@@ -1,10 +1,17 @@
-use async_process::{Command, Stdio};
+use async_process::{Child, Command, Stdio};
 use futures_lite::{future, io::BufReader, AsyncBufReadExt, StreamExt};
 
 async fn exec_fcgi(fcgi_app: &str) -> std::io::Result<()> {
-    let mut child = Command::new(fcgi_app).stdout(Stdio::piped()).spawn()?;
+    let mut child: Vec<Child> = (0..2)
+        .map(|_| {
+            Command::new(fcgi_app)
+                .stdout(Stdio::piped())
+                .spawn()
+                .unwrap()
+        })
+        .collect();
 
-    let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
+    let mut lines = BufReader::new(child[1].stdout.take().unwrap()).lines();
 
     while let Some(line) = lines.next().await {
         println!("{}", line?);
