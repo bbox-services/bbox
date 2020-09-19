@@ -7,5 +7,7 @@ edition = "2018"
 [dependencies]
 async-process = "1.0.0"
 futures-lite = "1.2.0"
+fastcgi-client = { version = "0.5.0", default-features = false }
+bufstream = "0.1.4"
 log = "0.4"
 env_logger = "0.7"
