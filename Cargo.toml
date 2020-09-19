@@ -1,0 +1,9 @@
+[package]
+name = "async-fcgi"
+version = "0.1.0"
+authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
+edition = "2018"
+
+[dependencies]
+async-process = "1.0.0"
+futures-lite = "1.2.0"
