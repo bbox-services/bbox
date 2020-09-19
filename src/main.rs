@@ -3,16 +3,26 @@ use bufstream::BufStream;
 use fastcgi_client::{Client, Params};
 use futures_lite::{future, io::BufReader, AsyncBufReadExt, StreamExt};
 use log::{error, info};
-use std::os::unix::net::UnixStream;
+use std::os::unix::io::{AsRawFd, FromRawFd};
+use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::Path;
+
+static SOCKET_PATH: &'static str = "/tmp/asyncfcgi";
 
 async fn exec_fcgi(fcgi_app: &str) -> std::io::Result<()> {
-    let mut child = Command::new("spawn-fcgi")
-        .arg("-n")
-        .arg("-s")
-        .arg("/tmp/asyncfcgi")
-        .arg("--")
-        .arg(fcgi_app)
+    let socket = Path::new(SOCKET_PATH);
+    // Delete old socket if necessary
+    if socket.exists() {
+        std::fs::remove_file(&socket)?;
+    }
+    // Bind to socket
+    let stream = UnixListener::bind(&socket)?;
+    let fcgi_io = unsafe { Stdio::from_raw_fd(stream.as_raw_fd()) };
+
+    let mut child = Command::new(fcgi_app)
+        .stdin(fcgi_io)
         .stderr(Stdio::piped())
+        .kill_on_drop(true)
         .spawn()?;
 
     std::thread::sleep(std::time::Duration::from_millis(500));
@@ -32,7 +42,7 @@ async fn exec_fcgi(fcgi_app: &str) -> std::io::Result<()> {
 type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 
 fn fcgi_client() -> FcgiClient {
-    let stream = UnixStream::connect("/tmp/asyncfcgi").unwrap();
+    let stream = UnixStream::connect(SOCKET_PATH).unwrap();
     // let stream = TcpStream::connect(("127.0.0.1", 9000)).unwrap();
     Client::new(stream, true)
 }
