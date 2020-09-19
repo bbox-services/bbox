@@ -1,11 +1,8 @@
 use async_process::{Command, Stdio};
 use futures_lite::{future, io::BufReader, AsyncBufReadExt, StreamExt};
 
-async fn exec_process() -> std::io::Result<()> {
-    let mut child = Command::new("find")
-        .arg(".")
-        .stdout(Stdio::piped())
-        .spawn()?;
+async fn exec_fcgi(fcgi_app: &str) -> std::io::Result<()> {
+    let mut child = Command::new(fcgi_app).stdout(Stdio::piped()).spawn()?;
 
     let mut lines = BufReader::new(child.stdout.take().unwrap()).lines();
 
@@ -16,5 +13,5 @@ async fn exec_process() -> std::io::Result<()> {
 }
 
 fn main() {
-    future::block_on(exec_process()).unwrap();
+    future::block_on(exec_fcgi("/usr/lib/cgi-bin/qgis_mapserv.fcgi")).unwrap();
 }
