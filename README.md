@@ -10,6 +10,10 @@ Fast CGI
 Usage
 -----
 
+    cargo run
+
+    x-www-browser http://127.0.0.1:8080/qgis/helloworld
+
 Manual calls:
 
     curl 'http://127.0.0.1:6767/fcgi/?map=test/helloworld.qgs&SERVICE=WMS&REQUEST=GetCapabilities'

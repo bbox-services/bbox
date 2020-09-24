@@ -9,11 +9,25 @@ use std::path::Path;
 
 pub struct FcgiProcess {
     child: ChildProcess,
+    socket_path: String,
     _listener: UnixListener,
-    fcgi_client: FcgiClient,
 }
 
-type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
+#[derive(Clone)]
+pub struct FcgiClientHandler {
+    socket_path: String,
+}
+
+impl FcgiClientHandler {
+    pub fn fcgi_client(&self) -> std::io::Result<FcgiClient> {
+        let stream = UnixStream::connect(&self.socket_path)?;
+        // let stream = TcpStream::connect(("127.0.0.1", 9000)).unwrap();
+        let fcgi_client = Client::new(stream, true);
+        Ok(fcgi_client)
+    }
+}
+
+pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 
 impl FcgiProcess {
     pub async fn spawn(fcgi_path: &str) -> std::io::Result<Self> {
@@ -33,14 +47,10 @@ impl FcgiProcess {
             .kill_on_drop(true)
             .spawn()?;
 
-        let stream = UnixStream::connect(SOCKET_PATH).unwrap();
-        // let stream = TcpStream::connect(("127.0.0.1", 9000)).unwrap();
-        let fcgi_client = Client::new(stream, true);
-
         let process = FcgiProcess {
             child,
             _listener: listener,
-            fcgi_client,
+            socket_path: SOCKET_PATH.to_string(),
         };
 
         Ok(process)
@@ -51,21 +61,10 @@ impl FcgiProcess {
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
-    pub async fn do_request(&mut self, query_string: &str) -> std::io::Result<()> {
-        let params = Params::new()
-            .set_request_method("GET")
-            .set_query_string(query_string);
-        let output = self
-            .fcgi_client
-            .do_request(&params, &mut std::io::empty())
-            .unwrap();
-        if let Some(stdout) = output.get_stdout() {
-            info!("{}", String::from_utf8(stdout).unwrap());
+    pub fn handler(&self) -> FcgiClientHandler {
+        FcgiClientHandler {
+            socket_path: self.socket_path.clone(),
         }
-        if let Some(stderr) = output.get_stderr() {
-            error!("{}", String::from_utf8(stderr).unwrap());
-        }
-        Ok(())
     }
 
     pub async fn dump_stderr(&mut self) -> std::io::Result<()> {
@@ -75,4 +74,20 @@ impl FcgiProcess {
         }
         Ok(())
     }
+}
+
+pub fn do_request(fcgi_client: &mut FcgiClient, query_string: &str) -> std::io::Result<()> {
+    let params = Params::new()
+        .set_request_method("GET")
+        .set_query_string(query_string);
+    let output = fcgi_client
+        .do_request(&params, &mut std::io::empty())
+        .unwrap();
+    if let Some(stdout) = output.get_stdout() {
+        info!("{}", String::from_utf8(stdout).unwrap());
+    }
+    if let Some(stderr) = output.get_stderr() {
+        error!("{}", String::from_utf8(stderr).unwrap());
+    }
+    Ok(())
 }
