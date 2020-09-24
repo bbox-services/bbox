@@ -1,4 +1,5 @@
 mod fcgi_process;
+mod webserver;
 
 use crate::fcgi_process::FcgiProcess;
 use futures_lite::future;
@@ -20,6 +21,7 @@ fn main() {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    future::block_on(exec_wms_fcgi("/usr/lib/cgi-bin/qgis_mapserv.fcgi")).unwrap();
+    // future::block_on(exec_wms_fcgi("/usr/lib/cgi-bin/qgis_mapserv.fcgi")).unwrap();
     // future::block_on(exec_wms_fcgi("/usr/lib/cgi-bin/mapserv")).unwrap();
+    let _ = webserver::webserver();
 }
