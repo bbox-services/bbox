@@ -1,8 +1,8 @@
 use async_process::{Child as ChildProcess, Command, Stdio};
 use bufstream::BufStream;
-use fastcgi_client::{Client, Params};
+use fastcgi_client::Client;
 use futures_lite::{io::BufReader, AsyncBufReadExt, StreamExt};
-use log::{error, info};
+use log::error;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
@@ -67,6 +67,7 @@ impl FcgiProcess {
         }
     }
 
+    #[allow(dead_code)]
     pub async fn dump_stderr(&mut self) -> std::io::Result<()> {
         let mut lines = BufReader::new(self.child.stderr.take().unwrap()).lines();
         while let Some(line) = lines.next().await {
@@ -74,20 +75,4 @@ impl FcgiProcess {
         }
         Ok(())
     }
-}
-
-pub fn do_request(fcgi_client: &mut FcgiClient, query_string: &str) -> std::io::Result<()> {
-    let params = Params::new()
-        .set_request_method("GET")
-        .set_query_string(query_string);
-    let output = fcgi_client
-        .do_request(&params, &mut std::io::empty())
-        .unwrap();
-    if let Some(stdout) = output.get_stdout() {
-        info!("{}", String::from_utf8(stdout).unwrap());
-    }
-    if let Some(stderr) = output.get_stderr() {
-        error!("{}", String::from_utf8(stderr).unwrap());
-    }
-    Ok(())
 }

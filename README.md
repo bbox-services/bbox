@@ -12,7 +12,8 @@ Usage
 
     cargo run
 
-    x-www-browser http://127.0.0.1:8080/qgis/helloworld
+    x-www-browser http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&REQUEST=GetCapabilities
+    x-www-browser 'http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE'
 
 Manual calls:
 

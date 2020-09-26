@@ -1,5 +1,5 @@
 use crate::fcgi_process::*;
-use actix_web::{get, middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{get, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use log::{debug, error};
 use std::io::{BufRead, Cursor, Read};
 
@@ -12,12 +12,10 @@ async fn index() -> String {
 async fn qgis(
     fcgi: web::Data<FcgiClientHandler>,
     project: web::Path<String>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut fcgi_client = fcgi.fcgi_client()?;
-    let query = format!(
-        "map=test/{}.qgs&SERVICE=WMS&REQUEST=GetCapabilities",
-        project
-    );
+    let query = format!("map=test/{}.qgs&{}", project, req.query_string());
     let params = fastcgi_client::Params::new()
         .set_request_method("GET")
         .set_query_string(&query);
