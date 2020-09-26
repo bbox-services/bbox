@@ -1,5 +1,7 @@
 use crate::fcgi_process::*;
 use actix_web::{get, middleware, web, App, Error, HttpResponse, HttpServer};
+use log::{debug, error};
+use std::io::{BufRead, Cursor, Read};
 
 #[get("/")]
 async fn index() -> String {
@@ -24,13 +26,35 @@ async fn qgis(
         .unwrap();
     let fcgiout = output.get_stdout().unwrap();
 
-    // use futures_lite::*
-    // let mut reader = io::BufReader::new(fcgiout.take(99));
-    // let mut lines = reader.lines();
-    // let mut bytes = reader.bytes();
-    // let mut s = stream::iter(fcgiout);
+    let mut response = HttpResponse::Ok();
 
-    Ok(HttpResponse::Ok().body(fcgiout))
+    let mut cursor = Cursor::new(fcgiout);
+    let mut line = String::new();
+    while let Ok(bytes) = cursor.read_line(&mut line) {
+        if bytes <= 1 {
+            break;
+        }
+        // Truncate newline
+        if bytes > 0 {
+            line.truncate(line.len() - 1);
+        }
+        let parts: Vec<&str> = line.split(": ").collect();
+        if parts.len() != 2 {
+            error!("{:?}", "Invalid FCGI-Header received");
+            break;
+        }
+        let (key, value) = (parts[0], parts[1]);
+        match key {
+            "Content-Type" => {
+                response.header(key, value);
+            }
+            _ => debug!("Ignoring FCGI-Header: {}", line),
+        }
+        line.truncate(0);
+    }
+    let mut body = Vec::new(); // TODO: return body without copy
+    let _bytes = cursor.read_to_end(&mut body);
+    Ok(response.body(body))
 }
 
 #[actix_web::main]
