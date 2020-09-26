@@ -22,7 +22,7 @@ impl FcgiClientHandler {
     pub fn fcgi_client(&self) -> std::io::Result<FcgiClient> {
         let stream = UnixStream::connect(&self.socket_path)?;
         // let stream = TcpStream::connect(("127.0.0.1", 9000)).unwrap();
-        let fcgi_client = Client::new(stream, true);
+        let fcgi_client = Client::new(stream, false);
         Ok(fcgi_client)
     }
 }
