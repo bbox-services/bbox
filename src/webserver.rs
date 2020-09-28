@@ -14,10 +14,10 @@ struct IndexTemplate<'a> {
 async fn index() -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
         links: vec![
-        "/qgis/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/qgis/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE",
-        "/qgis/ne?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/qgis/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit",
+        "/qgis/data/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/qgis/data/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE",
+        "/qgis/data/ne?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/qgis/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit",
         ]
     }
     .render()
@@ -25,14 +25,14 @@ async fn index() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().content_type("text/html").body(s))
 }
 
-#[get("/qgis/{project}")]
+#[get("/qgis/{project:[^{}]+}")]
 async fn qgis(
     fcgi: web::Data<FcgiClientHandler>,
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut fcgi_client = fcgi.fcgi_client()?;
-    let query = format!("map=data/{}.qgs&{}", project, req.query_string());
+    let query = format!("map={}.qgs&{}", project, req.query_string());
     let params = fastcgi_client::Params::new()
         .set_request_method("GET")
         .set_query_string(&query);
