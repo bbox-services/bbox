@@ -357,6 +357,7 @@ dependencies = [
  "fastcgi-client",
  "futures-lite",
  "log",
+ "rand",
 ]
 
 [[package]]

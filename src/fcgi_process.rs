@@ -2,7 +2,8 @@ use async_process::{Child as ChildProcess, Command, Stdio};
 use bufstream::BufStream;
 use fastcgi_client::Client;
 use futures_lite::{io::BufReader, AsyncBufReadExt, StreamExt};
-use log::error;
+use log::{debug, error};
+use rand::Rng;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
@@ -31,8 +32,9 @@ pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 
 impl FcgiProcess {
     pub async fn spawn(fcgi_path: &str) -> std::io::Result<Self> {
-        static SOCKET_PATH: &'static str = "/tmp/asyncfcgi";
-        let socket = Path::new(SOCKET_PATH);
+        let socket_path = format!("/tmp/asyncfcgi{}", rand::thread_rng().gen::<u8>()); // TODO: guarantee uniqe name
+        debug!("Spawing {} at {}", fcgi_path, &socket_path);
+        let socket = Path::new(&socket_path);
         // Delete old socket if necessary
         if socket.exists() {
             std::fs::remove_file(&socket)?;
@@ -50,7 +52,7 @@ impl FcgiProcess {
         let process = FcgiProcess {
             child,
             _listener: listener,
-            socket_path: SOCKET_PATH.to_string(),
+            socket_path,
         };
 
         Ok(process)

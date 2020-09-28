@@ -1,5 +1,6 @@
 mod fcgi_process;
 mod webserver;
+mod wms_fcgi_backend;
 
 use std::env;
 
