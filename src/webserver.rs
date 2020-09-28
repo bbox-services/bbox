@@ -15,7 +15,9 @@ async fn index() -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
         links: vec![
         "/qgis/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/qgis/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE"
+        "/qgis/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE",
+        "/qgis/ne?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/qgis/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit",
         ]
     }
     .render()
@@ -30,7 +32,7 @@ async fn qgis(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut fcgi_client = fcgi.fcgi_client()?;
-    let query = format!("map=test/{}.qgs&{}", project, req.query_string());
+    let query = format!("map=data/{}.qgs&{}", project, req.query_string());
     let params = fastcgi_client::Params::new()
         .set_request_method("GET")
         .set_query_string(&query);
@@ -43,17 +45,16 @@ async fn qgis(
 
     let mut cursor = Cursor::new(fcgiout);
     let mut line = String::new();
-    while let Ok(bytes) = cursor.read_line(&mut line) {
-        if bytes <= 1 {
-            break;
-        }
+    while let Ok(_bytes) = cursor.read_line(&mut line) {
         // Truncate newline
-        if bytes > 0 {
-            line.truncate(line.len() - 1);
+        let len = line.trim_end_matches(&['\r', '\n'][..]).len();
+        line.truncate(len);
+        if len == 0 {
+            break;
         }
         let parts: Vec<&str> = line.split(": ").collect();
         if parts.len() != 2 {
-            error!("{:?}", "Invalid FCGI-Header received");
+            error!("Invalid FCGI-Header received: {}", line);
             break;
         }
         let (key, value) = (parts[0], parts[1]);
@@ -73,6 +74,7 @@ async fn qgis(
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
     let process = FcgiProcess::spawn("/usr/lib/cgi-bin/qgis_mapserv.fcgi").await?;
+    // let process = FcgiProcess::spawn("/usr/lib/cgi-bin/mapserv").await?;
     process.wait_until_ready();
     let handler = process.handler();
 
