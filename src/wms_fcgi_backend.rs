@@ -42,7 +42,6 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 
 pub trait FcgiBackendType {
     fn name(&self) -> &'static str;
-    fn default_url_prefix(&self) -> &'static str;
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
 }
@@ -52,9 +51,6 @@ pub struct QgisFcgiBackend;
 impl FcgiBackendType for QgisFcgiBackend {
     fn name(&self) -> &'static str {
         "QGIS Server"
-    }
-    fn default_url_prefix(&self) -> &'static str {
-        "qgis"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
         vec!["/usr/lib/cgi-bin/qgis_mapserv.fcgi"]
@@ -69,9 +65,6 @@ pub struct UmnFcgiBackend;
 impl FcgiBackendType for UmnFcgiBackend {
     fn name(&self) -> &'static str {
         "UMN Mapserver"
-    }
-    fn default_url_prefix(&self) -> &'static str {
-        "umn"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
         vec!["/usr/lib/cgi-bin/mapserv"]

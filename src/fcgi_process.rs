@@ -33,7 +33,7 @@ pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 impl FcgiProcess {
     pub async fn spawn(fcgi_path: &str) -> std::io::Result<Self> {
         let socket_path = format!("/tmp/asyncfcgi{}", rand::thread_rng().gen::<u8>()); // TODO: guarantee uniqe name
-        debug!("Spawing {} at {}", fcgi_path, &socket_path);
+        debug!("Spawning {} on {}", fcgi_path, &socket_path);
         let socket = Path::new(&socket_path);
         // Delete old socket if necessary
         if socket.exists() {
@@ -58,10 +58,9 @@ impl FcgiProcess {
         Ok(process)
     }
 
-    pub fn wait_until_ready(&self) {
-        // TODO
-        std::thread::sleep(std::time::Duration::from_millis(500));
-    }
+    // pub fn wait_until_ready(&self) {
+    //     std::thread::sleep(std::time::Duration::from_millis(500));
+    // }
 
     pub fn handler(&self) -> FcgiClientHandler {
         FcgiClientHandler {

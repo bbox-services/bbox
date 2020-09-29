@@ -12,13 +12,12 @@ Usage
 
     cargo run
 
-    x-www-browser http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&REQUEST=GetCapabilities
-    x-www-browser 'http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE'
+    x-www-browser http://127.0.0.1:8080/
 
 Manual calls:
 
-    curl 'http://127.0.0.1:6767/fcgi/?map=test/helloworld.qgs&SERVICE=WMS&REQUEST=GetCapabilities'
+    curl 'http://127.0.0.1:8080/wms/qgs/data/ne?&SERVICE=WMS&REQUEST=GetCapabilities'
 
-    curl -s -v -o /tmp/map.png 'http://127.0.0.1:6767/fcgi/?map=test/helloworld.qgs&ERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE'
+    curl -s -v -o /tmp/map.png 'http://127.0.0.1:8080/wms/qgs/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit'
 
-    curl -s -v -o /tmp/legend.png 'http://127.0.0.1:6767/fcgi/?map=test/helloworld.qgs&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&LAYER=Country&FORMAT=image/png&STYLE=default&SLD_VERSION=1.1.0&TRANSPARENT=true'
+    curl -s -v -o /tmp/legend.png 'http://127.0.0.1:8080/wms/qgs/data/ne?&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetLegendGraphic&LAYER=country&FORMAT=image/png&STYLE=default&TRANSPARENT=true'

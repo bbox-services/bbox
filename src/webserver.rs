@@ -15,12 +15,12 @@ struct IndexTemplate<'a> {
 async fn index() -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
         links: vec![
-        "/wms/qgis/data/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/wms/qgis/data/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode%3D8bit&DPI=96&TRANSPARENT=TRUE",
-        "/wms/qgis/data/ne?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/wms/qgis/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit",
-        "/wms/umn/data/ne?SERVICE=WMS&REQUEST=GetCapabilities",
-        "/wms/umn/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png;%20mode%3D8bit",
+        "/wms/qgs/data/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/wms/qgs/data/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
+        "/wms/qgs/data/ne?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/wms/qgs/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
+        "/wms/map/data/ne?SERVICE=WMS&REQUEST=GetCapabilities",
+        "/wms/map/data/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
         ]
     }
     .render()
@@ -36,6 +36,7 @@ async fn wms_fcgi(
 ) -> Result<HttpResponse, Error> {
     let mut fcgi_client = fcgi.fcgi_client()?;
     let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
+    debug!("Forwarding query to FCGI: {}", &query);
     let params = fastcgi_client::Params::new()
         .set_request_method("GET")
         .set_query_string(&query);
@@ -82,10 +83,11 @@ pub async fn webserver() -> std::io::Result<()> {
     for backend in backends {
         if let Some(process) = FcgiBackend::spawn_backend(backend).await {
             info!("{} FCGI process started", backend.name());
-            process.wait_until_ready();
-            let path = format!("/wms/{}", backend.default_url_prefix());
-            info!("Registering WMS endpoint {}", &path);
-            handlers.push((process.handler(), path, backend.project_files()[0]));
+            for ending in backend.project_files() {
+                let path = format!("/wms/{}", ending);
+                info!("Registering WMS endpoint {}", &path);
+                handlers.push((process.handler(), path, ending));
+            }
             processes.push(process);
         }
     }
