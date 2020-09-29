@@ -2,32 +2,32 @@ use crate::fcgi_process::{FcgiClientHandler, FcgiProcess};
 use crate::file_search;
 use log::info;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct FcgiBackend {
     exe_path: String,
-    base_dir: String,
+    base_dir: PathBuf,
 }
 
 impl FcgiBackend {
-    fn detect_fcgi(locations: Vec<&str>) -> Option<FcgiBackend> {
+    fn detect_fcgi(locations: Vec<&str>, base_dir: PathBuf) -> Option<FcgiBackend> {
         if let Some(exe_path) = find_exe(locations) {
-            Some(FcgiBackend {
-                exe_path,
-                base_dir: ".".to_string(),
-            })
+            Some(FcgiBackend { exe_path, base_dir })
         } else {
             None
         }
     }
 
     async fn spawn_process(&self) -> std::io::Result<FcgiProcess> {
-        let process = FcgiProcess::spawn(&self.exe_path).await;
+        let process = FcgiProcess::spawn(&self.exe_path, Some(&self.base_dir)).await;
         process
     }
 
-    pub async fn spawn_backend(backend: &dyn FcgiBackendType) -> Option<FcgiProcess> {
-        if let Some(backend) = FcgiBackend::detect_fcgi(backend.exe_locations()) {
+    pub async fn spawn_backend(
+        backend: &dyn FcgiBackendType,
+        base: PathBuf,
+    ) -> Option<FcgiProcess> {
+        if let Some(backend) = FcgiBackend::detect_fcgi(backend.exe_locations(), base) {
             if let Ok(process) = backend.spawn_process().await {
                 return Some(process);
             }
@@ -86,20 +86,28 @@ pub async fn init_backends(
         .canonicalize()?;
     let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
     for backend in backends {
-        if let Some(process) = FcgiBackend::spawn_backend(backend).await {
-            info!("{} FCGI process started", backend.name());
+        if FcgiBackend::detect_fcgi(backend.exe_locations(), PathBuf::new()).is_some() {
+            info!(
+                "Searching project files with project_scan_basedir: {}",
+                curdir.to_str().expect("Invalid UTF-8 path name")
+            );
+            let mut allfiles = Vec::new();
             for ending in backend.project_files() {
-                info!(
-                    "Searching project files with project_scan_basedir: {}",
-                    curdir.to_str().expect("Invalid UTF-8 path name")
-                );
-                let files = file_search::search(&curdir, &format!("*.{}", ending));
+                let mut files = file_search::search(&curdir, &format!("*.{}", ending));
                 info!("Found {} file(s) matching *.{}", files.len(), ending);
-                let path = format!("/wms/{}", ending);
-                info!("Registering WMS endpoint {}", &path);
-                handlers.push((process.handler(), path, ending.to_string()));
+                allfiles.append(&mut files);
             }
-            processes.push(process);
+            let basedir = file_search::longest_common_prefix(&allfiles);
+            info!("Setting base path to {:?}", basedir);
+            if let Some(process) = FcgiBackend::spawn_backend(backend, basedir).await {
+                info!("{} FCGI process started", backend.name());
+                for ending in backend.project_files() {
+                    let path = format!("/wms/{}", ending);
+                    info!("Registering WMS endpoint {}", &path);
+                    handlers.push((process.handler(), path, ending.to_string()));
+                }
+                processes.push(process);
+            }
         }
     }
     Ok((processes, handlers))
