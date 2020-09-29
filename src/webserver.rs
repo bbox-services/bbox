@@ -35,11 +35,23 @@ async fn wms_fcgi(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut fcgi_client = fcgi.fcgi_client()?;
+    let conninfo = req.connection_info();
+    let host_port: Vec<&str> = conninfo.host().split(':').collect();
     let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
     debug!("Forwarding query to FCGI: {}", &query);
-    let params = fastcgi_client::Params::new()
+    let mut params = fastcgi_client::Params::new()
         .set_request_method("GET")
+        .set_request_uri(req.path())
+        .set_server_name(host_port.get(0).unwrap_or(&""))
         .set_query_string(&query);
+    if let Some(port) = host_port.get(1) {
+        params = params.set_server_port(port);
+    }
+    if conninfo.scheme() == "https" {
+        params.insert("HTTPS", "ON");
+    }
+    // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
+    // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
     let output = fcgi_client
         .do_request(&params, &mut std::io::empty())
         .unwrap();
