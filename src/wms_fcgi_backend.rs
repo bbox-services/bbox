@@ -1,4 +1,7 @@
-use crate::fcgi_process::FcgiProcess;
+use crate::fcgi_process::{FcgiClientHandler, FcgiProcess};
+use crate::file_search;
+use log::info;
+use std::env;
 use std::path::Path;
 
 pub struct FcgiBackend {
@@ -72,4 +75,32 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
     }
+}
+
+pub async fn init_backends(
+) -> std::io::Result<(Vec<FcgiProcess>, Vec<(FcgiClientHandler, String, String)>)> {
+    let mut processes = Vec::new();
+    let mut handlers = Vec::new();
+    let curdir = env::current_dir()
+        .expect("current_dir unkown")
+        .canonicalize()?;
+    let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
+    for backend in backends {
+        if let Some(process) = FcgiBackend::spawn_backend(backend).await {
+            info!("{} FCGI process started", backend.name());
+            for ending in backend.project_files() {
+                info!(
+                    "Searching project files with project_scan_basedir: {}",
+                    curdir.to_str().expect("Invalid UTF-8 path name")
+                );
+                let files = file_search::search(&curdir, &format!("*.{}", ending));
+                info!("Found {} file(s) matching *.{}", files.len(), ending);
+                let path = format!("/wms/{}", ending);
+                info!("Registering WMS endpoint {}", &path);
+                handlers.push((process.handler(), path, ending.to_string()));
+            }
+            processes.push(process);
+        }
+    }
+    Ok((processes, handlers))
 }

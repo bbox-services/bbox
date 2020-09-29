@@ -2,7 +2,7 @@ use crate::fcgi_process::*;
 use crate::wms_fcgi_backend::*;
 use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use askama::Template;
-use log::{debug, error, info};
+use log::{debug, error};
 use std::io::{BufRead, Cursor, Read};
 
 #[derive(Template)]
@@ -77,20 +77,7 @@ async fn wms_fcgi(
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let mut processes = Vec::new();
-    let mut handlers = Vec::new();
-    let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
-    for backend in backends {
-        if let Some(process) = FcgiBackend::spawn_backend(backend).await {
-            info!("{} FCGI process started", backend.name());
-            for ending in backend.project_files() {
-                let path = format!("/wms/{}", ending);
-                info!("Registering WMS endpoint {}", &path);
-                handlers.push((process.handler(), path, ending));
-            }
-            processes.push(process);
-        }
-    }
+    let (_processes, handlers) = init_backends().await?;
 
     HttpServer::new(move || {
         let mut app = App::new()

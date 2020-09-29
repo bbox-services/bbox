@@ -1,4 +1,5 @@
 mod fcgi_process;
+mod file_search;
 mod webserver;
 mod wms_fcgi_backend;
 
