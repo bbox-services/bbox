@@ -15,6 +15,7 @@ env_logger = "0.7"
 askama = "0.9"
 rand = "0.7.3"
 ignore = "0.4"
+num_cpus = "1.0"
 
 [build-dependencies]
 askama = "0.9"

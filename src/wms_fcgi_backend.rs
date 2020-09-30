@@ -1,48 +1,9 @@
-use crate::fcgi_process::{FcgiClientHandler, FcgiProcess};
+use crate::fcgi_process::{FcgiClientHandler, FcgiPool};
 use crate::file_search;
 use log::info;
 use std::collections::{HashMap, HashSet};
 use std::env;
-use std::path::{Path, PathBuf};
-
-pub struct FcgiBackend {
-    exe_path: String,
-    base_dir: PathBuf,
-}
-
-impl FcgiBackend {
-    fn detect_fcgi(locations: Vec<&str>, base_dir: PathBuf) -> Option<FcgiBackend> {
-        if let Some(exe_path) = find_exe(locations) {
-            Some(FcgiBackend { exe_path, base_dir })
-        } else {
-            None
-        }
-    }
-
-    async fn spawn_process(&self) -> std::io::Result<FcgiProcess> {
-        let process = FcgiProcess::spawn(&self.exe_path, Some(&self.base_dir)).await;
-        process
-    }
-
-    pub async fn spawn_backend(
-        backend: &dyn FcgiBackendType,
-        base: PathBuf,
-    ) -> Option<FcgiProcess> {
-        if let Some(backend) = FcgiBackend::detect_fcgi(backend.exe_locations(), base) {
-            if let Ok(process) = backend.spawn_process().await {
-                return Some(process);
-            }
-        }
-        None
-    }
-}
-
-fn find_exe(locations: Vec<&str>) -> Option<String> {
-    locations
-        .iter()
-        .find(|&&c| Path::new(c).is_file())
-        .map(|&c| c.to_string())
-}
+use std::path::Path;
 
 pub trait FcgiBackendType {
     fn name(&self) -> &'static str;
@@ -78,6 +39,17 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
 }
 
+fn detect_fcgi(backend: &dyn FcgiBackendType) -> Option<String> {
+    find_exe(backend.exe_locations())
+}
+
+fn find_exe(locations: Vec<&str>) -> Option<String> {
+    locations
+        .iter()
+        .find(|&&c| Path::new(c).is_file())
+        .map(|&c| c.to_string())
+}
+
 #[derive(Clone, Debug)]
 pub struct WmsCatalogEntry {
     /// WMS base path like `/wms/qgs/ne`
@@ -85,17 +57,17 @@ pub struct WmsCatalogEntry {
 }
 
 pub async fn init_backends() -> std::io::Result<(
-    Vec<FcgiProcess>,
+    Vec<FcgiPool>,
     Vec<(FcgiClientHandler, String, String)>,
     Vec<WmsCatalogEntry>,
 )> {
-    let mut processes = Vec::new();
+    let mut pools = Vec::new();
     let mut handlers = Vec::new();
     let mut catalog = Vec::new();
     let curdir = env::current_dir()?;
     let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
     for backend in backends {
-        if FcgiBackend::detect_fcgi(backend.exe_locations(), PathBuf::new()).is_some() {
+        if let Some(exe_path) = detect_fcgi(backend) {
             info!(
                 "Searching project files with project_scan_basedir: {}",
                 curdir.to_str().expect("Invalid UTF-8 path name")
@@ -119,8 +91,15 @@ pub async fn init_backends() -> std::io::Result<(
             };
             info!("Setting base path to {:?}", basedir);
 
-            if let Some(process) = FcgiBackend::spawn_backend(backend, basedir.clone()).await {
-                info!("{} FCGI process started", backend.name());
+            let num_processes = num_cpus::get();
+            if let Ok(pool) =
+                FcgiPool::spawn(&exe_path, Some(&basedir.clone()), num_processes).await
+            {
+                info!(
+                    "{} {} FCGI processes started",
+                    num_processes,
+                    backend.name()
+                );
                 for ending in backend.project_files() {
                     let route = format!("/wms/{}", ending);
 
@@ -153,11 +132,11 @@ pub async fn init_backends() -> std::io::Result<(
                     );
 
                     info!("Registering WMS endpoint {}", &route);
-                    handlers.push((process.handler(), route, ending.to_string()));
+                    handlers.push((pool.handler(), route, ending.to_string()));
                 }
-                processes.push(process);
+                pools.push(pool);
             }
         }
     }
-    Ok((processes, handlers, catalog))
+    Ok((pools, handlers, catalog))
 }

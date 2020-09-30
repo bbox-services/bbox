@@ -88,7 +88,7 @@ async fn wms_fcgi(
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let (_processes, handlers, catalog) = init_backends().await?;
+    let (_process_pools, handlers, catalog) = init_backends().await?;
 
     HttpServer::new(move || {
         let mut app = App::new()

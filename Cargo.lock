@@ -358,6 +358,7 @@ dependencies = [
  "futures-lite",
  "ignore",
  "log",
+ "num_cpus",
  "rand",
 ]
 
