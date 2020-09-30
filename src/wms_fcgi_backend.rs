@@ -1,7 +1,7 @@
 use crate::fcgi_process::{FcgiClientHandler, FcgiProcess};
 use crate::file_search;
 use log::info;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -101,7 +101,7 @@ pub async fn init_backends() -> std::io::Result<(
                 curdir.to_str().expect("Invalid UTF-8 path name")
             );
             let mut catalog_files = HashMap::new();
-            let mut all_paths = Vec::new();
+            let mut all_paths = HashSet::new();
             for ending in backend.project_files() {
                 let files = file_search::search(&curdir, &format!("*.{}", ending));
                 info!("Found {} file(s) matching *.{}", files.len(), ending);
@@ -115,7 +115,7 @@ pub async fn init_backends() -> std::io::Result<(
             let basedir = if all_paths.is_empty() {
                 env::current_dir().expect("no current dir")
             } else {
-                file_search::longest_common_prefix(&all_paths)
+                file_search::longest_common_prefix(&all_paths.into_iter().collect())
             };
             info!("Setting base path to {:?}", basedir);
 
@@ -130,7 +130,7 @@ pub async fn init_backends() -> std::io::Result<(
                             .expect("route entry missing")
                             .iter()
                             .map(|p| {
-                                // /basedir/data/ne.qgs -> /wms/qgs/data/ne
+                                // /basedir/data/project.qgs -> /wms/qgs/data/project
                                 let project = p
                                     .file_stem()
                                     .expect("no file name")
