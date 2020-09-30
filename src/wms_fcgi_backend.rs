@@ -92,9 +92,7 @@ pub async fn init_backends() -> std::io::Result<(
     let mut processes = Vec::new();
     let mut handlers = Vec::new();
     let mut catalog = Vec::new();
-    let curdir = env::current_dir()
-        .expect("current_dir unkown")
-        .canonicalize()?;
+    let curdir = env::current_dir()?;
     let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
     for backend in backends {
         if FcgiBackend::detect_fcgi(backend.exe_locations(), PathBuf::new()).is_some() {
@@ -114,7 +112,11 @@ pub async fn init_backends() -> std::io::Result<(
                 );
                 catalog_files.insert(format!("/wms/{}", ending), files);
             }
-            let basedir = file_search::longest_common_prefix(&all_paths);
+            let basedir = if all_paths.is_empty() {
+                env::current_dir().expect("no current dir")
+            } else {
+                file_search::longest_common_prefix(&all_paths)
+            };
             info!("Setting base path to {:?}", basedir);
 
             if let Some(process) = FcgiBackend::spawn_backend(backend, basedir.clone()).await {
