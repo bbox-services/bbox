@@ -1,6 +1,7 @@
 use crate::fcgi_process::{FcgiClientHandler, FcgiProcess};
 use crate::file_search;
 use log::info;
+use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -77,10 +78,20 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
 }
 
-pub async fn init_backends(
-) -> std::io::Result<(Vec<FcgiProcess>, Vec<(FcgiClientHandler, String, String)>)> {
+#[derive(Clone, Debug)]
+pub struct WmsCatalogEntry {
+    /// WMS base path like `/wms/qgs/ne`
+    pub wms_path: String,
+}
+
+pub async fn init_backends() -> std::io::Result<(
+    Vec<FcgiProcess>,
+    Vec<(FcgiClientHandler, String, String)>,
+    Vec<WmsCatalogEntry>,
+)> {
     let mut processes = Vec::new();
     let mut handlers = Vec::new();
+    let mut catalog = Vec::new();
     let curdir = env::current_dir()
         .expect("current_dir unkown")
         .canonicalize()?;
@@ -91,24 +102,60 @@ pub async fn init_backends(
                 "Searching project files with project_scan_basedir: {}",
                 curdir.to_str().expect("Invalid UTF-8 path name")
             );
-            let mut allfiles = Vec::new();
+            let mut catalog_files = HashMap::new();
+            let mut all_paths = Vec::new();
             for ending in backend.project_files() {
-                let mut files = file_search::search(&curdir, &format!("*.{}", ending));
+                let files = file_search::search(&curdir, &format!("*.{}", ending));
                 info!("Found {} file(s) matching *.{}", files.len(), ending);
-                allfiles.append(&mut files);
+                all_paths.extend(
+                    files
+                        .iter()
+                        .map(|p| p.parent().expect("file in root").to_path_buf()),
+                );
+                catalog_files.insert(format!("/wms/{}", ending), files);
             }
-            let basedir = file_search::longest_common_prefix(&allfiles);
+            let basedir = file_search::longest_common_prefix(&all_paths);
             info!("Setting base path to {:?}", basedir);
-            if let Some(process) = FcgiBackend::spawn_backend(backend, basedir).await {
+
+            if let Some(process) = FcgiBackend::spawn_backend(backend, basedir.clone()).await {
                 info!("{} FCGI process started", backend.name());
                 for ending in backend.project_files() {
-                    let path = format!("/wms/{}", ending);
-                    info!("Registering WMS endpoint {}", &path);
-                    handlers.push((process.handler(), path, ending.to_string()));
+                    let route = format!("/wms/{}", ending);
+
+                    catalog.extend(
+                        catalog_files
+                            .get(&route)
+                            .expect("route entry missing")
+                            .iter()
+                            .map(|p| {
+                                // /basedir/data/ne.qgs -> /wms/qgs/data/ne
+                                let project = p
+                                    .file_stem()
+                                    .expect("no file name")
+                                    .to_str()
+                                    .expect("Invalid UTF-8 file name");
+                                let rel_path = p
+                                    .parent()
+                                    .expect("file in root")
+                                    .strip_prefix(&basedir)
+                                    .expect("wrong prefix")
+                                    .to_str()
+                                    .expect("Invalid UTF-8 path name");
+                                let wms_path = if rel_path == "" {
+                                    format!("{}/{}", &route, project)
+                                } else {
+                                    format!("{}/{}/{}", &route, rel_path, project)
+                                };
+                                WmsCatalogEntry { wms_path }
+                            }),
+                    );
+
+                    info!("Registering WMS endpoint {}", &route);
+                    handlers.push((process.handler(), route, ending.to_string()));
                 }
                 processes.push(process);
             }
         }
     }
-    Ok((processes, handlers))
+    Ok((processes, handlers, catalog))
 }

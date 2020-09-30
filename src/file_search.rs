@@ -129,5 +129,9 @@ mod test {
             ]),
             PathBuf::from("/a")
         );
+        assert_eq!(
+            longest_common_prefix(&vec![PathBuf::from("/a/f1.x"),]),
+            PathBuf::from("/a/f1.x") // Strip file names, if you want the path
+        );
     }
 }

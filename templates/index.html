@@ -5,10 +5,16 @@
   <title>async-fcgi</title>
 </head>
 <body>
-  <h1>WMS requests</h1>
+  <h1>WMS catalog</h1>
+  <ul>
+  {% for entry in wms_catalog %}
+    <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a></li>
+  {% endfor %}
+  </ul>
+  <h1>WMS request examples</h1>
   <ul>
   {% for link in links %}
-    <li><a href="{{ link }}">{{ link }}</a></li>
+    <li><a href="{{ link }}">{{ link|truncate(20) }}</a></li>
   {% endfor %}
   </ul>
 </body>

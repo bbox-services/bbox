@@ -8,18 +8,17 @@ use std::io::{BufRead, Cursor, Read};
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate<'a> {
+    wms_catalog: Vec<WmsCatalogEntry>,
     links: Vec<&'a str>,
 }
 
 #[get("/")]
-async fn index() -> Result<HttpResponse, Error> {
+async fn index(wms_catalog: web::Data<Vec<WmsCatalogEntry>>) -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
+        wms_catalog: wms_catalog.to_vec(),
         links: vec![
-        "/wms/qgs/helloworld?SERVICE=WMS&REQUEST=GetCapabilities",
         "/wms/qgs/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
-        "/wms/qgs/ne?SERVICE=WMS&REQUEST=GetCapabilities",
         "/wms/qgs/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
-        "/wms/map/ne?SERVICE=WMS&REQUEST=GetCapabilities",
         "/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
         ]
     }
@@ -89,12 +88,13 @@ async fn wms_fcgi(
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let (_processes, handlers) = init_backends().await?;
+    let (_processes, handlers, catalog) = init_backends().await?;
 
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .data(catalog.clone())
             .service(index);
         for (handler, base, ending) in &handlers {
             app = app.service(
