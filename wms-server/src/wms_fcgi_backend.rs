@@ -18,11 +18,8 @@ pub struct QgisFcgiBackend {
 
 impl QgisFcgiBackend {
     fn new() -> Self {
-        let curdir = env::current_dir().expect("env::current_dir failed"); // FIXME: project base dir
-        let plugindir = format!(
-            "{}/qgis/plugins",
-            curdir.to_str().expect("Invalid UTF-8 path name")
-        );
+        let dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
+        let plugindir = format!("{}/qgis/plugins", dir);
         QgisFcgiBackend { plugindir }
     }
 }
