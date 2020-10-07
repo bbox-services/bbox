@@ -744,6 +744,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e1cd41440ae7e4734bbd42302f63eaba892afc93a3912dad84006247f0dedb0e"
 
 [[package]]
+name = "fastcgi"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4159a0f48bea0281602e508eb070d7d7ba1f6ac2480f9db1a60a39274aea1cc"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "fastcgi-client"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1238,6 +1247,13 @@ dependencies = [
  "net2",
  "winapi 0.2.8",
  "ws2_32-sys",
+]
+
+[[package]]
+name = "mock-fcgi-wms"
+version = "0.1.0"
+dependencies = [
+ "fastcgi",
 ]
 
 [[package]]

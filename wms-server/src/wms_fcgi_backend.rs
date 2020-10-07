@@ -65,6 +65,29 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
 }
 
+pub struct MockFcgiBackend;
+
+impl MockFcgiBackend {
+    fn new() -> Self {
+        MockFcgiBackend {}
+    }
+}
+
+impl FcgiBackendType for MockFcgiBackend {
+    fn name(&self) -> &'static str {
+        "Mock FCGI WMS"
+    }
+    fn exe_locations(&self) -> Vec<&'static str> {
+        vec!["target/debug/mock-fcgi-wms"]
+    }
+    fn project_files(&self) -> Vec<&'static str> {
+        vec!["mock"]
+    }
+    fn envs(&self) -> Vec<(&str, &str)> {
+        Vec::new()
+    }
+}
+
 fn detect_fcgi(backend: &dyn FcgiBackendType) -> Option<String> {
     find_exe(backend.exe_locations())
 }
@@ -93,7 +116,8 @@ pub async fn init_backends() -> std::io::Result<(
     let curdir = env::current_dir()?;
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
-    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend];
+    let mock_backend = MockFcgiBackend::new();
+    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
     for backend in backends {
         if let Some(exe_path) = detect_fcgi(backend) {
             info!(
