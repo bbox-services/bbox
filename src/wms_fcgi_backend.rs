@@ -9,10 +9,23 @@ pub trait FcgiBackendType {
     fn name(&self) -> &'static str;
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
+    fn envs(&self) -> Vec<(&str, &str)>;
 }
 
-pub struct QgisFcgiBackend;
+pub struct QgisFcgiBackend {
+    plugindir: String,
+}
 
+impl QgisFcgiBackend {
+    fn new() -> Self {
+        let curdir = env::current_dir().expect("env::current_dir failed"); // FIXME: project base dir
+        let plugindir = format!(
+            "{}/qgis/plugins",
+            curdir.to_str().expect("Invalid UTF-8 path name")
+        );
+        QgisFcgiBackend { plugindir }
+    }
+}
 impl FcgiBackendType for QgisFcgiBackend {
     fn name(&self) -> &'static str {
         "QGIS Server"
@@ -23,9 +36,22 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
     }
+    fn envs(&self) -> Vec<(&str, &str)> {
+        vec![
+            ("QGIS_PLUGINPATH", &self.plugindir),
+            ("QGIS_SERVER_LOG_STDERR", "1"),
+            ("QGIS_SERVER_LOG_LEVEL", "0"),
+        ]
+    }
 }
 
 pub struct UmnFcgiBackend;
+
+impl UmnFcgiBackend {
+    fn new() -> Self {
+        UmnFcgiBackend {}
+    }
+}
 
 impl FcgiBackendType for UmnFcgiBackend {
     fn name(&self) -> &'static str {
@@ -36,6 +62,9 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
+    }
+    fn envs(&self) -> Vec<(&str, &str)> {
+        Vec::new()
     }
 }
 
@@ -65,7 +94,9 @@ pub async fn init_backends() -> std::io::Result<(
     let mut handlers = Vec::new();
     let mut catalog = Vec::new();
     let curdir = env::current_dir()?;
-    let backends: Vec<&dyn FcgiBackendType> = vec![&QgisFcgiBackend {}, &UmnFcgiBackend {}];
+    let qgis_backend = QgisFcgiBackend::new();
+    let umn_backend = UmnFcgiBackend::new();
+    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend];
     for backend in backends {
         if let Some(exe_path) = detect_fcgi(backend) {
             info!(
@@ -91,9 +122,16 @@ pub async fn init_backends() -> std::io::Result<(
             };
             info!("Setting base path to {:?}", basedir);
 
-            let num_processes = num_cpus::get();
-            if let Ok(pool) =
-                FcgiPool::spawn(&exe_path, Some(&basedir.clone()), num_processes).await
+            let num_processes = std::env::var("NUM_FCGI_PROCESSES")
+                .map(|v| v.parse().expect("NUM_FCGI_PROCESSES invalid"))
+                .unwrap_or(num_cpus::get());
+            if let Ok(pool) = FcgiPool::spawn(
+                &exe_path,
+                Some(&basedir.clone()),
+                backend.envs(),
+                num_processes,
+            )
+            .await
             {
                 info!(
                     "{} {} FCGI processes started",

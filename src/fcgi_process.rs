@@ -1,8 +1,7 @@
 use async_process::{Child as ChildProcess, Command, Stdio};
 use bufstream::BufStream;
 use fastcgi_client::Client;
-use futures_lite::{io::BufReader, AsyncBufReadExt, StreamExt};
-use log::{debug, error};
+use log::debug;
 use rand::Rng;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -23,11 +22,12 @@ impl FcgiPool {
     pub async fn spawn(
         fcgi_path: &str,
         base_dir: Option<&PathBuf>,
+        envs: Vec<(&str, &str)>,
         num_processes: usize,
     ) -> std::io::Result<Self> {
         let mut processes = Vec::with_capacity(num_processes);
         for _no in 0..num_processes {
-            let process = FcgiProcess::spawn(fcgi_path, base_dir).await?;
+            let process = FcgiProcess::spawn(fcgi_path, base_dir, &envs).await?;
             processes.push(process)
         }
         Ok(FcgiPool { processes })
@@ -66,7 +66,11 @@ impl FcgiClientHandler {
 pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 
 impl FcgiProcess {
-    pub async fn spawn(fcgi_path: &str, base_dir: Option<&PathBuf>) -> std::io::Result<Self> {
+    pub async fn spawn(
+        fcgi_path: &str,
+        base_dir: Option<&PathBuf>,
+        envs: &Vec<(&str, &str)>,
+    ) -> std::io::Result<Self> {
         let socket_path = format!("/tmp/asyncfcgi_{:x}", rand::thread_rng().gen::<u32>());
         debug!("Spawning {} on {}", fcgi_path, &socket_path);
         let socket = Path::new(&socket_path);
@@ -80,11 +84,11 @@ impl FcgiProcess {
 
         let mut cmd = Command::new(fcgi_path);
         cmd.stdin(fcgi_io);
-        cmd.stderr(Stdio::piped());
         cmd.kill_on_drop(true);
         if let Some(dir) = base_dir {
             cmd.current_dir(dir);
         }
+        cmd.envs(envs.clone());
         let child = cmd.spawn()?;
 
         let process = FcgiProcess {
@@ -101,12 +105,8 @@ impl FcgiProcess {
     // }
 
     #[allow(dead_code)]
-    pub async fn dump_stderr(&mut self) -> std::io::Result<()> {
-        let mut lines = BufReader::new(self.child.stderr.take().unwrap()).lines();
-        while let Some(line) = lines.next().await {
-            error!("{}", line?);
-        }
-        Ok(())
+    pub fn is_running(&mut self) -> std::io::Result<bool> {
+        Ok(self.child.try_status()?.is_none())
     }
 }
 

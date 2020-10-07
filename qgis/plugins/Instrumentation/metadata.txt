@@ -1,0 +1,19 @@
+[general]
+name=Instrumentation
+qgisMinimumVersion=3
+description=Instrumentation plugin for QGIS server
+about=Instrumentation plugin for QGIS server
+version=0.1.0
+author=Pirmin Kalberer
+email=pka@sourcepole.ch
+
+server=True
+
+changelog=
+
+
+tags=server
+
+category=server
+
+experimental=True
