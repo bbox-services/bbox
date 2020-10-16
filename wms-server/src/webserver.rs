@@ -1,8 +1,14 @@
 use crate::fcgi_process::*;
 use crate::wms_fcgi_backend::*;
+use actix_service::Service;
 use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use askama::Template;
 use log::{debug, error};
+use opentelemetry::api::{
+    trace::{FutureExt, TraceContextExt, Tracer},
+    Key,
+};
+use opentelemetry::{global, sdk::trace as sdktrace};
 use std::io::{BufRead, Cursor, Read};
 
 #[derive(Template)]
@@ -34,6 +40,11 @@ async fn wms_fcgi(
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    let tracer = global::tracer("request");
+    tracer.in_span("wms_fcgi", |ctx| {
+        ctx.span()
+            .set_attribute(Key::new("project").string(project.as_str()));
+    });
     let mut fcgi_client = fcgi.fcgi_client()?;
     let conninfo = req.connection_info();
     let host_port: Vec<&str> = conninfo.host().split(':').collect();
@@ -87,13 +98,29 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
+fn init_tracer(
+) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
+    opentelemetry_jaeger::new_pipeline()
+        .with_collector_endpoint("http://127.0.0.1:14268/api/traces")
+        .with_service_name("wms-service")
+        .install()
+}
+
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
+    let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let (_process_pools, handlers, catalog) = init_backends().await?;
 
     HttpServer::new(move || {
+        let tracer = tracer.clone();
         let mut app = App::new()
             .wrap(middleware::Logger::default())
+            .wrap_fn(move |req, srv| {
+                tracer.in_span("http-request", move |cx| {
+                    cx.span().set_attribute(Key::new("path").string(req.path()));
+                    srv.call(req).with_context(cx)
+                })
+            })
             .wrap(middleware::Compress::default())
             .data(catalog.clone())
             .service(index);
