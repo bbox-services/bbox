@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 from qgis.server import *
 from qgis.core import *
@@ -27,15 +28,43 @@ class InstrumentationRequestFilter(QgsServerFilter):
 
     def __init__(self, serverIface):
         super().__init__(serverIface)
+        self.trace = {}
+        self.metrics = {'hit': 0, 'miss': 0, 'count': 0}
+        self.projects = {}
+        # self.configCache = QgsConfigCache.instance()
 
     def requestReady(self):
+        # Method called when the QgsRequestHandler is ready and populated with
+        # parameters, just before entering the main switch for core services.
+        self.trace = {'requestReady': time.perf_counter()}
         QgsMessageLog.logMessage("InstrumentationRequestFilter.requestReady")
+        request = self.serverInterface().requestHandler()
+        # Projects for GetMap queries are cached in QgsConfigCache,
+        # with missing public API, so we simulate cache content here.
+        # Could also be done by caller outside of FCGI.
+        project = request.parameter("MAP") or ''
+        if self.projects.get(project) is None:
+            self.metrics['miss'] += 1
+            self.projects[project] = 1
+            # We could load the project here to measure loading time
+            self.metrics['count'] += 1
+        else:
+            self.metrics['hit'] += 1
+
+    def responseComplete(self):
+        # Method called when the QgsRequestHandler processing has done and
+        # the response is ready, just after the main switch for core services
+        # and before final sending response to FCGI stdout.
+        self.trace['responseComplete'] = time.perf_counter()
+        QgsMessageLog.logMessage("InstrumentationRequestFilter.responseComplete")
+        duration = self.trace['responseComplete']-self.trace['requestReady']
+        request = self.serverInterface().requestHandler()
+        request.setResponseHeader("X-trace", str(self.trace))
+        request.setResponseHeader("X-us", str(round(duration*1000000)))
+        request.setResponseHeader("X-metrics", str(self.metrics))
 
     def sendResponse(self):
         QgsMessageLog.logMessage("InstrumentationRequestFilter.sendResponse")
-
-    def responseComplete(self):
-        QgsMessageLog.logMessage("InstrumentationRequestFilter.responseComplete")
 
 
 class InstrumentationCacheFilter(QgsServerCacheFilter):

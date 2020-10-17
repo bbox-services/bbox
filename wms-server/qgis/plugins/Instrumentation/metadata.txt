@@ -1,6 +1,6 @@
 [general]
 name=Instrumentation
-qgisMinimumVersion=3
+qgisMinimumVersion=3.4
 description=Instrumentation plugin for QGIS server
 about=Instrumentation plugin for QGIS server
 version=0.1.0

@@ -5,11 +5,12 @@ use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpRespon
 use askama::Template;
 use log::{debug, error};
 use opentelemetry::api::{
-    trace::{FutureExt, TraceContextExt, Tracer},
+    trace::{FutureExt, SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
 use opentelemetry::{global, sdk::trace as sdktrace};
 use std::io::{BufRead, Cursor, Read};
+use std::time::{Duration, SystemTime};
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -40,59 +41,73 @@ async fn wms_fcgi(
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    let mut response = HttpResponse::Ok();
     let tracer = global::tracer("request");
-    tracer.in_span("wms_fcgi", |ctx| {
+    let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
         ctx.span()
             .set_attribute(Key::new("project").string(project.as_str()));
-    });
-    let mut fcgi_client = fcgi.fcgi_client()?;
-    let conninfo = req.connection_info();
-    let host_port: Vec<&str> = conninfo.host().split(':').collect();
-    let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
-    debug!("Forwarding query to FCGI: {}", &query);
-    let mut params = fastcgi_client::Params::new()
-        .set_request_method("GET")
-        .set_request_uri(req.path())
-        .set_server_name(host_port.get(0).unwrap_or(&""))
-        .set_query_string(&query);
-    if let Some(port) = host_port.get(1) {
-        params = params.set_server_port(port);
-    }
-    if conninfo.scheme() == "https" {
-        params.insert("HTTPS", "ON");
-    }
-    // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
-    // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
-    let output = fcgi_client
-        .do_request(&params, &mut std::io::empty())
-        .unwrap();
-    let fcgiout = output.get_stdout().unwrap();
-
-    let mut response = HttpResponse::Ok();
-
-    let mut cursor = Cursor::new(fcgiout);
-    let mut line = String::new();
-    while let Ok(_bytes) = cursor.read_line(&mut line) {
-        // Truncate newline
-        let len = line.trim_end_matches(&['\r', '\n'][..]).len();
-        line.truncate(len);
-        if len == 0 {
-            break;
+        let mut fcgi_client = fcgi.fcgi_client().unwrap();
+        let conninfo = req.connection_info();
+        let host_port: Vec<&str> = conninfo.host().split(':').collect();
+        let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
+        debug!("Forwarding query to FCGI: {}", &query);
+        let mut params = fastcgi_client::Params::new()
+            .set_request_method("GET")
+            .set_request_uri(req.path())
+            .set_server_name(host_port.get(0).unwrap_or(&""))
+            .set_query_string(&query);
+        if let Some(port) = host_port.get(1) {
+            params = params.set_server_port(port);
         }
-        let parts: Vec<&str> = line.split(": ").collect();
-        if parts.len() != 2 {
-            error!("Invalid FCGI-Header received: {}", line);
-            break;
+        if conninfo.scheme() == "https" {
+            params.insert("HTTPS", "ON");
         }
-        let (key, value) = (parts[0], parts[1]);
-        match key {
-            "Content-Type" => {
-                response.header(key, value);
+        // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
+        // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
+        let fcgi_start = SystemTime::now();
+        let output = fcgi_client
+            .do_request(&params, &mut std::io::empty())
+            .unwrap();
+        let fcgiout = output.get_stdout().unwrap();
+
+        let mut cursor = Cursor::new(fcgiout);
+        let mut line = String::new();
+        while let Ok(_bytes) = cursor.read_line(&mut line) {
+            // Truncate newline
+            let len = line.trim_end_matches(&['\r', '\n'][..]).len();
+            line.truncate(len);
+            if len == 0 {
+                break;
             }
-            _ => debug!("Ignoring FCGI-Header: {}", line),
+            let parts: Vec<&str> = line.splitn(2, ": ").collect();
+            if parts.len() != 2 {
+                error!("Invalid FCGI-Header received: {}", line);
+                break;
+            }
+            let (key, value) = (parts[0], parts[1]);
+            match key {
+                "Content-Type" => {
+                    response.header(key, value);
+                }
+                // "X-trace" => {
+                "X-us" => {
+                    let now = SystemTime::now();
+                    let _span = tracer.build(SpanBuilder {
+                        name: "fcgi".to_string(),
+                        span_kind: Some(SpanKind::Internal),
+                        start_time: Some(fcgi_start),
+                        end_time: Some(
+                            fcgi_start + Duration::from_micros(value.parse().expect("u64 value")),
+                        ),
+                        ..Default::default()
+                    });
+                }
+                _ => debug!("Ignoring FCGI-Header: {}", line),
+            }
+            line.truncate(0);
         }
-        line.truncate(0);
-    }
+        cursor
+    });
     let mut body = Vec::new(); // TODO: return body without copy
     let _bytes = cursor.read_to_end(&mut body);
     Ok(response.body(body))
