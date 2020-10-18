@@ -2,6 +2,7 @@ use crate::fcgi_process::*;
 use crate::wms_fcgi_backend::*;
 use actix_service::Service;
 use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web_prom::PrometheusMetrics;
 use askama::Template;
 use log::{debug, error};
 use opentelemetry::api::{
@@ -24,6 +25,7 @@ async fn index(wms_catalog: web::Data<Vec<WmsCatalogEntry>>) -> Result<HttpRespo
     let s = IndexTemplate {
         wms_catalog: wms_catalog.to_vec(),
         links: vec![
+        "/metrics",
         "/wms/qgs/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
         "/wms/qgs/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
         "/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
@@ -91,7 +93,6 @@ async fn wms_fcgi(
                 }
                 // "X-trace" => {
                 "X-us" => {
-                    let now = SystemTime::now();
                     let _span = tracer.build(SpanBuilder {
                         name: "fcgi".to_string(),
                         span_kind: Some(SpanKind::Internal),
@@ -124,6 +125,7 @@ fn init_tracer(
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
+    let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
     let (_process_pools, handlers, catalog) = init_backends().await?;
 
     HttpServer::new(move || {
@@ -136,6 +138,7 @@ pub async fn webserver() -> std::io::Result<()> {
                     srv.call(req).with_context(cx)
                 })
             })
+            .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
             .data(catalog.clone())
             .service(index);
