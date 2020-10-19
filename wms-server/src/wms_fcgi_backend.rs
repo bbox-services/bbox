@@ -1,4 +1,4 @@
-use crate::fcgi_process::{FcgiClientHandler, FcgiPool};
+use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::file_search;
 use log::info;
 use std::collections::{HashMap, HashSet};
@@ -9,7 +9,7 @@ pub trait FcgiBackendType {
     fn name(&self) -> &'static str;
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
-    fn envs(&self) -> Vec<(&str, &str)>;
+    fn envs(&self) -> Vec<(String, String)>;
 }
 
 pub struct QgisFcgiBackend {
@@ -33,11 +33,11 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
     }
-    fn envs(&self) -> Vec<(&str, &str)> {
+    fn envs(&self) -> Vec<(String, String)> {
         vec![
-            ("QGIS_PLUGINPATH", &self.plugindir),
-            ("QGIS_SERVER_LOG_STDERR", "1"),
-            ("QGIS_SERVER_LOG_LEVEL", "0"),
+            ("QGIS_PLUGINPATH".to_string(), self.plugindir.clone()),
+            ("QGIS_SERVER_LOG_STDERR".to_string(), "1".to_string()),
+            ("QGIS_SERVER_LOG_LEVEL".to_string(), "0".to_string()),
         ]
     }
 }
@@ -60,7 +60,7 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
     }
-    fn envs(&self) -> Vec<(&str, &str)> {
+    fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
     }
 }
@@ -83,7 +83,7 @@ impl FcgiBackendType for MockFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["mock"]
     }
-    fn envs(&self) -> Vec<(&str, &str)> {
+    fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
     }
 }
@@ -106,8 +106,8 @@ pub struct WmsCatalogEntry {
 }
 
 pub async fn init_backends() -> std::io::Result<(
-    Vec<FcgiPool>,
-    Vec<(FcgiClientHandler, String, String)>,
+    Vec<FcgiProcessPool>,
+    Vec<(FcgiDispatcher, String, String)>,
     Vec<WmsCatalogEntry>,
 )> {
     let mut pools = Vec::new();
@@ -146,14 +146,9 @@ pub async fn init_backends() -> std::io::Result<(
             let num_processes = std::env::var("NUM_FCGI_PROCESSES")
                 .map(|v| v.parse().expect("NUM_FCGI_PROCESSES invalid"))
                 .unwrap_or(num_cpus::get());
-            if let Ok(pool) = FcgiPool::spawn(
-                &exe_path,
-                Some(&basedir.clone()),
-                backend.envs(),
-                num_processes,
-            )
-            .await
-            {
+            let mut process_pool =
+                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend.envs());
+            if process_pool.spawn_processes(num_processes).await.is_ok() {
                 info!(
                     "{} {} FCGI processes started",
                     num_processes,
@@ -191,9 +186,10 @@ pub async fn init_backends() -> std::io::Result<(
                     );
 
                     info!("Registering WMS endpoint {}", &route);
-                    handlers.push((pool.handler(), route, ending.to_string()));
+                    let dispatcher = process_pool.client_dispatcher(2);
+                    handlers.push((dispatcher, route, ending.to_string()));
                 }
-                pools.push(pool);
+                pools.push(process_pool);
             }
         }
     }

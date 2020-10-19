@@ -4,7 +4,7 @@ use actix_service::Service;
 use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetrics;
 use askama::Template;
-use log::{debug, error};
+use log::{debug, error, warn};
 use opentelemetry::api::{
     trace::{FutureExt, SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
@@ -38,17 +38,21 @@ async fn index(wms_catalog: web::Data<Vec<WmsCatalogEntry>>) -> Result<HttpRespo
 }
 
 async fn wms_fcgi(
-    fcgi: web::Data<FcgiClientHandler>,
+    fcgi: web::Data<FcgiDispatcher>,
     ending: web::Data<String>,
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut response = HttpResponse::Ok();
+    let mut fcgi_client = fcgi
+        .select(&project)
+        .get()
+        .await
+        .expect("Couldn't get FCGI client");
     let tracer = global::tracer("request");
     let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
         ctx.span()
             .set_attribute(Key::new("project").string(project.as_str()));
-        let mut fcgi_client = fcgi.fcgi_client().unwrap();
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
         let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
@@ -67,10 +71,13 @@ async fn wms_fcgi(
         // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
         // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
         let fcgi_start = SystemTime::now();
-        let output = fcgi_client
-            .do_request(&params, &mut std::io::empty())
-            .unwrap();
-        let fcgiout = output.get_stdout().unwrap();
+        let output = fcgi_client.do_request(&params, &mut std::io::empty());
+        if let Err(ref e) = output {
+            warn!("FCGI error: {}", e);
+            response = HttpResponse::InternalServerError();
+            return Cursor::new(Vec::new());
+        }
+        let fcgiout = output.unwrap().get_stdout().unwrap();
 
         let mut cursor = Cursor::new(fcgiout);
         let mut line = String::new();
@@ -126,7 +133,11 @@ fn init_tracer(
 pub async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
-    let (_process_pools, handlers, catalog) = init_backends().await?;
+    let (process_pools, handlers, catalog) = init_backends().await?;
+
+    for mut process_pool in process_pools {
+        actix_web::rt::spawn(async move { process_pool.watchdog_loop().await });
+    }
 
     HttpServer::new(move || {
         let tracer = tracer.clone();
