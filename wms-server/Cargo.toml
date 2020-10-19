@@ -23,5 +23,11 @@ ignore = "0.4"
 num_cpus = "1.0"
 actix-web-prom = "0.5.0"
 
+rust-embed = { version = "5.6.0", features = ["compression"] }
+futures-util = "0.3.5"
+mime = "0.3.16"
+mime_guess = "2.0.3"
+fxhash = "0.2.1"
+
 [build-dependencies]
 askama = "0.9"

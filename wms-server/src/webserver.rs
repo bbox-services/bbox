@@ -1,4 +1,5 @@
 use crate::fcgi_process::*;
+use crate::static_files::EmbedFile;
 use crate::wms_fcgi_backend::*;
 use actix_service::Service;
 use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
@@ -10,7 +11,9 @@ use opentelemetry::api::{
     Key,
 };
 use opentelemetry::{global, sdk::trace as sdktrace};
+use rust_embed::RustEmbed;
 use std::io::{BufRead, Cursor, Read};
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 #[derive(Template)]
@@ -121,6 +124,17 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
+#[derive(RustEmbed)]
+#[folder = "static/"]
+struct Statics;
+
+async fn map(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("map").join(&*filename),
+    )?)
+}
+
 fn init_tracer(
 ) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
     opentelemetry_jaeger::new_pipeline()
@@ -152,7 +166,8 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
             .data(catalog.clone())
-            .service(index);
+            .service(index)
+            .service(web::resource(r#"/map/{filename:.*}"#).route(web::get().to(map)));
         for (handler, base, ending) in &handlers {
             app = app.service(
                 web::resource(base.to_string() + "/{project:.+}") // :[^{}]+

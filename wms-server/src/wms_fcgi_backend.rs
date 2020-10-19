@@ -18,7 +18,7 @@ pub struct QgisFcgiBackend {
 
 impl QgisFcgiBackend {
     fn new() -> Self {
-        let dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
+        let dir = env::var("CARGO_MANIFEST_DIR").unwrap_or(".".to_string()); // TODO: determine runtime install dir
         let plugindir = format!("{}/qgis/plugins", dir);
         QgisFcgiBackend { plugindir }
     }
