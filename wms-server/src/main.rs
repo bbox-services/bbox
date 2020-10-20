@@ -2,6 +2,7 @@ mod fcgi_process;
 mod file_search;
 mod static_files;
 mod webserver;
+mod wms_capabilities;
 mod wms_fcgi_backend;
 
 use std::env;
