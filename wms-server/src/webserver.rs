@@ -1,4 +1,5 @@
 use crate::fcgi_process::*;
+use crate::inventory::*;
 use crate::static_files::EmbedFile;
 use crate::wms_fcgi_backend::*;
 use actix_service::Service;
@@ -19,14 +20,14 @@ use std::time::{Duration, SystemTime};
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate<'a> {
-    wms_catalog: Vec<WmsCatalogEntry>,
+    inventory: &'a Inventory,
     links: Vec<&'a str>,
 }
 
 #[get("/")]
-async fn index(wms_catalog: web::Data<Vec<WmsCatalogEntry>>) -> Result<HttpResponse, Error> {
+async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
-        wms_catalog: wms_catalog.to_vec(),
+        inventory: &inventory,
         links: vec![
         "/metrics",
         "/wms/qgs/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
@@ -42,7 +43,7 @@ async fn index(wms_catalog: web::Data<Vec<WmsCatalogEntry>>) -> Result<HttpRespo
 
 async fn wms_fcgi(
     fcgi: web::Data<FcgiDispatcher>,
-    ending: web::Data<String>,
+    suffix: web::Data<String>,
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -58,7 +59,7 @@ async fn wms_fcgi(
             .set_attribute(Key::new("project").string(project.as_str()));
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
-        let query = format!("map={}.{}&{}", project, ending.as_str(), req.query_string());
+        let query = format!("map={}.{}&{}", project, suffix.as_str(), req.query_string());
         debug!("Forwarding query to FCGI: {}", &query);
         let mut params = fastcgi_client::Params::new()
             .set_request_method("GET")
@@ -147,7 +148,7 @@ fn init_tracer(
 pub async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
-    let (process_pools, handlers, catalog) = init_backends().await?;
+    let (process_pools, handlers, inventory) = init_backends().await?;
 
     for mut process_pool in process_pools {
         actix_web::rt::spawn(async move { process_pool.watchdog_loop().await });
@@ -165,14 +166,14 @@ pub async fn webserver() -> std::io::Result<()> {
             })
             .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
-            .data(catalog.clone())
+            .data(inventory.clone())
             .service(index)
             .service(web::resource(r#"/map/{filename:.*}"#).route(web::get().to(map)));
-        for (handler, base, ending) in &handlers {
+        for (handler, base, suffix) in &handlers {
             app = app.service(
                 web::resource(base.to_string() + "/{project:.+}") // :[^{}]+
                     .data(handler.clone())
-                    .data(ending.to_string())
+                    .data(suffix.to_string())
                     .route(
                         web::route()
                             .guard(guard::Any(guard::Get()).or(guard::Post()))

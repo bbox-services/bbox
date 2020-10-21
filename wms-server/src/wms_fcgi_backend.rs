@@ -1,5 +1,6 @@
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::file_search;
+use crate::inventory::*;
 use log::info;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -99,20 +100,14 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
         .map(|&c| c.to_string())
 }
 
-#[derive(Clone, Debug)]
-pub struct WmsCatalogEntry {
-    /// WMS base path like `/wms/qgs/ne`
-    pub wms_path: String,
-}
-
 pub async fn init_backends() -> std::io::Result<(
     Vec<FcgiProcessPool>,
     Vec<(FcgiDispatcher, String, String)>,
-    Vec<WmsCatalogEntry>,
+    Inventory,
 )> {
     let mut pools = Vec::new();
     let mut handlers = Vec::new();
-    let mut catalog = Vec::new();
+    let mut wms_inventory = Vec::new();
     let curdir = env::current_dir()?;
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
@@ -124,17 +119,17 @@ pub async fn init_backends() -> std::io::Result<(
                 "Searching project files with project_scan_basedir: {}",
                 curdir.to_str().expect("Invalid UTF-8 path name")
             );
-            let mut catalog_files = HashMap::new();
+            let mut wms_inventory_files = HashMap::new();
             let mut all_paths = HashSet::new();
-            for ending in backend.project_files() {
-                let files = file_search::search(&curdir, &format!("*.{}", ending));
-                info!("Found {} file(s) matching *.{}", files.len(), ending);
+            for suffix in backend.project_files() {
+                let files = file_search::search(&curdir, &format!("*.{}", suffix));
+                info!("Found {} file(s) matching *.{}", files.len(), suffix);
                 all_paths.extend(
                     files
                         .iter()
                         .map(|p| p.parent().expect("file in root").to_path_buf()),
                 );
-                catalog_files.insert(format!("/wms/{}", ending), files);
+                wms_inventory_files.insert(format!("/wms/{}", suffix), files);
             }
             let basedir = if all_paths.is_empty() {
                 env::current_dir().expect("no current dir")
@@ -154,11 +149,11 @@ pub async fn init_backends() -> std::io::Result<(
                     num_processes,
                     backend.name()
                 );
-                for ending in backend.project_files() {
-                    let route = format!("/wms/{}", ending);
+                for suffix in backend.project_files() {
+                    let route = format!("/wms/{}", suffix);
 
-                    catalog.extend(
-                        catalog_files
+                    wms_inventory.extend(
+                        wms_inventory_files
                             .get(&route)
                             .expect("route entry missing")
                             .iter()
@@ -181,17 +176,20 @@ pub async fn init_backends() -> std::io::Result<(
                                 } else {
                                     format!("{}/{}/{}", &route, rel_path, project)
                                 };
-                                WmsCatalogEntry { wms_path }
+                                WmsInventoryEntry { wms_path }
                             }),
                     );
 
                     info!("Registering WMS endpoint {}", &route);
                     let dispatcher = process_pool.client_dispatcher(2);
-                    handlers.push((dispatcher, route, ending.to_string()));
+                    handlers.push((dispatcher, route, suffix.to_string()));
                 }
                 pools.push(process_pool);
             }
         }
     }
-    Ok((pools, handlers, catalog))
+    let inventory = Inventory {
+        wms_services: wms_inventory,
+    };
+    Ok((pools, handlers, inventory))
 }

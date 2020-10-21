@@ -7,7 +7,7 @@
 <body>
   <h1>WMS catalog</h1>
   <ul>
-  {% for entry in wms_catalog %}
+  {% for entry in inventory.wms_services %}
     <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a></li>
   {% endfor %}
   </ul>

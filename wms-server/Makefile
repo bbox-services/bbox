@@ -7,3 +7,7 @@ static_map:
 	cp $(QWC2_DIR)/translations/data* static/map/translations/
 	cp $(QWC2_DIR)/dist/QWC2App.js static/map/js/
 	for f in $(files); do cp $(QWC2_DIR)/$$f static/map/$$f; done
+
+reset_gpkg:
+	git checkout ../data/mvtbench.gpkg
+	rm ../data/mvtbench.gpkg-*
