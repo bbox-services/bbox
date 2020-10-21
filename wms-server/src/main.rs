@@ -1,6 +1,7 @@
 mod fcgi_process;
 mod file_search;
 mod inventory;
+mod qwc2_config;
 mod static_files;
 mod webserver;
 mod wms_capabilities;

@@ -11,6 +11,7 @@ pub trait FcgiBackendType {
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
     fn envs(&self) -> Vec<(String, String)>;
+    fn cap_type(&self) -> CapType;
 }
 
 pub struct QgisFcgiBackend {
@@ -41,6 +42,9 @@ impl FcgiBackendType for QgisFcgiBackend {
             ("QGIS_SERVER_LOG_LEVEL".to_string(), "0".to_string()),
         ]
     }
+    fn cap_type(&self) -> CapType {
+        CapType::Qgis
+    }
 }
 
 pub struct UmnFcgiBackend;
@@ -64,6 +68,9 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
     }
+    fn cap_type(&self) -> CapType {
+        CapType::Ogc
+    }
 }
 
 pub struct MockFcgiBackend;
@@ -86,6 +93,9 @@ impl FcgiBackendType for MockFcgiBackend {
     }
     fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
+    }
+    fn cap_type(&self) -> CapType {
+        CapType::Ogc
     }
 }
 
@@ -176,7 +186,8 @@ pub async fn init_backends() -> std::io::Result<(
                                 } else {
                                     format!("{}/{}/{}", &route, rel_path, project)
                                 };
-                                WmsInventoryEntry { wms_path }
+                                let cap_type = backend.cap_type();
+                                WmsService { wms_path, cap_type }
                             }),
                     );
 

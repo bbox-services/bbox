@@ -381,6 +381,7 @@ dependencies = [
  "askama",
  "async-process",
  "async-trait",
+ "awc",
  "bufstream",
  "deadpool",
  "env_logger",
@@ -388,6 +389,7 @@ dependencies = [
  "futures-util",
  "fxhash",
  "ignore",
+ "lazy_static",
  "log",
  "mime",
  "mime_guess",
@@ -398,6 +400,7 @@ dependencies = [
  "rust-embed",
  "serde",
  "serde-xml-rs",
+ "serde_json",
  "tokio",
 ]
 

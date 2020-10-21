@@ -1,5 +1,6 @@
 use crate::fcgi_process::*;
 use crate::inventory::*;
+use crate::qwc2_config::*;
 use crate::static_files::EmbedFile;
 use crate::wms_fcgi_backend::*;
 use actix_service::Service;
@@ -136,6 +137,24 @@ async fn map(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
     )?)
 }
 
+fn req_baseurl(req: &HttpRequest) -> String {
+    let conninfo = req.connection_info();
+    format!("{}://{}", conninfo.scheme(), conninfo.host())
+}
+
+async fn map_themes(
+    inventory: web::Data<Inventory>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+    let url = req_baseurl(&req);
+    let mut caps = Vec::new();
+    for wms in &inventory.wms_services {
+        caps.push(wms.capabilities(&url).await);
+    }
+    let themes_json = ThemesJson::from_capabilities(caps);
+    Ok(HttpResponse::Ok().json(themes_json))
+}
+
 fn init_tracer(
 ) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
     opentelemetry_jaeger::new_pipeline()
@@ -168,6 +187,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .data(inventory.clone())
             .service(index)
+            .service(web::resource("/map/themes.json").route(web::get().to(map_themes)))
             .service(web::resource(r#"/map/{filename:.*}"#).route(web::get().to(map)));
         for (handler, base, suffix) in &handlers {
             app = app.service(

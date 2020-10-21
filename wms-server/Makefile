@@ -9,5 +9,5 @@ static_map:
 	for f in $(files); do cp $(QWC2_DIR)/$$f static/map/$$f; done
 
 reset_gpkg:
-	git checkout ../data/mvtbench.gpkg
+	git checkout 2c96bb5 ../data/mvtbench.gpkg
 	rm ../data/mvtbench.gpkg-*
