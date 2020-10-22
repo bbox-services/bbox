@@ -22,17 +22,16 @@ pub struct Service {
 #[derive(Deserialize, Debug)]
 pub struct KeywordList {
     #[serde(rename = "Keyword", default)]
-    keyword: Vec<String>,
+    pub keywords: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "PascalCase")]
 pub struct Capability {
     // Request
     // Exception
     // UserDefinedSymbolization
-    #[serde(default)]
-    pub layer: Vec<Layer>,
+    #[serde(rename = "Layer", default)]
+    pub layers: Vec<Layer>,
     // QGIS extended capabilities
     // WFSLayers
     // LayerDrawingOrder
@@ -68,7 +67,7 @@ pub struct Layer {
     #[serde(rename = "MetadataURL")]
     pub metadata_url: Option<MetadataUrl>,
     #[serde(rename = "Layer", default)]
-    pub layer: Vec<Layer>,
+    pub layers: Vec<Layer>,
 
     // QGIS extended capabilities
     pub visible: Option<bool>,
@@ -88,30 +87,30 @@ pub struct Layer {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ExGeographicBoundingBox {
-    west_bound_longitude: f64,
-    east_bound_longitude: f64,
-    south_bound_latitude: f64,
-    north_bound_latitude: f64,
+    pub west_bound_longitude: f64,
+    pub east_bound_longitude: f64,
+    pub south_bound_latitude: f64,
+    pub north_bound_latitude: f64,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Attribution {
-    title: String,
-    online_resource: OnlineResource,
+    pub title: String,
+    pub online_resource: OnlineResource,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct MetadataUrl {
-    online_resource: OnlineResource,
+    pub online_resource: OnlineResource,
     // type
     // Format
 }
 
 #[derive(Deserialize, Debug)]
 pub struct OnlineResource {
-    href: String,
+    pub href: String,
     // xlink
     // type
 }
@@ -263,20 +262,20 @@ mod test {
         assert_eq!(cap.service.title, "Test mapfile for MVT development.");
 
         assert_eq!(
-            cap.capability.layer[0].name,
+            cap.capability.layers[0].name,
             Some("ne_countries".to_string())
         );
         assert_eq!(
-            cap.capability.layer[0].title,
+            cap.capability.layers[0].title,
             Some("Test mapfile for MVT development.".to_string())
         );
         assert_eq!(
-            cap.capability.layer[0].abstract_,
+            cap.capability.layers[0].abstract_,
             Some("ne_countries".to_string())
         );
-        assert_eq!(cap.capability.layer[0].crs, vec!["epsg:3857", "epsg:4326"]);
+        assert_eq!(cap.capability.layers[0].crs, vec!["epsg:3857", "epsg:4326"]);
 
-        let layer = &cap.capability.layer[0].layer[0];
+        let layer = &cap.capability.layers[0].layers[0];
         assert_eq!(layer.name, Some("country".to_string()));
         assert_eq!(
             layer.metadata_url.as_ref().unwrap().online_resource.href,
@@ -540,19 +539,19 @@ mod test {
         assert_eq!(cap.service.name, "WMS");
         assert_eq!(cap.service.title, "untitled");
         assert_eq!(
-            cap.service.keyword_list.unwrap().keyword,
+            cap.service.keyword_list.unwrap().keywords,
             vec!["infoMapAccessService".to_string()]
         );
 
-        assert_eq!(cap.capability.layer[0].name, None);
-        assert_eq!(cap.capability.layer[0].title, None);
-        assert_eq!(cap.capability.layer[0].queryable, Some(true));
-        assert_eq!(cap.capability.layer[0].abstract_, None);
+        assert_eq!(cap.capability.layers[0].name, None);
+        assert_eq!(cap.capability.layers[0].title, None);
+        assert_eq!(cap.capability.layers[0].queryable, Some(true));
+        assert_eq!(cap.capability.layers[0].abstract_, None);
         assert_eq!(
-            cap.capability.layer[0].crs,
+            cap.capability.layers[0].crs,
             vec!["CRS:84", "EPSG:3857", "EPSG:4326"]
         );
-        let bbox = cap.capability.layer[0]
+        let bbox = cap.capability.layers[0]
             .ex_geographic_bounding_box
             .as_ref()
             .unwrap();
@@ -562,28 +561,28 @@ mod test {
         assert_eq!(bbox.north_bound_latitude, 89.999996);
 
         assert_eq!(
-            cap.capability.layer[0].layer[0].name,
+            cap.capability.layers[0].layers[0].name,
             Some("country-name".to_string())
         );
         assert_eq!(
-            cap.capability.layer[0].layer[0].title,
+            cap.capability.layers[0].layers[0].title,
             Some("country-name".to_string())
         );
         assert_eq!(
-            cap.capability.layer[0].layer[0].crs,
+            cap.capability.layers[0].layers[0].crs,
             vec!["CRS:84", "EPSG:3857", "EPSG:4326"]
         );
 
         assert_eq!(
-            cap.capability.layer[0].layer[3].layer[0].name,
+            cap.capability.layers[0].layers[3].layers[0].name,
             Some("ne_10m_geographic_lines".to_string())
         );
         assert_eq!(
-            cap.capability.layer[0].layer[3].layer[0].min_scale_denominator,
+            cap.capability.layers[0].layers[3].layers[0].min_scale_denominator,
             Some(0.0)
         );
         assert_eq!(
-            cap.capability.layer[0].layer[3].layer[0].max_scale_denominator,
+            cap.capability.layers[0].layers[3].layers[0].max_scale_denominator,
             Some(5000000.0)
         );
     }
@@ -1117,16 +1116,16 @@ mod test {
         assert_eq!(cap.service.name, "WMS");
         assert_eq!(cap.service.title, "untitled");
 
-        assert_eq!(cap.capability.layer[0].name, None);
-        assert_eq!(cap.capability.layer[0].title, None);
-        assert_eq!(cap.capability.layer[0].queryable, Some(true));
-        assert_eq!(cap.capability.layer[0].abstract_, None);
+        assert_eq!(cap.capability.layers[0].name, None);
+        assert_eq!(cap.capability.layers[0].title, None);
+        assert_eq!(cap.capability.layers[0].queryable, Some(true));
+        assert_eq!(cap.capability.layers[0].abstract_, None);
         assert_eq!(
-            cap.capability.layer[0].crs,
+            cap.capability.layers[0].crs,
             vec!["CRS:84", "EPSG:3857", "EPSG:4326"]
         );
 
-        let layer = &cap.capability.layer[0].layer[0];
+        let layer = &cap.capability.layers[0].layers[0];
         assert_eq!(layer.name, Some("ne".to_string()));
         assert_eq!(layer.title, Some("Natural Earth".to_string()));
         assert_eq!(layer.crs, vec!["CRS:84", "EPSG:3857", "EPSG:4326"]);
@@ -1147,7 +1146,7 @@ mod test {
         assert_eq!(layer.geometry_type, Some("Point".to_string()));
         assert_eq!(layer.expanded, Some(true));
 
-        let layer = &cap.capability.layer[0].layer[3];
+        let layer = &cap.capability.layers[0].layers[3];
         assert_eq!(layer.name, Some("geo-lines".to_string()));
         // <Layer visible="0" queryable="1" expanded="1" mutuallyExclusive="0">
         assert_eq!(layer.mutually_exclusive, Some(false));

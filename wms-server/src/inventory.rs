@@ -31,13 +31,16 @@ impl WmsService {
         }
     }
 
+    pub fn url(&self, base_url: &str) -> String {
+        format!("{}{}", base_url, self.wms_path)
+    }
+
     pub async fn capabilities(&self, base_url: &str) -> WmsCapabilities {
         let client = awc::Client::default();
         let mut response = client
             .get(format!(
-                "{}{}?SERVICE=WMS&VERSION=1.3.0&REQUEST={}",
-                base_url,
-                self.wms_path,
+                "{}?SERVICE=WMS&VERSION=1.3.0&REQUEST={}",
+                &self.url(base_url),
                 self.cap_request()
             ))
             .send()

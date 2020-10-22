@@ -1,5 +1,6 @@
-use crate::wms_capabilities::*;
+use crate::wms_capabilities as ogc;
 use lazy_static::lazy_static;
+use log::warn;
 use serde::Serialize;
 
 /// QWC2 map theme configuration
@@ -49,7 +50,7 @@ pub struct Theme {
     pub initial_bbox: Bbox,
     #[serde(rename = "printResolutions")]
     pub print_resolutions: Vec<i64>,
-    pub sublayers: Vec<ThemeLayer>,
+    pub sublayers: Vec<Layer>,
     pub expanded: bool,
     #[serde(rename = "externalLayers")]
     pub external_layers: Vec<Option<()>>,
@@ -77,42 +78,34 @@ pub struct Theme {
 }
 
 #[derive(Debug, Serialize, Clone)]
-pub struct ThemeLayer {
+pub struct Layer {
     pub name: String,
     pub title: String,
     pub visibility: Option<bool>,
     pub queryable: Option<bool>,
     #[serde(rename = "displayField")]
     pub display_field: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub attribution: Option<Attribution>,
-    #[serde(rename = "dataUrl")]
+    #[serde(rename = "dataUrl", skip_serializing_if = "Option::is_none")]
     pub data_url: Option<String>,
-    #[serde(rename = "metadataUrl")]
+    #[serde(rename = "metadataUrl", skip_serializing_if = "Option::is_none")]
     pub metadata_url: Option<String>,
-    pub opacity: Option<i64>,
+    pub opacity: Option<u8>,
+    #[serde(rename = "minScale", skip_serializing_if = "Option::is_none")]
+    pub min_scale: Option<i64>,
+    #[serde(rename = "maxScale", skip_serializing_if = "Option::is_none")]
+    pub max_scale: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub keywords: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bbox: Option<Bbox>,
     #[serde(rename = "mutuallyExclusive", skip_serializing_if = "Option::is_none")]
     pub mutually_exclusive: Option<bool>,
-    pub sublayers: Option<Vec<Sublayer>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sublayers: Option<Vec<Layer>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expanded: Option<bool>,
-}
-
-#[derive(Debug, Serialize, Clone)]
-pub struct Sublayer {
-    pub name: String,
-    pub title: String,
-    pub visibility: bool,
-    pub queryable: bool,
-    #[serde(rename = "displayField")]
-    pub display_field: String,
-    pub opacity: i64,
-    #[serde(rename = "minScale")]
-    pub min_scale: i64,
-    #[serde(rename = "maxScale")]
-    pub max_scale: i64,
-    pub bbox: Bbox,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -174,14 +167,182 @@ pub struct BackgroundLayer {
     pub projection: Option<String>,
     pub resolutions: Option<Vec<f64>>,
     #[serde(rename = "tileSize")]
-    pub tile_size: Option<Vec<i64>>,
+    pub tile_size: Option<[u16; 2]>,
 }
 
-
 impl ThemesJson {
-    pub fn from_capabilities(_caps: Vec<WmsCapabilities>) -> Self {
-        THEMES_JSON.clone()
+    pub fn from_capabilities(caps: Vec<ogc::WmsCapabilities>, urls: Vec<String>) -> Self {
+        // TODO: create unique theme id's
+        let themes: Vec<Theme> = caps
+            .iter()
+            .zip(urls.iter())
+            .map(|(c, url)| Theme::from_capabilities(c, url).unwrap())
+            .collect();
+        let default_theme = themes
+            .get(0)
+            .map(|th| th.id.clone())
+            .unwrap_or("".to_string());
+        ThemesJson {
+            themes: Themes {
+                title: "themes".to_string(),
+                subdirs: vec![],
+                items: themes,
+                default_theme,
+                default_scales: THEMES_JSON.themes.default_scales.clone(), // TODO
+                default_print_grid: THEMES_JSON.themes.default_print_grid.clone(), // TODO
+                background_layers: THEMES_JSON.themes.background_layers.clone(), // TODO
+                default_wms_version: "1.3.0".to_string(),
+            },
+        }
     }
+}
+
+impl Theme {
+    pub fn from_capabilities(caps: &ogc::WmsCapabilities, url: &String) -> Option<Self> {
+        dbg!(caps);
+        if caps.capability.layers.len() == 0 {
+            return None;
+        }
+        if caps.capability.layers.len() > 1 {
+            warn!("Ignoring root layers after first one in WMS capabilitiies")
+        }
+        let layers = parse_layer_tree(&caps.capability.layers);
+
+        let root_layer_ogc = &caps.capability.layers[0];
+        let root_layer = &layers[0];
+        let sublayers = layers[0].sublayers.as_ref().unwrap_or(&vec![]).clone();
+        let keywords = "".to_string();
+        // capabilities.Service.KeywordList.Keyword).map((entry) => {
+        //     let value = (typeof entry === 'object') ? entry._ : entry;
+        //     if (value !== "infoMapAccessService") {
+        //         keywords.push(value);
+        //     }
+        // };
+
+        let theme = Theme {
+            url: url.clone(),
+            id: root_layer_ogc
+                .name
+                .as_ref()
+                .unwrap_or(&caps.service.title)
+                .clone(),
+            title: caps.service.title.clone(), // or root_layer_ogc.title or url suffix,
+            description: "".to_string(),       // make configurable
+            attribution: Attribution {
+                title: None,
+                online_resource: None,
+            },
+            item_abstract: "".to_string(), // caps.service.abstract_.clone(),
+            keywords,
+            online_resource: url.clone(),
+            contact: Contact {
+                person: "".to_string(), // "Service.ContactInformation.ContactPersonPrimary.ContactPerson"
+                organization: "".to_string(), // "Service.ContactInformation.ContactPersonPrimary.ContactOrganization"
+                position: "".to_string(),     // "Service.ContactInformation.ContactPosition"
+                phone: "".to_string(),        // "Service.ContactInformation.ContactVoiceTelephone"
+                email: "".to_string(), // "Service.ContactInformation.ContactElectronicMailAddress"
+            },
+            // format: configItem.format;
+            available_formats: vec![
+                // capabilities.Capability.Request.GetMap.Format
+                "image/jpeg".to_string(),
+                "image/png".to_string(),
+                "image/png; mode=16bit".to_string(),
+                "image/png; mode=8bit".to_string(),
+                "image/png; mode=1bit".to_string(),
+                "application/dxf".to_string(),
+            ],
+            // tiled: configItem.tiled;
+            version: "1.3.0".to_string(), // configItem.version ? configItem.version : config.defaultWMSVersion
+            info_formats: vec![
+                // capabilities.Capability.Request.GetFeatureInfo.Format
+                "text/plain".to_string(),
+                "text/html".to_string(),
+                "text/xml".to_string(),
+                "application/vnd.ogc.gml".to_string(),
+                "application/vnd.ogc.gml/3.1.1".to_string(),
+                "application/json".to_string(),
+                "application/geo+json".to_string(),
+            ],
+            bbox: root_layer.bbox.as_ref().unwrap().clone(),
+            initial_bbox: root_layer.bbox.as_ref().unwrap().clone(), // make configurable
+            // scales:  configItem.scales;
+            // printScales:  configItem.printScales;
+            print_resolutions: vec![300], // make configurable
+            // printGrid:  configItem.printGrid;
+            sublayers,
+            expanded: true,
+            external_layers: vec![], // make configurable
+            background_layers: THEMES_JSON.themes.items[0].background_layers.clone(), // make configurable
+            search_providers: vec!["coordinates".to_string()], // make configurable
+            additional_mouse_crs: vec![],                      // make configurable
+            map_crs: "EPSG:3857".to_string(),                  // make configurable
+            drawing_order: vec![], // (capabilities.Capability.LayerDrawingOrder || "").split(",").map(title => title in titleNameMap ? titleNameMap[title] : title);
+            legend_url: format!("{}?", url),
+            feature_info_url: format!("{}?", url),
+            print_url: format!("{}?", url),
+            skip_empty_feature_attributes: true,
+            edit_config: None,
+            thumbnail: "img/mapthumbs/default.jpg".to_string(),
+        };
+        Some(theme)
+    }
+}
+
+fn parse_layer_tree(ogc_layers: &Vec<ogc::Layer>) -> Vec<Layer> {
+    let layers: Vec<Layer> = ogc_layers
+        .iter()
+        // skip layers without geometry
+        //TODO: layer.$.geometryType == "WKBNoGeometry" || layer.$.geometryType == "NoGeometry") {
+        .map(|l| {
+            let sublayers = parse_layer_tree(&l.layers);
+            let expanded = if sublayers.len() == 0 {
+                None
+            } else {
+                l.expanded
+            };
+            let sublayers = if sublayers.len() == 0 {
+                None
+            } else {
+                Some(sublayers)
+            };
+
+            let layer = Layer {
+                name: l.name.as_ref().unwrap_or(&"".to_string()).clone(),
+                title: l.title.as_ref().unwrap_or(&"".to_string()).clone(),
+                visibility: l.visible.or(Some(true)),
+                queryable: l.queryable,
+                display_field: l.display_field.as_ref().map(|c| c.clone()),
+                attribution: l.attribution.as_ref().map(|attr| Attribution {
+                    title: Some(attr.title.clone()),
+                    online_resource: Some(attr.online_resource.href.clone()),
+                }),
+                data_url: l.data_url.as_ref().map(|c| c.online_resource.href.clone()),
+                metadata_url: l
+                    .metadata_url
+                    .as_ref()
+                    .map(|c| c.online_resource.href.clone()),
+                opacity: l.opacity.map(|v| (v * 255.0).round() as u8).or(Some(255)),
+                keywords: Some("countries,political".to_string()), // TODO: Layer.KeywordList.Keyword
+                bbox: l.ex_geographic_bounding_box.as_ref().map(|c| Bbox {
+                    crs: "EPSG:4326".to_string(),
+                    bounds: vec![
+                        c.west_bound_longitude,
+                        c.south_bound_latitude,
+                        c.east_bound_longitude,
+                        c.north_bound_latitude,
+                    ],
+                }),
+                max_scale: l.min_scale_denominator.map(|v| v.round() as i64),
+                min_scale: l.max_scale_denominator.map(|v| v.round() as i64),
+                mutually_exclusive: l.mutually_exclusive,
+                sublayers,
+                expanded,
+            };
+            layer
+        })
+        .collect();
+    layers
 }
 
 lazy_static! {
@@ -253,7 +414,7 @@ lazy_static! {
                     300,
                 ],
                 sublayers: vec![
-                    ThemeLayer {
+                    Layer {
                         name: "ne".to_string(),
                         title: "Natural Earth".to_string(),
                         visibility: Some(
@@ -298,11 +459,13 @@ lazy_static! {
                                 ],
                             },
                         ),
+                        max_scale: None,
+                        min_scale: None,
                         mutually_exclusive: None,
                         sublayers: None,
                         expanded: None,
                     },
-                    ThemeLayer {
+                    Layer {
                         name: "state".to_string(),
                         title: "state".to_string(),
                         visibility: Some(
@@ -332,11 +495,13 @@ lazy_static! {
                                 ],
                             },
                         ),
+                        max_scale: None,
+                        min_scale: None,
                         mutually_exclusive: None,
                         sublayers: None,
                         expanded: None,
                     },
-                    ThemeLayer {
+                    Layer {
                         name: "country".to_string(),
                         title: "country".to_string(),
                         visibility: Some(
@@ -366,11 +531,13 @@ lazy_static! {
                                 ],
                             },
                         ),
+                        max_scale: None,
+                        min_scale: None,
                         mutually_exclusive: None,
                         sublayers: None,
                         expanded: None,
                     },
-                    ThemeLayer {
+                    Layer {
                         name: "geo-lines".to_string(),
                         title: "geo-lines".to_string(),
                         visibility: None,
@@ -382,21 +549,27 @@ lazy_static! {
                         opacity: None,
                         keywords: None,
                         bbox: None,
+                        max_scale: None,
+                        min_scale: None,
                         mutually_exclusive: Some(
                             false,
                         ),
                         sublayers: Some(
                             vec![
-                                Sublayer {
+                                Layer {
                                     name: "ne_10m_geographic_lines".to_string(),
                                     title: "ne_10m_geographic_lines".to_string(),
-                                    visibility: false,
-                                    queryable: true,
-                                    display_field: "name".to_string(),
-                                    opacity: 255,
-                                    min_scale: 0,
-                                    max_scale: 5000000,
-                                    bbox: Bbox {
+                                    attribution: None,
+                                    data_url: None,
+                                    metadata_url: None,
+                                    keywords: None,
+                                    visibility: Some(false),
+                                    queryable: Some(true),
+                                    display_field: Some("name".to_string()),
+                                    opacity: Some(255),
+                                    min_scale: Some(0),
+                                    max_scale: Some(5000000),
+                                    bbox: Some(Bbox {
                                         crs: "EPSG:4326".to_string(),
                                         bounds: vec![
                                             -179.999926,
@@ -404,18 +577,25 @@ lazy_static! {
                                             179.999926,
                                             89.999996,
                                         ],
-                                    },
+                                    }),
+                                    mutually_exclusive: None,
+                                    sublayers: None,
+                                    expanded: None,
                                 },
-                                Sublayer {
+                                Layer {
                                     name: "ne_50m_geographic_lines".to_string(),
                                     title: "ne_50m_geographic_lines".to_string(),
-                                    visibility: false,
-                                    queryable: true,
-                                    display_field: "name".to_string(),
-                                    opacity: 255,
-                                    min_scale: 5000000,
-                                    max_scale: 100000000,
-                                    bbox: Bbox {
+                                    attribution: None,
+                                    data_url: None,
+                                    metadata_url: None,
+                                    keywords: None,
+                                    visibility: Some(false),
+                                    queryable: Some(true),
+                                    display_field: Some("name".to_string()),
+                                    opacity: Some(255),
+                                    min_scale: Some(5000000),
+                                    max_scale: Some(100000000),
+                                    bbox: Some(Bbox {
                                         crs: "EPSG:4326".to_string(),
                                         bounds: vec![
                                             -179.999926,
@@ -423,7 +603,10 @@ lazy_static! {
                                             179.999926,
                                             89.999996,
                                         ],
-                                    },
+                                    }),
+                                    mutually_exclusive: None,
+                                    sublayers: None,
+                                    expanded: None,
                                 },
                             ],
                         ),
@@ -589,7 +772,7 @@ lazy_static! {
                     ],
                 ),
                 tile_size: Some(
-                    vec![
+                    [
                         256,
                         256,
                     ],
@@ -693,8 +876,7 @@ mod test {
                 178.519502,
                 73.348998
               ]
-            },
-            "sublayers": null
+            }
           },
           {
             "name": "state",
@@ -702,11 +884,7 @@ mod test {
             "visibility": true,
             "queryable": true,
             "displayField": "name",
-            "attribution": null,
-            "dataUrl": null,
-            "metadataUrl": null,
             "opacity": 255,
-            "keywords": null,
             "bbox": {
               "crs": "EPSG:4326",
               "bounds": [
@@ -715,8 +893,7 @@ mod test {
                 153.506568,
                 78.686917
               ]
-            },
-            "sublayers": null
+            }
           },
           {
             "name": "country",
@@ -724,11 +901,7 @@ mod test {
             "visibility": true,
             "queryable": true,
             "displayField": "name",
-            "attribution": null,
-            "dataUrl": null,
-            "metadataUrl": null,
             "opacity": 255,
-            "keywords": null,
             "bbox": {
               "crs": "EPSG:4326",
               "bounds": [
@@ -737,8 +910,7 @@ mod test {
                 179.999926,
                 83.634081
               ]
-            },
-            "sublayers": null
+            }
           },
           {
             "name": "geo-lines",
@@ -746,12 +918,7 @@ mod test {
             "visibility": null,
             "queryable": null,
             "displayField": null,
-            "attribution": null,
-            "dataUrl": null,
-            "metadataUrl": null,
             "opacity": null,
-            "keywords": null,
-            "bbox": null,
             "mutuallyExclusive": false,
             "sublayers": [
               {

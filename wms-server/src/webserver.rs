@@ -131,9 +131,14 @@ async fn wms_fcgi(
 struct Statics;
 
 async fn map(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    let filename = if *filename == PathBuf::from("") {
+        PathBuf::from("index.html")
+    } else {
+        filename.to_path_buf()
+    };
     Ok(EmbedFile::open(
         &Statics,
-        PathBuf::from("map").join(&*filename),
+        PathBuf::from("map").join(filename),
     )?)
 }
 
@@ -146,12 +151,17 @@ async fn map_themes(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let url = req_baseurl(&req);
+    let base_url = req_baseurl(&req);
     let mut caps = Vec::new();
     for wms in &inventory.wms_services {
-        caps.push(wms.capabilities(&url).await);
+        caps.push(wms.capabilities(&base_url).await);
     }
-    let themes_json = ThemesJson::from_capabilities(caps);
+    let wms_urls = inventory
+        .wms_services
+        .iter()
+        .map(|wms| wms.url(&base_url))
+        .collect();
+    let themes_json = ThemesJson::from_capabilities(caps, wms_urls);
     Ok(HttpResponse::Ok().json(themes_json))
 }
 
