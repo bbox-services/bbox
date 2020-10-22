@@ -186,8 +186,13 @@ pub async fn init_backends() -> std::io::Result<(
                                 } else {
                                     format!("{}/{}/{}", &route, rel_path, project)
                                 };
+                                let id = wms_path.replace("/wms/", "").replace('/', "_");
                                 let cap_type = backend.cap_type();
-                                WmsService { wms_path, cap_type }
+                                WmsService {
+                                    id,
+                                    wms_path,
+                                    cap_type,
+                                }
                             }),
                     );
 

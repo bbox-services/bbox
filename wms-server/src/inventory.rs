@@ -8,6 +8,7 @@ pub struct Inventory {
 
 #[derive(Clone, Debug)]
 pub struct WmsService {
+    pub id: String,
     /// WMS base path like `/wms/qgs/ne`
     pub wms_path: String,
     pub cap_type: CapType,

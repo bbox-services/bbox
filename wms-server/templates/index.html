@@ -8,8 +8,15 @@
   <h1>WMS catalog</h1>
   <ul>
   {% for entry in inventory.wms_services %}
-    <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a></li>
+    <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
+                              <a href="/map/{{ entry.id }}/">Viewer</a>
+    </li>
   {% endfor %}
+  </ul>
+  <h1>Links</h1>
+  <ul>
+    <li><a href="/maps/">Map viewer</a></li>
+    <li><a href="/metrics">Metrics endpoint</a></li>
   </ul>
   <h1>WMS request examples</h1>
   <ul>

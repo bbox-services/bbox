@@ -171,17 +171,22 @@ pub struct BackgroundLayer {
 }
 
 impl ThemesJson {
-    pub fn from_capabilities(caps: Vec<ogc::WmsCapabilities>, urls: Vec<String>) -> Self {
-        // TODO: create unique theme id's
-        let themes: Vec<Theme> = caps
+    pub fn from_capabilities(
+        ids: Vec<String>,
+        caps: Vec<ogc::WmsCapabilities>,
+        urls: Vec<String>,
+        default_theme: Option<&str>,
+    ) -> Self {
+        let themes: Vec<Theme> = ids
             .iter()
+            .zip(caps.iter())
             .zip(urls.iter())
-            .map(|(c, url)| Theme::from_capabilities(c, url).unwrap())
+            .map(|((id, c), url)| Theme::from_capabilities(id.clone(), c, url).unwrap())
             .collect();
-        let default_theme = themes
-            .get(0)
-            .map(|th| th.id.clone())
-            .unwrap_or("".to_string());
+        let default_theme = default_theme
+            .or(ids.get(0).map(|v| v.as_str()))
+            .unwrap_or("")
+            .to_string();
         ThemesJson {
             themes: Themes {
                 title: "themes".to_string(),
@@ -198,8 +203,11 @@ impl ThemesJson {
 }
 
 impl Theme {
-    pub fn from_capabilities(caps: &ogc::WmsCapabilities, url: &String) -> Option<Self> {
-        dbg!(caps);
+    pub fn from_capabilities(
+        id: String,
+        caps: &ogc::WmsCapabilities,
+        url: &String,
+    ) -> Option<Self> {
         if caps.capability.layers.len() == 0 {
             return None;
         }
@@ -208,8 +216,8 @@ impl Theme {
         }
         let layers = parse_layer_tree(&caps.capability.layers);
 
-        let root_layer_ogc = &caps.capability.layers[0];
         let root_layer = &layers[0];
+        let _root_layer_ogc = &caps.capability.layers[0];
         let sublayers = layers[0].sublayers.as_ref().unwrap_or(&vec![]).clone();
         let keywords = "".to_string();
         // capabilities.Service.KeywordList.Keyword).map((entry) => {
@@ -221,11 +229,7 @@ impl Theme {
 
         let theme = Theme {
             url: url.clone(),
-            id: root_layer_ogc
-                .name
-                .as_ref()
-                .unwrap_or(&caps.service.title)
-                .clone(),
+            id,
             title: caps.service.title.clone(), // or root_layer_ogc.title or url suffix,
             description: "".to_string(),       // make configurable
             attribution: Attribution {
