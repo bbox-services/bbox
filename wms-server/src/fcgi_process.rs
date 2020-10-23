@@ -13,7 +13,6 @@ use std::path::{Path, PathBuf};
 struct FcgiProcess {
     child: ChildProcess,
     socket_path: String,
-    listener: UnixListener,
 }
 
 impl FcgiProcess {
@@ -28,10 +27,34 @@ impl FcgiProcess {
                 break p;
             }
         };
-        debug!("Spawning {} on {}", fcgi_path, &socket_path);
-        let socket = Path::new(&socket_path);
+        let child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, &socket_path)?;
+        Ok(FcgiProcess { child, socket_path })
+    }
+
+    pub async fn respawn(
+        &mut self,
+        fcgi_path: &str,
+        base_dir: Option<&PathBuf>,
+        envs: &[(&str, &str)],
+    ) -> std::io::Result<()> {
+        self.child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, &self.socket_path)?;
+        Ok(())
+    }
+
+    fn spawn_process(
+        fcgi_path: &str,
+        base_dir: Option<&PathBuf>,
+        envs: &[(&str, &str)],
+        socket_path: &str,
+    ) -> std::io::Result<ChildProcess> {
+        debug!("Spawning {} on {}", fcgi_path, socket_path);
+        let socket = Path::new(socket_path);
+        if socket.exists() {
+            std::fs::remove_file(&socket)?;
+        }
         let listener = UnixListener::bind(&socket)?;
-        let fcgi_io = unsafe { Stdio::from_raw_fd(listener.as_raw_fd()) };
+        let fd = listener.as_raw_fd();
+        let fcgi_io = unsafe { Stdio::from_raw_fd(fd) };
 
         let mut cmd = Command::new(fcgi_path);
         cmd.stdin(fcgi_io);
@@ -42,46 +65,7 @@ impl FcgiProcess {
         cmd.envs(envs.to_vec());
         let child = cmd.spawn()?;
 
-        let process = FcgiProcess {
-            child,
-            listener,
-            socket_path,
-        };
-
-        Ok(process)
-    }
-
-    pub async fn respawn(
-        &mut self,
-        fcgi_path: &str,
-        base_dir: Option<&PathBuf>,
-        envs: &[(&str, &str)],
-    ) -> std::io::Result<()> {
-        debug!("Respawning {} on {}", fcgi_path, &self.socket_path);
-        if true {
-            // TODO: Respawning doesn't work yet!
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "skipped"));
-        }
-        drop(&self.listener);
-        let socket = Path::new(&self.socket_path);
-        dbg!();
-        if socket.exists() {
-            std::fs::remove_file(&socket)?;
-        }
-        self.listener = UnixListener::bind(&socket)?;
-        let fcgi_io = unsafe { Stdio::from_raw_fd(self.listener.as_raw_fd()) };
-        dbg!(self.listener.as_raw_fd());
-
-        let mut cmd = Command::new(fcgi_path);
-        cmd.stdin(fcgi_io);
-        cmd.kill_on_drop(true);
-        if let Some(dir) = base_dir {
-            cmd.current_dir(dir);
-        }
-        cmd.envs(envs.to_vec());
-        self.child = cmd.spawn()?;
-        dbg!();
-        Ok(())
+        Ok(child)
     }
 
     fn handler(&self) -> FcgiClientHandler {

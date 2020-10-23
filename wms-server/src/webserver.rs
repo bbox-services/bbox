@@ -78,6 +78,11 @@ async fn wms_fcgi(
         let output = fcgi_client.do_request(&params, &mut std::io::empty());
         if let Err(ref e) = output {
             warn!("FCGI error: {}", e);
+            // Remove probably broken FCGI client from pool
+            deadpool::managed::Object::take(fcgi_client);
+            // TODO: drop all clients of same pool
+            // Possible implementation:
+            // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient
             response = HttpResponse::InternalServerError();
             return Cursor::new(Vec::new());
         }
@@ -223,6 +228,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
             .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
             .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)));
+        // Add endpoint for each WMS/FCGI backend
         for (handler, base, suffix) in &handlers {
             app = app.service(
                 web::resource(base.to_string() + "/{project:.+}") // :[^{}]+
