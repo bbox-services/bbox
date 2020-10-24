@@ -134,6 +134,11 @@ async fn wms_fcgi(
 #[folder = "static/"]
 struct Statics;
 
+#[get("/favicon.ico")]
+async fn favicon() -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(&Statics, PathBuf::from("favicon.ico"))?)
+}
+
 async fn maps(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
     map_assets(&*filename)
 }
@@ -222,6 +227,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .data(inventory.clone())
             .service(index)
+            .service(favicon)
             .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
             .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
             .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
