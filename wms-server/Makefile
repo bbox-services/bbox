@@ -8,6 +8,11 @@ static_map:
 	cp $(QWC2_DIR)/dist/QWC2App.js static/map/js/
 	for f in $(files); do cp $(QWC2_DIR)/$$f static/map/$$f; done
 
-reset_gpkg:
-	git checkout 2c96bb5 ../data/mvtbench.gpkg
-	rm ../data/mvtbench.gpkg-*
+# For reverting mvtbench.gpkg add the following .git/hooks/pre-commit file:
+# #!/bin/sh
+# 
+# if [ -f data/mvtbench.gpkg-wal ]; then
+# 	echo Revert mvtbench.gpkg
+# 	git checkout 2c96bb5 data/mvtbench.gpkg
+# 	rm data/mvtbench.gpkg-*
+# fi
