@@ -53,7 +53,8 @@ pub struct Layer {
     pub crs: Vec<String>,
     #[serde(rename = "EX_GeographicBoundingBox")]
     pub ex_geographic_bounding_box: Option<ExGeographicBoundingBox>,
-    // pub BoundingBox
+    #[serde(rename = "BoundingBox", default)]
+    pub bounding_box: Vec<BoundingBox>,
     // pub Style
     #[serde(rename = "MinScaleDenominator")]
     pub min_scale_denominator: Option<f32>,
@@ -91,6 +92,16 @@ pub struct ExGeographicBoundingBox {
     pub east_bound_longitude: f64,
     pub south_bound_latitude: f64,
     pub north_bound_latitude: f64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct BoundingBox {
+    #[serde(rename = "CRS")]
+    pub crs: String,
+    pub minx: f64,
+    pub miny: f64,
+    pub maxx: f64,
+    pub maxy: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -539,7 +550,7 @@ mod test {
         assert_eq!(cap.service.name, "WMS");
         assert_eq!(cap.service.title, "untitled");
         assert_eq!(
-            cap.service.keyword_list.unwrap().keywords,
+            cap.service.keyword_list.as_ref().unwrap().keywords,
             vec!["infoMapAccessService".to_string()]
         );
 

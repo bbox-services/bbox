@@ -185,11 +185,9 @@ async fn themes_json(
 ) -> ThemesJson {
     let mut caps = Vec::new();
     for wms in wms_services {
-        caps.push(wms.capabilities(&base_url).await);
+        caps.push((wms, wms.capabilities(&base_url).await, wms.url(&base_url)));
     }
-    let ids = wms_services.iter().map(|wms| wms.id.clone()).collect();
-    let wms_urls = wms_services.iter().map(|wms| wms.url(&base_url)).collect();
-    ThemesJson::from_capabilities(ids, caps, wms_urls, default_theme)
+    ThemesJson::from_capabilities(caps, default_theme)
 }
 
 fn init_tracer(

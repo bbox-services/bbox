@@ -1,3 +1,4 @@
+use crate::inventory;
 use crate::wms_capabilities as ogc;
 use lazy_static::lazy_static;
 use log::warn;
@@ -172,19 +173,15 @@ pub struct BackgroundLayer {
 
 impl ThemesJson {
     pub fn from_capabilities(
-        ids: Vec<String>,
-        caps: Vec<ogc::WmsCapabilities>,
-        urls: Vec<String>,
+        caps: Vec<(&inventory::WmsService, ogc::WmsCapabilities, String)>,
         default_theme: Option<&str>,
     ) -> Self {
-        let themes: Vec<Theme> = ids
+        let themes: Vec<Theme> = caps
             .iter()
-            .zip(caps.iter())
-            .zip(urls.iter())
-            .map(|((id, c), url)| Theme::from_capabilities(id.clone(), c, url).unwrap())
+            .map(|(wms, c, url)| Theme::from_capabilities(wms.id.to_string(), c, url).unwrap())
             .collect();
         let default_theme = default_theme
-            .or(ids.get(0).map(|v| v.as_str()))
+            .or(caps.get(0).map(|(wms, _, _)| wms.id.as_str()))
             .unwrap_or("")
             .to_string();
         ThemesJson {
@@ -216,8 +213,8 @@ impl Theme {
         }
         let layers = parse_layer_tree(&caps.capability.layers);
 
-        let root_layer = &layers[0];
-        let _root_layer_ogc = &caps.capability.layers[0];
+        let root_layer_ogc = &caps.capability.layers[0];
+        let _root_layer = &layers[0];
         let sublayers = layers[0].sublayers.as_ref().unwrap_or(&vec![]).clone();
         let keywords = "".to_string();
         // capabilities.Service.KeywordList.Keyword).map((entry) => {
@@ -226,6 +223,52 @@ impl Theme {
         //         keywords.push(value);
         //     }
         // };
+        // Search for first layer with valid bbox (UMN may have invalid bbox on root level)
+        let bbox_reference_layer = caps
+            .capability
+            .layers
+            .iter()
+            .chain(root_layer_ogc.layers.iter())
+            .find(|l| {
+                if let Some(bbox) = &l.ex_geographic_bounding_box {
+                    (bbox.west_bound_longitude - bbox.east_bound_longitude).abs() > 0.0
+                        && (bbox.south_bound_latitude - bbox.north_bound_latitude).abs() > 0.0
+                } else {
+                    false
+                }
+            })
+            .unwrap_or(root_layer_ogc);
+        let bbox = bbox_reference_layer
+            .ex_geographic_bounding_box
+            .as_ref()
+            .map(|c| Bbox {
+                crs: "EPSG:4326".to_string(),
+                bounds: vec![
+                    c.west_bound_longitude,
+                    c.south_bound_latitude,
+                    c.east_bound_longitude,
+                    c.north_bound_latitude,
+                ],
+            })
+            .unwrap_or(Bbox {
+                crs: "EPSG:4326".to_string(),
+                bounds: vec![-180.0, -90.0, 180.0, 90.0],
+            });
+        let map_crs = root_layer_ogc
+            .crs
+            .iter()
+            .find(|&entry| entry.to_uppercase() != "CRS:84")
+            .map(|crs| crs.to_uppercase());
+        // let first_bbox: Option<Bbox> = map_crs.as_ref().and_then(|crs| {
+        //     bbox_reference_layer
+        //         .bounding_box
+        //         .iter()
+        //         .find(|bbox| &bbox.crs.to_uppercase() == crs)
+        //         .map(|bbox| Bbox {
+        //             crs: bbox.crs.to_uppercase(),
+        //             bounds: vec![bbox.minx, bbox.miny, bbox.maxx, bbox.maxy],
+        //         })
+        // });
 
         let theme = Theme {
             url: url.clone(),
@@ -268,8 +311,8 @@ impl Theme {
                 "application/json".to_string(),
                 "application/geo+json".to_string(),
             ],
-            bbox: root_layer.bbox.as_ref().unwrap().clone(),
-            initial_bbox: root_layer.bbox.as_ref().unwrap().clone(), // make configurable
+            bbox: bbox.clone(),
+            initial_bbox: bbox,
             // scales:  configItem.scales;
             // printScales:  configItem.printScales;
             print_resolutions: vec![300], // make configurable
@@ -280,7 +323,7 @@ impl Theme {
             background_layers: THEMES_JSON.themes.items[0].background_layers.clone(), // make configurable
             search_providers: vec!["coordinates".to_string()], // make configurable
             additional_mouse_crs: vec![],                      // make configurable
-            map_crs: "EPSG:3857".to_string(),                  // make configurable
+            map_crs: map_crs.unwrap_or("EPSG:3857".to_string()),
             drawing_order: vec![], // (capabilities.Capability.LayerDrawingOrder || "").split(",").map(title => title in titleNameMap ? titleNameMap[title] : title);
             legend_url: format!("{}?", url),
             feature_info_url: format!("{}?", url),

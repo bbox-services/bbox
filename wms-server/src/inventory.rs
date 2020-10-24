@@ -14,7 +14,7 @@ pub struct WmsService {
     pub cap_type: CapType,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CapType {
     Ogc,
     Qgis,
