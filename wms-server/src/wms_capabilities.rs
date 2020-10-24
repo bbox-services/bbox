@@ -27,7 +27,8 @@ pub struct KeywordList {
 
 #[derive(Deserialize, Debug)]
 pub struct Capability {
-    // Request
+    #[serde(rename = "Request")]
+    pub request: Request,
     // Exception
     // UserDefinedSymbolization
     #[serde(rename = "Layer", default)]
@@ -35,6 +36,21 @@ pub struct Capability {
     // QGIS extended capabilities
     // WFSLayers
     // LayerDrawingOrder
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct Request {
+    pub get_map: Option<RequestType>,
+    pub get_feature_info: Option<RequestType>,
+    // ...
+}
+
+#[derive(Deserialize, Debug)]
+pub struct RequestType {
+    #[serde(rename = "Format", default)]
+    pub format: Vec<String>,
+    // DCPType
 }
 
 #[derive(Deserialize, Debug)]

@@ -290,27 +290,22 @@ impl Theme {
                 email: "".to_string(), // "Service.ContactInformation.ContactElectronicMailAddress"
             },
             // format: configItem.format;
-            available_formats: vec![
-                // capabilities.Capability.Request.GetMap.Format
-                "image/jpeg".to_string(),
-                "image/png".to_string(),
-                "image/png; mode=16bit".to_string(),
-                "image/png; mode=8bit".to_string(),
-                "image/png; mode=1bit".to_string(),
-                "application/dxf".to_string(),
-            ],
+            available_formats: caps
+                .capability
+                .request
+                .get_map
+                .as_ref()
+                .map(|r| r.format.clone())
+                .unwrap_or(vec![]),
             // tiled: configItem.tiled;
             version: "1.3.0".to_string(), // configItem.version ? configItem.version : config.defaultWMSVersion
-            info_formats: vec![
-                // capabilities.Capability.Request.GetFeatureInfo.Format
-                "text/plain".to_string(),
-                "text/html".to_string(),
-                "text/xml".to_string(),
-                "application/vnd.ogc.gml".to_string(),
-                "application/vnd.ogc.gml/3.1.1".to_string(),
-                "application/json".to_string(),
-                "application/geo+json".to_string(),
-            ],
+            info_formats: caps
+                .capability
+                .request
+                .get_feature_info
+                .as_ref()
+                .map(|r| r.format.clone())
+                .unwrap_or(vec![]),
             bbox: bbox.clone(),
             initial_bbox: bbox,
             // scales:  configItem.scales;
