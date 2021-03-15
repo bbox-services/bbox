@@ -15,7 +15,7 @@ env_logger = "0.7"
 deadpool = "0.5.2"
 async-trait = "0.1.40"
 tokio = "0.2.22"
-opentelemetry = "0.9.0"
+opentelemetry = { version = "0.9", default-features = false, features = ["trace"] }
 opentelemetry-jaeger = { version = "0.8.0", features = ["collector_client"] }
 askama = "0.9"
 rand = "0.7.3"
