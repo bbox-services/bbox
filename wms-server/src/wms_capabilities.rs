@@ -43,14 +43,39 @@ pub struct Capability {
 pub struct Request {
     pub get_map: Option<RequestType>,
     pub get_feature_info: Option<RequestType>,
-    // ...
+    pub get_capabilities: Option<RequestType>,
+    pub get_legend_graphic: Option<RequestType>,
+    pub get_styles: Option<RequestType>,
+    pub describe_layer: Option<RequestType>,
+    // QGIS extended capabilities
+    pub get_print: Option<RequestType>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct RequestType {
     #[serde(rename = "Format", default)]
     pub format: Vec<String>,
-    // DCPType
+    #[serde(rename = "DCPType")]
+    pub dcp_type: DcpType,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DcpType {
+    #[serde(rename = "HTTP")]
+    pub http: Http,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct Http {
+    pub get: Option<Verb>,
+    pub post: Option<Verb>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Verb {
+    #[serde(rename = "OnlineResource")]
+    pub online_resource: OnlineResource,
 }
 
 #[derive(Deserialize, Debug)]
