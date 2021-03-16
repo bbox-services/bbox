@@ -79,10 +79,7 @@ async fn wms_fcgi(
         if let Err(ref e) = output {
             warn!("FCGI error: {}", e);
             // Remove probably broken FCGI client from pool
-            deadpool::managed::Object::take(fcgi_client);
-            // TODO: drop all clients of same pool
-            // Possible implementation:
-            // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient
+            fcgi.remove(fcgi_client);
             response = HttpResponse::InternalServerError();
             return Cursor::new(Vec::new());
         }

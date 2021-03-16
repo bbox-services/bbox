@@ -1,3 +1,19 @@
+//! FCGI process management
+//!
+//! ```
+//! ┌────────────────────┐         ┌─────────────────┐
+//! │FcgiDispatcher      │         │FcgiProcessPool  │
+//! │ ┌────────────────┐ │ socket1 │ ┌─────────────┐ │
+//! │ │ FcgiClientPool ├─┼─────────┤►│ FcgiProcess │ │
+//! │ └────────────────┘ │         │ └─────────────┘ │
+//! │                    │         │                 │
+//! │ ┌────────────────┐ │ socket2 │ ┌─────────────┐ │
+//! │ │ FcgiClientPool ├─┼─────────┤►│ FcgiProcess │ │
+//! │ └────────────────┘ │         │ └─────────────┘ │
+//! │                    │         │                 │
+//! └────────────────────┘         └─────────────────┘
+//! ```
+
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
 use bufstream::BufStream;
@@ -10,6 +26,7 @@ use std::path::{Path, PathBuf};
 
 // --- FCGI Process ---
 
+/// Child process with FCGI communication
 struct FcgiProcess {
     child: ChildProcess,
     socket_path: String,
@@ -91,6 +108,7 @@ impl Drop for FcgiProcess {
 
 // --- FCGI Process Pool ---
 
+/// Collection of FCGI processes for one application
 pub struct FcgiProcessPool {
     fcgi_path: String,
     base_dir: Option<PathBuf>,
@@ -160,10 +178,11 @@ impl FcgiProcessPool {
 
     pub async fn watchdog_loop(&mut self) {
         loop {
+            debug!("Checking process pool");
             for no in 0..self.processes.len() {
                 let _ = self.check_process(no).await;
             }
-            tokio::time::delay_for(std::time::Duration::from_secs(1)).await;
+            tokio::time::delay_for(std::time::Duration::from_secs(10)).await;
         }
     }
 }
@@ -193,13 +212,22 @@ pub type FcgiClientPoolError = std::io::Error;
 #[async_trait]
 impl deadpool::managed::Manager<FcgiClient, FcgiClientPoolError> for FcgiClientHandler {
     async fn create(&self) -> Result<FcgiClient, FcgiClientPoolError> {
-        self.fcgi_client()
+        debug!("deadpool::managed::Manager::create {}", &self.socket_path);
+        let client = self.fcgi_client();
+        if let Err(ref e) = client {
+            debug!("Failed to create client {}: {}", &self.socket_path, e);
+        }
+        client
     }
     async fn recycle(
         &self,
         _fcgi: &mut FcgiClient,
     ) -> deadpool::managed::RecycleResult<FcgiClientPoolError> {
+        debug!("deadpool::managed::Manager::recycle {}", &self.socket_path);
         Ok(())
+        // Err(deadpool::managed::RecycleError::Message(
+        //     "client invalid".to_string(),
+        // ))
     }
 }
 
@@ -210,6 +238,7 @@ pub type FcgiClientPool = deadpool::managed::Pool<FcgiClient, FcgiClientPoolErro
 /// FCGI client dispatcher
 #[derive(Clone)]
 pub struct FcgiDispatcher {
+    // Client pool for each FCGI process
     pools: Vec<FcgiClientPool>,
 }
 
@@ -218,6 +247,17 @@ impl FcgiDispatcher {
         rand::thread_rng().gen_range(0, self.pools.len())
     }
     pub fn select(&self, _project: &str) -> &FcgiClientPool {
-        &self.pools[self.select_rand()]
+        let pool = &self.pools[self.select_rand()];
+        debug!("selected pool: {:?}", pool.status());
+        pool
+    }
+    /// Remove possibly broken client
+    pub fn remove(&self, fcgi_client: deadpool::managed::Object<FcgiClient, FcgiClientPoolError>) {
+        // Can't call with `&mut self` from web service thread
+        debug!("Removing Client from FcgiClientPool");
+        deadpool::managed::Object::take(fcgi_client);
+        // TODO: remove all clients with same socket path
+        // Possible implementation:
+        // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient
     }
 }
