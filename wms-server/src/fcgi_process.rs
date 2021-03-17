@@ -178,11 +178,11 @@ impl FcgiProcessPool {
 
     pub async fn watchdog_loop(&mut self) {
         loop {
-            debug!("Checking process pool");
+            // debug!("Checking process pool");
             for no in 0..self.processes.len() {
                 let _ = self.check_process(no).await;
             }
-            tokio::time::delay_for(std::time::Duration::from_secs(10)).await;
+            tokio::time::delay_for(std::time::Duration::from_secs(1)).await;
         }
     }
 }

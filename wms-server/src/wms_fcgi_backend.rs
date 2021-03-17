@@ -119,10 +119,19 @@ pub async fn init_backends() -> std::io::Result<(
     let mut handlers = Vec::new();
     let mut wms_inventory = Vec::new();
     let curdir = env::current_dir()?;
+    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
+        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
+        .unwrap_or(2);
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
     let mock_backend = MockFcgiBackend::new();
-    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
+    let mut backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
+    if let Ok(backend) = std::env::var("WMS_BACKEND") {
+        backends = backends
+            .into_iter()
+            .filter(|b| b.name() == backend)
+            .collect();
+    }
     for backend in backends {
         if let Some(exe_path) = detect_fcgi(backend) {
             info!(
@@ -197,7 +206,7 @@ pub async fn init_backends() -> std::io::Result<(
                     );
 
                     info!("Registering WMS endpoint {}", &route);
-                    let dispatcher = process_pool.client_dispatcher(2);
+                    let dispatcher = process_pool.client_dispatcher(fcgi_clnt_pool_size);
                     handlers.push((dispatcher, route, suffix.to_string()));
                 }
                 pools.push(process_pool);
