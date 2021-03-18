@@ -86,7 +86,7 @@ impl FcgiBackendType for MockFcgiBackend {
         "Mock FCGI WMS"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
-        vec!["target/debug/mock-fcgi-wms"]
+        vec!["target/release/mock-fcgi-wms"]
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["mock"]

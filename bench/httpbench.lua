@@ -88,7 +88,7 @@ done = function(summary, latency, requests)
   if newcsv then
     f:write("#time_started,software,connections,min_requests,max_requests,mean_requests,min_latency,max_latency,mean_latency,stdev,50th,90th,99th,99.999th,duration,requests,bytes,request_per_sec,connect_errors,read_errors,write_errors,status_errors,timeouts\n")
   end
-  f:write(string.format("%s,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%d,%d,%d,%d,%d\n",
+  f:write(string.format("%s,%s,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%f,%d,%d,%d,%d,%d\n",
     os.date("!%Y-%m-%dT%TZ"),
     os.getenv("SW"),
     os.getenv("CONNECTIONS"),
