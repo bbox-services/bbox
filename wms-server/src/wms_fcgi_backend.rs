@@ -121,7 +121,7 @@ pub async fn init_backends() -> std::io::Result<(
     let curdir = env::current_dir()?;
     let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
         .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
-        .unwrap_or(2);
+        .unwrap_or(1);
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
     let mock_backend = MockFcgiBackend::new();

@@ -204,11 +204,19 @@ fn init_tracer(
 pub async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
-    let (process_pools, handlers, inventory) = init_backends().await?;
+    let (process_pools, mut handlers, inventory) = init_backends().await?;
+    let handlers: Vec<_> = handlers
+        .drain(..)
+        .map(|(handler, base, suffix)| (web::Data::new(handler), base, suffix))
+        .collect();
 
     for mut process_pool in process_pools {
         actix_web::rt::spawn(async move { process_pool.watchdog_loop().await });
     }
+
+    let workers = std::env::var("HTTP_WORKER_THREADS")
+        .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
+        .unwrap_or(num_cpus::get());
 
     HttpServer::new(move || {
         let tracer = tracer.clone();
@@ -233,7 +241,7 @@ pub async fn webserver() -> std::io::Result<()> {
         for (handler, base, suffix) in &handlers {
             app = app.service(
                 web::resource(base.to_string() + "/{project:.+}") // :[^{}]+
-                    .data(handler.clone())
+                    .app_data(handler.clone())
                     .data(suffix.to_string())
                     .route(
                         web::route()
@@ -245,6 +253,7 @@ pub async fn webserver() -> std::io::Result<()> {
         app
     })
     .bind("0.0.0.0:8080")?
+    .workers(workers)
     .run()
     .await
 }

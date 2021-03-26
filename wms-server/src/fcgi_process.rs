@@ -23,6 +23,7 @@ use rand::Rng;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 // --- FCGI Process ---
 
@@ -147,7 +148,10 @@ impl FcgiProcessPool {
             .iter()
             .map(|p| FcgiClientPool::new(p.handler(), max_pool_size))
             .collect();
-        FcgiDispatcher { pools }
+        FcgiDispatcher {
+            pools,
+            pool_no: Mutex::new(0),
+        }
     }
 
     async fn check_process(&mut self, no: usize) -> std::io::Result<()> {
@@ -236,18 +240,25 @@ pub type FcgiClientPool = deadpool::managed::Pool<FcgiClient, FcgiClientPoolErro
 // --- FCGI Dispatching ---
 
 /// FCGI client dispatcher
-#[derive(Clone)]
 pub struct FcgiDispatcher {
     // Client pool for each FCGI process
     pools: Vec<FcgiClientPool>,
+    // last selected pool
+    pool_no: Mutex<usize>,
 }
 
 impl FcgiDispatcher {
     fn select_rand(&self) -> usize {
         rand::thread_rng().gen_range(0, self.pools.len())
     }
+    fn roundrobin(&self) -> usize {
+        let mut pool_no = self.pool_no.lock().unwrap();
+        *pool_no = (*pool_no + 1) % self.pools.len();
+        *pool_no
+    }
     pub fn select(&self, _project: &str) -> &FcgiClientPool {
-        let pool = &self.pools[self.select_rand()];
+        // let pool = &self.pools[self.select_rand()];
+        let pool = &self.pools[self.roundrobin()];
         debug!("selected pool: {:?}", pool.status());
         pool
     }

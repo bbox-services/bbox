@@ -6,7 +6,17 @@ wkr_cmd = docker run --rm --user=$$UID --net=host -e SW="$(sw)" -e CSV_NAME=$(cs
 duration = 10
 
 # Run server with
-# WMS_BACKEND="Mock FCGI WMS" RUST_LOG=info cargo run --release
+# HTTP_WORKER_THREADS=32 NUM_FCGI_PROCESSES=32 WMS_BACKEND="Mock FCGI WMS" RUST_LOG=info cargo run --release
+
+trace:
+	make trace_bench duration=5 csv=http_quick.csv sw=asyncfcgi-baseline path_file=paths_baseline.txt host=http://127.0.0.1:8080
+	sleep 3
+	make trace_bench duration=5 csv=http_quick.csv sw=apache-baseline path_file=paths_baseline.txt host=http://127.0.0.1
+
+trace_bench:
+	$(wkr_cmd:[CONN]=32) --latency -d $(duration) -c 32 --timeout 8 -t 4 -s /bench/httpbench.lua $(host)
+	@echo >>$(result_prefix)${csv}
+	@echo >>$(result_prefix)${csv}
 
 quick_bench:
 	make bench_http duration=5 csv=http_quick.csv sw=apache-baseline path_file=paths_baseline.txt host=http://127.0.0.1
