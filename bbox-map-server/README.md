@@ -4,11 +4,11 @@ BBOX map server
 Asynchronous map server with FCGI backend.
 
 Features:
--[ ] OGC WMS 1.3 Server
--[ ] OGC Map API Server
--[ ] Instrumentation: Prometheus and Jaeger tracing
--[X] Map rendering backends: QGIS Server + UNN Mapserver
--[ ] Intelligent process dispatching (slow query detection)
+- [ ] OGC WMS 1.3 Server
+- [ ] OGC Map API Server
+- [ ] Instrumentation: Prometheus and Jaeger tracing
+- [X] Map rendering backends: QGIS Server + UNN Mapserver
+- [ ] Intelligent process dispatching (slow query detection)
 
 Usage
 -----
