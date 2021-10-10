@@ -1,0 +1,24 @@
+[package]
+name = "bbox-ogcapi-features"
+version = "0.1.0"
+authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "2.0.0"
+actix-rt = "1.0.0"
+actix-service = "1.0.0"
+
+bytes = "0.5.2"
+futures = "0.3.1"
+env_logger = "*"
+
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+json = "0.12"
+
+dotenv = "0.15.0"
+config = { version = "0.10.1", default-features = false }
+
+deadpool-postgres = "0.5.0"
+tokio-postgres = "0.5.1"
