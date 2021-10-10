@@ -1,45 +1,16 @@
 use crate::fcgi_process::*;
-use crate::inventory::*;
-use crate::qwc2_config::*;
-use crate::static_files::EmbedFile;
 use crate::wms_fcgi_backend::*;
 use actix_service::Service;
-use actix_web::{get, guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetrics;
-use askama::Template;
 use log::{debug, error, warn};
 use opentelemetry::api::{
     trace::{FutureExt, SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
 use opentelemetry::{global, sdk::trace as sdktrace};
-use rust_embed::RustEmbed;
 use std::io::{BufRead, Cursor, Read};
-use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-
-#[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate<'a> {
-    inventory: &'a Inventory,
-    links: Vec<&'a str>,
-}
-
-#[get("/")]
-async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
-    let s = IndexTemplate {
-        inventory: &inventory,
-        links: vec![
-        "/wms/qgs/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
-        "/wms/qgs/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
-        "/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
-        "/wms/mock/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
-        ]
-    }
-    .render()
-    .unwrap();
-    Ok(HttpResponse::Ok().content_type("text/html").body(s))
-}
 
 async fn wms_fcgi(
     fcgi: web::Data<FcgiDispatcher>,
@@ -127,71 +98,6 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-#[derive(RustEmbed)]
-#[folder = "static/"]
-struct Statics;
-
-#[get("/favicon.ico")]
-async fn favicon() -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(&Statics, PathBuf::from("favicon.ico"))?)
-}
-
-async fn maps(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    map_assets(&*filename)
-}
-
-async fn map(path: web::Path<(String, PathBuf)>) -> Result<EmbedFile, Error> {
-    // Used for /map/{theme}/index.html and /map/{theme}/config.json
-    map_assets(&path.1)
-}
-
-fn map_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
-    let filename = if filename == &PathBuf::from("") {
-        PathBuf::from("index.html")
-    } else {
-        filename.to_path_buf()
-    };
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("map").join(filename),
-    )?)
-}
-
-fn req_baseurl(req: &HttpRequest) -> String {
-    let conninfo = req.connection_info();
-    format!("{}://{}", conninfo.scheme(), conninfo.host())
-}
-
-async fn map_themes(
-    inventory: web::Data<Inventory>,
-    req: HttpRequest,
-) -> Result<HttpResponse, Error> {
-    let json = themes_json(&inventory.wms_services, req_baseurl(&req), None).await;
-    Ok(HttpResponse::Ok().json(json))
-}
-
-async fn map_theme(
-    id: web::Path<String>,
-    inventory: web::Data<Inventory>,
-    req: HttpRequest,
-) -> Result<HttpResponse, Error> {
-    // let wms_service = inventory.wms_services.iter().find(|wms| wms.id == *id).unwrap().clone();
-    let json = themes_json(&inventory.wms_services, req_baseurl(&req), Some(&*id)).await;
-    Ok(HttpResponse::Ok().json(json))
-}
-
-async fn themes_json(
-    wms_services: &Vec<WmsService>,
-    base_url: String,
-    default_theme: Option<&str>,
-) -> ThemesJson {
-    let mut caps = Vec::new();
-    for wms in wms_services {
-        caps.push((wms, wms.capabilities(&base_url).await, wms.url(&base_url)));
-    }
-    ThemesJson::from_capabilities(caps, default_theme)
-}
-
 fn init_tracer(
 ) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
     opentelemetry_jaeger::new_pipeline()
@@ -204,7 +110,7 @@ fn init_tracer(
 pub async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
-    let (process_pools, mut handlers, inventory) = init_backends().await?;
+    let (process_pools, mut handlers, _inventory) = init_backends().await?;
     let handlers: Vec<_> = handlers
         .drain(..)
         .map(|(handler, base, suffix)| (web::Data::new(handler), base, suffix))
@@ -229,14 +135,7 @@ pub async fn webserver() -> std::io::Result<()> {
                 })
             })
             .wrap(prometheus.clone())
-            .wrap(middleware::Compress::default())
-            .data(inventory.clone())
-            .service(index)
-            .service(favicon)
-            .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
-            .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
-            .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
-            .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)));
+            .wrap(middleware::Compress::default());
         // Add endpoint for each WMS/FCGI backend
         for (handler, base, suffix) in &handlers {
             app = app.service(

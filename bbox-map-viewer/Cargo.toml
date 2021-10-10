@@ -1,0 +1,26 @@
+[package]
+name = "bbox-map-viewer"
+version = "0.1.0"
+authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
+edition = "2018"
+
+[dependencies]
+bbox-map-server = { path = "../bbox-map-server" }
+actix-web = "3"
+log = "0.4"
+env_logger = "0.7"
+tokio = "0.2.22"
+askama = "0.9"
+rand = "0.7.3"
+num_cpus = "1.0"
+lazy_static = "1.4.0"
+serde = "1.0.116"
+serde_json = "1.0.57"
+
+rust-embed = { version = "5.6.0", features = ["compression"] }
+futures-util = "0.3.5"
+mime = "0.3.16"
+mime_guess = "2.0.3"
+fxhash = "0.2.1"
+
+[dev-dependencies]

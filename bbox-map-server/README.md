@@ -13,11 +13,10 @@ Features:
 Usage
 -----
 
+    cd ..
     cargo run
 
-    x-www-browser http://127.0.0.1:8080/
-
-Manual calls:
+Request examples:
 
     curl 'http://127.0.0.1:8080/wms/qgs/ne?&SERVICE=WMS&REQUEST=GetCapabilities'
 
@@ -92,9 +91,7 @@ Development
 -----------
 
 Documentation of used libriaries:
-
 * Actix: https://actix.rs/
-* Askama: https://djc.github.io/askama/
 * Async Process: https://docs.rs/async-process/
 * QGIS Server plugins: https://docs.qgis.org/3.10/en/docs/user_manual/working_with_ogc/server/plugins.html
 

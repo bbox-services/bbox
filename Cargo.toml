@@ -1,3 +1,3 @@
 [workspace]
-members = ["bbox-map-server", "bbox-map-server/mock-fcgi-wms", "bbox-ogcapi-features"]
+members = ["bbox-map-server", "bbox-map-server/mock-fcgi-wms", "bbox-map-viewer", "bbox-ogcapi-features"]
 default-members = ["bbox-map-server"]

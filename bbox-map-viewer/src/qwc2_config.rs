@@ -1,5 +1,5 @@
-use crate::inventory;
-use crate::wms_capabilities as ogc;
+use bbox_map_server::inventory;
+use bbox_map_server::wms_capabilities as ogc;
 use lazy_static::lazy_static;
 use log::warn;
 use serde::Serialize;

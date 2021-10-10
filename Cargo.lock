@@ -691,7 +691,6 @@ dependencies = [
  "actix-service",
  "actix-web 3.3.2",
  "actix-web-prom",
- "askama",
  "async-process",
  "async-trait",
  "awc 2.0.3",
@@ -699,20 +698,36 @@ dependencies = [
  "deadpool",
  "env_logger",
  "fastcgi-client",
+ "ignore",
+ "log",
+ "num_cpus",
+ "opentelemetry 0.9.1",
+ "opentelemetry-jaeger 0.8.0",
+ "rand 0.7.3",
+ "serde",
+ "serde-xml-rs",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "bbox-map-viewer"
+version = "0.1.0"
+dependencies = [
+ "actix-web 3.3.2",
+ "askama",
+ "bbox-map-server",
+ "env_logger",
  "futures-util",
  "fxhash",
- "ignore",
  "lazy_static",
  "log",
  "mime",
  "mime_guess",
  "num_cpus",
- "opentelemetry 0.9.1",
- "opentelemetry-jaeger 0.8.0",
  "rand 0.7.3",
  "rust-embed",
  "serde",
- "serde-xml-rs",
  "serde_json",
  "tokio",
 ]
@@ -1505,9 +1520,9 @@ checksum = "615caabe2c3160b313d52ccc905335f4ed5f10881dd63dc5699d47e90be85691"
 
 [[package]]
 name = "humansize"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6cab2627acfc432780848602f3f558f7e9dd427352224b0d9324025796d2a5e"
+checksum = "02296996cb8796d7c6e3bc2d9211b7802812d36999a51bb754123ead7d37d026"
 
 [[package]]
 name = "humantime"
@@ -3382,6 +3397,6 @@ dependencies = [
 
 [[package]]
 name = "xml-rs"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b07db065a5cf61a7e4ba64f29e67db906fb1787316516c4e6e5ff0fea1efcd8a"
+checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
