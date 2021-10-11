@@ -8,7 +8,7 @@ fn main() {
     if env::var("RUST_LOG").is_err() {
         env::set_var(
             "RUST_LOG",
-            "async_fcgi=debug,actix_server=info,actix_web=info",
+            "bbox_map_viewer=debug,actix_server=info,actix_web=info",
         );
     }
     env_logger::init();
