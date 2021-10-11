@@ -1,4 +1,4 @@
-use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
+use crate::fcgi_process::FcgiProcessPool;
 use crate::file_search;
 use crate::inventory::*;
 use log::info;
@@ -27,7 +27,7 @@ impl QgisFcgiBackend {
 }
 impl FcgiBackendType for QgisFcgiBackend {
     fn name(&self) -> &'static str {
-        "QGIS Server"
+        "qgis"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
         vec!["/usr/lib/cgi-bin/qgis_mapserv.fcgi"]
@@ -57,7 +57,7 @@ impl UmnFcgiBackend {
 
 impl FcgiBackendType for UmnFcgiBackend {
     fn name(&self) -> &'static str {
-        "UMN Mapserver"
+        "mapserver"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
         vec!["/usr/lib/cgi-bin/mapserv"]
@@ -83,7 +83,7 @@ impl MockFcgiBackend {
 
 impl FcgiBackendType for MockFcgiBackend {
     fn name(&self) -> &'static str {
-        "Mock FCGI WMS"
+        "mock"
     }
     fn exe_locations(&self) -> Vec<&'static str> {
         vec!["target/release/mock-fcgi-wms"]
@@ -110,18 +110,10 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
         .map(|&c| c.to_string())
 }
 
-pub async fn init_backends() -> std::io::Result<(
-    Vec<FcgiProcessPool>,
-    Vec<(FcgiDispatcher, String, String)>,
-    Inventory,
-)> {
+pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let mut pools = Vec::new();
-    let mut handlers = Vec::new();
     let mut wms_inventory = Vec::new();
     let curdir = env::current_dir()?;
-    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
-        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
-        .unwrap_or(1);
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
     let mock_backend = MockFcgiBackend::new();
@@ -160,61 +152,62 @@ pub async fn init_backends() -> std::io::Result<(
             let num_processes = std::env::var("NUM_FCGI_PROCESSES")
                 .map(|v| v.parse().expect("NUM_FCGI_PROCESSES invalid"))
                 .unwrap_or(num_cpus::get());
-            let mut process_pool =
-                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend.envs());
-            if process_pool.spawn_processes(num_processes).await.is_ok() {
-                info!(
-                    "{} {} FCGI processes started",
-                    num_processes,
-                    backend.name()
+            let process_pool =
+                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_processes);
+            for suffix in backend.project_files() {
+                let route = format!("/wms/{}", suffix);
+
+                wms_inventory.extend(
+                    wms_inventory_files
+                        .get(&route)
+                        .expect("route entry missing")
+                        .iter()
+                        .map(|p| {
+                            // /basedir/data/project.qgs -> /wms/qgs/data/project
+                            let project = p
+                                .file_stem()
+                                .expect("no file name")
+                                .to_str()
+                                .expect("Invalid UTF-8 file name");
+                            let rel_path = p
+                                .parent()
+                                .expect("file in root")
+                                .strip_prefix(&basedir)
+                                .expect("wrong prefix")
+                                .to_str()
+                                .expect("Invalid UTF-8 path name");
+                            let wms_path = if rel_path == "" {
+                                format!("{}/{}", &route, project)
+                            } else {
+                                format!("{}/{}/{}", &route, rel_path, project)
+                            };
+                            let id = wms_path.replace("/wms/", "").replace('/', "_");
+                            let cap_type = backend.cap_type();
+                            WmsService {
+                                id,
+                                wms_path,
+                                cap_type,
+                            }
+                        }),
                 );
-                for suffix in backend.project_files() {
-                    let route = format!("/wms/{}", suffix);
-
-                    wms_inventory.extend(
-                        wms_inventory_files
-                            .get(&route)
-                            .expect("route entry missing")
-                            .iter()
-                            .map(|p| {
-                                // /basedir/data/project.qgs -> /wms/qgs/data/project
-                                let project = p
-                                    .file_stem()
-                                    .expect("no file name")
-                                    .to_str()
-                                    .expect("Invalid UTF-8 file name");
-                                let rel_path = p
-                                    .parent()
-                                    .expect("file in root")
-                                    .strip_prefix(&basedir)
-                                    .expect("wrong prefix")
-                                    .to_str()
-                                    .expect("Invalid UTF-8 path name");
-                                let wms_path = if rel_path == "" {
-                                    format!("{}/{}", &route, project)
-                                } else {
-                                    format!("{}/{}/{}", &route, rel_path, project)
-                                };
-                                let id = wms_path.replace("/wms/", "").replace('/', "_");
-                                let cap_type = backend.cap_type();
-                                WmsService {
-                                    id,
-                                    wms_path,
-                                    cap_type,
-                                }
-                            }),
-                    );
-
-                    info!("Registering WMS endpoint {}", &route);
-                    let dispatcher = process_pool.client_dispatcher(fcgi_clnt_pool_size);
-                    handlers.push((dispatcher, route, suffix.to_string()));
-                }
-                pools.push(process_pool);
             }
+            pools.push(process_pool);
         }
     }
     let inventory = Inventory {
         wms_services: wms_inventory,
     };
-    Ok((pools, handlers, inventory))
+    Ok((pools, inventory))
+}
+
+pub async fn init_service() {
+    let (process_pools, _inventory) = detect_backends().unwrap();
+
+    for mut process_pool in process_pools {
+        if process_pool.spawn_processes().await.is_ok() {
+            actix_web::rt::spawn(async move {
+                process_pool.watchdog_loop().await;
+            });
+        }
+    }
 }

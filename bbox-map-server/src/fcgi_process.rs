@@ -14,11 +14,12 @@
 //! └────────────────────┘         └─────────────────┘
 //! ```
 
+use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
 use bufstream::BufStream;
 use fastcgi_client::Client;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use rand::Rng;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -38,15 +39,13 @@ impl FcgiProcess {
         fcgi_path: &str,
         base_dir: Option<&PathBuf>,
         envs: &[(&str, &str)],
+        socket_path: &str,
     ) -> std::io::Result<Self> {
-        let socket_path = loop {
-            let p = format!("/tmp/asyncfcgi_{:x}", rand::thread_rng().gen::<u32>());
-            if !Path::new(&p).exists() {
-                break p;
-            }
-        };
-        let child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, &socket_path)?;
-        Ok(FcgiProcess { child, socket_path })
+        let child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, socket_path)?;
+        Ok(FcgiProcess {
+            child,
+            socket_path: socket_path.to_string(),
+        })
     }
 
     pub async fn respawn(
@@ -86,12 +85,6 @@ impl FcgiProcess {
         Ok(child)
     }
 
-    fn handler(&self) -> FcgiClientHandler {
-        FcgiClientHandler {
-            socket_path: self.socket_path.clone(),
-        }
-    }
-
     pub fn is_running(&mut self) -> std::io::Result<bool> {
         Ok(self.child.try_status()?.is_none())
     }
@@ -109,44 +102,73 @@ impl Drop for FcgiProcess {
 
 // --- FCGI Process Pool ---
 
-/// Collection of FCGI processes for one application
+/// Collection of processes for one FCGI application
 pub struct FcgiProcessPool {
     fcgi_path: String,
     base_dir: Option<PathBuf>,
     envs: Vec<(String, String)>,
+    process_name: String,
+    pub(crate) suffixes: Vec<String>,
+    num_processes: usize,
     processes: Vec<FcgiProcess>,
 }
 
 impl FcgiProcessPool {
-    pub fn new(fcgi_path: String, base_dir: Option<PathBuf>, envs: Vec<(String, String)>) -> Self {
+    pub fn new(
+        fcgi_path: String,
+        base_dir: Option<PathBuf>,
+        backend: &dyn FcgiBackendType,
+        num_processes: usize,
+    ) -> Self {
         FcgiProcessPool {
             fcgi_path,
             base_dir,
-            envs,
+            envs: backend.envs(),
+            process_name: backend.name().to_string(),
+            suffixes: backend
+                .project_files()
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+            num_processes,
             processes: Vec::new(),
         }
     }
-
-    pub async fn spawn_processes(&mut self, num_processes: usize) -> std::io::Result<()> {
+    /// Constant socket path over application lifetime
+    fn socket_path(name: &str, process_no: usize) -> String {
+        // TODO: Use tempfile::tempdir
+        format!("/tmp/fcgi_{}_{}", name, process_no)
+    }
+    pub async fn spawn_processes(&mut self) -> std::io::Result<()> {
         let envs: Vec<_> = self
             .envs
             .iter()
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
-        for _no in 0..num_processes {
+        for no in 0..self.num_processes {
+            let socket_path = Self::socket_path(&self.process_name, no);
             let process =
-                FcgiProcess::spawn(&self.fcgi_path, self.base_dir.as_ref(), &envs).await?;
+                FcgiProcess::spawn(&self.fcgi_path, self.base_dir.as_ref(), &envs, &socket_path)
+                    .await?;
             self.processes.push(process)
         }
+        info!(
+            "Spawned {} FCGI processes '{}'",
+            self.processes.len(),
+            &self.fcgi_path
+        );
         Ok(())
     }
 
     /// Create client pool for each process and return dispatcher
     pub fn client_dispatcher(&self, max_pool_size: usize) -> FcgiDispatcher {
-        let pools = self
-            .processes
-            .iter()
-            .map(|p| FcgiClientPool::new(p.handler(), max_pool_size))
+        debug!("Creating {} FcgiDispatcher", self.process_name);
+        let pools = (0..self.num_processes)
+            .map(|no| {
+                let socket_path = Self::socket_path(&self.process_name, no);
+                let handler = FcgiClientHandler { socket_path };
+                FcgiClientPool::new(handler, max_pool_size)
+            })
             .collect();
         FcgiDispatcher {
             pools,

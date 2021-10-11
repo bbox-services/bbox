@@ -1,15 +1,14 @@
 use crate::fcgi_process::*;
 use crate::wms_fcgi_backend::*;
-use actix_service::Service;
-use actix_web::{guard, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
-use actix_web_prom::PrometheusMetrics;
-use log::{debug, error, warn};
+use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
+use log::{debug, error, info, warn};
 use opentelemetry::api::{
-    trace::{FutureExt, SpanBuilder, SpanKind, TraceContextExt, Tracer},
+    trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
-use opentelemetry::{global, sdk::trace as sdktrace};
+use opentelemetry::global;
 use std::io::{BufRead, Cursor, Read};
+use std::sync::Once;
 use std::time::{Duration, SystemTime};
 
 async fn wms_fcgi(
@@ -98,50 +97,43 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-fn init_tracer(
-) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
-    opentelemetry_jaeger::new_pipeline()
-        .with_collector_endpoint("http://127.0.0.1:14268/api/traces")
-        .with_service_name("wms-service")
-        .install()
-}
+// FcgiDispatcher for each FCGI application
+static mut HANDLERS: Vec<web::Data<FcgiDispatcher>> = vec![];
+static INIT: Once = Once::new();
 
-#[actix_web::main]
-pub async fn webserver() -> std::io::Result<()> {
-    let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
-    let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
-    let (process_pools, mut handlers, _inventory) = init_backends().await?;
-    let handlers: Vec<_> = handlers
-        .drain(..)
-        .map(|(handler, base, suffix)| (web::Data::new(handler), base, suffix))
-        .collect();
+pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
+    let (process_pools, inventory) = detect_backends().unwrap();
 
-    for mut process_pool in process_pools {
-        actix_web::rt::spawn(async move { process_pool.watchdog_loop().await });
-    }
+    cfg.data(inventory);
 
-    let workers = std::env::var("HTTP_WORKER_THREADS")
-        .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
-        .unwrap_or(num_cpus::get());
+    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
+        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
+        .unwrap_or(1);
 
-    HttpServer::new(move || {
-        let tracer = tracer.clone();
-        let mut app = App::new()
-            .wrap(middleware::Logger::default())
-            .wrap_fn(move |req, srv| {
-                tracer.in_span("http-request", move |cx| {
-                    cx.span().set_attribute(Key::new("path").string(req.path()));
-                    srv.call(req).with_context(cx)
+    // We need a shared FcgiDispatcher between web server threads,
+    // but register_endpoints is called for each thread and we can't
+    // pass shared configuration infos.
+    // Safety: See https://doc.rust-lang.org/std/sync/struct.Once.html
+    let handlers = unsafe {
+        INIT.call_once(|| {
+            HANDLERS = process_pools
+                .iter()
+                .map(|process_pool| {
+                    web::Data::new(process_pool.client_dispatcher(fcgi_clnt_pool_size))
                 })
-            })
-            .wrap(prometheus.clone())
-            .wrap(middleware::Compress::default());
-        // Add endpoint for each WMS/FCGI backend
-        for (handler, base, suffix) in &handlers {
-            app = app.service(
-                web::resource(base.to_string() + "/{project:.+}") // :[^{}]+
-                    .app_data(handler.clone())
-                    .data(suffix.to_string())
+                .collect();
+        });
+        &HANDLERS
+    };
+
+    for (no, process_pool) in process_pools.iter().enumerate() {
+        for suffix in &process_pool.suffixes {
+            let route = format!("/wms/{}", &suffix);
+            info!("Registering WMS endpoint {}", &route);
+            cfg.service(
+                web::resource(route + "/{project:.+}") // :[^{}]+
+                    .app_data(handlers[no].clone())
+                    .data(suffix.clone())
                     .route(
                         web::route()
                             .guard(guard::Any(guard::Get()).or(guard::Post()))
@@ -149,10 +141,5 @@ pub async fn webserver() -> std::io::Result<()> {
                     ),
             );
         }
-        app
-    })
-    .bind("0.0.0.0:8080")?
-    .workers(workers)
-    .run()
-    .await
+    }
 }

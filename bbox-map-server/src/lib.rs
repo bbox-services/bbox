@@ -5,4 +5,5 @@ mod webserver;
 pub mod wms_capabilities;
 mod wms_fcgi_backend;
 
-pub use wms_fcgi_backend::init_backends as init_inventory;
+pub use webserver::register_endpoints;
+pub use wms_fcgi_backend::init_service;

@@ -6,7 +6,7 @@ wkr_cmd = docker run --rm --user=$$UID --net=host -e SW="$(sw)" -e CSV_NAME=$(cs
 duration = 10
 
 # Run server with
-# HTTP_WORKER_THREADS=32 NUM_FCGI_PROCESSES=32 WMS_BACKEND="Mock FCGI WMS" RUST_LOG=info cargo run --release
+# HTTP_WORKER_THREADS=32 NUM_FCGI_PROCESSES=32 WMS_BACKEND="mock" RUST_LOG=info cargo run --release
 
 trace:
 	make trace_bench duration=5 csv=http_quick.csv sw=asyncfcgi-baseline path_file=paths_baseline.txt host=http://127.0.0.1:8080

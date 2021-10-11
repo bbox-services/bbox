@@ -2,8 +2,8 @@ use crate::qwc2_config::*;
 use crate::static_files::EmbedFile;
 use actix_web::{get, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use askama::Template;
-use bbox_map_server::init_inventory;
-use bbox_map_server::inventory::*;
+use bbox_map_server;
+use bbox_map_server::inventory::{Inventory, WmsService};
 use rust_embed::RustEmbed;
 use std::path::PathBuf;
 
@@ -97,16 +97,17 @@ async fn themes_json(
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let (_, _, inventory) = init_inventory().await?;
     let workers = std::env::var("HTTP_WORKER_THREADS")
         .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
         .unwrap_or(num_cpus::get());
+
+    bbox_map_server::init_service().await;
 
     HttpServer::new(move || {
         let app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .data(inventory.clone())
+            .configure(bbox_map_server::register_endpoints)
             .service(index)
             .service(favicon)
             .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
