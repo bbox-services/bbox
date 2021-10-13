@@ -25,6 +25,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::time::Duration;
 
 // --- FCGI Process ---
 
@@ -163,11 +164,16 @@ impl FcgiProcessPool {
     /// Create client pool for each process and return dispatcher
     pub fn client_dispatcher(&self, max_pool_size: usize) -> FcgiDispatcher {
         debug!("Creating {} FcgiDispatcher", self.process_name);
+        let config = deadpool::managed::PoolConfig::new(max_pool_size);
+        // config.timeouts.create = Some(Duration::from_millis(500));
+        // config.timeouts.wait = Some(Duration::from_secs(120));
+        // config.timeouts.recycle = Some(Duration::from_millis(500));
+        // config.runtime = deadpool::Runtime::Tokio1;
         let pools = (0..self.num_processes)
             .map(|no| {
                 let socket_path = Self::socket_path(&self.process_name, no);
                 let handler = FcgiClientHandler { socket_path };
-                FcgiClientPool::new(handler, max_pool_size)
+                FcgiClientPool::from_config(handler, config.clone())
             })
             .collect();
         FcgiDispatcher {
@@ -208,7 +214,7 @@ impl FcgiProcessPool {
             for no in 0..self.processes.len() {
                 let _ = self.check_process(no).await;
             }
-            tokio::time::delay_for(std::time::Duration::from_secs(1)).await;
+            tokio::time::delay_for(Duration::from_secs(1)).await;
         }
     }
 }
@@ -216,7 +222,7 @@ impl FcgiProcessPool {
 // --- FCGI Client ---
 
 #[derive(Clone)]
-pub(crate) struct FcgiClientHandler {
+pub struct FcgiClientHandler {
     socket_path: String,
 }
 
@@ -236,7 +242,9 @@ pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
 pub type FcgiClientPoolError = std::io::Error;
 
 #[async_trait]
-impl deadpool::managed::Manager<FcgiClient, FcgiClientPoolError> for FcgiClientHandler {
+impl deadpool::managed::Manager for FcgiClientHandler {
+    type Type = FcgiClient;
+    type Error = FcgiClientPoolError;
     async fn create(&self) -> Result<FcgiClient, FcgiClientPoolError> {
         debug!("deadpool::managed::Manager::create {}", &self.socket_path);
         let client = self.fcgi_client();
@@ -257,7 +265,7 @@ impl deadpool::managed::Manager<FcgiClient, FcgiClientPoolError> for FcgiClientH
     }
 }
 
-pub type FcgiClientPool = deadpool::managed::Pool<FcgiClient, FcgiClientPoolError>;
+pub type FcgiClientPool = deadpool::managed::Pool<FcgiClientHandler>;
 
 // --- FCGI Dispatching ---
 
@@ -285,7 +293,7 @@ impl FcgiDispatcher {
         pool
     }
     /// Remove possibly broken client
-    pub fn remove(&self, fcgi_client: deadpool::managed::Object<FcgiClient, FcgiClientPoolError>) {
+    pub fn remove(&self, fcgi_client: deadpool::managed::Object<FcgiClientHandler>) {
         // Can't call with `&mut self` from web service thread
         debug!("Removing Client from FcgiClientPool");
         deadpool::managed::Object::take(fcgi_client);
