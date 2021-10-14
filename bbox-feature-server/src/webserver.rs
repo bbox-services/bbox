@@ -1,7 +1,6 @@
 use crate::ogcapi::*;
 use crate::openapi;
-use actix_web::{middleware, web, App, HttpRequest, HttpResponse, HttpServer};
-use dotenv::dotenv;
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde_json::json;
 
 fn absurl(req: &HttpRequest, path: &str) -> String {
@@ -249,48 +248,17 @@ async fn feature(
     }
 }
 
-pub mod config {
-    pub use ::config::ConfigError;
-    use serde::Deserialize;
-    #[derive(Deserialize)]
-    pub struct Config {
-        pub server_addr: String,
-    }
-    impl Config {
-        pub fn from_env() -> Result<Self, ConfigError> {
-            let mut cfg = ::config::Config::new();
-            cfg.merge(::config::Environment::new()).unwrap();
-            cfg.try_into()
-        }
-    }
-}
-
-#[actix_web::main]
-pub async fn webserver() -> std::io::Result<()> {
-    dotenv().ok();
-
-    let config = config::Config::from_env().expect("Config::from_env");
-
-    HttpServer::new(move || {
-        App::new()
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
-            .service(web::resource("/").route(web::get().to(index)))
-            .service(web::resource("/api").route(web::get().to(api)))
-            .service(web::resource("/conformance").route(web::get().to(conformance)))
-            .service(web::resource("/collections").route(web::get().to(collections)))
-            .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
-            .service(
-                web::resource("/collections/{collectionId}/items").route(web::get().to(features)),
-            )
-            .service(
-                web::resource("/collections/{collectionId}/items/{featureId}")
-                    .route(web::get().to(feature)),
-            )
-    })
-    .bind(config.server_addr.clone())?
-    .run()
-    .await
+pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::resource("/").route(web::get().to(index)))
+        .service(web::resource("/api").route(web::get().to(api)))
+        .service(web::resource("/conformance").route(web::get().to(conformance)))
+        .service(web::resource("/collections").route(web::get().to(collections)))
+        .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
+        .service(web::resource("/collections/{collectionId}/items").route(web::get().to(features)))
+        .service(
+            web::resource("/collections/{collectionId}/items/{featureId}")
+                .route(web::get().to(feature)),
+        );
 }
 
 #[cfg(test)]
