@@ -1,7 +1,5 @@
 mod ogcapi;
 mod openapi;
-#[cfg(test)]
-mod tests;
 mod webserver;
 
 use std::env;

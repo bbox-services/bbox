@@ -125,8 +125,7 @@ async fn collections(req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(collections)
 }
 
-async fn collection(req: HttpRequest, path: web::Path<(String,)>) -> HttpResponse {
-    let collection_id = &path.0;
+async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
     if collection_id == "building" {
         let collection = CoreCollection {
             id: "building".to_string(),
@@ -177,8 +176,7 @@ async fn collection(req: HttpRequest, path: web::Path<(String,)>) -> HttpRespons
     }
 }
 
-async fn features(req: HttpRequest, path: web::Path<(String,)>) -> HttpResponse {
-    let collection_id = &path.0;
+async fn features(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
     if collection_id == "building" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
@@ -212,9 +210,10 @@ async fn features(req: HttpRequest, path: web::Path<(String,)>) -> HttpResponse 
     }
 }
 
-async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
-    let collection_id = &path.0;
-    let feature_id = &path.1;
+async fn feature(
+    req: HttpRequest,
+    web::Path((collection_id, feature_id)): web::Path<(String, String)>,
+) -> HttpResponse {
     if collection_id == "building" && feature_id == "123" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
@@ -266,13 +265,13 @@ pub mod config {
     }
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
     dotenv().ok();
 
     let config = config::Config::from_env().expect("Config::from_env");
 
-    let server = HttpServer::new(move || {
+    HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
@@ -290,8 +289,29 @@ pub async fn webserver() -> std::io::Result<()> {
             )
     })
     .bind(config.server_addr.clone())?
-    .run();
-    println!("Server running at http://{}/", config.server_addr);
+    .run()
+    .await
+}
 
-    server.await
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{http, test, Error};
+
+    #[actix_rt::test]
+    async fn test_index() -> Result<(), Error> {
+        let req = test::TestRequest::default().to_http_request();
+        let resp = index(req).await;
+
+        assert_eq!(resp.status(), http::StatusCode::OK);
+
+        let response_body = match resp.body().as_ref() {
+            Some(actix_web::body::Body::Bytes(bytes)) => bytes,
+            _ => panic!("Response error"),
+        };
+
+        assert_eq!(response_body, "{\"title\":\"Buildings in Bonn\",\"description\":\"Access to data about buildings in the city of Bonn via a Web API that conforms to the OGC API Features specification\",\"links\":[{\"href\":\"http://localhost:8080/\",\"rel\":\"self\",\"type\":\"application/json\",\"title\":\"this document\"},{\"href\":\"http://localhost:8080/api\",\"rel\":\"service-desc\",\"type\":\"application/vnd.oai.openapi+json;version=3.0\",\"title\":\"the API definition\"},{\"href\":\"http://localhost:8080/conformance\",\"rel\":\"conformance\",\"type\":\"application/json\",\"title\":\"OGC API conformance classes implemented by this server\"},{\"href\":\"http://localhost:8080/collections\",\"rel\":\"data\",\"type\":\"application/json\",\"title\":\"Information about the feature collections\"}]}");
+
+        Ok(())
+    }
 }
