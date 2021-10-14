@@ -108,6 +108,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .configure(bbox_map_server::register_endpoints)
+            .service(web::scope("/ogcapi").configure(bbox_feature_server::register_endpoints))
             .service(index)
             .service(favicon)
             .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))

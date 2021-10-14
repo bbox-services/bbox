@@ -561,6 +561,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "askama",
+ "bbox-feature-server",
  "bbox-map-server",
  "env_logger",
  "futures-util",

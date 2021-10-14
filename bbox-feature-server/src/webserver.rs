@@ -3,9 +3,28 @@ use crate::openapi;
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde_json::json;
 
-fn absurl(req: &HttpRequest, path: &str) -> String {
+fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
-    format!("{}://{}{}", conninfo.scheme(), conninfo.host(), path)
+    let pathbase = path.split('/').nth(1).unwrap_or("");
+    let reqbase = req
+        .path()
+        .split('/')
+        .nth(1)
+        .map(|p| {
+            if p == "" || p == pathbase {
+                "".to_string()
+            } else {
+                format!("/{}", p)
+            }
+        })
+        .unwrap_or("".to_string());
+    format!(
+        "{}://{}{}{}",
+        conninfo.scheme(),
+        conninfo.host(),
+        reqbase,
+        path
+    )
 }
 
 async fn index(req: HttpRequest) -> HttpResponse {
@@ -13,7 +32,7 @@ async fn index(req: HttpRequest) -> HttpResponse {
         title: Some("Buildings in Bonn".to_string()),
         description: Some("Access to data about buildings in the city of Bonn via a Web API that conforms to the OGC API Features specification".to_string()),
         links: vec![ApiLink {
-            href: absurl(&req, "/"),
+            href: relurl(&req, "/"),
             rel: Some("self".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("this document".to_string()),
@@ -21,7 +40,7 @@ async fn index(req: HttpRequest) -> HttpResponse {
             length: None
         },
         ApiLink {
-            href: absurl(&req, "/api"),
+            href: relurl(&req, "/api"),
             rel: Some("service-desc".to_string()),
             type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
             title: Some("the API definition".to_string()),
@@ -29,7 +48,7 @@ async fn index(req: HttpRequest) -> HttpResponse {
             length: None
         },
         ApiLink {
-            href: absurl(&req, "/conformance"),
+            href: relurl(&req, "/conformance"),
             rel: Some("conformance".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("OGC API conformance classes implemented by this server".to_string()),
@@ -37,7 +56,7 @@ async fn index(req: HttpRequest) -> HttpResponse {
             length: None
         },
         ApiLink {
-            href: absurl(&req, "/collections"),
+            href: relurl(&req, "/collections"),
             rel: Some("data".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("Information about the feature collections".to_string()),
@@ -52,7 +71,7 @@ async fn index(req: HttpRequest) -> HttpResponse {
 async fn api(req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok()
         .content_type("application/vnd.oai.openapi+json;version=3.0")
-        .body(openapi::OPEN_API_TEMPLATE.replace("https://data.example.org/", &absurl(&req, "/")))
+        .body(openapi::OPEN_API_TEMPLATE.replace("https://data.example.org/", &relurl(&req, "/")))
 }
 
 async fn conformance() -> HttpResponse {
@@ -85,7 +104,7 @@ async fn collections(req: HttpRequest) -> HttpResponse {
         crs: vec![],
         links: vec![
             ApiLink {
-                href: absurl(&req, "/collections/buildings/items"),
+                href: relurl(&req, "/collections/buildings/items"),
                 rel: Some("items".to_string()),
                 type_: Some("application/geo+json".to_string()),
                 title: Some("Buildings".to_string()),
@@ -112,7 +131,7 @@ async fn collections(req: HttpRequest) -> HttpResponse {
     };
     let collections = CoreCollections {
         links: vec![ApiLink {
-            href: absurl(&req, "/collections"),
+            href: relurl(&req, "/collections"),
             rel: Some("self".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("this document".to_string()),
@@ -144,7 +163,7 @@ async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String
             crs: vec![],
             links: vec![
                 ApiLink {
-                    href: absurl(&req, "/collections/buildings/items"),
+                    href: relurl(&req, "/collections/buildings/items"),
                     rel: Some("items".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("Buildings".to_string()),
@@ -191,7 +210,7 @@ async fn features(req: HttpRequest, web::Path(collection_id): web::Path<String>)
         let collection = CoreFeatures {
             type_: "FeatureCollection".to_string(),
             links: vec![ApiLink {
-                href: absurl(&req, "/collections/buildings/items"),
+                href: relurl(&req, "/collections/buildings/items"),
                 rel: Some("self".to_string()),
                 type_: Some("application/geo+json".to_string()),
                 title: Some("this document".to_string()),
@@ -218,7 +237,7 @@ async fn feature(
             type_: "Feature".to_string(),
             links: vec![
                 ApiLink {
-                    href: absurl(&req, "/collections/buildings/items/123"),
+                    href: relurl(&req, "/collections/buildings/items/123"),
                     rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("this document".to_string()),
@@ -226,7 +245,7 @@ async fn feature(
                     length: None,
                 },
                 ApiLink {
-                    href: absurl(&req, "/collections/buildings"),
+                    href: relurl(&req, "/collections/buildings"),
                     rel: Some("collection".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("the collection document".to_string()),

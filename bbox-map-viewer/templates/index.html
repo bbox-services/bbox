@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>async-fcgi</title>
+  <title>BBOX viewer</title>
 </head>
 <body>
   <h1>WMS catalog</h1>
@@ -23,5 +23,11 @@
   {% for link in links %}
     <li><a href="{{ link }}">{{ link|truncate(20) }}</a></li>
   {% endfor %}
+  </ul>
+  <h1>OGC API Features</h1>
+  <ul>
+    <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li>
+    <li><a href="https://editor.swagger.io/?url=http://localhost:8080/ogcapi/api">OpenAPI (editor.swagger.io)</a></li>
+  </ul>
   </ul>
 </body>
