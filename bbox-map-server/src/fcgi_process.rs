@@ -1,6 +1,6 @@
 //! FCGI process management
 //!
-//! ```
+//! ```md
 //! ┌────────────────────┐         ┌─────────────────┐
 //! │FcgiDispatcher      │         │FcgiProcessPool  │
 //! │ ┌────────────────┐ │ socket1 │ ┌─────────────┐ │
