@@ -10,7 +10,7 @@ fn main() {
     if env::var("RUST_LOG").is_err() {
         env::set_var(
             "RUST_LOG",
-            "bbox_ogcapi_features=debug,actix_server=info,actix_web=info",
+            "bbox_feature_server=debug,actix_server=info,actix_web=info",
         );
     }
     env_logger::init();

@@ -17,7 +17,7 @@ pub const OPEN_API_TEMPLATE: &str = r#"{
   "servers": [
     {
       "url": "https://data.example.org/",
-      "description": "t-rex server"
+      "description": "BBOX feature server"
     }
   ],
   "tags": [

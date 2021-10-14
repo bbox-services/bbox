@@ -1,5 +1,5 @@
 [package]
-name = "bbox-ogcapi-features"
+name = "bbox-feature-server"
 version = "0.1.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
