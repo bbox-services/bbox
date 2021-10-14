@@ -1,4 +1,3 @@
-mod db;
 mod ogcapi;
 mod openapi;
 #[cfg(test)]
@@ -8,9 +7,7 @@ extern crate serde_json;
 
 use crate::ogcapi::*;
 use actix_web::{middleware, web, App, HttpRequest, HttpResponse, HttpServer};
-use deadpool_postgres::{Client, Pool};
 use dotenv::dotenv;
-use tokio_postgres::NoTls;
 
 fn absurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -258,28 +255,12 @@ async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpRes
     }
 }
 
-pub async fn db_query(db_pool: web::Data<Pool>) -> HttpResponse {
-    let client: Client = db_pool.get().await.unwrap();
-
-    let mut geojson = String::new();
-    // TODO:
-    // - Wrap Fetures in FeatureCollection
-    // - Add ',' after each Feature
-    // - Create HttpResponse stream
-    db::db_query(&client, |s| geojson.push_str(s)).await;
-
-    HttpResponse::Ok()
-        .content_type("application/geo+json")
-        .body(geojson)
-}
-
 pub mod config {
     pub use ::config::ConfigError;
     use serde::Deserialize;
     #[derive(Deserialize)]
     pub struct Config {
         pub server_addr: String,
-        pub pg: deadpool_postgres::Config,
     }
     impl Config {
         pub fn from_env() -> Result<Self, ConfigError> {
@@ -298,13 +279,9 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let config = config::Config::from_env().expect("Config::from_env");
-    let pool = config.pg.create_pool(NoTls).expect("create_pool");
-    // Test connection
-    pool.get().await.expect("Connection failed");
 
     let server = HttpServer::new(move || {
         App::new()
-            .data(pool.clone())
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(web::resource("/").route(web::get().to(index)))
@@ -319,7 +296,6 @@ async fn main() -> std::io::Result<()> {
                 web::resource("/collections/{collectionId}/items/{featureId}")
                     .route(web::get().to(feature)),
             )
-            .service(web::resource("/db").route(web::get().to(db_query)))
     })
     .bind(config.server_addr.clone())?
     .run();

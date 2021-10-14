@@ -12,17 +12,10 @@ Features:
 
 ## Usage
 
-Create .env file:
-```
-SERVER_ADDR=127.0.0.1:8080
-PG.USER=t_rex
-PG.PASSWORD=t_rex
-PG.HOST=127.0.0.1
-PG.PORT=5439
-PG.DBNAME=t_rex_tests
-PG.POOL.MAX_SIZE=16
-```
+    cargo run
 
-Start test DB:
+    x-www-browser http://127.0.0.1:8080/
 
-    docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
+View API in Swagger editor:
+
+https://editor.swagger.io/?url=http://localhost:8080/api

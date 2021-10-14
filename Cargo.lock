@@ -696,7 +696,7 @@ dependencies = [
  "async-trait",
  "awc 2.0.3",
  "bufstream",
- "deadpool 0.8.2",
+ "deadpool",
  "env_logger 0.7.1",
  "fastcgi-client",
  "ignore",
@@ -742,14 +742,12 @@ dependencies = [
  "actix-web 2.0.0",
  "bytes 0.5.6",
  "config",
- "deadpool-postgres",
  "dotenv",
  "env_logger 0.9.0",
  "futures",
  "json",
  "serde",
  "serde_json",
- "tokio-postgres",
 ]
 
 [[package]]
@@ -954,28 +952,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-queue"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "774ba60a54c213d409d5353bda12d49cd68d14e45036a285234c8d6f91f92570"
-dependencies = [
- "cfg-if 0.1.10",
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
-]
-
-[[package]]
-name = "crossbeam-utils"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3c7c73a2d1e9fc0886a08b93e98eb643461230d5f1925e4036204d5f2e261a8"
-dependencies = [
- "autocfg",
- "cfg-if 0.1.10",
- "lazy_static",
-]
-
-[[package]]
 name = "crossbeam-utils"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -983,16 +959,6 @@ checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
 dependencies = [
  "cfg-if 1.0.0",
  "lazy_static",
-]
-
-[[package]]
-name = "crypto-mac"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58bcd97a54c7ca5ce2f6eb16f6bede5b0ab5f0055fedc17d2f0b4466e21671ca"
-dependencies = [
- "generic-array",
- "subtle",
 ]
 
 [[package]]
@@ -1027,20 +993,6 @@ dependencies = [
 
 [[package]]
 name = "deadpool"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4aaff9a7a1de9893f4004fa08527b31cb2ae4121c44e053cf53f29203c73bd23"
-dependencies = [
- "async-trait",
- "config",
- "crossbeam-queue",
- "num_cpus",
- "serde",
- "tokio 0.2.25",
-]
-
-[[package]]
-name = "deadpool"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef82259c587bceda08349f28ff00f69ae4c897898f254140af6021eb218e8232"
@@ -1048,22 +1000,6 @@ dependencies = [
  "async-trait",
  "num_cpus",
  "tokio 1.12.0",
-]
-
-[[package]]
-name = "deadpool-postgres"
-version = "0.5.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faad41e7f93dd682108c72aec029e5bc6238e7df64c9d84832525d4033d2e726"
-dependencies = [
- "async-trait",
- "config",
- "deadpool 0.5.2",
- "futures",
- "log",
- "serde",
- "tokio 0.2.25",
- "tokio-postgres",
 ]
 
 [[package]]
@@ -1196,12 +1132,6 @@ dependencies = [
  "syn 1.0.80",
  "synstructure",
 ]
-
-[[package]]
-name = "fallible-iterator"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
 
 [[package]]
 name = "fastcgi"
@@ -1502,16 +1432,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hmac"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deae6d9dbb35ec2c502d62b8f7b1c000a0822c3b0794ba36b3149c0a1c840dff"
-dependencies = [
- "crypto-mac",
- "digest",
-]
-
-[[package]]
 name = "hostname"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1577,7 +1497,7 @@ version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "713f1b139373f96a2e0ce3ac931cd01ee973c3c5dd7c40c0c2efe96ad2b6751d"
 dependencies = [
- "crossbeam-utils 0.8.5",
+ "crossbeam-utils",
  "globset",
  "lazy_static",
  "log",
@@ -1676,7 +1596,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2948a0ce43e2c2ef11d7edf6816508998d99e13badd1150be0914205df9388a"
 dependencies = [
  "bytes 0.5.6",
- "crossbeam-utils 0.8.5",
+ "crossbeam-utils",
  "curl",
  "curl-sys",
  "flume",
@@ -1822,18 +1742,6 @@ name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3e378b66a060d48947b590737b30a1be76706c8dd7b8ba0f2fe3989c68a853f"
-
-[[package]]
-name = "maybe-uninit"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
-
-[[package]]
-name = "md5"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
 
 [[package]]
 name = "memchr"
@@ -2136,24 +2044,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "phf"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3dfb61232e34fcb633f43d12c58f83c1df82962dcdfa565a4e866ffc17dafe12"
-dependencies = [
- "phf_shared",
-]
-
-[[package]]
-name = "phf_shared"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c00cf8b9eafe68dde5e9eaa2cef8ee84a9336a47d566ec55ca16589633b65af7"
-dependencies = [
- "siphasher",
-]
-
-[[package]]
 name = "pin-project"
 version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2228,35 +2118,6 @@ dependencies = [
  "log",
  "wepoll-ffi",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "postgres-protocol"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4888a0e36637ab38d76cace88c1476937d617ad015f07f6b669cec11beacc019"
-dependencies = [
- "base64 0.13.0",
- "byteorder",
- "bytes 0.5.6",
- "fallible-iterator",
- "hmac",
- "md5",
- "memchr",
- "rand 0.7.3",
- "sha2",
- "stringprep",
-]
-
-[[package]]
-name = "postgres-types"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfc08a7d94a80665de4a83942fa8db2fdeaf2f123fc0535e384dc4fff251efae"
-dependencies = [
- "bytes 0.5.6",
- "fallible-iterator",
- "postgres-protocol",
 ]
 
 [[package]]
@@ -2675,19 +2536,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
 
 [[package]]
-name = "sha2"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b69f9a4c9740d74c5baa3fd2e547f9525fa8088a8a958e0ca2409a514e33f5fa"
-dependencies = [
- "block-buffer",
- "cfg-if 1.0.0",
- "cpufeatures",
- "digest",
- "opaque-debug",
-]
-
-[[package]]
 name = "signal-hook"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2705,12 +2553,6 @@ checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "siphasher"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "533494a8f9b724d33625ab53c6c4800f7cc445895924a8ef649222dcb76e938b"
 
 [[package]]
 name = "slab"
@@ -2828,22 +2670,6 @@ name = "stdweb-internal-runtime"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213701ba3370744dcd1a12960caa4843b3d68b4d1c0a5d575e0d65b2ee9d16c0"
-
-[[package]]
-name = "stringprep"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ee348cb74b87454fff4b551cbf727025810a004f88aeacae7f85b87f4e9a1c1"
-dependencies = [
- "unicode-bidi",
- "unicode-normalization",
-]
-
-[[package]]
-name = "subtle"
-version = "2.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
@@ -3016,7 +2842,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6703a273949a90131b290be1fe7b039d0fc884aa1935860dfcbe056f28cd8092"
 dependencies = [
  "bytes 0.5.6",
- "fnv",
  "futures-core",
  "iovec",
  "lazy_static",
@@ -3038,28 +2863,6 @@ checksum = "c2c2416fdedca8443ae44b4527de1ea633af61d8f7169ffa6e72c5b53d24efcc"
 dependencies = [
  "autocfg",
  "pin-project-lite 0.2.7",
-]
-
-[[package]]
-name = "tokio-postgres"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55a2482c9fe4dd481723cf5c0616f34afc710e55dcda0944e12e7b3316117892"
-dependencies = [
- "async-trait",
- "byteorder",
- "bytes 0.5.6",
- "fallible-iterator",
- "futures",
- "log",
- "parking_lot",
- "percent-encoding",
- "phf",
- "pin-project-lite 0.1.12",
- "postgres-protocol",
- "postgres-types",
- "tokio 0.2.25",
- "tokio-util 0.3.1",
 ]
 
 [[package]]
