@@ -15,12 +15,14 @@
 //! ```
 
 use crate::wms_fcgi_backend::FcgiBackendType;
+use actix_web::web::Query;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
 use bufstream::BufStream;
 use fastcgi_client::Client;
 use log::{debug, error, info, warn};
 use rand::Rng;
+use serde::Deserialize;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
@@ -178,7 +180,11 @@ impl FcgiProcessPool {
             .collect();
         FcgiDispatcher {
             pools,
+            config: DispatchConfig {
+                mode: DispatchMode::WmsOptimized,
+            },
             pool_no: Mutex::new(0),
+            stats: Mutex::new(DispatchStats::new()),
         }
     }
 
@@ -271,10 +277,14 @@ pub type FcgiClientPool = deadpool::managed::Pool<FcgiClientHandler>;
 
 /// FCGI client dispatcher
 pub struct FcgiDispatcher {
-    // Client pool for each FCGI process
+    /// Client pool for each FCGI process
     pools: Vec<FcgiClientPool>,
-    // last selected pool
+    /// Dispatch configuration
+    config: DispatchConfig,
+    /// last selected pool (RoundRobin mode)
     pool_no: Mutex<usize>,
+    /// Statistics for WmsOptimized mode
+    stats: Mutex<DispatchStats>,
 }
 
 impl FcgiDispatcher {
@@ -286,9 +296,19 @@ impl FcgiDispatcher {
         *pool_no = (*pool_no + 1) % self.pools.len();
         *pool_no
     }
-    pub fn select(&self, _project: &str) -> &FcgiClientPool {
-        // let pool = &self.pools[self.select_rand()];
-        let pool = &self.pools[self.roundrobin()];
+    fn wms_optimized(&self, query_str: &str) -> usize {
+        let query =
+            Query::<WmsQuery>::from_query(&query_str.to_lowercase()).expect("Invalid query params");
+        dbg!(&query);
+        dbg!(&self.stats.lock().unwrap());
+        self.roundrobin()
+    }
+    pub fn select(&self, query_str: &str) -> &FcgiClientPool {
+        let pool = match self.config.mode {
+            DispatchMode::Rand => &self.pools[self.select_rand()],
+            DispatchMode::RoundRobin => &self.pools[self.roundrobin()],
+            DispatchMode::WmsOptimized => &self.pools[self.wms_optimized(query_str)],
+        };
         debug!("selected pool: {:?}", pool.status());
         pool
     }
@@ -300,5 +320,40 @@ impl FcgiDispatcher {
         // TODO: remove all clients with same socket path
         // Possible implementation:
         // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient
+    }
+}
+
+/// Extracted query params for optimized dispatching
+#[derive(Debug, Deserialize)]
+struct WmsQuery {
+    map: String,
+    service: Option<String>,
+    request: Option<String>,
+    layers: Option<String>,
+    width: Option<u32>,
+    height: Option<u32>,
+}
+
+#[allow(dead_code)]
+enum DispatchMode {
+    Rand,
+    RoundRobin,
+    WmsOptimized,
+}
+
+struct DispatchConfig {
+    mode: DispatchMode,
+    // map_pools: Vec<usize>,
+}
+
+#[derive(Debug)]
+struct DispatchStats {
+    // map -> Vec<pool_no>
+// map, reuqest, layers, size, request -> time
+}
+
+impl DispatchStats {
+    fn new() -> Self {
+        DispatchStats {}
     }
 }

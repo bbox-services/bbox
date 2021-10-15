@@ -17,8 +17,9 @@ async fn wms_fcgi(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut response = HttpResponse::Ok();
+    let fcgi_query = format!("map={}.{}&{}", project, suffix.as_str(), req.query_string());
     let mut fcgi_client = fcgi
-        .select(&project)
+        .select(&fcgi_query)
         .get()
         .await
         .expect("Couldn't get FCGI client");
@@ -28,13 +29,12 @@ async fn wms_fcgi(
             .set_attribute(Key::new("project").string(project.as_str()));
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
-        let query = format!("map={}.{}&{}", project, suffix.as_str(), req.query_string());
-        debug!("Forwarding query to FCGI: {}", &query);
+        debug!("Forwarding query to FCGI: {}", &fcgi_query);
         let mut params = fastcgi_client::Params::new()
             .set_request_method("GET")
             .set_request_uri(req.path())
             .set_server_name(host_port.get(0).unwrap_or(&""))
-            .set_query_string(&query);
+            .set_query_string(&fcgi_query);
         if let Some(port) = host_port.get(1) {
             params = params.set_server_port(port);
         }
