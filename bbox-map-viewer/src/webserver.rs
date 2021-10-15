@@ -101,13 +101,15 @@ pub async fn webserver() -> std::io::Result<()> {
         .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
         .unwrap_or(num_cpus::get());
 
-    bbox_map_server::init_service().await;
+    let (fcgi_clients, inventory) = bbox_map_server::init_service().await;
 
     HttpServer::new(move || {
         let app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(bbox_map_server::register_endpoints)
+            .configure(|mut cfg| {
+                bbox_map_server::register_endpoints(&mut cfg, &fcgi_clients, &inventory)
+            })
             .service(web::scope("/ogcapi").configure(bbox_feature_server::register_endpoints))
             .service(index)
             .service(favicon)

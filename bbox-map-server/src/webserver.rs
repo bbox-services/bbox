@@ -1,5 +1,5 @@
 use crate::fcgi_process::*;
-use crate::wms_fcgi_backend::*;
+use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use log::{debug, error, info, warn};
 use opentelemetry::api::{
@@ -8,7 +8,6 @@ use opentelemetry::api::{
 };
 use opentelemetry::global;
 use std::io::{BufRead, Cursor, Read};
-use std::sync::Once;
 use std::time::{Duration, SystemTime};
 
 async fn wms_fcgi(
@@ -97,42 +96,20 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-// FcgiDispatcher for each FCGI application
-static mut HANDLERS: Vec<web::Data<FcgiDispatcher>> = vec![];
-static INIT: Once = Once::new();
+pub fn register_endpoints(
+    cfg: &mut web::ServiceConfig,
+    fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
+    inventory: &Inventory,
+) {
+    cfg.data(inventory.clone());
 
-pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
-    let (process_pools, inventory) = detect_backends().unwrap();
-
-    cfg.data(inventory);
-
-    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
-        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
-        .unwrap_or(1);
-
-    // We need a shared FcgiDispatcher between web server threads,
-    // but register_endpoints is called for each thread and we can't
-    // pass shared configuration infos.
-    // Safety: See https://doc.rust-lang.org/std/sync/struct.Once.html
-    let handlers = unsafe {
-        INIT.call_once(|| {
-            HANDLERS = process_pools
-                .iter()
-                .map(|process_pool| {
-                    web::Data::new(process_pool.client_dispatcher(fcgi_clnt_pool_size))
-                })
-                .collect();
-        });
-        &HANDLERS
-    };
-
-    for (no, process_pool) in process_pools.iter().enumerate() {
-        for suffix in &process_pool.suffixes {
+    for (fcgi_client, suffixes) in fcgi_clients {
+        for suffix in suffixes {
             let route = format!("/wms/{}", &suffix);
             info!("Registering WMS endpoint {}", &route);
             cfg.service(
                 web::resource(route + "/{project:.+}") // :[^{}]+
-                    .app_data(handlers[no].clone())
+                    .app_data(fcgi_client.clone())
                     .data(suffix.clone())
                     .route(
                         web::route()

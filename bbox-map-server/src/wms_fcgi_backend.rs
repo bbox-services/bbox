@@ -1,6 +1,7 @@
-use crate::fcgi_process::FcgiProcessPool;
+use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::file_search;
 use crate::inventory::*;
+use actix_web::web;
 use log::info;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -200,8 +201,22 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     Ok((pools, inventory))
 }
 
-pub async fn init_service() {
-    let (process_pools, _inventory) = detect_backends().unwrap();
+pub async fn init_service() -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
+    let (process_pools, inventory) = detect_backends().unwrap();
+
+    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
+        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
+        .unwrap_or(1);
+
+    let fcgi_clients = process_pools
+        .iter()
+        .map(|process_pool| {
+            (
+                web::Data::new(process_pool.client_dispatcher(fcgi_clnt_pool_size)),
+                process_pool.suffixes.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
 
     for mut process_pool in process_pools {
         if process_pool.spawn_processes().await.is_ok() {
@@ -210,4 +225,6 @@ pub async fn init_service() {
             });
         }
     }
+
+    (fcgi_clients, inventory)
 }

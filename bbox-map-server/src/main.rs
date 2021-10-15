@@ -40,7 +40,7 @@ async fn webserver() -> std::io::Result<()> {
     let (tracer, _uninstall) = init_tracer().expect("Failed to initialise tracer.");
     let prometheus = PrometheusMetrics::new("wmsapi", Some("/metrics"), None);
 
-    wms_fcgi_backend::init_service().await;
+    let (fcgi_clients, inventory) = wms_fcgi_backend::init_service().await;
 
     let workers = std::env::var("HTTP_WORKER_THREADS")
         .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
@@ -58,7 +58,7 @@ async fn webserver() -> std::io::Result<()> {
             })
             .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
-            .configure(webserver::register_endpoints)
+            .configure(|mut cfg| webserver::register_endpoints(&mut cfg, &fcgi_clients, &inventory))
     })
     .bind("0.0.0.0:8080")?
     .workers(workers)
