@@ -87,7 +87,7 @@ async fn conformance() -> HttpResponse {
 
 async fn collections(req: HttpRequest) -> HttpResponse {
     let collection = CoreCollection {
-        id: "building".to_string(),
+        id: "buildings".to_string(),
         title: Some("Buildings".to_string()),
         description: Some("Buildings in the city of Bonn.".to_string()),
         extent: Some(CoreExtent {
@@ -144,9 +144,9 @@ async fn collections(req: HttpRequest) -> HttpResponse {
 }
 
 async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
-    if collection_id == "building" {
+    if collection_id == "buildings" {
         let collection = CoreCollection {
-            id: "building".to_string(),
+            id: "buildings".to_string(),
             title: Some("Buildings".to_string()),
             description: Some("Buildings in the city of Bonn.".to_string()),
             extent: Some(CoreExtent {
@@ -195,7 +195,7 @@ async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String
 }
 
 async fn features(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
-    if collection_id == "building" {
+    if collection_id == "buildings" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
             id: Some("123".to_string()),
@@ -232,7 +232,7 @@ async fn feature(
     req: HttpRequest,
     web::Path((collection_id, feature_id)): web::Path<(String, String)>,
 ) -> HttpResponse {
-    if collection_id == "building" && feature_id == "123" {
+    if collection_id == "buildings" && feature_id == "123" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
             links: vec![
