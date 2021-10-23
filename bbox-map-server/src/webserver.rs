@@ -11,14 +11,14 @@ use std::io::{BufRead, Cursor, Read};
 use std::time::{Duration, SystemTime};
 
 async fn wms_fcgi(
-    fcgi: web::Data<FcgiDispatcher>,
+    fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
     project: web::Path<String>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut response = HttpResponse::Ok();
     let fcgi_query = format!("map={}.{}&{}", project, suffix.as_str(), req.query_string());
-    let mut fcgi_client = fcgi
+    let mut fcgi_client = fcgi_dispatcher
         .select(&fcgi_query)
         .get()
         .await
@@ -48,7 +48,7 @@ async fn wms_fcgi(
         if let Err(ref e) = output {
             warn!("FCGI error: {}", e);
             // Remove probably broken FCGI client from pool
-            fcgi.remove(fcgi_client);
+            fcgi_dispatcher.remove(fcgi_client);
             response = HttpResponse::InternalServerError();
             return Cursor::new(Vec::new());
         }

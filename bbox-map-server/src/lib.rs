@@ -1,3 +1,4 @@
+mod dispatcher;
 mod fcgi_process;
 mod file_search;
 pub mod inventory;

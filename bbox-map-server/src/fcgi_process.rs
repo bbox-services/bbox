@@ -14,19 +14,16 @@
 //! └────────────────────┘         └─────────────────┘
 //! ```
 
+use crate::dispatcher::{DispatchConfig, Dispatcher, RequestDispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
-use actix_web::web::Query;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
 use bufstream::BufStream;
 use fastcgi_client::Client;
 use log::{debug, error, info, warn};
-use rand::Rng;
-use serde::Deserialize;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use std::time::Duration;
 
 // --- FCGI Process ---
@@ -166,26 +163,21 @@ impl FcgiProcessPool {
     /// Create client pool for each process and return dispatcher
     pub fn client_dispatcher(&self, max_pool_size: usize) -> FcgiDispatcher {
         debug!("Creating {} FcgiDispatcher", self.process_name);
-        let config = deadpool::managed::PoolConfig::new(max_pool_size);
-        // config.timeouts.create = Some(Duration::from_millis(500));
-        // config.timeouts.wait = Some(Duration::from_secs(120));
-        // config.timeouts.recycle = Some(Duration::from_millis(500));
-        // config.runtime = deadpool::Runtime::Tokio1;
+        let config = DispatchConfig::new();
+        let pool_config = deadpool::managed::PoolConfig::new(max_pool_size);
+        // pool_config.timeouts.create = Some(Duration::from_millis(500));
+        // pool_config.timeouts.wait = Some(Duration::from_secs(120));
+        // pool_config.timeouts.recycle = Some(Duration::from_millis(500));
+        // pool_config.runtime = deadpool::Runtime::Tokio1;
         let pools = (0..self.num_processes)
             .map(|no| {
                 let socket_path = Self::socket_path(&self.process_name, no);
                 let handler = FcgiClientHandler { socket_path };
-                FcgiClientPool::from_config(handler, config.clone())
+                FcgiClientPool::from_config(handler, pool_config.clone())
             })
             .collect();
-        FcgiDispatcher {
-            pools,
-            config: DispatchConfig {
-                mode: DispatchMode::WmsOptimized,
-            },
-            pool_no: Mutex::new(0),
-            stats: Mutex::new(DispatchStats::new()),
-        }
+        let dispatcher = Dispatcher::new(&config, &pools);
+        FcgiDispatcher { pools, dispatcher }
     }
 
     async fn check_process(&mut self, no: usize) -> std::io::Result<()> {
@@ -279,36 +271,13 @@ pub type FcgiClientPool = deadpool::managed::Pool<FcgiClientHandler>;
 pub struct FcgiDispatcher {
     /// Client pool for each FCGI process
     pools: Vec<FcgiClientPool>,
-    /// Dispatch configuration
-    config: DispatchConfig,
-    /// last selected pool (RoundRobin mode)
-    pool_no: Mutex<usize>,
-    /// Statistics for WmsOptimized mode
-    stats: Mutex<DispatchStats>,
+    /// Mode-dependent dispatcher
+    dispatcher: Dispatcher,
 }
 
 impl FcgiDispatcher {
-    fn select_rand(&self) -> usize {
-        rand::thread_rng().gen_range(0, self.pools.len())
-    }
-    fn roundrobin(&self) -> usize {
-        let mut pool_no = self.pool_no.lock().unwrap();
-        *pool_no = (*pool_no + 1) % self.pools.len();
-        *pool_no
-    }
-    fn wms_optimized(&self, query_str: &str) -> usize {
-        let query =
-            Query::<WmsQuery>::from_query(&query_str.to_lowercase()).expect("Invalid query params");
-        dbg!(&query);
-        dbg!(&self.stats.lock().unwrap());
-        self.roundrobin()
-    }
     pub fn select(&self, query_str: &str) -> &FcgiClientPool {
-        let pool = match self.config.mode {
-            DispatchMode::Rand => &self.pools[self.select_rand()],
-            DispatchMode::RoundRobin => &self.pools[self.roundrobin()],
-            DispatchMode::WmsOptimized => &self.pools[self.wms_optimized(query_str)],
-        };
+        let pool = &self.pools[self.dispatcher.select(query_str)];
         debug!("selected pool: {:?}", pool.status());
         pool
     }
@@ -320,40 +289,5 @@ impl FcgiDispatcher {
         // TODO: remove all clients with same socket path
         // Possible implementation:
         // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient
-    }
-}
-
-/// Extracted query params for optimized dispatching
-#[derive(Debug, Deserialize)]
-struct WmsQuery {
-    map: String,
-    service: Option<String>,
-    request: Option<String>,
-    layers: Option<String>,
-    width: Option<u32>,
-    height: Option<u32>,
-}
-
-#[allow(dead_code)]
-enum DispatchMode {
-    Rand,
-    RoundRobin,
-    WmsOptimized,
-}
-
-struct DispatchConfig {
-    mode: DispatchMode,
-    // map_pools: Vec<usize>,
-}
-
-#[derive(Debug)]
-struct DispatchStats {
-    // map -> Vec<pool_no>
-// map, reuqest, layers, size, request -> time
-}
-
-impl DispatchStats {
-    fn new() -> Self {
-        DispatchStats {}
     }
 }
