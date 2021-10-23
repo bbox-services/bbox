@@ -14,7 +14,7 @@
 //! └────────────────────┘         └─────────────────┘
 //! ```
 
-use crate::dispatcher::{DispatchConfig, Dispatcher, RequestDispatcher};
+use crate::dispatcher::{DispatchConfig, Dispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;

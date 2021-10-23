@@ -1,4 +1,5 @@
 use crate::fcgi_process::FcgiClientPool;
+use std::sync::Mutex;
 
 mod rand;
 mod round_robin;
@@ -25,32 +26,34 @@ impl DispatchConfig {
 
 pub trait RequestDispatcher {
     fn new(config: &DispatchConfig, pools: &Vec<FcgiClientPool>) -> Self;
-    fn select(&self, query_str: &str) -> usize;
+    fn select(&mut self, query_str: &str) -> usize;
 }
 
 pub enum Dispatcher {
-    Rand(rand::Dispatcher),
-    RoundRobin(round_robin::Dispatcher),
-    WmsOptimized(wms_optimized::Dispatcher),
+    Rand(Mutex<rand::Dispatcher>),
+    RoundRobin(Mutex<round_robin::Dispatcher>),
+    WmsOptimized(Mutex<wms_optimized::Dispatcher>),
 }
 
-impl RequestDispatcher for Dispatcher {
-    fn new(config: &DispatchConfig, pools: &Vec<FcgiClientPool>) -> Self {
+impl Dispatcher {
+    pub fn new(config: &DispatchConfig, pools: &Vec<FcgiClientPool>) -> Self {
         match config.mode {
-            DispatchMode::Rand => Dispatcher::Rand(rand::Dispatcher::new(config, pools)),
+            DispatchMode::Rand => {
+                Dispatcher::Rand(Mutex::new(rand::Dispatcher::new(config, pools)))
+            }
             DispatchMode::RoundRobin => {
-                Dispatcher::RoundRobin(round_robin::Dispatcher::new(config, pools))
+                Dispatcher::RoundRobin(Mutex::new(round_robin::Dispatcher::new(config, pools)))
             }
             DispatchMode::WmsOptimized => {
-                Dispatcher::WmsOptimized(wms_optimized::Dispatcher::new(config, pools))
+                Dispatcher::WmsOptimized(Mutex::new(wms_optimized::Dispatcher::new(config, pools)))
             }
         }
     }
-    fn select(&self, query_str: &str) -> usize {
+    pub fn select(&self, query_str: &str) -> usize {
         match self {
-            Dispatcher::Rand(dispatcher) => dispatcher.select(query_str),
-            Dispatcher::RoundRobin(dispatcher) => dispatcher.select(query_str),
-            Dispatcher::WmsOptimized(dispatcher) => dispatcher.select(query_str),
+            Dispatcher::Rand(dispatcher) => dispatcher.lock().unwrap().select(query_str),
+            Dispatcher::RoundRobin(dispatcher) => dispatcher.lock().unwrap().select(query_str),
+            Dispatcher::WmsOptimized(dispatcher) => dispatcher.lock().unwrap().select(query_str),
         }
     }
 }
