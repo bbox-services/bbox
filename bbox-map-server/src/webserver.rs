@@ -14,10 +14,17 @@ async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
     project: web::Path<String>,
+    body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let mut response = HttpResponse::Ok();
-    let fcgi_query = format!("map={}.{}&{}", project, suffix.as_str(), req.query_string());
+    let fcgi_query = format!(
+        "map={}.{}&{}{}",
+        project,
+        suffix.as_str(),
+        req.query_string(),
+        &body
+    );
     let mut fcgi_client = fcgi_dispatcher
         .select(&fcgi_query)
         .get()
@@ -31,7 +38,7 @@ async fn wms_fcgi(
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
         debug!("Forwarding query to FCGI: {}", &fcgi_query);
         let mut params = fastcgi_client::Params::new()
-            .set_request_method("GET")
+            .set_request_method(req.method().as_str())
             .set_request_uri(req.path())
             .set_server_name(host_port.get(0).unwrap_or(&""))
             .set_query_string(&fcgi_query);
