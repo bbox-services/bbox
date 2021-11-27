@@ -544,9 +544,7 @@ dependencies = [
 name = "bbox-map-server"
 version = "0.1.0"
 dependencies = [
- "actix-service",
  "actix-web",
- "actix-web-prom",
  "async-process",
  "async-trait",
  "awc",
@@ -558,7 +556,6 @@ dependencies = [
  "log",
  "num_cpus",
  "opentelemetry 0.9.1",
- "opentelemetry-jaeger 0.8.0",
  "rand 0.7.3",
  "serde",
  "serde-xml-rs",
@@ -587,6 +584,23 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio 0.2.25",
+]
+
+[[package]]
+name = "bbox-server"
+version = "0.1.0"
+dependencies = [
+ "actix-service",
+ "actix-web",
+ "actix-web-prom",
+ "bbox-common",
+ "bbox-feature-server",
+ "bbox-map-server",
+ "bbox-map-viewer",
+ "num_cpus",
+ "opentelemetry 0.9.1",
+ "opentelemetry-jaeger 0.8.0",
+ "serde",
 ]
 
 [[package]]

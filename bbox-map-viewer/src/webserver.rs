@@ -1,8 +1,7 @@
 use crate::qwc2_config::*;
 use crate::static_files::EmbedFile;
-use actix_web::{get, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use askama::Template;
-use bbox_map_server;
 use bbox_map_server::inventory::{Inventory, WmsService};
 use rust_embed::RustEmbed;
 use std::path::PathBuf;
@@ -14,7 +13,6 @@ struct IndexTemplate<'a> {
     links: Vec<&'a str>,
 }
 
-#[get("/")]
 async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
     let s = IndexTemplate {
         inventory: &inventory,
@@ -95,32 +93,11 @@ async fn themes_json(
     ThemesJson::from_capabilities(caps, default_theme)
 }
 
-#[actix_web::main]
-pub async fn webserver() -> std::io::Result<()> {
-    let workers = std::env::var("HTTP_WORKER_THREADS")
-        .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
-        .unwrap_or(num_cpus::get());
-
-    let (fcgi_clients, inventory) = bbox_map_server::init_service().await;
-
-    HttpServer::new(move || {
-        let app = App::new()
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
-            .configure(|mut cfg| {
-                bbox_map_server::register_endpoints(&mut cfg, &fcgi_clients, &inventory)
-            })
-            .service(web::scope("/ogcapi").configure(bbox_feature_server::register_endpoints))
-            .service(index)
-            .service(favicon)
-            .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
-            .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
-            .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
-            .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)));
-        app
-    })
-    .bind("0.0.0.0:8080")?
-    .workers(workers)
-    .run()
-    .await
+pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::resource("/").route(web::get().to(index)))
+        .service(favicon)
+        .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
+        .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
+        .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
+        .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)));
 }

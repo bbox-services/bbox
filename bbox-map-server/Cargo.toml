@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 actix-web = "3"
-actix-service = "1"
 async-process = "1.0.0"
 fastcgi-client = { version = "0.5.0", default-features = false }
 bufstream = "0.1.4"
@@ -16,11 +15,9 @@ deadpool = { version = "0.8.2", default-features = false, features = ["managed",
 async-trait = "0.1.40"
 tokio = "0.2.22"
 opentelemetry = { version = "0.9", default-features = false, features = ["trace"] }
-opentelemetry-jaeger = { version = "0.8.0", features = ["collector_client"] }
 rand = "0.7.3"
 ignore = "0.4"
 num_cpus = "1.0"
-actix-web-prom = "0.5.0"
 serde = "1.0.116"
 serde_json = "1.0.57"
 serde-xml-rs = "0.4.0"

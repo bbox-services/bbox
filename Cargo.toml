@@ -1,3 +1,3 @@
 [workspace]
-members = ["bbox-common", "bbox-map-server", "bbox-map-server/mock-fcgi-wms", "bbox-map-viewer", "bbox-feature-server"]
-default-members = ["bbox-map-server"]
+members = ["bbox-common", "bbox-server", "bbox-map-server", "bbox-map-server/mock-fcgi-wms", "bbox-map-viewer", "bbox-feature-server"]
+default-members = ["bbox-server"]
