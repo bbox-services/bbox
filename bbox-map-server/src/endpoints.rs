@@ -103,7 +103,7 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-pub fn register_endpoints(
+pub fn register(
     cfg: &mut web::ServiceConfig,
     fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
     inventory: &Inventory,

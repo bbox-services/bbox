@@ -1,6 +1,6 @@
+mod endpoints;
 mod ogcapi;
 mod openapi;
-mod webserver;
 
 use actix_web::{middleware, App, HttpServer};
 
@@ -10,7 +10,7 @@ pub async fn webserver() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(webserver::register_endpoints)
+            .configure(endpoints::register)
     })
     .bind("0.0.0.0:8080")?
     .run()

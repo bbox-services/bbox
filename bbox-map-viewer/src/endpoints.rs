@@ -93,7 +93,7 @@ async fn themes_json(
     ThemesJson::from_capabilities(caps, default_theme)
 }
 
-pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
+pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
         .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))

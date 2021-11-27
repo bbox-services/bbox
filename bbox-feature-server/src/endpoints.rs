@@ -267,7 +267,7 @@ async fn feature(
     }
 }
 
-pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
+pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(web::resource("/api").route(web::get().to(api)))
         .service(web::resource("/conformance").route(web::get().to(conformance)))

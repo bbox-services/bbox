@@ -50,10 +50,10 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
             .configure(|mut cfg| {
-                bbox_map_server::register_endpoints(&mut cfg, &fcgi_clients, &inventory)
+                bbox_map_server::endpoints::register(&mut cfg, &fcgi_clients, &inventory)
             })
-            .service(web::scope("/ogcapi").configure(bbox_feature_server::register_endpoints))
-            .configure(bbox_map_viewer::register_endpoints)
+            .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register))
+            .configure(bbox_map_viewer::endpoints::register)
     })
     .bind(web_config.server_addr.clone())?
     .workers(workers)

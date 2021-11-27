@@ -1,8 +1,8 @@
 mod dispatcher;
+mod endpoints;
 mod fcgi_process;
 mod file_search;
-pub mod inventory;
-mod webserver;
+mod inventory;
 mod wms_capabilities;
 mod wms_fcgi_backend;
 
@@ -16,7 +16,7 @@ pub async fn webserver() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|mut cfg| webserver::register_endpoints(&mut cfg, &fcgi_clients, &inventory))
+            .configure(|mut cfg| endpoints::register(&mut cfg, &fcgi_clients, &inventory))
     })
     .bind("0.0.0.0:8080")?
     .run()
