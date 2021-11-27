@@ -5,11 +5,11 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [dependencies]
+bbox-common = { path = "../bbox-common" }
 bbox-map-server = { path = "../bbox-map-server" }
 bbox-feature-server = { path = "../bbox-feature-server" }
 actix-web = "3"
 log = "0.4"
-env_logger = "0.7"
 tokio = "0.2.22"
 askama = "0.9"
 rand = "0.7.3"

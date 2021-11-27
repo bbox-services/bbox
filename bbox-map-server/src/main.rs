@@ -14,17 +14,9 @@ use opentelemetry::api::{
     Key,
 };
 use opentelemetry::sdk::trace as sdktrace;
-use std::env;
 
 fn main() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var(
-            "RUST_LOG",
-            "bbox_map_server=debug,actix_server=info,actix_web=info",
-        );
-    }
-    env_logger::init();
-
+    bbox_common::logger::init();
     webserver().unwrap();
 }
 

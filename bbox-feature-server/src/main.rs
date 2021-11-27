@@ -3,42 +3,24 @@ mod openapi;
 mod webserver;
 
 use actix_web::{middleware, App, HttpServer};
-use dotenv::dotenv;
-use std::env;
+use serde::Deserialize;
 
 fn main() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var(
-            "RUST_LOG",
-            "bbox_feature_server=debug,actix_server=info,actix_web=info",
-        );
-    }
-    env_logger::init();
-
+    bbox_common::logger::init();
     webserver().unwrap();
 }
 
-pub mod config {
-    pub use ::config::ConfigError;
-    use serde::Deserialize;
-    #[derive(Deserialize)]
-    pub struct Config {
-        pub server_addr: String,
-    }
-    impl Config {
-        pub fn from_env() -> Result<Self, ConfigError> {
-            let mut cfg = ::config::Config::new();
-            cfg.merge(::config::Environment::new()).unwrap();
-            cfg.try_into()
-        }
-    }
+#[derive(Deserialize)]
+struct WebserverConfig {
+    server_addr: String,
 }
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    dotenv().ok();
-
-    let config = config::Config::from_env().expect("Config::from_env");
+    let config = bbox_common::config::app_config();
+    let web_config: WebserverConfig = config
+        .extract_inner("webserver")
+        .expect("webserver config invalid");
 
     HttpServer::new(move || {
         App::new()
@@ -46,7 +28,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .configure(webserver::register_endpoints)
     })
-    .bind(config.server_addr.clone())?
+    .bind(web_config.server_addr.clone())?
     .run()
     .await
 }
