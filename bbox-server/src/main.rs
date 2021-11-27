@@ -54,6 +54,7 @@ async fn webserver() -> std::io::Result<()> {
             })
             .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register))
             .configure(bbox_map_viewer::endpoints::register)
+            .configure(bbox_file_server::endpoints::register)
     })
     .bind(web_config.server_addr.clone())?
     .workers(workers)

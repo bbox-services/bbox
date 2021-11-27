@@ -18,7 +18,7 @@ pub async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .configure(|mut cfg| endpoints::register(&mut cfg, &fcgi_clients, &inventory))
     })
-    .bind("0.0.0.0:8080")?
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }
