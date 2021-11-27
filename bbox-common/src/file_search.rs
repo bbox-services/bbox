@@ -9,7 +9,7 @@ const SAME_FS_SUPPORTED: bool = true;
 const SAME_FS_SUPPORTED: bool = false;
 
 /// Find files with given pattern ignoring hidden directories or similar
-pub fn search(basedir: &Path, pattern: &str) -> Vec<PathBuf> {
+pub fn search<P: AsRef<Path>>(basedir: P, pattern: &str) -> Vec<PathBuf> {
     let mut builder = TypesBuilder::new();
     builder.add("files", pattern).expect("Invalid file pattern");
     let types = builder

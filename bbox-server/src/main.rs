@@ -36,6 +36,7 @@ async fn webserver() -> std::io::Result<()> {
         .unwrap_or(num_cpus::get());
 
     let (fcgi_clients, inventory) = bbox_map_server::init_service().await;
+    let plugins_index = bbox_file_server::endpoints::init_service();
 
     HttpServer::new(move || {
         let tracer = tracer.clone();
@@ -54,7 +55,7 @@ async fn webserver() -> std::io::Result<()> {
             })
             .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register))
             .configure(bbox_map_viewer::endpoints::register)
-            .configure(bbox_file_server::endpoints::register)
+            .configure(|mut cfg| bbox_file_server::endpoints::register(&mut cfg, &plugins_index))
     })
     .bind(web_config.server_addr.clone())?
     .workers(workers)

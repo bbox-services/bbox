@@ -1,7 +1,6 @@
 mod dispatcher;
 mod endpoints;
 mod fcgi_process;
-mod file_search;
 mod inventory;
 mod wms_capabilities;
 mod wms_fcgi_backend;

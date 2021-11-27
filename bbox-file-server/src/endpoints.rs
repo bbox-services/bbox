@@ -1,33 +1,110 @@
-use actix_files::Files;
-use actix_web::web;
+use crate::qgis_plugins::*;
+use actix_files::{Files, NamedFile};
+use actix_web::{web, HttpRequest, Result};
+use bbox_common::app_dir;
 use log::{info, warn};
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use tempfile::tempfile;
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct WebserverStaticCfg {
     #[serde(rename = "static", default)]
     pub static_: Vec<StaticDirCfg>,
+    #[serde(default)]
+    pub repo: Vec<QgisPluginRepoCfg>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct StaticDirCfg {
     pub path: String,
     pub dir: String,
 }
 
-pub fn register(cfg: &mut web::ServiceConfig) {
+type PluginIndex = HashMap<String, Vec<PathBuf>>;
+
+fn req_baseurl(req: &HttpRequest) -> String {
+    let conninfo = req.connection_info();
+    format!("{}://{}", conninfo.scheme(), conninfo.host())
+}
+
+async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> Result<NamedFile> {
+    // http://localhost:8080/qgis/plugins.xml -> http://localhost:8080/plugins/qgis/
+    let url = format!(
+        "{}/plugins{}",
+        req_baseurl(&req),
+        Path::new(req.path())
+            .parent()
+            .expect("invalid req.path")
+            .to_str()
+            .expect("invalid req.path")
+    );
+    let zips = plugins_index
+        .get(req.path())
+        .expect("zip file list missing");
+    let plugins = plugin_metadata(zips);
+    let xml = render_plugin_xml(&plugins, &url);
+    let mut file = tempfile()?;
+    file.write_all(xml.as_bytes())?;
+    Ok(NamedFile::from_file(file, "plugin.xml")?)
+}
+
+pub fn init_service() -> PluginIndex {
+    let config = bbox_common::config::app_config();
+    let static_cfg: WebserverStaticCfg = config
+        .extract_inner("webserver")
+        .expect("webserver config invalid");
+
+    let mut plugins_index = PluginIndex::new();
+    for repo in &static_cfg.repo {
+        let dir = app_dir(&repo.dir);
+        if Path::new(&dir).is_dir() {
+            info!("Serving QGIS plugin repository from directory '{}'", &dir);
+            let plugins = plugin_files(&dir);
+            plugins_index.insert(format!("/{}/plugins.xml", repo.path), plugins);
+        } else {
+            warn!("QGIS plugin repository file directory '{}' not found", &dir);
+        }
+    }
+    plugins_index
+}
+
+pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
     let config = bbox_common::config::app_config();
     let static_cfg: WebserverStaticCfg = config
         .extract_inner("webserver")
         .expect("webserver config invalid");
 
     for static_dir in &static_cfg.static_ {
-        let dir = &static_dir.dir;
-        if std::path::Path::new(dir).is_dir() {
-            info!("Serving static files from directory '{}'", dir);
-            cfg.service(Files::new(&static_dir.path, dir));
+        let dir = app_dir(&static_dir.dir);
+        if Path::new(&dir).is_dir() {
+            info!("Serving static files from directory '{}'", &dir);
+            cfg.service(Files::new(&static_dir.path, &dir));
         } else {
-            warn!("Static file directory '{}' not found", dir);
+            warn!("Static file directory '{}' not found", &dir);
+        }
+    }
+
+    cfg.data(plugins_index.clone());
+
+    for repo in &static_cfg.repo {
+        let dir = app_dir(&repo.dir);
+        if Path::new(&dir).is_dir() {
+            // info!("Serving QGIS plugin repository from directory '{}'", &dir);
+            cfg.service(Files::new(
+                "/qgis/static",
+                app_dir("bbox-file-server/src/static"),
+            ))
+            .route(
+                &format!("/{}/plugins.xml", repo.path),
+                web::get().to(plugin_xml),
+            )
+            // TODO: same prefix not possible?
+            .service(Files::new(&format!("/plugins/{}", repo.path), &dir));
+        } else {
+            // warn!("QGIS plugin repository file directory '{}' not found", &dir);
         }
     }
 }

@@ -1,7 +1,7 @@
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
-use crate::file_search;
 use crate::inventory::*;
 use actix_web::web;
+use bbox_common::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -21,8 +21,7 @@ pub struct QgisFcgiBackend {
 
 impl QgisFcgiBackend {
     fn new() -> Self {
-        let dir = env::var("CARGO_MANIFEST_DIR").unwrap_or(".".to_string()); // TODO: determine runtime install dir
-        let plugindir = format!("{}/qgis/plugins", dir);
+        let plugindir = app_dir("bbox-map-server/qgis/plugins");
         QgisFcgiBackend { plugindir }
     }
 }

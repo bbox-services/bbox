@@ -4,3 +4,8 @@ server_addr="127.0.0.1:8080"
 [[webserver.static]]
 dir = "data"
 path = "data"
+
+[[webserver.repo]]
+# ./plugins/*.zip -> http://localhost:8080/qgis/plugins.xml
+dir = "plugins"
+path = "qgis"

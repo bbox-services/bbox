@@ -1,0 +1,20 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<?xml-stylesheet type='text/xsl' href='/qgis/static/plugins.xsl' ?>
+<plugins>
+{% for plugin in plugins %}
+  <pyqgis_plugin name='{{ plugin.name }}' version='{{ plugin.version }}'>
+    <description>{{ plugin.description }}</description>
+    <version>{{ plugin.version }}</version>
+    <qgis_minimum_version>{{ plugin.qgis_minimum_version }}</qgis_minimum_version>
+    <qgis_maximum_version>{{ plugin.qgis_maximum_version }}</qgis_maximum_version>
+    {% if plugin.homepage %}<homepage>{{ plugin.homepage | safe }}</homepage>{% endif %}
+    <file_name>{{ plugin.file_name }}</file_name>
+    <author_name>{{ plugin.author }}</author_name>
+    <download_url>{{url | safe}}/{{ plugin.file_name }}</download_url>
+    <uploaded_by>BBOX</uploaded_by>
+    <create_date>1970-01-01</create_date>
+    <update_date>1970-01-01</update_date>
+    <experimental>{{ plugin.experimental | default(False) }}</experimental>
+  </pyqgis_plugin>
+{% endfor %}
+</plugins>
