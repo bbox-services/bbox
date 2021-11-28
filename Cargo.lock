@@ -609,16 +609,14 @@ dependencies = [
  "bbox-map-server",
  "futures-util",
  "fxhash",
- "lazy_static",
  "log",
  "mime",
  "mime_guess",
- "num_cpus",
+ "once_cell",
  "rand 0.7.3",
  "rust-embed",
  "serde",
  "serde_json",
- "tokio 0.2.25",
 ]
 
 [[package]]

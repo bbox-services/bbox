@@ -1,7 +1,7 @@
 use bbox_map_server::inventory;
 use bbox_map_server::wms_capabilities as ogc;
-use lazy_static::lazy_static;
 use log::warn;
+use once_cell::sync::Lazy;
 use serde::Serialize;
 
 /// QWC2 map theme configuration
@@ -387,8 +387,8 @@ fn parse_layer_tree(ogc_layers: &Vec<ogc::Layer>) -> Vec<Layer> {
     layers
 }
 
-lazy_static! {
-    static ref THEMES_JSON: ThemesJson = ThemesJson {
+static THEMES_JSON: Lazy<ThemesJson> = Lazy::new(|| {
+    ThemesJson {
     themes: Themes {
         title: "root".to_string(),
         subdirs: vec![],
@@ -822,9 +822,9 @@ lazy_static! {
             },
         ],
         default_wms_version: "1.3.0".to_string(),
-    },
-};
+    }
 }
+});
 
 #[cfg(test)]
 mod test {
