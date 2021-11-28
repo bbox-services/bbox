@@ -1,31 +1,45 @@
 use crate::qwc2_config::*;
 use crate::static_files::EmbedFile;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
-use askama::Template;
+use bbox_common::app_dir;
 use bbox_map_server::inventory::{Inventory, WmsService};
+use minijinja::{context, Environment, Source, State};
 use rust_embed::RustEmbed;
 use std::path::PathBuf;
 
-#[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate<'a> {
-    inventory: &'a Inventory,
-    links: Vec<&'a str>,
+fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, minijinja::Error> {
+    let mut s = value.clone();
+    s.truncate(new_len);
+    Ok(s)
+}
+
+fn template_env() -> Environment<'static> {
+    let mut env = Environment::new();
+    env.add_filter("truncate", truncate);
+    let mut source = Source::new();
+    source
+        .load_from_path(&app_dir("bbox-map-viewer/templates"), &["html"])
+        .unwrap();
+    env.set_source(source);
+    env
 }
 
 async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
-    let s = IndexTemplate {
-        inventory: &inventory,
-        links: vec![
+    let env = template_env();
+    let template = env
+        .get_template("index.html")
+        .expect("couln't load template `index.html`");
+    let links = vec![
         "/wms/qgs/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
         "/wms/qgs/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
         "/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&CRS=EPSG:900913&WIDTH=1399&HEIGHT=824&LAYERS=country&STYLES=&FORMAT=image/png; mode=8bit",
         "/wms/mock/helloworld?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png; mode=8bit&DPI=96&TRANSPARENT=TRUE",
         ]
-    }
-    .render()
-    .unwrap();
-    Ok(HttpResponse::Ok().content_type("text/html").body(s))
+    ;
+    let index = template
+        .render(context!(wms_services => &inventory.wms_services, links => links))
+        .expect("index.hmtl render failed");
+    Ok(HttpResponse::Ok().content_type("text/html").body(index))
 }
 
 #[derive(RustEmbed)]

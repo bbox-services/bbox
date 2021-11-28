@@ -1,12 +1,13 @@
 use crate::wms_capabilities::*;
+use serde::Serialize;
 use serde_xml_rs::from_reader;
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct Inventory {
     pub wms_services: Vec<WmsService>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Clone, Debug)]
 pub struct WmsService {
     pub id: String,
     /// WMS base path like `/wms/qgs/ne`
@@ -14,7 +15,7 @@ pub struct WmsService {
     pub cap_type: CapType,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Serialize, Clone, PartialEq, Debug)]
 pub enum CapType {
     Ogc,
     Qgis,
