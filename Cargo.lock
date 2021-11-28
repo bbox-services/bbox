@@ -502,6 +502,7 @@ dependencies = [
  "env_logger",
  "figment",
  "ignore",
+ "minijinja",
  "once_cell",
  "serde",
 ]
@@ -528,6 +529,7 @@ dependencies = [
  "configparser",
  "log",
  "minijinja",
+ "once_cell",
  "serde",
  "tempfile",
  "zip",

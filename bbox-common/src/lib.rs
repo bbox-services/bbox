@@ -1,6 +1,7 @@
 pub mod config;
 pub mod file_search;
 pub mod logger;
+pub mod templates;
 
 use std::env;
 use std::path::Path;

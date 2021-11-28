@@ -1,6 +1,7 @@
-use bbox_common::{app_dir, file_search};
+use bbox_common::{app_dir, file_search, templates::create_env};
 use configparser::ini::Ini;
-use minijinja::{context, Environment, Source};
+use minijinja::{context, Environment};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::io::Read;
@@ -40,19 +41,11 @@ pub struct Plugin {
     deprecated: Option<String>,
 }
 
-fn template_env() -> Environment<'static> {
-    let mut env = Environment::new();
-    let mut source = Source::new();
-    source
-        .load_from_path(&app_dir("bbox-file-server/src/templates"), &["xml"])
-        .unwrap();
-    env.set_source(source);
-    env
-}
+static TEMPLATE_ENV: Lazy<Environment<'static>> =
+    Lazy::new(|| create_env(&app_dir("bbox-file-server/src/templates"), &["xml"]));
 
 pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
-    let env = template_env();
-    let template = env
+    let template = TEMPLATE_ENV
         .get_template("plugins.xml")
         .expect("couln't load template `plugins.xml`");
     let plugin_xml = template
