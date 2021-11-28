@@ -1,7 +1,8 @@
-use bbox_common::{app_dir, file_search, templates::create_env};
+use bbox_common::{file_search, templates::create_env_embedded};
 use configparser::ini::Ini;
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
+use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::io::Read;
@@ -41,8 +42,11 @@ pub struct Plugin {
     deprecated: Option<String>,
 }
 
-static TEMPLATE_ENV: Lazy<Environment<'static>> =
-    Lazy::new(|| create_env(&app_dir("bbox-file-server/src/templates"), &["xml"]));
+#[derive(RustEmbed)]
+#[folder = "src/templates/"]
+struct Templates;
+
+static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
     let template = TEMPLATE_ENV

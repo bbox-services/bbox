@@ -1,15 +1,18 @@
 use crate::qwc2_config::*;
 use crate::static_files::EmbedFile;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
-use bbox_common::{app_dir, templates::create_env};
+use bbox_common::templates::create_env_embedded;
 use bbox_map_server::inventory::{Inventory, WmsService};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
 use std::path::PathBuf;
 
-static TEMPLATE_ENV: Lazy<Environment<'static>> =
-    Lazy::new(|| create_env(&app_dir("bbox-map-viewer/templates"), &["html"]));
+#[derive(RustEmbed)]
+#[folder = "templates/"]
+struct Templates;
+
+static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
     let template = TEMPLATE_ENV

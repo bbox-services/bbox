@@ -504,6 +504,7 @@ dependencies = [
  "ignore",
  "minijinja",
  "once_cell",
+ "rust-embed",
  "serde",
 ]
 
@@ -530,6 +531,7 @@ dependencies = [
  "log",
  "minijinja",
  "once_cell",
+ "rust-embed",
  "serde",
  "tempfile",
  "zip",

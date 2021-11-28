@@ -95,7 +95,7 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
             // info!("Serving QGIS plugin repository from directory '{}'", &dir);
             cfg.service(Files::new(
                 "/qgis/static",
-                app_dir("bbox-file-server/src/static"),
+                app_dir("bbox-file-server/src/static"), // TODO: RustEmbed !
             ))
             .route(
                 &format!("/{}/plugins.xml", repo.path),
