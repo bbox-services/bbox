@@ -2,6 +2,7 @@
 server_addr="127.0.0.1:8080"
 
 [[webserver.static]]
+# ./data/* -> http://localhost:8080/data/
 dir = "data"
 path = "data"
 

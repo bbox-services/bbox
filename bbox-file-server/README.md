@@ -5,4 +5,4 @@ Static file serving.
 
 Features:
 - [x] Configurable base directories and endpoints
-- [ ] QGIS plugin repository
+- [x] QGIS plugin repository
