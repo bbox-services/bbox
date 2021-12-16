@@ -1,6 +1,8 @@
-from qgis.core import Qgis, QgsMessageLog
-from qgis.server import QgsServerFilter, QgsConfigCache, QgsCapabilitiesCache
+from qgis.core import Qgis, QgsMessageLog, QgsProject
+from qgis.server import QgsServerFilter, QgsConfigCache, QgsServerSettings
 from qgis.PyQt.QtCore import QFileInfo
+import shutil
+import os
 
 
 class ClearCapabilitiesFilter(QgsServerFilter):
@@ -11,29 +13,49 @@ class ClearCapabilitiesFilter(QgsServerFilter):
         self.projects = {}
 
     def requestReady(self):
-        """ Checks the project timestamps and clears cache on update """
-
         handler = self.serverInterface().requestHandler()
         params = handler.parameterMap()
-
-        if (params.get("SERVICE", "").upper() in ["WMS", "WMTS", "WFS"]
-                and params.get("REQUEST", "").upper() in ["GETPROJECTSETTINGS", "GETCAPABILITIES"]
+        if params.get("CLEARCACHE") and params.get("MAP", ""):
+            self.clearWmsCache()
+            self.clearCache(params.get("MAP", ""))
+        elif (params.get("SERVICE", "").upper() in ["WMS", "WMTS", "WFS"]
+                and params.get("REQUEST", "").upper() in [
+                    "GETPROJECTSETTINGS", "GETCAPABILITIES"]
                 and params.get("MAP", "")):
-            project = params.get("MAP", "")
-            fi = QFileInfo(project)
+            self.clearCacheIfModified(params.get("MAP", ""))
 
-            if fi.exists():
-                lm = fi.lastModified()
+    def clearCacheIfModified(self, project):
+        """ Checks the project timestamps and clears cache on update """
+        fi = QFileInfo(project)
 
-                if self.projects.get(project, lm) < lm:
-                    # QgsConfigCache.instance().removeEntry(project)
-                    # cache = QgsCapabilitiesCache()
-                    # cache.removeCapabilitiesDocument(project)
-                    self.serverInterface().removeConfigCacheEntry(project)
+        if fi.exists():
+            lm = fi.lastModified()
 
-                    QgsMessageLog.logMessage("Cached cleared after update: {} [{}]".format(project, lm.toString()), "ClearCapabilities", Qgis.Warning)
+            if self.projects.get(project, lm) < lm:
+                self.clearCache(project)
+                QgsMessageLog.logMessage(
+                    "Cached cleared after update: {} [{}]".format(
+                        project, lm.toString()),
+                    "ClearCapabilities", Qgis.Warning)
 
-                self.projects[project] = lm
+            self.projects[project] = lm
+
+    def clearWmsCache(self):
+        settings = QgsServerSettings()
+        settings.load()
+        shutil.rmtree(os.path.join(settings.cacheDirectory(), 'data8'),
+                      ignore_errors=True)
+        # QgsProject.instance().removeAllMapLayers()
+
+    def clearCache(self, project):
+        # QgsConfigCache.instance().removeEntry(project)
+        # cache = QgsCapabilitiesCache()
+        # cache.removeCapabilitiesDocument(project)
+        self.serverInterface().removeConfigCacheEntry(project)
+
+        QgsMessageLog.logMessage(
+            "Cached cleared : {}".format(project),
+            "ClearCapabilities", Qgis.Warning)
 
 
 class ClearCapabilities:
