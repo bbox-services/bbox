@@ -7,7 +7,7 @@ use std::env;
 use std::path::Path;
 
 pub fn base_dir() -> String {
-    env::var("CARGO_MANIFEST_DIR") // TODO: determine runtime install dir
+    env::var("CARGO_MANIFEST_DIR") // FIXME: does only work with `cargo run`
         .map(|p| {
             Path::new(&p)
                 .parent()

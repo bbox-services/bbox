@@ -113,12 +113,12 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
-    let curdir = env::current_dir()?;
+    let project_scan_basedir = app_dir(""); // TODO: configuration or env::current_dir
     let qgis_backend = QgisFcgiBackend::new();
     let umn_backend = UmnFcgiBackend::new();
     let mock_backend = MockFcgiBackend::new();
     let mut backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
-    if let Ok(backend) = std::env::var("WMS_BACKEND") {
+    if let Ok(backend) = env::var("WMS_BACKEND") {
         backends = backends
             .into_iter()
             .filter(|b| b.name() == backend)
@@ -128,12 +128,12 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
         if let Some(exe_path) = detect_fcgi(backend) {
             info!(
                 "Searching project files with project_scan_basedir: {}",
-                curdir.to_str().expect("Invalid UTF-8 path name")
+                project_scan_basedir
             );
             let mut wms_inventory_files = HashMap::new();
             let mut all_paths = HashSet::new();
             for suffix in backend.project_files() {
-                let files = file_search::search(&curdir, &format!("*.{}", suffix));
+                let files = file_search::search(&project_scan_basedir, &format!("*.{}", suffix));
                 info!("Found {} file(s) matching *.{}", files.len(), suffix);
                 all_paths.extend(
                     files

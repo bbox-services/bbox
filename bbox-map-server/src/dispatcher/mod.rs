@@ -19,7 +19,7 @@ pub struct DispatchConfig {
 impl DispatchConfig {
     pub fn new() -> Self {
         Self {
-            mode: DispatchMode::WmsOptimized,
+            mode: DispatchMode::RoundRobin,
         }
     }
 }
