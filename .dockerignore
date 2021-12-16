@@ -1,0 +1,5 @@
+/.git
+/target
+.gitlab-ci.yml
+Dockerfile*
+bbox.sublime-*

@@ -1,0 +1,25 @@
+image: docker:20.10.11
+
+variables:
+  # disable TLS for Docker
+  DOCKER_TLS_CERTDIR: ""
+  # https://git.sourcepole.ch/help/user/packages/container_registry/index#image-naming-convention
+  # IMAGE_BASE_NAME: '$CI_SERVER_HOST:$CI_REGISTRY_PORT/$CI_PROJECT_PATH'
+  IMAGE_BASE_NAME: '$CI_SERVER_HOST:5050/$CI_PROJECT_PATH'
+
+services:
+  - docker:20.10.11-dind
+
+stages:
+  - docker_build
+
+build_images:
+  stage: docker_build
+  script:
+    # - echo "$CI_TOKEN" | docker login -u $CI_TOKEN_USER --password-stdin $CI_SERVER_HOST:$CI_REGISTRY_PORT
+
+    - docker build -t $IMAGE_BASE_NAME/bbox-qgis-server:latest -f Dockerfile-qgis-server .
+    - docker push $IMAGE_BASE_NAME/bbox-qgis-server:latest
+  only:
+    - tags 
+    - master
