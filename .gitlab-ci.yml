@@ -1,12 +1,6 @@
 image: docker:20.10.11
-
 variables:
-  # disable TLS for Docker
-  DOCKER_TLS_CERTDIR: ""
-  # https://git.sourcepole.ch/help/user/packages/container_registry/index#image-naming-convention
-  # IMAGE_BASE_NAME: '$CI_SERVER_HOST:$CI_REGISTRY_PORT/$CI_PROJECT_PATH'
-  IMAGE_BASE_NAME: '$CI_SERVER_HOST:5050/$CI_PROJECT_PATH'
-
+    DOCKER_TLS_CERTDIR: "/certs"
 services:
   - docker:20.10.11-dind
 
@@ -15,11 +9,30 @@ stages:
 
 build_images:
   stage: docker_build
+  variables:
+    IMAGE_TAG: 'eu.gcr.io/sourcepole/bbox-qgis-server'
   script:
-    # - echo "$CI_TOKEN" | docker login -u $CI_TOKEN_USER --password-stdin $CI_SERVER_HOST:$CI_REGISTRY_PORT
-
-    - docker build -t $IMAGE_BASE_NAME/bbox-qgis-server:latest -f Dockerfile-qgis-server .
-    - docker push $IMAGE_BASE_NAME/bbox-qgis-server:latest
+    # Build
+    - |
+      if [ -z "$CI_COMMIT_TAG" ]
+      then
+        docker build -t "$IMAGE_TAG" -f Dockerfile-qgis-server .
+      else
+        docker build -t "$IMAGE_TAG:latest" -f Dockerfile-qgis-server .
+        docker build -t "$IMAGE_TAG:$CI_COMMIT_TAG" -f Dockerfile-qgis-server .
+      fi
+    # Push
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin https://eu.gcr.io
+    - |
+      if [ -z "$CI_COMMIT_TAG" ]
+      then
+        docker push "$IMAGE_TAG"
+      else
+        docker push "$IMAGE_TAG:latest"
+        docker push "$IMAGE_TAG:$CI_COMMIT_TAG"
+      fi
   only:
     - tags 
     - master
+  tags:
+    - dockerbuild
