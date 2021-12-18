@@ -3,12 +3,19 @@ name = "bbox-server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["file-server"]
+map-server = ["bbox-map-server"]
+file-server = ["bbox-file-server"]
+feature-server = ["bbox-feature-server"]
+map-viewer = ["bbox-map-viewer"]
+
 [dependencies]
 bbox-common = { path = "../bbox-common" }
-bbox-feature-server = { path = "../bbox-feature-server" }
-bbox-file-server = { path = "../bbox-file-server" }
-bbox-map-viewer = { path = "../bbox-map-viewer" }
-bbox-map-server = { path = "../bbox-map-server" }
+bbox-feature-server = { path = "../bbox-feature-server", optional = true }
+bbox-file-server = { path = "../bbox-file-server", optional = true }
+bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
+bbox-map-server = { path = "../bbox-map-server", optional = true }
 actix-web = "3"
 actix-service = "1"
 actix-web-prom = "0.5.0"

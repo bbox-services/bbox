@@ -1,14 +1,15 @@
-FROM rust:slim-bullseye as builder
+FROM rust:bullseye as builder
 WORKDIR /usr/src/bbox
 COPY . .
-RUN cd bbox-map-server && cargo install --path .
+RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y ca-certificates gnupg2 && \
+RUN apt-get update && apt-get install -y ca-certificates gnupg2 libcurl4 && \
     apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 46B5721DBBD2996A && \
     echo "deb https://qgis.org/debian bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
-    apt-get update && apt-get install -y qgis-server && \
+    apt-get update && apt-get install -y qgis-server-wms && \
     rm -rf /var/lib/apt/lists/*
-COPY --from=builder /usr/local/cargo/bin/bbox-map-server /usr/local/bin/bbox-map-server
+COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
+COPY --from=builder /usr/src/bbox/bbox-qgis-server.toml ./bbox.toml
 COPY bbox-map-server/qgis/plugins ./bbox-map-server/qgis/plugins
-CMD ["bbox-map-server"]
+CMD ["bbox-server"]

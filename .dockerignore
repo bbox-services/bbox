@@ -1,5 +1,7 @@
 /.git
 /target
-.gitlab-ci.yml
-Dockerfile*
-bbox.sublime-*
+/.gitlab-ci.yml
+/Dockerfile*
+README.md
+/bbox.toml
+/bbox.sublime-*

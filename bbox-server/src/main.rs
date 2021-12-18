@@ -1,5 +1,7 @@
 use actix_service::Service;
-use actix_web::{middleware, web, App, HttpServer};
+#[cfg(feature = "feature-server")]
+use actix_web::web;
+use actix_web::{middleware, App, HttpServer};
 use actix_web_prom::PrometheusMetrics;
 use opentelemetry::api::{
     trace::{FutureExt, TraceContextExt, Tracer},
@@ -35,12 +37,14 @@ async fn webserver() -> std::io::Result<()> {
         .map(|v| v.parse().expect("HTTP_WORKER_THREADS invalid"))
         .unwrap_or(num_cpus::get());
 
+    #[cfg(feature = "map-server")]
     let (fcgi_clients, inventory) = bbox_map_server::init_service().await;
+    #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     HttpServer::new(move || {
         let tracer = tracer.clone();
-        App::new()
+        let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap_fn(move |req, srv| {
                 tracer.in_span("http-request", move |cx| {
@@ -49,13 +53,34 @@ async fn webserver() -> std::io::Result<()> {
                 })
             })
             .wrap(prometheus.clone())
-            .wrap(middleware::Compress::default())
-            .configure(|mut cfg| {
+            .wrap(middleware::Compress::default());
+
+        #[cfg(feature = "map-server")]
+        {
+            app = app.configure(|mut cfg| {
                 bbox_map_server::endpoints::register(&mut cfg, &fcgi_clients, &inventory)
-            })
-            .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register))
-            .configure(bbox_map_viewer::endpoints::register)
-            .configure(|mut cfg| bbox_file_server::endpoints::register(&mut cfg, &plugins_index))
+            });
+        }
+
+        #[cfg(feature = "feature-server")]
+        {
+            app = app
+                .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register));
+        }
+
+        #[cfg(feature = "map-viewer")]
+        {
+            app = app.configure(bbox_map_viewer::endpoints::register);
+        }
+
+        #[cfg(feature = "file-server")]
+        {
+            app = app.configure(|mut cfg| {
+                bbox_file_server::endpoints::register(&mut cfg, &plugins_index)
+            });
+        }
+
+        app
     })
     .bind(web_config.server_addr.clone())?
     .workers(workers)
