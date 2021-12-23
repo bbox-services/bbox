@@ -1,0 +1,15 @@
+##notifiers:
+##  - name: "Grafana Alerting Telegram"
+##    type: telegram
+##    uid: notifier1
+##    org_name: Main Org.
+##    is_default: true
+##    send_reminder: true
+##    frequency: 15m
+##    disable_resolve_message: false
+##    # See `Supported Settings` section for settings supported for each
+##    # alert notification type.
+##    settings:
+##      # bottoken: '1234567890:AAF_k7w8BOtsEmns,adasdasdascnnWR9vY'
+##      # chatid: '-544993956'
+##      uploadImage: false

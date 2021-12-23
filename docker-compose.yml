@@ -1,0 +1,27 @@
+version: "3"
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - "./instrumentation/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "prom-data:/prometheus"
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - "./instrumentation/grafana:/etc/grafana:ro"
+  jaeger: 
+    image: jaegertracing/all-in-one:latest
+    ports:
+      #- "127.0.0.1:5775:5775/udp"
+      - "127.0.0.1:6831:6831/udp"
+      - "127.0.0.1:6832:6832/udp"
+      #- "127.0.0.1:5778:5778"
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:14268:14268"
+      #- "127.0.0.1:9411:9411"
+volumes:
+  prom-data:

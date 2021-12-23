@@ -1,5 +1,5 @@
 [webserver]
-server_addr="127.0.0.1:8080"
+server_addr="0.0.0.0:8080"
 
 [[webserver.static]]
 # ./data/* -> http://localhost:8080/data/
