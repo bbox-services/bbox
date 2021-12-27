@@ -17,8 +17,7 @@ Usage
     cargo run
 
 Configuration:
-* `NUM_FCGI_PROCESSES`: Number of FCGI processes (default: number of CPU cores)
-* `WMS_BACKEND`: FCGI backend - `qgis`, `mapserver`, `mock` (default: all avalailable backends)
+* `BBOX_WMSSERVER__NUM_FCGI_PROCESSES`: Number of FCGI processes (default: number of CPU cores)
 
 
 Request examples:

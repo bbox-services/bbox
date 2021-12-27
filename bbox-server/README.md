@@ -12,6 +12,68 @@ Usage
     x-www-browser http://127.0.0.1:8080/
 
 
+Configuration
+-------------
+
+Configuraton is read from `bbox.toml` and environment variables.
+
+## Webserver
+
+```toml
+[webserver]
+# Web server settings
+# Environment variable prefix: BBOX_WEBSERVER__
+# server_addr = "127.0.0.1:8080"  # Default: 127.0.0.1:8080
+# worker_threads = 4  # Default: number of CPU cores
+
+[[fileserver.static]] 
+# Static file serving
+# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
+# ./data/* -> http://localhost:8080/data/
+# dir = "./data"
+# path = "data"
+
+[[fileserver.repo]]
+# QGIS plugin repository
+# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="qgis"}]'
+# ./plugins/*.zip -> http://localhost:8080/qgis/plugins.xml
+# dir = "./plugins"
+# path = "qgis"
+
+[wmsserver]
+# WMS server settings
+# Environment variable prefix: BBOX_WMSSERVER__
+path = "/wms"                # Base path of WMS endpoints
+# num_fcgi_processes = 4     # Default: number of CPU cores
+# fcgi_client_pool_size = 1  # FCGI client pool size. Default: 1
+search_projects = false      # Scan directories and build inventory
+
+[wmsserver.qgis]
+# QGIS Server settings
+# Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
+# project_basedir = "."      # Base dir for project files (.qgs, .qgz)
+
+[wmsserver.umn]
+# UMN MapServer settings
+# Environment variable prefix: BBOX_WMSSERVER__UMN_BACKEND__
+# project_basedir = "."      # Base dir for project files (.map)
+
+[wmsserver.mock]
+# Enable FCGI mockup backend (for testing)
+# Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
+
+[metrics.prometheus]
+# Prometheus metrics endpoint
+# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
+path = "/metrics"
+
+[metrics.jaeger] 
+# Jaeger tracing
+# Environment variable prefix: BBOX_METRICS__JAEGER__
+collector_endpoint = "http://127.0.0.1:14268/api/traces"
+```
+
+
 Instrumenation
 -------------
 
@@ -29,7 +91,7 @@ Test expression browser:
 
 Expression example:
 
-    wmsapi_http_requests_duration_seconds_bucket
+    bbox_http_requests_duration_seconds_bucket
 
 
 ### Jaeger tracing
@@ -61,14 +123,14 @@ Open Grafana:
 
 Average request duration:
 
-    rate(wmsapi_http_requests_duration_seconds_sum[5m])/rate(wmsapi_http_requests_duration_seconds_count[5m])
+    rate(bbox_http_requests_duration_seconds_sum[5m])/rate(bbox_http_requests_duration_seconds_count[5m])
 
 Request duration 90th percentile
         
-    histogram_quantile(0.9, rate(wmsapi_http_requests_duration_seconds_bucket[5m]))
+    histogram_quantile(0.9, rate(bbox_http_requests_duration_seconds_bucket[5m]))
 
 https://www.robustperception.io/how-does-a-prometheus-histogram-work
 
 WMS Endpoint:
 
-    wmsapi_http_requests_duration_seconds_sum{endpoint="/wms/qgs/{project:.+}"}
+    bbox_http_requests_duration_seconds_sum{endpoint="/wms/qgs/{project:.+}"}

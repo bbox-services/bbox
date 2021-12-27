@@ -1,12 +1,51 @@
 [webserver]
-server_addr="0.0.0.0:8080"
+# Web server settings
+# Environment variable prefix: BBOX_WEBSERVER__
+# server_addr = "127.0.0.1:8080"  # Default: 127.0.0.1:8080
+# worker_threads = 4  # Default: number of CPU cores
 
-[[webserver.static]]
+[[fileserver.static]] 
+# Static file serving
+# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
 # ./data/* -> http://localhost:8080/data/
-dir = "data"
+dir = "./data"
 path = "data"
 
-[[webserver.repo]]
+[[fileserver.repo]]
+# QGIS plugin repository
+# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="qgis"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgis/plugins.xml
-dir = "plugins"
+dir = "./plugins"
 path = "qgis"
+
+[wmsserver]
+# WMS server settings
+# Environment variable prefix: BBOX_WMSSERVER__
+path = "/wms"                # Base path of WMS endpoints
+# num_fcgi_processes = 4     # Default: number of CPU cores
+# fcgi_client_pool_size = 1  # FCGI client pool size. Default: 1
+search_projects = true       # Scan directories and build inventory
+
+[wmsserver.qgis_backend]
+# QGIS Server settings
+# Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
+# project_basedir = "."      # Base dir for project files (.qgs, .qgz)
+
+[wmsserver.umn_backend]
+# UMN MapServer settings
+# Environment variable prefix: BBOX_WMSSERVER__UMN_BACKEND__
+# project_basedir = "."      # Base dir for project files (.map)
+
+#[wmsserver.mock_backend]
+# Enable FCGI mockup backend (for testing)
+# Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
+
+[metrics.prometheus]
+# Prometheus metrics endpoint
+# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
+path = "/metrics"
+
+[metrics.jaeger] 
+# Jaeger tracing
+# Environment variable prefix: BBOX_METRICS__JAEGER__
+collector_endpoint = "http://127.0.0.1:14268/api/traces"

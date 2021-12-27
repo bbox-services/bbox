@@ -2,6 +2,7 @@ use crate::qgis_plugins::*;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, Result};
 use bbox_common::app_dir;
+use bbox_common::config::config_error_exit;
 use log::{info, warn};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -9,8 +10,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use tempfile::tempfile;
 
-#[derive(Deserialize, Debug)]
-pub struct WebserverStaticCfg {
+#[derive(Deserialize, Default, Debug)]
+pub struct FileserverCfg {
     #[serde(rename = "static", default)]
     pub static_: Vec<StaticDirCfg>,
     #[serde(default)]
@@ -21,6 +22,20 @@ pub struct WebserverStaticCfg {
 pub struct StaticDirCfg {
     pub path: String,
     pub dir: String,
+}
+
+impl FileserverCfg {
+    pub fn from_config() -> Self {
+        let config = bbox_common::config::app_config();
+        if config.find_value("fileserver").is_ok() {
+            config
+                .extract_inner("fileserver")
+                .map_err(|err| config_error_exit(err))
+                .unwrap()
+        } else {
+            Default::default()
+        }
+    }
 }
 
 type PluginIndex = HashMap<String, Vec<PathBuf>>;
@@ -52,10 +67,7 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
 }
 
 pub fn init_service() -> PluginIndex {
-    let config = bbox_common::config::app_config();
-    let static_cfg: WebserverStaticCfg = config
-        .extract_inner("webserver")
-        .expect("webserver config invalid");
+    let static_cfg = FileserverCfg::from_config();
 
     let mut plugins_index = PluginIndex::new();
     for repo in &static_cfg.repo {
@@ -72,10 +84,7 @@ pub fn init_service() -> PluginIndex {
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
-    let config = bbox_common::config::app_config();
-    let static_cfg: WebserverStaticCfg = config
-        .extract_inner("webserver")
-        .expect("webserver config invalid");
+    let static_cfg = FileserverCfg::from_config();
 
     for static_dir in &static_cfg.static_ {
         let dir = app_dir(&static_dir.dir);

@@ -1,31 +1,39 @@
+use crate::endpoints::{MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg};
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::inventory::*;
 use actix_web::web;
 use bbox_common::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
-use std::env;
+use std::path::PathBuf;
+
 use std::path::Path;
 
 pub trait FcgiBackendType {
+    fn is_active(&self) -> bool;
     fn name(&self) -> &'static str;
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
+    fn project_basedir(&self) -> String;
     fn envs(&self) -> Vec<(String, String)>;
     fn cap_type(&self) -> CapType;
 }
 
 pub struct QgisFcgiBackend {
+    config: Option<QgisBackendCfg>,
     plugindir: String,
 }
 
 impl QgisFcgiBackend {
-    fn new() -> Self {
+    fn new(config: Option<QgisBackendCfg>) -> Self {
         let plugindir = app_dir("bbox-map-server/qgis/plugins");
-        QgisFcgiBackend { plugindir }
+        QgisFcgiBackend { config, plugindir }
     }
 }
 impl FcgiBackendType for QgisFcgiBackend {
+    fn is_active(&self) -> bool {
+        self.config.is_some()
+    }
     fn name(&self) -> &'static str {
         "qgis"
     }
@@ -34,6 +42,14 @@ impl FcgiBackendType for QgisFcgiBackend {
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
+    }
+    fn project_basedir(&self) -> String {
+        self.config
+            .as_ref()
+            .expect("active")
+            .project_basedir
+            .clone()
+            .unwrap_or(app_dir("")) // TODO: env::current_dir
     }
     fn envs(&self) -> Vec<(String, String)> {
         vec![
@@ -47,15 +63,20 @@ impl FcgiBackendType for QgisFcgiBackend {
     }
 }
 
-pub struct UmnFcgiBackend;
+pub struct UmnFcgiBackend {
+    config: Option<UmnBackendCfg>,
+}
 
 impl UmnFcgiBackend {
-    fn new() -> Self {
-        UmnFcgiBackend {}
+    fn new(config: Option<UmnBackendCfg>) -> Self {
+        UmnFcgiBackend { config }
     }
 }
 
 impl FcgiBackendType for UmnFcgiBackend {
+    fn is_active(&self) -> bool {
+        self.config.is_some()
+    }
     fn name(&self) -> &'static str {
         "mapserver"
     }
@@ -65,6 +86,14 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
     }
+    fn project_basedir(&self) -> String {
+        self.config
+            .as_ref()
+            .expect("active")
+            .project_basedir
+            .clone()
+            .unwrap_or(app_dir("")) // TODO: env::current_dir
+    }
     fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
     }
@@ -73,15 +102,20 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
 }
 
-pub struct MockFcgiBackend;
+pub struct MockFcgiBackend {
+    config: Option<MockBackendCfg>,
+}
 
 impl MockFcgiBackend {
-    fn new() -> Self {
-        MockFcgiBackend {}
+    fn new(config: Option<MockBackendCfg>) -> Self {
+        MockFcgiBackend { config }
     }
 }
 
 impl FcgiBackendType for MockFcgiBackend {
+    fn is_active(&self) -> bool {
+        self.config.is_some()
+    }
     fn name(&self) -> &'static str {
         "mock"
     }
@@ -90,6 +124,9 @@ impl FcgiBackendType for MockFcgiBackend {
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["mock"]
+    }
+    fn project_basedir(&self) -> String {
+        ".".to_string()
     }
     fn envs(&self) -> Vec<(String, String)> {
         Vec::new()
@@ -111,86 +148,85 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 }
 
 pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
+    let config = WmsserverCfg::from_config();
+    let num_fcgi_processes = config.num_fcgi_processes.unwrap_or(num_cpus::get());
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
-    let project_scan_basedir = app_dir(""); // TODO: configuration or env::current_dir
-    let qgis_backend = QgisFcgiBackend::new();
-    let umn_backend = UmnFcgiBackend::new();
-    let mock_backend = MockFcgiBackend::new();
-    let mut backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
-    if let Ok(backend) = env::var("WMS_BACKEND") {
-        backends = backends
-            .into_iter()
-            .filter(|b| b.name() == backend)
-            .collect();
-    }
+    let qgis_backend = QgisFcgiBackend::new(config.qgis_backend);
+    let umn_backend = UmnFcgiBackend::new(config.umn_backend);
+    let mock_backend = MockFcgiBackend::new(config.mock_backend);
+    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
     for backend in backends {
+        if !backend.is_active() {
+            continue;
+        }
         if let Some(exe_path) = detect_fcgi(backend) {
-            info!(
-                "Searching project files with project_scan_basedir: {}",
-                project_scan_basedir
-            );
             let mut wms_inventory_files = HashMap::new();
-            let mut all_paths = HashSet::new();
-            for suffix in backend.project_files() {
-                let files = file_search::search(&project_scan_basedir, &format!("*.{}", suffix));
-                info!("Found {} file(s) matching *.{}", files.len(), suffix);
-                all_paths.extend(
-                    files
-                        .iter()
-                        .map(|p| p.parent().expect("file in root").to_path_buf()),
-                );
-                wms_inventory_files.insert(format!("/wms/{}", suffix), files);
-            }
-            let basedir = if all_paths.is_empty() {
-                env::current_dir().expect("no current dir")
+            let base = backend.project_basedir();
+            let basedir = if config.search_projects {
+                info!("Searching project files with project_basedir: {}", &base);
+                let mut all_paths = HashSet::new();
+                for suffix in backend.project_files() {
+                    let files = file_search::search(&base, &format!("*.{}", suffix));
+                    info!("Found {} file(s) matching *.{}", files.len(), suffix);
+                    all_paths.extend(
+                        files
+                            .iter()
+                            .map(|p| p.parent().expect("file in root").to_path_buf()),
+                    );
+                    wms_inventory_files.insert(format!("{}/{}", &config.path, suffix), files);
+                }
+                let basedir = if all_paths.is_empty() {
+                    PathBuf::from(&base)
+                } else {
+                    file_search::longest_common_prefix(&all_paths.into_iter().collect())
+                };
+                for suffix in backend.project_files() {
+                    let prefix = format!("{}/", &config.path);
+                    let route = format!("{}{}", prefix, suffix);
+
+                    wms_inventory.extend(
+                        wms_inventory_files
+                            .get(&route)
+                            .expect("route entry missing")
+                            .iter()
+                            .map(|p| {
+                                // /basedir/data/project.qgs -> /wms/qgs/data/project
+                                let project = p
+                                    .file_stem()
+                                    .expect("no file name")
+                                    .to_str()
+                                    .expect("Invalid UTF-8 file name");
+                                let rel_path = p
+                                    .parent()
+                                    .expect("file in root")
+                                    .strip_prefix(&basedir)
+                                    .expect("wrong prefix")
+                                    .to_str()
+                                    .expect("Invalid UTF-8 path name");
+                                let wms_path = if rel_path == "" {
+                                    format!("{}/{}", &route, project)
+                                } else {
+                                    format!("{}/{}/{}", &route, rel_path, project)
+                                };
+                                let id = wms_path.replace(&prefix, "").replace('/', "_");
+                                let cap_type = backend.cap_type();
+                                WmsService {
+                                    id,
+                                    wms_path,
+                                    cap_type,
+                                }
+                            }),
+                    );
+                }
+                basedir
             } else {
-                file_search::longest_common_prefix(&all_paths.into_iter().collect())
+                PathBuf::from(&base)
             };
             info!("Setting base path to {:?}", basedir);
 
-            let num_processes = std::env::var("NUM_FCGI_PROCESSES")
-                .map(|v| v.parse().expect("NUM_FCGI_PROCESSES invalid"))
-                .unwrap_or(num_cpus::get());
             let process_pool =
-                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_processes);
-            for suffix in backend.project_files() {
-                let route = format!("/wms/{}", suffix);
-
-                wms_inventory.extend(
-                    wms_inventory_files
-                        .get(&route)
-                        .expect("route entry missing")
-                        .iter()
-                        .map(|p| {
-                            // /basedir/data/project.qgs -> /wms/qgs/data/project
-                            let project = p
-                                .file_stem()
-                                .expect("no file name")
-                                .to_str()
-                                .expect("Invalid UTF-8 file name");
-                            let rel_path = p
-                                .parent()
-                                .expect("file in root")
-                                .strip_prefix(&basedir)
-                                .expect("wrong prefix")
-                                .to_str()
-                                .expect("Invalid UTF-8 path name");
-                            let wms_path = if rel_path == "" {
-                                format!("{}/{}", &route, project)
-                            } else {
-                                format!("{}/{}/{}", &route, rel_path, project)
-                            };
-                            let id = wms_path.replace("/wms/", "").replace('/', "_");
-                            let cap_type = backend.cap_type();
-                            WmsService {
-                                id,
-                                wms_path,
-                                cap_type,
-                            }
-                        }),
-                );
-            }
+                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_fcgi_processes);
             pools.push(process_pool);
         }
     }
@@ -201,17 +237,14 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
 }
 
 pub async fn init_service() -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
+    let config = WmsserverCfg::from_config();
     let (process_pools, inventory) = detect_backends().unwrap();
-
-    let fcgi_clnt_pool_size = std::env::var("CLIENT_POOL_SIZE")
-        .map(|v| v.parse().expect("CLIENT_POOL_SIZE invalid"))
-        .unwrap_or(1);
 
     let fcgi_clients = process_pools
         .iter()
         .map(|process_pool| {
             (
-                web::Data::new(process_pool.client_dispatcher(fcgi_clnt_pool_size)),
+                web::Data::new(process_pool.client_dispatcher(config.fcgi_client_pool_size)),
                 process_pool.suffixes.clone(),
             )
         })

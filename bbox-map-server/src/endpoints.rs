@@ -1,14 +1,78 @@
 use crate::fcgi_process::*;
 use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
+use bbox_common::config::config_error_exit;
 use log::{debug, error, info, warn};
 use opentelemetry::api::{
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
 use opentelemetry::global;
+use serde::Deserialize;
 use std::io::{BufRead, Cursor, Read};
 use std::time::{Duration, SystemTime};
+
+#[derive(Deserialize, Debug)]
+pub struct WmsserverCfg {
+    pub path: String,
+    pub num_fcgi_processes: Option<usize>,
+    #[serde(default = "default_fcgi_client_pool_size")]
+    pub fcgi_client_pool_size: usize,
+    pub qgis_backend: Option<QgisBackendCfg>,
+    pub umn_backend: Option<UmnBackendCfg>,
+    pub mock_backend: Option<MockBackendCfg>,
+    #[serde(default)]
+    pub search_projects: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QgisBackendCfg {
+    pub project_basedir: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct UmnBackendCfg {
+    pub project_basedir: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct MockBackendCfg;
+
+fn default_fcgi_client_pool_size() -> usize {
+    1
+}
+
+impl Default for WmsserverCfg {
+    fn default() -> Self {
+        WmsserverCfg {
+            path: "/wms".to_string(),
+            num_fcgi_processes: None,
+            fcgi_client_pool_size: default_fcgi_client_pool_size(),
+            qgis_backend: Some(QgisBackendCfg {
+                project_basedir: None,
+            }),
+            umn_backend: Some(UmnBackendCfg {
+                project_basedir: None,
+            }),
+            mock_backend: None,
+            search_projects: true,
+        }
+    }
+}
+
+impl WmsserverCfg {
+    pub fn from_config() -> Self {
+        let config = bbox_common::config::app_config();
+        if config.find_value("wmsserver").is_ok() {
+            config
+                .extract_inner("wmsserver")
+                .map_err(|err| config_error_exit(err))
+                .unwrap()
+        } else {
+            Default::default()
+        }
+    }
+}
 
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
@@ -108,11 +172,13 @@ pub fn register(
     fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
     inventory: &Inventory,
 ) {
+    let config = WmsserverCfg::from_config();
+
     cfg.data(inventory.clone());
 
     for (fcgi_client, suffixes) in fcgi_clients {
         for suffix in suffixes {
-            let route = format!("/wms/{}", &suffix);
+            let route = format!("{}/{}", &config.path, &suffix);
             info!("Registering WMS endpoint {}", &route);
             cfg.service(
                 web::resource(route + "/{project:.+}") // :[^{}]+

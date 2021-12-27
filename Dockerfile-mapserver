@@ -11,6 +11,9 @@ COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 USER www-data
 WORKDIR /var/www
 
-COPY --from=builder /usr/src/bbox/bbox-map-server.toml ./bbox.toml
-COPY bbox-map-server/qgis/plugins ./bbox-map-server/qgis/plugins
+ENV BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080
+#ENV BBOX_WMSSERVER__PATH=
+#ENV BBOX_WMSSERVER__UMN_BACKEND__PROJECT_BASEDIR=/maps
+ENV BBOX_METRICS__PROMETHEUS='{path="/metrics"}'
+
 CMD ["bbox-server"]
