@@ -5,9 +5,8 @@ use actix_web::web;
 use bbox_common::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
-
-use std::path::Path;
+use std::env;
+use std::path::{Path, PathBuf};
 
 pub trait FcgiBackendType {
     fn is_active(&self) -> bool;
@@ -15,8 +14,18 @@ pub trait FcgiBackendType {
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
     fn project_basedir(&self) -> String;
-    fn envs(&self) -> Vec<(String, String)>;
-    fn cap_type(&self) -> CapType;
+    fn env_defaults(&self) -> Vec<(&str, &str)> {
+        Vec::new()
+    }
+    fn envs(&self) -> Vec<(String, String)> {
+        self.env_defaults()
+            .iter()
+            .map(|(name, val)| (name.to_string(), env::var(name).unwrap_or(val.to_string())))
+            .collect()
+    }
+    fn cap_type(&self) -> CapType {
+        CapType::Ogc
+    }
 }
 
 pub struct QgisFcgiBackend {
@@ -51,11 +60,11 @@ impl FcgiBackendType for QgisFcgiBackend {
             .clone()
             .unwrap_or(app_dir("")) // TODO: env::current_dir
     }
-    fn envs(&self) -> Vec<(String, String)> {
+    fn env_defaults(&self) -> Vec<(&str, &str)> {
         vec![
-            ("QGIS_PLUGINPATH".to_string(), self.plugindir.clone()),
-            ("QGIS_SERVER_LOG_STDERR".to_string(), "1".to_string()),
-            ("QGIS_SERVER_LOG_LEVEL".to_string(), "0".to_string()),
+            ("QGIS_PLUGINPATH", &self.plugindir),
+            ("QGIS_SERVER_LOG_STDERR", "1"),
+            ("QGIS_SERVER_LOG_LEVEL", "0"),
         ]
     }
     fn cap_type(&self) -> CapType {
@@ -94,12 +103,6 @@ impl FcgiBackendType for UmnFcgiBackend {
             .clone()
             .unwrap_or(app_dir("")) // TODO: env::current_dir
     }
-    fn envs(&self) -> Vec<(String, String)> {
-        Vec::new()
-    }
-    fn cap_type(&self) -> CapType {
-        CapType::Ogc
-    }
 }
 
 pub struct MockFcgiBackend {
@@ -127,12 +130,6 @@ impl FcgiBackendType for MockFcgiBackend {
     }
     fn project_basedir(&self) -> String {
         ".".to_string()
-    }
-    fn envs(&self) -> Vec<(String, String)> {
-        Vec::new()
-    }
-    fn cap_type(&self) -> CapType {
-        CapType::Ogc
     }
 }
 

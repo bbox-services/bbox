@@ -29,4 +29,11 @@ Docker
 ------
 
     docker build -f ./Dockerfile-qgis-server -t bbox .
-    docker run -p 8080:8080 bbox
+
+Run with environment variables:
+
+    docker run -p 8080:8080 -e BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080 bbox
+
+Run with configuration file:
+
+    docker run -p 8080:8080 -v bbox.toml:/var/www/bbox.toml:ro bbox
