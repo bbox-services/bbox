@@ -9,9 +9,10 @@ use opentelemetry::api::{
     Key,
 };
 use opentelemetry::global;
-use prometheus::IntCounterVec;
+use prometheus::{IntCounterVec, IntGaugeVec};
 use serde::Deserialize;
 use std::io::{BufRead, Cursor, Read};
+use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
 #[derive(Deserialize, Debug)]
@@ -74,13 +75,16 @@ impl WmsserverCfg {
             Default::default()
         }
     }
+    pub fn num_fcgi_processes(&self) -> usize {
+        self.num_fcgi_processes.unwrap_or(num_cpus::get())
+    }
 }
 
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
     project: web::Path<String>,
-    wms_requests_counter: web::Data<IntCounterVec>,
+    metrics: web::Data<WmsMetrics>,
     body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -92,21 +96,27 @@ async fn wms_fcgi(
         req.query_string(),
         &body
     );
-    let mut fcgi_client = fcgi_dispatcher
-        .select(&fcgi_query)
-        .get()
-        .await
-        .expect("Couldn't get FCGI client");
-    wms_requests_counter
-        .with_label_values(&[req.path(), req.method().as_str()])
+    let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
+    metrics
+        .wms_requests_counter
+        .with_label_values(&[
+            req.path(),
+            fcgi_dispatcher.backend_name(),
+            &fcgino.to_string(),
+        ])
         .inc();
+    // metrics.fcgi_client_pool_available[fcgino].set(pool.status().available as i64);
+    let mut fcgi_client = pool.get().await.expect("Couldn't get FCGI client");
     let tracer = global::tracer("request");
     let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
         ctx.span()
             .set_attribute(Key::new("project").string(project.as_str()));
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
-        debug!("Forwarding query to FCGI: {}", &fcgi_query);
+        debug!(
+            "Forwarding query to FCGI process {}: {}",
+            fcgino, &fcgi_query
+        );
         let mut params = fastcgi_client::Params::new()
             .set_request_method(req.method().as_str())
             .set_request_uri(req.path())
@@ -151,7 +161,6 @@ async fn wms_fcgi(
                     response.header(key, value);
                 }
                 "Content-Length" | "Server" => {} // ignore
-                // "X-trace" => {
                 "X-us" => {
                     let us: u64 = value.parse().expect("u64 value");
                     let _span = tracer.build(SpanBuilder {
@@ -166,6 +175,24 @@ async fn wms_fcgi(
                     // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
                     response.header("Server-Timing", format!("wms-backend;dur={}", us / 1000));
                 }
+                // "X-trace" => {
+                "X-metrics" => {
+                    for entry in value.split(',') {
+                        let keyval: Vec<&str> = entry.splitn(2, ":").collect();
+                        match keyval[0] {
+                            "cache_count" => metrics.fcgi_cache_count[fcgino]
+                                .with_label_values(&[fcgi_dispatcher.backend_name()])
+                                .set(i64::from_str(keyval[1]).expect("i64 value")),
+                            "cache_hit" => metrics.fcgi_cache_hit[fcgino]
+                                .with_label_values(&[fcgi_dispatcher.backend_name()])
+                                .set(i64::from_str(keyval[1]).expect("i64 value")),
+                            "cache_miss" => metrics.fcgi_cache_miss[fcgino]
+                                .with_label_values(&[fcgi_dispatcher.backend_name()])
+                                .set(i64::from_str(keyval[1]).expect("i64 value")),
+                            _ => debug!("Ignoring metric entry {}", entry),
+                        }
+                    }
+                }
                 _ => debug!("Ignoring FCGI-Header: {}", &line),
             }
             line.truncate(0);
@@ -177,13 +204,58 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-pub(crate) fn wms_requests_counter() -> &'static IntCounterVec {
-    static METRIC: OnceCell<IntCounterVec> = OnceCell::new();
-    &METRIC.get_or_init(|| {
-        let counter_opts = prometheus::opts!("requests_total", "Total number of WMS requests")
+#[derive(Clone)]
+pub(crate) struct WmsMetrics {
+    pub wms_requests_counter: IntCounterVec,
+    // pub fcgi_client_pool_available: Vec<IntGaugeVec>,
+    pub fcgi_cache_count: Vec<IntGaugeVec>,
+    pub fcgi_cache_hit: Vec<IntGaugeVec>,
+    pub fcgi_cache_miss: Vec<IntGaugeVec>,
+}
+
+pub(crate) fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
+    static METRICS: OnceCell<WmsMetrics> = OnceCell::new();
+    &METRICS.get_or_init(|| {
+        let opts = prometheus::opts!("requests_total", "Total number of WMS requests")
             .namespace("bbox_wms");
-        let counter = IntCounterVec::new(counter_opts, &["endpoint", "method"]).unwrap();
-        counter
+        let wms_requests_counter =
+            IntCounterVec::new(opts, &["endpoint", "backend", "fcgino"]).unwrap();
+        let fcgi_cache_count = (0..num_fcgi_processes)
+            .map(|fcgino| {
+                let opts = prometheus::opts!(
+                    format!("fcgi_cache_count_{}", fcgino),
+                    "FCGI project cache size"
+                )
+                .namespace("bbox_wms");
+                IntGaugeVec::new(opts, &["backend"]).unwrap()
+            })
+            .collect();
+        let fcgi_cache_hit = (0..num_fcgi_processes)
+            .map(|fcgino| {
+                let opts = prometheus::opts!(
+                    format!("fcgi_cache_hit_{}", fcgino),
+                    "FCGI project cache hit"
+                )
+                .namespace("bbox_wms");
+                IntGaugeVec::new(opts, &["backend"]).unwrap()
+            })
+            .collect();
+        let fcgi_cache_miss = (0..num_fcgi_processes)
+            .map(|fcgino| {
+                let opts = prometheus::opts!(
+                    format!("fcgi_cache_miss_{}", fcgino),
+                    "FCGI project cache miss"
+                )
+                .namespace("bbox_wms");
+                IntGaugeVec::new(opts, &["backend"]).unwrap()
+            })
+            .collect();
+        WmsMetrics {
+            wms_requests_counter,
+            fcgi_cache_count,
+            fcgi_cache_hit,
+            fcgi_cache_miss,
+        }
     })
 }
 
@@ -193,8 +265,9 @@ pub fn register(
     inventory: &Inventory,
 ) {
     let config = WmsserverCfg::from_config();
+    let metrics = wms_metrics(config.num_fcgi_processes());
 
-    cfg.data(wms_requests_counter().clone());
+    cfg.data((*metrics).clone());
 
     cfg.data(inventory.clone());
 

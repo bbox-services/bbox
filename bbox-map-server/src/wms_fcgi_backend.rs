@@ -1,6 +1,4 @@
-use crate::endpoints::{
-    wms_requests_counter, MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg,
-};
+use crate::endpoints::{wms_metrics, MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg};
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::inventory::*;
 use actix_web::web;
@@ -149,7 +147,7 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 
 pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let config = WmsserverCfg::from_config();
-    let num_fcgi_processes = config.num_fcgi_processes.unwrap_or(num_cpus::get());
+    let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
     let qgis_backend = QgisFcgiBackend::new(config.qgis_backend);
@@ -242,15 +240,28 @@ pub async fn init_service(
     let config = WmsserverCfg::from_config();
 
     if let Some(prometheus) = prometheus {
-        let counter = wms_requests_counter();
+        let metrics = wms_metrics(config.num_fcgi_processes());
         prometheus
             .registry
-            .register(Box::new(counter.clone()))
+            .register(Box::new(metrics.wms_requests_counter.clone()))
             .unwrap();
+        for no in 0..metrics.fcgi_cache_count.len() {
+            prometheus
+                .registry
+                .register(Box::new(metrics.fcgi_cache_count[no].clone()))
+                .unwrap();
+            prometheus
+                .registry
+                .register(Box::new(metrics.fcgi_cache_hit[no].clone()))
+                .unwrap();
+            prometheus
+                .registry
+                .register(Box::new(metrics.fcgi_cache_miss[no].clone()))
+                .unwrap();
+        }
     }
 
     let (process_pools, inventory) = detect_backends().unwrap();
-
     let fcgi_clients = process_pools
         .iter()
         .map(|process_pool| {

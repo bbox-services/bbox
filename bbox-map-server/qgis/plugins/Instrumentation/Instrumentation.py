@@ -61,7 +61,10 @@ class InstrumentationRequestFilter(QgsServerFilter):
         request = self.serverInterface().requestHandler()
         request.setResponseHeader("X-trace", str(self.trace))
         request.setResponseHeader("X-us", str(round(duration*1000000)))
-        request.setResponseHeader("X-metrics", str(self.metrics))
+        request.setResponseHeader(
+            "X-metrics", "cache_count:%d,cache_hit:%d,cache_miss:%d" % (
+                self.metrics['count'],
+                self.metrics['hit'], self.metrics['miss']))
 
     def sendResponse(self):
         QgsMessageLog.logMessage("InstrumentationRequestFilter.sendResponse")

@@ -107,7 +107,7 @@ pub struct FcgiProcessPool {
     fcgi_path: String,
     base_dir: Option<PathBuf>,
     envs: Vec<(String, String)>,
-    process_name: String,
+    backend_name: String,
     pub(crate) suffixes: Vec<String>,
     num_processes: usize,
     processes: Vec<FcgiProcess>,
@@ -124,7 +124,7 @@ impl FcgiProcessPool {
             fcgi_path,
             base_dir,
             envs: backend.envs(),
-            process_name: backend.name().to_string(),
+            backend_name: backend.name().to_string(),
             suffixes: backend
                 .project_files()
                 .iter()
@@ -146,7 +146,7 @@ impl FcgiProcessPool {
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
         for no in 0..self.num_processes {
-            let socket_path = Self::socket_path(&self.process_name, no);
+            let socket_path = Self::socket_path(&self.backend_name, no);
             let process =
                 FcgiProcess::spawn(&self.fcgi_path, self.base_dir.as_ref(), &envs, &socket_path)
                     .await?;
@@ -162,7 +162,7 @@ impl FcgiProcessPool {
 
     /// Create client pool for each process and return dispatcher
     pub fn client_dispatcher(&self, max_pool_size: usize) -> FcgiDispatcher {
-        debug!("Creating {} FcgiDispatcher", self.process_name);
+        debug!("Creating {} FcgiDispatcher", self.backend_name);
         let config = DispatchConfig::new();
         let pool_config = deadpool::managed::PoolConfig::new(max_pool_size);
         // pool_config.timeouts.create = Some(Duration::from_millis(500));
@@ -171,13 +171,17 @@ impl FcgiProcessPool {
         // pool_config.runtime = deadpool::Runtime::Tokio1;
         let pools = (0..self.num_processes)
             .map(|no| {
-                let socket_path = Self::socket_path(&self.process_name, no);
+                let socket_path = Self::socket_path(&self.backend_name, no);
                 let handler = FcgiClientHandler { socket_path };
                 FcgiClientPool::from_config(handler, pool_config.clone())
             })
             .collect();
         let dispatcher = Dispatcher::new(&config, &pools);
-        FcgiDispatcher { pools, dispatcher }
+        FcgiDispatcher {
+            backend_name: self.backend_name.clone(),
+            pools,
+            dispatcher,
+        }
     }
 
     async fn check_process(&mut self, no: usize) -> std::io::Result<()> {
@@ -269,6 +273,7 @@ pub type FcgiClientPool = deadpool::managed::Pool<FcgiClientHandler>;
 
 /// FCGI client dispatcher
 pub struct FcgiDispatcher {
+    backend_name: String,
     /// Client pool for each FCGI process
     pools: Vec<FcgiClientPool>,
     /// Mode-dependent dispatcher
@@ -276,10 +281,16 @@ pub struct FcgiDispatcher {
 }
 
 impl FcgiDispatcher {
-    pub fn select(&self, query_str: &str) -> &FcgiClientPool {
-        let pool = &self.pools[self.dispatcher.select(query_str)];
-        debug!("selected pool: {:?}", pool.status());
-        pool
+    pub fn backend_name(&self) -> &str {
+        &self.backend_name
+    }
+    /// Select FCGI process
+    /// Returns process index and FCGI client pool
+    pub fn select(&self, query_str: &str) -> (usize, &FcgiClientPool) {
+        let poolno = self.dispatcher.select(query_str);
+        let pool = &self.pools[poolno];
+        debug!("selected pool {}: client {:?}", poolno, pool.status());
+        (poolno, pool)
     }
     /// Remove possibly broken client
     pub fn remove(&self, fcgi_client: deadpool::managed::Object<FcgiClientHandler>) {
