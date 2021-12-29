@@ -1,7 +1,10 @@
-use crate::endpoints::{MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg};
+use crate::endpoints::{
+    wms_requests_counter, MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg,
+};
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::inventory::*;
 use actix_web::web;
+use actix_web_prom::PrometheusMetrics;
 use bbox_common::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
@@ -233,8 +236,19 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     Ok((pools, inventory))
 }
 
-pub async fn init_service() -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
+pub async fn init_service(
+    prometheus: Option<&PrometheusMetrics>,
+) -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
     let config = WmsserverCfg::from_config();
+
+    if let Some(prometheus) = prometheus {
+        let counter = wms_requests_counter();
+        prometheus
+            .registry
+            .register(Box::new(counter.clone()))
+            .unwrap();
+    }
+
     let (process_pools, inventory) = detect_backends().unwrap();
 
     let fcgi_clients = process_pools

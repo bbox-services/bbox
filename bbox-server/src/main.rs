@@ -88,7 +88,7 @@ fn init_tracer(
 }
 
 fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
+    HttpResponse::Ok().body("OK")
 }
 
 #[actix_web::main]
@@ -106,13 +106,14 @@ async fn webserver() -> std::io::Result<()> {
     let workers = web_config.worker_threads.unwrap_or(num_cpus::get());
 
     #[cfg(feature = "map-server")]
-    let (fcgi_clients, inventory) = bbox_map_server::init_service().await;
+    let (fcgi_clients, inventory) = bbox_map_server::init_service(Some(&prometheus)).await;
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     HttpServer::new(move || {
         let tracer = tracer.clone();
         let mut app = App::new()
+            .wrap(prometheus.clone())
             .wrap(middleware::Logger::default())
             .wrap_fn(move |req, srv| {
                 tracer.in_span("http-request", move |cx| {
@@ -120,7 +121,6 @@ async fn webserver() -> std::io::Result<()> {
                     srv.call(req).with_context(cx)
                 })
             })
-            .wrap(prometheus.clone())
             .wrap(middleware::Compress::default())
             .service(web::resource("/health").to(health));
 

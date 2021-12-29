@@ -9,7 +9,7 @@ use actix_web::{middleware, App, HttpServer};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let (fcgi_clients, inventory) = wms_fcgi_backend::init_service().await;
+    let (fcgi_clients, inventory) = wms_fcgi_backend::init_service(None).await;
 
     HttpServer::new(move || {
         App::new()

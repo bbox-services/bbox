@@ -3,11 +3,13 @@ use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use bbox_common::config::config_error_exit;
 use log::{debug, error, info, warn};
+use once_cell::sync::OnceCell;
 use opentelemetry::api::{
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
 use opentelemetry::global;
+use prometheus::IntCounterVec;
 use serde::Deserialize;
 use std::io::{BufRead, Cursor, Read};
 use std::time::{Duration, SystemTime};
@@ -78,6 +80,7 @@ async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
     project: web::Path<String>,
+    wms_requests_counter: web::Data<IntCounterVec>,
     body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -94,6 +97,9 @@ async fn wms_fcgi(
         .get()
         .await
         .expect("Couldn't get FCGI client");
+    wms_requests_counter
+        .with_label_values(&[req.path(), req.method().as_str()])
+        .inc();
     let tracer = global::tracer("request");
     let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
         ctx.span()
@@ -167,12 +173,24 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
+pub(crate) fn wms_requests_counter() -> &'static IntCounterVec {
+    static METRIC: OnceCell<IntCounterVec> = OnceCell::new();
+    &METRIC.get_or_init(|| {
+        let counter_opts = prometheus::opts!("requests_total", "Total number of WMS requests")
+            .namespace("bbox_wms");
+        let counter = IntCounterVec::new(counter_opts, &["endpoint", "method"]).unwrap();
+        counter
+    })
+}
+
 pub fn register(
     cfg: &mut web::ServiceConfig,
     fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
     inventory: &Inventory,
 ) {
     let config = WmsserverCfg::from_config();
+
+    cfg.data(wms_requests_counter().clone());
 
     cfg.data(inventory.clone());
 
