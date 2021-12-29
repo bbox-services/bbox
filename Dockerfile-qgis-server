@@ -3,24 +3,60 @@ WORKDIR /usr/src/bbox
 COPY . .
 RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
 
-FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y ca-certificates gnupg2 libcurl4 && \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 46B5721DBBD2996A && \
+
+FROM debian:bullseye-slim as qgis-server
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y -y ca-certificates gnupg2 curl apt-utils && \
+    curl https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
+    chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
     echo "deb https://qgis.org/debian bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
-    apt-get update && apt-get install -y qgis-server-wms && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y qgis-server-wms qgis-server-wfs xvfb && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 
-USER www-data
 WORKDIR /var/www
 
 COPY bbox-map-server/qgis/plugins ./bbox-map-server/qgis/plugins
 
-ENV BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080
-#ENV BBOX_WMSSERVER__PATH=
-#ENV BBOX_WMSSERVER__QGIS_BACKEND__PROJECT_BASEDIR=/data
-ENV BBOX_METRICS__PROMETHEUS='{path="/metrics"}'
+#ENV BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080
+# ENV BBOX_WMSSERVER__PATH=
+# ENV BBOX_WMSSERVER__QGIS_BACKEND__PROJECT_BASEDIR=/data
+#ENV BBOX_METRICS__PROMETHEUS='{path="/metrics"}'
 # ENV BBOX_FILESERVER__STATIC='[{dir="/static",path="static"}]'
 # ENV BBOX_FILESERVER__REPO='[{dir="/plugins",path="qgis"}]'
 
+RUN chown -R www-data /var/www
+USER www-data
 CMD ["bbox-server"]
+
+
+# Additional optional packages
+FROM qgis-server
+
+USER root
+
+#Fonts
+# add also asian fonts-noto - https://git.sourcepole.ch/sourcepole/qgiscloud-services/-/issues/363
+RUN echo "deb http://deb.debian.org/debian bullseye non-free" >> /etc/apt/sources.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ttf-bitstream-vera fonts-liberation ttf-ubuntu-font-family \
+                                                      fonts-noto && \
+    rm -rf /var/lib/apt/lists/*
+
+# Cadastra Font - siehe Cadastra/README.md
+#
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y fontconfig unzip && rm -rf /var/lib/apt/lists/*
+RUN curl -s -L -o /tmp/Cadastra.zip \
+ 'https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/dokumente_geodaten/dokumente-geodaten/Cadastra_neue_Normen.zip/download' && \
+ unzip -d /usr/share/fonts/truetype /tmp/Cadastra.zip '*.ttf' && \
+ rm /tmp/Cadastra.zip
+
+RUN fc-cache -f && fc-list | sort
+
+# Fix https://git.sourcepole.ch/sourcepole/qgiscloud-services/-/issues/360#note_28862
+# this occurs in proj-data 6.3.1-1 and should hopefully
+# be fixed in later releases?
+RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
+
+USER www-data
