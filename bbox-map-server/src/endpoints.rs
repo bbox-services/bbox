@@ -150,19 +150,23 @@ async fn wms_fcgi(
                 "Content-Type" => {
                     response.header(key, value);
                 }
+                "Content-Length" | "Server" => {} // ignore
                 // "X-trace" => {
                 "X-us" => {
+                    let us: u64 = value.parse().expect("u64 value");
                     let _span = tracer.build(SpanBuilder {
                         name: "fcgi".to_string(),
                         span_kind: Some(SpanKind::Internal),
                         start_time: Some(fcgi_start),
-                        end_time: Some(
-                            fcgi_start + Duration::from_micros(value.parse().expect("u64 value")),
-                        ),
+                        end_time: Some(fcgi_start + Duration::from_micros(us)),
                         ..Default::default()
                     });
+                    // Return server timing to browser
+                    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
+                    // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
+                    response.header("Server-Timing", format!("wms-backend;dur={}", us / 1000));
                 }
-                _ => debug!("Ignoring FCGI-Header: {}", line),
+                _ => debug!("Ignoring FCGI-Header: {}", &line),
             }
             line.truncate(0);
         }

@@ -59,10 +59,8 @@ class InstrumentationRequestFilter(QgsServerFilter):
         QgsMessageLog.logMessage("InstrumentationRequestFilter.responseComplete")
         duration = self.trace['responseComplete']-self.trace['requestReady']
         request = self.serverInterface().requestHandler()
-        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
-        # https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
-        request.setResponseHeader("Server-Timing", "qgis-server;" + str(round(duration*1000000)))
         request.setResponseHeader("X-trace", str(self.trace))
+        request.setResponseHeader("X-us", str(round(duration*1000000)))
         request.setResponseHeader("X-metrics", str(self.metrics))
 
     def sendResponse(self):
