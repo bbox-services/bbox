@@ -8,7 +8,6 @@ Features:
 - [ ] OGC API - Features - Part 2: Coordinate Reference Systems by Reference 1.0
 - [ ] OpenAPI endpoint
 - [ ] GeoZero backend (PostGIS, GeoPackage, ...)
-- [ ] Instrumentation: Prometheus and Jaeger tracing
 
 
 ## Usage

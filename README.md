@@ -3,6 +3,14 @@ BBOX services
 
 Composable spatial services.
 
+Features:
+* OGC WMS Server (backends: QGIS Server + UNN Mapserver)
+* Built-in map viewer
+* Static file server
+* Instrumentation: Prometheus and Jaeger tracing
+* Healths endpoints for Kubernetes hosting
+
+Components:
 * [BBOX map server](bbox-map-server/)
 * [BBOX map viewer](bbox-map-viewer/)
 * [BBOX OGC API Features service](bbox-feature-server/)

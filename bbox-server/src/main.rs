@@ -1,7 +1,6 @@
 use actix_service::Service;
-#[cfg(feature = "feature-server")]
 use actix_web::web;
-use actix_web::{middleware, App, HttpServer};
+use actix_web::{middleware, App, HttpResponse, HttpServer};
 use actix_web_prom::PrometheusMetrics;
 use bbox_common::config::config_error_exit;
 use opentelemetry::api::{
@@ -88,6 +87,10 @@ fn init_tracer(
     }
 }
 
+fn health() -> HttpResponse {
+    HttpResponse::Ok().finish()
+}
+
 #[actix_web::main]
 async fn webserver() -> std::io::Result<()> {
     let web_config = WebserverCfg::from_config();
@@ -118,7 +121,8 @@ async fn webserver() -> std::io::Result<()> {
                 })
             })
             .wrap(prometheus.clone())
-            .wrap(middleware::Compress::default());
+            .wrap(middleware::Compress::default())
+            .service(web::resource("/health").to(health));
 
         #[cfg(feature = "map-server")]
         {

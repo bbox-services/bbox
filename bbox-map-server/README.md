@@ -4,7 +4,7 @@ BBOX map server
 Asynchronous map server with FCGI backend.
 
 Features:
-- [ ] OGC WMS 1.3 Server
+- [x] OGC WMS 1.3 Server
 - [ ] OGC Map API Server
 - [X] Map rendering backends: QGIS Server + UNN Mapserver
 - [ ] Instrumentation data for WMS backends
@@ -39,7 +39,7 @@ Request examples:
 Development
 -----------
 
-Documentation of used libriaries:
+Documentation of main libriaries:
 * Actix: https://actix.rs/
 * Async Process: https://docs.rs/async-process/
 * QGIS Server plugins: https://docs.qgis.org/3.10/en/docs/user_manual/working_with_ogc/server/plugins.html
