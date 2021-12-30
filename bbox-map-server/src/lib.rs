@@ -1,3 +1,4 @@
+mod config;
 mod dispatcher;
 pub mod endpoints;
 mod fcgi_process;

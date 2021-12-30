@@ -1,4 +1,4 @@
-use crate::endpoints::{wms_metrics, MockBackendCfg, QgisBackendCfg, UmnBackendCfg, WmsserverCfg};
+use crate::config::*;
 use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
 use crate::inventory::*;
 use actix_web::web;

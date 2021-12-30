@@ -1,84 +1,16 @@
+use crate::config::*;
 use crate::fcgi_process::*;
 use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
-use bbox_common::config::config_error_exit;
 use log::{debug, error, info, warn};
-use once_cell::sync::OnceCell;
 use opentelemetry::api::{
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Key,
 };
 use opentelemetry::global;
-use prometheus::{IntCounterVec, IntGaugeVec};
-use serde::Deserialize;
 use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-
-#[derive(Deserialize, Debug)]
-pub struct WmsserverCfg {
-    pub path: String,
-    pub num_fcgi_processes: Option<usize>,
-    #[serde(default = "default_fcgi_client_pool_size")]
-    pub fcgi_client_pool_size: usize,
-    pub qgis_backend: Option<QgisBackendCfg>,
-    pub umn_backend: Option<UmnBackendCfg>,
-    pub mock_backend: Option<MockBackendCfg>,
-    #[serde(default)]
-    pub search_projects: bool,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct QgisBackendCfg {
-    pub project_basedir: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct UmnBackendCfg {
-    pub project_basedir: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MockBackendCfg;
-
-fn default_fcgi_client_pool_size() -> usize {
-    1
-}
-
-impl Default for WmsserverCfg {
-    fn default() -> Self {
-        WmsserverCfg {
-            path: "/wms".to_string(),
-            num_fcgi_processes: None,
-            fcgi_client_pool_size: default_fcgi_client_pool_size(),
-            qgis_backend: Some(QgisBackendCfg {
-                project_basedir: None,
-            }),
-            umn_backend: Some(UmnBackendCfg {
-                project_basedir: None,
-            }),
-            mock_backend: None,
-            search_projects: true,
-        }
-    }
-}
-
-impl WmsserverCfg {
-    pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("wmsserver").is_ok() {
-            config
-                .extract_inner("wmsserver")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
-    }
-    pub fn num_fcgi_processes(&self) -> usize {
-        self.num_fcgi_processes.unwrap_or(num_cpus::get())
-    }
-}
 
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
@@ -177,6 +109,7 @@ async fn wms_fcgi(
                 }
                 // "X-trace" => {
                 "X-metrics" => {
+                    // cache_count:2,cache_hit:13,cache_miss:2
                     for entry in value.split(',') {
                         let keyval: Vec<&str> = entry.splitn(2, ":").collect();
                         match keyval[0] {
@@ -202,61 +135,6 @@ async fn wms_fcgi(
     let mut body = Vec::new(); // TODO: return body without copy
     let _bytes = cursor.read_to_end(&mut body);
     Ok(response.body(body))
-}
-
-#[derive(Clone)]
-pub(crate) struct WmsMetrics {
-    pub wms_requests_counter: IntCounterVec,
-    // pub fcgi_client_pool_available: Vec<IntGaugeVec>,
-    pub fcgi_cache_count: Vec<IntGaugeVec>,
-    pub fcgi_cache_hit: Vec<IntGaugeVec>,
-    pub fcgi_cache_miss: Vec<IntGaugeVec>,
-}
-
-pub(crate) fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
-    static METRICS: OnceCell<WmsMetrics> = OnceCell::new();
-    &METRICS.get_or_init(|| {
-        let opts = prometheus::opts!("requests_total", "Total number of WMS requests")
-            .namespace("bbox_wms");
-        let wms_requests_counter =
-            IntCounterVec::new(opts, &["endpoint", "backend", "fcgino"]).unwrap();
-        let fcgi_cache_count = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_count_{}", fcgino),
-                    "FCGI project cache size"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        let fcgi_cache_hit = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_hit_{}", fcgino),
-                    "FCGI project cache hit"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        let fcgi_cache_miss = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_miss_{}", fcgino),
-                    "FCGI project cache miss"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        WmsMetrics {
-            wms_requests_counter,
-            fcgi_cache_count,
-            fcgi_cache_hit,
-            fcgi_cache_miss,
-        }
-    })
 }
 
 pub fn register(
