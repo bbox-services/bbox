@@ -3,12 +3,12 @@ WORKDIR /usr/src/bbox
 COPY . .
 RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
 
-
+# ------
 FROM debian:bullseye-slim as qgis-server
 
 ARG DEBIAN_REPO=debian
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y -y ca-certificates gnupg2 curl apt-utils && \
+    apt-get install --no-install-recommends -y -y ca-certificates gnupg2 curl apt-utils gosu && \
     curl https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
     echo "deb https://qgis.org/$DEBIAN_REPO bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
@@ -17,19 +17,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 
-WORKDIR /var/www
-
-COPY bbox-map-server/qgis/plugins ./bbox-map-server/qgis/plugins
+COPY bbox-map-server/qgis/plugins /var/www/bbox-map-server/qgis/plugins
 
 RUN chown -R www-data /var/www
-USER www-data
-CMD ["bbox-server"]
+WORKDIR /var/www
+CMD ["gosu", "www-data", "bbox-server"]
 
-
+# ------
 # Additional optional packages
 FROM qgis-server
-
-USER root
 
 #Fonts
 # add also asian fonts-noto - https://git.sourcepole.ch/sourcepole/qgiscloud-services/-/issues/363
@@ -53,5 +49,3 @@ RUN fc-cache -f && fc-list | sort
 # this occurs in proj-data 6.3.1-1 and should hopefully
 # be fixed in later releases?
 RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
-
-USER www-data
