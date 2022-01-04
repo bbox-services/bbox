@@ -5,26 +5,21 @@ RUN cd bbox-server && cargo install --no-default-features --features=map-server 
 
 
 FROM debian:bullseye-slim as qgis-server
+
+ARG DEBIAN_REPO=debian
 RUN apt-get update && \
     apt-get install --no-install-recommends -y -y ca-certificates gnupg2 curl apt-utils && \
     curl https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
-    echo "deb https://qgis.org/debian bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
+    echo "deb https://qgis.org/$DEBIAN_REPO bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y qgis-server-wms qgis-server-wfs xvfb && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y qgis-server-wms qgis-server-wfs && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 
 WORKDIR /var/www
 
 COPY bbox-map-server/qgis/plugins ./bbox-map-server/qgis/plugins
-
-#ENV BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080
-# ENV BBOX_WMSSERVER__PATH=
-# ENV BBOX_WMSSERVER__QGIS_BACKEND__PROJECT_BASEDIR=/data
-#ENV BBOX_METRICS__PROMETHEUS='{path="/metrics"}'
-# ENV BBOX_FILESERVER__STATIC='[{dir="/static",path="static"}]'
-# ENV BBOX_FILESERVER__REPO='[{dir="/plugins",path="qgis"}]'
 
 RUN chown -R www-data /var/www
 USER www-data

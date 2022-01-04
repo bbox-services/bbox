@@ -1,0 +1,8 @@
+FROM alpine:3
+
+RUN apk add --no-cache xvfb
+
+ENV DISPLAY 0
+# Listens on port 6000 + $DISPLAY
+
+ENTRYPOINT Xvfb :$DISPLAY -listen TCP -ac -screen 0 1024x768x24 +render -noreset

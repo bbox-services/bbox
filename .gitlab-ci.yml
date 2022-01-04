@@ -14,23 +14,36 @@ build_images:
   script:
     # Build
     - |
-      if [ -z "$CI_COMMIT_TAG" ]
-      then
-        docker build -t "$IMAGE_TAG" -f Dockerfile-qgis-server .
-      else
-        docker build -t "$IMAGE_TAG:latest" -f Dockerfile-qgis-server .
+      docker build -t "$IMAGE_TAG:latest" -f Dockerfile-qgis-server .
+      if [ -n "$CI_COMMIT_TAG" ]; then
         docker build -t "$IMAGE_TAG:$CI_COMMIT_TAG" -f Dockerfile-qgis-server .
       fi
     # Push
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin https://eu.gcr.io
     - |
-      if [ -z "$CI_COMMIT_TAG" ]
-      then
-        docker push "$IMAGE_TAG"
-      else
-        docker push "$IMAGE_TAG:latest"
+      docker push "$IMAGE_TAG:latest"
+      if [ -n "$CI_COMMIT_TAG" ]; then
         docker push "$IMAGE_TAG:$CI_COMMIT_TAG"
       fi
+
+    # Build LTR
+    - |
+      docker build --build-arg DEBIAN_REPO=debian-ltr -t "$IMAGE_TAG:ltr" -f Dockerfile-qgis-server .
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        docker build --build-arg DEBIAN_REPO=debian-ltr -t "$IMAGE_TAG:${CI_COMMIT_TAG}-ltr" -f Dockerfile-qgis-server .
+      fi
+    # Push LTR
+    - |
+      docker push "$IMAGE_TAG:ltr"
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        docker push "$IMAGE_TAG:${CI_COMMIT_TAG}-ltr"
+      fi
+
+    # Build & push xvfb
+    - |
+      IMAGE_TAG='eu.gcr.io/sourcepole/xvfb'
+      docker build -t $IMAGE_TAG -f Dockerfile-xvfb .
+      docker push "$IMAGE_TAG"
   only:
     - tags 
     - master
