@@ -305,6 +305,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-opentelemetry"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ac71801f541f5225e71f522d56901b0be7fd6ee2181724a7e551b74249d0129"
+dependencies = [
+ "actix-http",
+ "actix-web",
+ "futures",
+ "opentelemetry 0.12.0",
+ "opentelemetry-prometheus",
+ "opentelemetry-semantic-conventions",
+ "prometheus",
+ "serde",
+]
+
+[[package]]
 name = "actix-web-prom"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -542,7 +558,6 @@ name = "bbox-map-server"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "actix-web-prom",
  "async-process",
  "async-trait",
  "awc",
@@ -553,7 +568,7 @@ dependencies = [
  "log",
  "num_cpus",
  "once_cell",
- "opentelemetry 0.9.1",
+ "opentelemetry 0.12.0",
  "prometheus",
  "rand 0.7.3",
  "serde",
@@ -589,6 +604,7 @@ version = "0.1.0"
 dependencies = [
  "actix-service",
  "actix-web",
+ "actix-web-opentelemetry",
  "actix-web-prom",
  "bbox-common",
  "bbox-feature-server",
@@ -596,8 +612,9 @@ dependencies = [
  "bbox-map-server",
  "bbox-map-viewer",
  "num_cpus",
- "opentelemetry 0.9.1",
- "opentelemetry-jaeger 0.8.0",
+ "opentelemetry 0.12.0",
+ "opentelemetry-jaeger 0.11.0",
+ "opentelemetry-prometheus",
  "serde",
 ]
 
@@ -831,6 +848,16 @@ dependencies = [
  "pkg-config",
  "vcpkg",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "dashmap"
+version = "4.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e77a43b28d0668df09411cb0bc9a8c2adc40f9a048afe863e05fd43251e8e39c"
+dependencies = [
+ "cfg-if 1.0.0",
+ "num_cpus",
 ]
 
 [[package]]
@@ -1726,9 +1753,9 @@ checksum = "28988d872ab76095a6e6ac88d99b54fd267702734fd7ffe610ca27f533ddb95a"
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.71"
+version = "0.9.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7df13d165e607909b363a4757a6f133f8a818a74e9d3a98d09c6128e15fa4c73"
+checksum = "7e46109c383602735fa0a2e48dd2b7c892b048e1bf69e5c3b1d804b7d9c203cb"
 dependencies = [
  "autocfg",
  "cc",
@@ -1739,17 +1766,20 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry"
-version = "0.9.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4281f4b4b62fd9f6aa99abdaac38b15fdaf129f8b51b5c26bb6e05c3b74576c3"
+checksum = "514d24875c140ed269eecc2d1b56d7b71b573716922a763c317fb1b1b4b58f15"
 dependencies = [
  "async-trait",
+ "dashmap",
+ "fnv",
  "futures",
+ "js-sys",
  "lazy_static",
  "percent-encoding",
- "pin-project 0.4.28",
- "rand 0.7.3",
- "regex",
+ "pin-project 1.0.8",
+ "rand 0.8.4",
+ "thiserror",
 ]
 
 [[package]]
@@ -1770,6 +1800,19 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry-http"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69a853d37ac1c02889211517007a99b2a90d3d7e89526f9af037ada84f1326a1"
+dependencies = [
+ "async-trait",
+ "http",
+ "isahc",
+ "opentelemetry 0.12.0",
+ "thiserror",
+]
+
+[[package]]
+name = "opentelemetry-http"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba72bd27f28377a2e4f0f15a040c06ab0e70ea73df0689f8adf4d22d04591a1a"
@@ -1782,14 +1825,17 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry-jaeger"
-version = "0.8.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69ad2f25082f03dcd84dcae292de250ec83c77c0156efb0fdeedcea79de16a11"
+checksum = "a5677b3a361784aff6e2b1b30dbdb5f85f4ec57ff2ced41d9a481ad70a9d0b57"
 dependencies = [
  "async-trait",
  "http",
  "isahc",
- "opentelemetry 0.9.1",
+ "lazy_static",
+ "opentelemetry 0.12.0",
+ "opentelemetry-http 0.1.0",
+ "thiserror",
  "thrift",
 ]
 
@@ -1803,9 +1849,29 @@ dependencies = [
  "http",
  "lazy_static",
  "opentelemetry 0.13.0",
- "opentelemetry-http",
+ "opentelemetry-http 0.2.0",
  "thiserror",
  "thrift",
+]
+
+[[package]]
+name = "opentelemetry-prometheus"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5407eac459699e03e83f55a557920c612d09f202b58f44212b5cdc4e8a7666e"
+dependencies = [
+ "opentelemetry 0.12.0",
+ "prometheus",
+ "protobuf",
+]
+
+[[package]]
+name = "opentelemetry-semantic-conventions"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ecb679b997c41108a498e3ce8b933fe2f643a9a722ad8ca33f95edab84df106"
+dependencies = [
+ "opentelemetry 0.12.0",
 ]
 
 [[package]]
@@ -1946,9 +2012,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.22"
+version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12295df4f294471248581bc09bef3c38a5e46f1e36d6a37353621a0c6c357e1f"
+checksum = "58893f751c9b0412871a09abd62ecd2a00298c6c83befa223ef98c52aef40cbe"
 
 [[package]]
 name = "polling"
@@ -2007,9 +2073,16 @@ dependencies = [
  "fnv",
  "lazy_static",
  "parking_lot",
+ "protobuf",
  "regex",
  "thiserror",
 ]
+
+[[package]]
+name = "protobuf"
+version = "2.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47c327e191621a2158159df97cdbc2e7074bb4e940275e35abf38eb3d2595754"
 
 [[package]]
 name = "quick-error"

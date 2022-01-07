@@ -3,11 +3,11 @@ use crate::fcgi_process::*;
 use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use log::{debug, error, info, warn};
-use opentelemetry::api::{
+use opentelemetry::{
+    global,
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
-    Key,
+    KeyValue,
 };
-use opentelemetry::global;
 use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -42,7 +42,7 @@ async fn wms_fcgi(
     let tracer = global::tracer("request");
     let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
         ctx.span()
-            .set_attribute(Key::new("project").string(project.as_str()));
+            .set_attribute(KeyValue::new("project", project.to_string()));
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
         debug!(

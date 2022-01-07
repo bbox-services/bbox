@@ -1,26 +1,24 @@
 mod config;
 
 use crate::config::*;
-use actix_service::Service;
 use actix_web::web;
 use actix_web::{middleware, App, HttpResponse, HttpServer};
-use actix_web_prom::PrometheusMetrics;
-use opentelemetry::api::{
-    trace::{FutureExt, TraceContextExt, Tracer},
-    Key,
+use actix_web_opentelemetry::RequestTracing;
+use opentelemetry::{
+    global, sdk::propagation::TraceContextPropagator, sdk::trace::Tracer, trace::TraceError,
 };
-use opentelemetry::sdk::trace as sdktrace;
 
 fn init_tracer(
     config: &MetricsCfg,
-) -> Result<(sdktrace::Tracer, opentelemetry_jaeger::Uninstall), Box<dyn std::error::Error>> {
+) -> Result<(Tracer, opentelemetry_jaeger::Uninstall), TraceError> {
     if let Some(cfg) = &config.jaeger {
+        global::set_text_map_propagator(TraceContextPropagator::new()); // default header: traceparent
         opentelemetry_jaeger::new_pipeline()
             .with_collector_endpoint(cfg.collector_endpoint.clone())
             .with_service_name("bbox")
             .install()
     } else {
-        opentelemetry_jaeger::new_pipeline().install()
+        opentelemetry_jaeger::new_pipeline().install() // is collector_endpoint configured by default?
     }
 }
 
@@ -33,31 +31,37 @@ async fn webserver() -> std::io::Result<()> {
     let web_config = WebserverCfg::from_config();
     let metrics_cfg = MetricsCfg::from_config();
 
-    let (tracer, _uninstall) = init_tracer(&metrics_cfg).expect("Failed to initialize tracer.");
-    let prometheus = if let Some(cfg) = metrics_cfg.prometheus {
-        PrometheusMetrics::new("bbox", Some(&cfg.path), None)
-    } else {
-        PrometheusMetrics::new("bbox", None, None)
-    };
+    let (_tracer, _uninstall) = init_tracer(&metrics_cfg).expect("Failed to initialize tracer.");
+
+    // Prometheus metrics
+    let exporter = opentelemetry_prometheus::exporter().init();
+    let prometheus = metrics_cfg.prometheus.as_ref().map(|_| exporter.registry());
+
+    #[cfg(feature = "map-server")]
+    let (fcgi_clients, inventory) = bbox_map_server::init_service(prometheus).await;
+
+    let endpoint = metrics_cfg.prometheus.map(|cfg| {
+        let path = cfg.path.clone();
+        move |req: &actix_web::dev::ServiceRequest| {
+            req.path() == path && req.method() == actix_web::http::Method::GET
+        }
+    });
+    let request_metrics = actix_web_opentelemetry::RequestMetrics::new(
+        opentelemetry::global::meter("bbox"),
+        endpoint,
+        Some(exporter),
+    );
 
     let workers = web_config.worker_threads();
 
-    #[cfg(feature = "map-server")]
-    let (fcgi_clients, inventory) = bbox_map_server::init_service(Some(&prometheus)).await;
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     HttpServer::new(move || {
-        let tracer = tracer.clone();
         let mut app = App::new()
-            .wrap(prometheus.clone())
+            .wrap(RequestTracing::new())
+            .wrap(request_metrics.clone())
             .wrap(middleware::Logger::default())
-            .wrap_fn(move |req, srv| {
-                tracer.in_span("http-request", move |cx| {
-                    cx.span().set_attribute(Key::new("path").string(req.path()));
-                    srv.call(req).with_context(cx)
-                })
-            })
             .wrap(middleware::Compress::default())
             .service(web::resource("/health").to(health));
 
