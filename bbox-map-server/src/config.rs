@@ -12,7 +12,7 @@ pub struct WmsserverCfg {
     pub qgis_backend: Option<QgisBackendCfg>,
     pub umn_backend: Option<UmnBackendCfg>,
     pub mock_backend: Option<MockBackendCfg>,
-    #[serde(default)]
+    #[serde(default = "default_search_projects")]
     pub search_projects: bool,
 }
 
@@ -33,6 +33,11 @@ fn default_fcgi_client_pool_size() -> usize {
     1
 }
 
+fn default_search_projects() -> bool {
+    // we want an inventory for the map viewer  
+    cfg!(feature = "map-viewer")
+}
+
 impl Default for WmsserverCfg {
     fn default() -> Self {
         WmsserverCfg {
@@ -46,7 +51,7 @@ impl Default for WmsserverCfg {
                 project_basedir: None,
             }),
             mock_backend: None,
-            search_projects: true,
+            search_projects: default_search_projects(),
         }
     }
 }
