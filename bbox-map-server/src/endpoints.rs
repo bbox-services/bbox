@@ -43,7 +43,7 @@ async fn wms_fcgi(
     ctx.span()
         .set_attribute(KeyValue::new("project", project.to_string()));
     ctx.span()
-        .set_attribute(KeyValue::new("fcgino", f64::from(fcgino as u16)));
+        .set_attribute(KeyValue::new("fcgino", fcgino.to_string()));
 
     let span = tracer.start("fcgi_wait");
     let ctx = Context::current_with_span(span);
@@ -56,7 +56,7 @@ async fn wms_fcgi(
         .set(available_clients as i64);
     ctx.span().set_attribute(KeyValue::new(
         "available_clients",
-        f64::from(available_clients as i32),
+        available_clients.to_string(),
     ));
     drop(ctx);
 

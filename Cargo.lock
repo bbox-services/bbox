@@ -321,20 +321,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-web-prom"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec994b7dd52e686b9ae8f63bc485e6027fb44b936ed09bdf648495b9966c36ce"
-dependencies = [
- "actix-http",
- "actix-service",
- "actix-web",
- "futures",
- "pin-project 1.0.8",
- "prometheus",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -605,7 +591,6 @@ dependencies = [
  "actix-service",
  "actix-web",
  "actix-web-opentelemetry",
- "actix-web-prom",
  "bbox-common",
  "bbox-feature-server",
  "bbox-file-server",
