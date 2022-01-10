@@ -38,12 +38,6 @@ build_images:
       if [ -n "$CI_COMMIT_TAG" ]; then
         docker push "$IMAGE_TAG:${CI_COMMIT_TAG}-ltr"
       fi
-
-    # Build & push xvfb
-    - |
-      IMAGE_TAG='eu.gcr.io/sourcepole/xvfb'
-      docker build -t $IMAGE_TAG -f Dockerfile-xvfb .
-      docker push "$IMAGE_TAG"
   only:
     - tags 
     - master
