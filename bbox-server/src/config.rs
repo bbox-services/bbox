@@ -51,7 +51,7 @@ pub struct PrometheusCfg {
 
 #[derive(Deserialize, Debug)]
 pub struct JaegerCfg {
-    pub collector_endpoint: String,
+    pub agent_endpoint: String,
 }
 
 impl MetricsCfg {

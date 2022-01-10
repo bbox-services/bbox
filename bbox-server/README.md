@@ -70,7 +70,7 @@ path = "/metrics"
 [metrics.jaeger] 
 # Jaeger tracing
 # Environment variable prefix: BBOX_METRICS__JAEGER__
-collector_endpoint = "http://127.0.0.1:14268/api/traces"
+agent_endpoint = "localhost:6831"
 ```
 
 

@@ -14,11 +14,11 @@ fn init_tracer(
     if let Some(cfg) = &config.jaeger {
         global::set_text_map_propagator(TraceContextPropagator::new()); // default header: traceparent
         opentelemetry_jaeger::new_pipeline()
-            .with_collector_endpoint(cfg.collector_endpoint.clone())
+            .with_agent_endpoint(cfg.agent_endpoint.clone())
             .with_service_name("bbox")
             .install()
     } else {
-        opentelemetry_jaeger::new_pipeline().install() // is collector_endpoint configured by default?
+        opentelemetry_jaeger::new_pipeline().install() // is agent_endpoint configured by default?
     }
 }
 
