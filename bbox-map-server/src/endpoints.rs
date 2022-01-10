@@ -6,7 +6,7 @@ use log::{debug, error, info, warn};
 use opentelemetry::{
     global,
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
-    KeyValue,
+    Context, KeyValue,
 };
 use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
@@ -28,6 +28,9 @@ async fn wms_fcgi(
         req.query_string(),
         &body
     );
+    let tracer = global::tracer("request");
+    let ctx = Context::current();
+
     let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
     metrics
         .wms_requests_counter
@@ -37,12 +40,27 @@ async fn wms_fcgi(
             &fcgino.to_string(),
         ])
         .inc();
-    // metrics.fcgi_client_pool_available[fcgino].set(pool.status().available as i64);
+    ctx.span()
+        .set_attribute(KeyValue::new("project", project.to_string()));
+    ctx.span()
+        .set_attribute(KeyValue::new("fcgino", f64::from(fcgino as u16)));
+
+    let span = tracer.start("fcgi_wait");
+    let ctx = Context::current_with_span(span);
+
+    let available_clients = pool.status().available;
     let mut fcgi_client = pool.get().await.expect("Couldn't get FCGI client");
-    let tracer = global::tracer("request");
-    let mut cursor = tracer.in_span("wms_fcgi", |ctx| {
-        ctx.span()
-            .set_attribute(KeyValue::new("project", project.to_string()));
+
+    metrics.fcgi_client_pool_available[fcgino]
+        .with_label_values(&[fcgi_dispatcher.backend_name()])
+        .set(available_clients as i64);
+    ctx.span().set_attribute(KeyValue::new(
+        "available_clients",
+        f64::from(available_clients as i32),
+    ));
+    drop(ctx);
+
+    let mut cursor = tracer.in_span("wms_fcgi", |_ctx| {
         let conninfo = req.connection_info();
         let host_port: Vec<&str> = conninfo.host().split(':').collect();
         debug!(
@@ -119,9 +137,7 @@ async fn wms_fcgi(
                             "cache_hit" => metrics.fcgi_cache_hit[fcgino]
                                 .with_label_values(&[fcgi_dispatcher.backend_name()])
                                 .set(i64::from_str(keyval[1]).expect("i64 value")),
-                            "cache_miss" => metrics.fcgi_cache_miss[fcgino]
-                                .with_label_values(&[fcgi_dispatcher.backend_name()])
-                                .set(i64::from_str(keyval[1]).expect("i64 value")),
+                            "cache_miss" => { /* ignore */ }
                             _ => debug!("Ignoring metric entry {}", entry),
                         }
                     }

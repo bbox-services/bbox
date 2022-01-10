@@ -34,7 +34,7 @@ fn default_fcgi_client_pool_size() -> usize {
 }
 
 fn default_search_projects() -> bool {
-    // we want an inventory for the map viewer  
+    // we want an inventory for the map viewer
     cfg!(feature = "map-viewer")
 }
 
@@ -76,10 +76,9 @@ impl WmsserverCfg {
 #[derive(Clone)]
 pub struct WmsMetrics {
     pub wms_requests_counter: IntCounterVec,
-    // pub fcgi_client_pool_available: Vec<IntGaugeVec>,
+    pub fcgi_client_pool_available: Vec<IntGaugeVec>,
     pub fcgi_cache_count: Vec<IntGaugeVec>,
     pub fcgi_cache_hit: Vec<IntGaugeVec>,
-    pub fcgi_cache_miss: Vec<IntGaugeVec>,
 }
 
 pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
@@ -99,6 +98,16 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
                 IntGaugeVec::new(opts, &["backend"]).unwrap()
             })
             .collect();
+        let fcgi_client_pool_available = (0..num_fcgi_processes)
+            .map(|fcgino| {
+                let opts = prometheus::opts!(
+                    format!("fcgi_client_pool_available_{}", fcgino),
+                    "FCGI clients available in pool"
+                )
+                .namespace("bbox_wms");
+                IntGaugeVec::new(opts, &["backend"]).unwrap()
+            })
+            .collect();
         let fcgi_cache_hit = (0..num_fcgi_processes)
             .map(|fcgino| {
                 let opts = prometheus::opts!(
@@ -109,21 +118,11 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
                 IntGaugeVec::new(opts, &["backend"]).unwrap()
             })
             .collect();
-        let fcgi_cache_miss = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_miss_{}", fcgino),
-                    "FCGI project cache miss"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
         WmsMetrics {
             wms_requests_counter,
+            fcgi_client_pool_available,
             fcgi_cache_count,
             fcgi_cache_hit,
-            fcgi_cache_miss,
         }
     })
 }

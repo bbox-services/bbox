@@ -249,13 +249,13 @@ pub async fn init_service(
             .unwrap();
         for no in 0..metrics.fcgi_cache_count.len() {
             prometheus
+                .register(Box::new(metrics.fcgi_client_pool_available[no].clone()))
+                .unwrap();
+            prometheus
                 .register(Box::new(metrics.fcgi_cache_count[no].clone()))
                 .unwrap();
             prometheus
                 .register(Box::new(metrics.fcgi_cache_hit[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_cache_miss[no].clone()))
                 .unwrap();
         }
     }
