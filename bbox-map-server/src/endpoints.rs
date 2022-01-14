@@ -35,6 +35,7 @@ async fn wms_fcgi(
     );
 
     let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
+    let available_clients = pool.status().available;
 
     // ---
     metrics
@@ -56,18 +57,26 @@ async fn wms_fcgi(
     let ctx = Context::current_with_span(span);
     // ---
 
-    let available_clients = pool.status().available;
+    let fcgi_client_start = SystemTime::now();
     let mut fcgi_client = pool.get().await.expect("Couldn't get FCGI client");
+    let fcgi_client_wait_elapsed = fcgi_client_start.elapsed();
 
     // ---
-    metrics.fcgi_client_pool_available[fcgino]
-        .with_label_values(&[fcgi_dispatcher.backend_name()])
-        .set(available_clients as i64);
     ctx.span().set_attribute(KeyValue::new(
         "available_clients",
         available_clients.to_string(),
     ));
     drop(ctx);
+    metrics.fcgi_client_pool_available[fcgino]
+        .with_label_values(&[fcgi_dispatcher.backend_name()])
+        .set(available_clients as i64);
+    if let Ok(elapsed) = fcgi_client_wait_elapsed {
+        let duration =
+            (elapsed.as_secs() as f64) + f64::from(elapsed.subsec_nanos()) / 1_000_000_000_f64;
+        metrics.fcgi_client_wait_seconds[fcgino]
+            .with_label_values(&[fcgi_dispatcher.backend_name()])
+            .observe(duration);
+    }
     // --- <
 
     // --- >>

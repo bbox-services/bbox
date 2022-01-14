@@ -252,6 +252,9 @@ pub async fn init_service(
                 .register(Box::new(metrics.fcgi_client_pool_available[no].clone()))
                 .unwrap();
             prometheus
+                .register(Box::new(metrics.fcgi_client_wait_seconds[no].clone()))
+                .unwrap();
+            prometheus
                 .register(Box::new(metrics.fcgi_cache_count[no].clone()))
                 .unwrap();
             prometheus
