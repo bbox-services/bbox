@@ -10,3 +10,4 @@ http-quick.jpg: http-quick.g results_http_quick.csv
 
 clean:
 	rm -f *.csv
+	touch results_http_quick.csv results_http.csv

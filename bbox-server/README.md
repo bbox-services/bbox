@@ -91,14 +91,14 @@ Test expression browser:
 
 Expression example:
 
-    bbox_http_requests_duration_seconds_bucket
+    http_requests_duration_bucket
 
 
 ### Jaeger tracing
 
 Run jaeger in background:
 
-    docker run --rm -d -p 6831:6831/udp -p 6832:6832/udp -p 16686:16686 -p 14268:14268 jaegertracing/all-in-one:latest
+    docker run --rm -d -p 6831:6831/udp -p 6832:6832/udp -p 16686:16686 jaegertracing/all-in-one:latest
 
 View spans:
 
@@ -123,14 +123,14 @@ Open Grafana:
 
 Average request duration:
 
-    rate(bbox_http_requests_duration_seconds_sum[5m])/rate(bbox_http_requests_duration_seconds_count[5m])
+    rate(http_requests_duration_sum[5m])/rate(http_requests_duration_count[5m])
 
 Request duration 90th percentile
         
-    histogram_quantile(0.9, rate(bbox_http_requests_duration_seconds_bucket[5m]))
+    histogram_quantile(0.9, rate(http_requests_duration_bucket[5m]))
 
 https://www.robustperception.io/how-does-a-prometheus-histogram-work
 
 WMS Endpoint:
 
-    bbox_http_requests_duration_seconds_sum{endpoint="/wms/qgs/{project:.+}"}
+    http_requests_duration_sum{endpoint="/wms/qgs/{project:.+}"}

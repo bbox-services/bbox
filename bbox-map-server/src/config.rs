@@ -27,7 +27,9 @@ pub struct UmnBackendCfg {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct MockBackendCfg;
+pub struct MockBackendCfg {
+    active: Option<bool>
+}
 
 fn default_fcgi_client_pool_size() -> usize {
     1

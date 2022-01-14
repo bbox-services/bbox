@@ -1,0 +1,17 @@
+[webserver]
+server_addr = "0.0.0.0:8080"
+worker_threads = 32
+
+[wmsserver]
+path = "/wms"
+num_fcgi_processes = 32
+search_projects = false
+
+[wmsserver.mock_backend]
+# Enable FCGI mockup backend (for testing)
+
+[metrics.prometheus]
+path = "/metrics"
+
+[metrics.jaeger] 
+agent_endpoint = "localhost:6831"
