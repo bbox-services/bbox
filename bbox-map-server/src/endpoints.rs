@@ -20,6 +20,11 @@ async fn wms_fcgi(
     body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    // --- > tracing/metrics
+    let tracer = global::tracer("request");
+    let ctx = Context::current();
+    // ---
+
     let mut response = HttpResponse::Ok();
     let fcgi_query = format!(
         "map={}.{}&{}{}",
@@ -28,10 +33,10 @@ async fn wms_fcgi(
         req.query_string(),
         &body
     );
-    let tracer = global::tracer("request");
-    let ctx = Context::current();
 
     let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
+
+    // ---
     metrics
         .wms_requests_counter
         .with_label_values(&[
@@ -44,13 +49,17 @@ async fn wms_fcgi(
         .set_attribute(KeyValue::new("project", project.to_string()));
     ctx.span()
         .set_attribute(KeyValue::new("fcgino", fcgino.to_string()));
+    // ---
 
+    // --- >>
     let span = tracer.start("fcgi_wait");
     let ctx = Context::current_with_span(span);
+    // ---
 
     let available_clients = pool.status().available;
     let mut fcgi_client = pool.get().await.expect("Couldn't get FCGI client");
 
+    // ---
     metrics.fcgi_client_pool_available[fcgino]
         .with_label_values(&[fcgi_dispatcher.backend_name()])
         .set(available_clients as i64);
@@ -59,95 +68,102 @@ async fn wms_fcgi(
         available_clients.to_string(),
     ));
     drop(ctx);
+    // --- <
 
-    let mut cursor = tracer.in_span("wms_fcgi", |_ctx| {
-        let conninfo = req.connection_info();
-        let host_port: Vec<&str> = conninfo.host().split(':').collect();
-        debug!(
-            "Forwarding query to FCGI process {}: {}",
-            fcgino, &fcgi_query
-        );
-        let mut params = fastcgi_client::Params::new()
-            .set_request_method(req.method().as_str())
-            .set_request_uri(req.path())
-            .set_server_name(host_port.get(0).unwrap_or(&""))
-            .set_query_string(&fcgi_query);
-        if let Some(port) = host_port.get(1) {
-            params = params.set_server_port(port);
-        }
-        if conninfo.scheme() == "https" {
-            params.insert("HTTPS", "ON");
-        }
-        // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
-        // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
-        let fcgi_start = SystemTime::now();
-        let output = fcgi_client.do_request(&params, &mut std::io::empty());
-        if let Err(ref e) = output {
-            warn!("FCGI error: {}", e);
-            // Remove probably broken FCGI client from pool
-            fcgi_dispatcher.remove(fcgi_client);
-            response = HttpResponse::InternalServerError();
-            return Cursor::new(Vec::new());
-        }
-        let fcgiout = output.unwrap().get_stdout().unwrap();
+    // --- >>
+    let span = tracer.start("wms_fcgi");
+    let ctx = Context::current_with_span(span);
+    // ---
 
-        let mut cursor = Cursor::new(fcgiout);
-        let mut line = String::new();
-        while let Ok(_bytes) = cursor.read_line(&mut line) {
-            // Truncate newline
-            let len = line.trim_end_matches(&['\r', '\n'][..]).len();
-            line.truncate(len);
-            if len == 0 {
-                break;
+    let conninfo = req.connection_info();
+    let host_port: Vec<&str> = conninfo.host().split(':').collect();
+    debug!(
+        "Forwarding query to FCGI process {}: {}",
+        fcgino, &fcgi_query
+    );
+    let mut params = fastcgi_client::Params::new()
+        .set_request_method(req.method().as_str())
+        .set_request_uri(req.path())
+        .set_server_name(host_port.get(0).unwrap_or(&""))
+        .set_query_string(&fcgi_query);
+    if let Some(port) = host_port.get(1) {
+        params = params.set_server_port(port);
+    }
+    if conninfo.scheme() == "https" {
+        params.insert("HTTPS", "ON");
+    }
+    // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
+    // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
+    let fcgi_start = SystemTime::now();
+    let output = fcgi_client.do_request(&params, &mut std::io::empty());
+    if let Err(ref e) = output {
+        warn!("FCGI error: {}", e);
+        // Remove probably broken FCGI client from pool
+        fcgi_dispatcher.remove(fcgi_client);
+        return Ok(HttpResponse::InternalServerError().finish());
+    }
+    let fcgiout = output.unwrap().get_stdout().unwrap();
+
+    let mut cursor = Cursor::new(fcgiout);
+    let mut line = String::new();
+    while let Ok(_bytes) = cursor.read_line(&mut line) {
+        // Truncate newline
+        let len = line.trim_end_matches(&['\r', '\n'][..]).len();
+        line.truncate(len);
+        if len == 0 {
+            break;
+        }
+        let parts: Vec<&str> = line.splitn(2, ": ").collect();
+        if parts.len() != 2 {
+            error!("Invalid FCGI-Header received: {}", line);
+            break;
+        }
+        let (key, value) = (parts[0], parts[1]);
+        match key {
+            "Content-Type" => {
+                response.header(key, value);
             }
-            let parts: Vec<&str> = line.splitn(2, ": ").collect();
-            if parts.len() != 2 {
-                error!("Invalid FCGI-Header received: {}", line);
-                break;
+            "Content-Length" | "Server" => {} // ignore
+            "X-us" => {
+                let us: u64 = value.parse().expect("u64 value");
+                let _span = tracer.build(SpanBuilder {
+                    name: "fcgi".to_string(),
+                    span_kind: Some(SpanKind::Internal),
+                    start_time: Some(fcgi_start),
+                    end_time: Some(fcgi_start + Duration::from_micros(us)),
+                    ..Default::default()
+                });
+                // Return server timing to browser
+                // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
+                // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
+                response.header("Server-Timing", format!("wms-backend;dur={}", us / 1000));
             }
-            let (key, value) = (parts[0], parts[1]);
-            match key {
-                "Content-Type" => {
-                    response.header(key, value);
-                }
-                "Content-Length" | "Server" => {} // ignore
-                "X-us" => {
-                    let us: u64 = value.parse().expect("u64 value");
-                    let _span = tracer.build(SpanBuilder {
-                        name: "fcgi".to_string(),
-                        span_kind: Some(SpanKind::Internal),
-                        start_time: Some(fcgi_start),
-                        end_time: Some(fcgi_start + Duration::from_micros(us)),
-                        ..Default::default()
-                    });
-                    // Return server timing to browser
-                    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
-                    // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
-                    response.header("Server-Timing", format!("wms-backend;dur={}", us / 1000));
-                }
-                // "X-trace" => {
-                "X-metrics" => {
-                    // cache_count:2,cache_hit:13,cache_miss:2
-                    for entry in value.split(',') {
-                        let keyval: Vec<&str> = entry.splitn(2, ":").collect();
-                        match keyval[0] {
-                            "cache_count" => metrics.fcgi_cache_count[fcgino]
-                                .with_label_values(&[fcgi_dispatcher.backend_name()])
-                                .set(i64::from_str(keyval[1]).expect("i64 value")),
-                            "cache_hit" => metrics.fcgi_cache_hit[fcgino]
-                                .with_label_values(&[fcgi_dispatcher.backend_name()])
-                                .set(i64::from_str(keyval[1]).expect("i64 value")),
-                            "cache_miss" => { /* ignore */ }
-                            _ => debug!("Ignoring metric entry {}", entry),
-                        }
+            // "X-trace" => {
+            "X-metrics" => {
+                // cache_count:2,cache_hit:13,cache_miss:2
+                for entry in value.split(',') {
+                    let keyval: Vec<&str> = entry.splitn(2, ":").collect();
+                    match keyval[0] {
+                        "cache_count" => metrics.fcgi_cache_count[fcgino]
+                            .with_label_values(&[fcgi_dispatcher.backend_name()])
+                            .set(i64::from_str(keyval[1]).expect("i64 value")),
+                        "cache_hit" => metrics.fcgi_cache_hit[fcgino]
+                            .with_label_values(&[fcgi_dispatcher.backend_name()])
+                            .set(i64::from_str(keyval[1]).expect("i64 value")),
+                        "cache_miss" => { /* ignore */ }
+                        _ => debug!("Ignoring metric entry {}", entry),
                     }
                 }
-                _ => debug!("Ignoring FCGI-Header: {}", &line),
             }
-            line.truncate(0);
+            _ => debug!("Ignoring FCGI-Header: {}", &line),
         }
-        cursor
-    });
+        line.truncate(0);
+    }
+
+    // ---
+    drop(ctx);
+    // --- <
+
     let mut body = Vec::new(); // TODO: return body without copy
     let _bytes = cursor.read_to_end(&mut body);
     Ok(response.body(body))
