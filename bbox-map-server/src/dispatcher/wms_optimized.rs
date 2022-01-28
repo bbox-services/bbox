@@ -1,6 +1,7 @@
 use crate::dispatcher::{DispatchConfig, RequestDispatcher};
 use crate::fcgi_process::FcgiClientPool;
 use actix_web::web::Query;
+use log::warn;
 use serde::Deserialize;
 use std::cmp::min;
 use std::collections::HashMap;
@@ -55,8 +56,13 @@ impl RequestDispatcher for Dispatcher {
         Self { prio_dispatch }
     }
     fn select(&mut self, query_str: &str) -> usize {
-        let query =
-            Query::<WmsQuery>::from_query(&query_str.to_lowercase()).expect("Invalid query params");
+        let query = match Query::<WmsQuery>::from_query(&query_str.to_lowercase()) {
+            Ok(query) => query,
+            Err(err) => {
+                warn!("Invalid query params `{}`: {}", &query_str, &err);
+                Query::<WmsQuery>::from_query("map=__params_error").expect("Empty query")
+            }
+        };
         let prio = self.prio(&query);
         let pool_no = self.prio_dispatch[prio].select(&query);
         // dbg!(self);
