@@ -8,21 +8,19 @@ use opentelemetry::{
     global, sdk::propagation::TraceContextPropagator, sdk::trace::Tracer, trace::TraceError,
 };
 
-fn init_tracer(
-    config: &MetricsCfg,
-) -> Result<(Tracer, opentelemetry_jaeger::Uninstall), TraceError> {
+fn init_tracer(config: &MetricsCfg) -> Result<Tracer, TraceError> {
     if let Some(cfg) = &config.jaeger {
         global::set_text_map_propagator(TraceContextPropagator::new()); // default header: traceparent
         opentelemetry_jaeger::new_pipeline()
             .with_agent_endpoint(cfg.agent_endpoint.clone())
             .with_service_name("bbox")
-            .install()
+            .install_simple()
     } else {
-        opentelemetry_jaeger::new_pipeline().install() // is agent_endpoint configured by default?
+        opentelemetry_jaeger::new_pipeline().install_simple() // is agent_endpoint configured by default?
     }
 }
 
-fn health() -> HttpResponse {
+async fn health() -> HttpResponse {
     HttpResponse::Ok().body("OK")
 }
 
@@ -31,7 +29,7 @@ async fn webserver() -> std::io::Result<()> {
     let web_config = WebserverCfg::from_config();
     let metrics_cfg = MetricsCfg::from_config();
 
-    let (_tracer, _uninstall) = init_tracer(&metrics_cfg).expect("Failed to initialize tracer.");
+    let _tracer = init_tracer(&metrics_cfg).expect("Failed to initialize tracer.");
 
     // Prometheus metrics
     let exporter = opentelemetry_prometheus::exporter().init();

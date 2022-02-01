@@ -130,13 +130,13 @@ async fn wms_fcgi(
         let (key, value) = (parts[0], parts[1]);
         match key {
             "Content-Type" => {
-                response.header(key, value);
+                response.insert_header((key, value));
             }
             "Content-Length" | "Server" => {} // ignore
             "X-us" => {
                 let us: u64 = value.parse().expect("u64 value");
                 let _span = tracer.build(SpanBuilder {
-                    name: "fcgi".to_string(),
+                    name: "fcgi".into(),
                     span_kind: Some(SpanKind::Internal),
                     start_time: Some(fcgi_start),
                     end_time: Some(fcgi_start + Duration::from_micros(us)),
@@ -145,7 +145,7 @@ async fn wms_fcgi(
                 // Return server timing to browser
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
                 // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
-                response.header("Server-Timing", format!("wms-backend;dur={}", us / 1000));
+                response.append_header(("Server-Timing", format!("wms-backend;dur={}", us / 1000)));
             }
             // "X-trace" => {
             "X-metrics" => {
@@ -186,9 +186,9 @@ pub fn register(
     let config = WmsserverCfg::from_config();
     let metrics = wms_metrics(config.num_fcgi_processes());
 
-    cfg.data((*metrics).clone());
+    cfg.app_data(web::Data::new((*metrics).clone()));
 
-    cfg.data(inventory.clone());
+    cfg.app_data(web::Data::new(inventory.clone()));
 
     for (fcgi_client, suffixes) in fcgi_clients {
         for suffix in suffixes {
@@ -197,7 +197,7 @@ pub fn register(
             cfg.service(
                 web::resource(route + "/{project:.+}") // :[^{}]+
                     .app_data(fcgi_client.clone())
-                    .data(suffix.clone())
+                    .app_data(web::Data::new(suffix.clone()))
                     .route(
                         web::route()
                             .guard(guard::Any(guard::Get()).or(guard::Post()))

@@ -173,7 +173,10 @@ impl FcgiProcessPool {
             .map(|no| {
                 let socket_path = Self::socket_path(&self.backend_name, no);
                 let handler = FcgiClientHandler { socket_path };
-                FcgiClientPool::from_config(handler, pool_config.clone())
+                FcgiClientPool::builder(handler)
+                    .config(pool_config)
+                    .build()
+                    .expect("FcgiClientPool::builder")
             })
             .collect();
         let dispatcher = Dispatcher::new(&config, &pools);
@@ -216,7 +219,7 @@ impl FcgiProcessPool {
             for no in 0..self.processes.len() {
                 let _ = self.check_process(no).await;
             }
-            tokio::time::delay_for(Duration::from_secs(1)).await;
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 }
@@ -296,7 +299,7 @@ impl FcgiDispatcher {
     pub fn remove(&self, fcgi_client: deadpool::managed::Object<FcgiClientHandler>) {
         // Can't call with `&mut self` from web service thread
         debug!("Removing Client from FcgiClientPool");
-        deadpool::managed::Object::take(fcgi_client);
+        let _obj = deadpool::managed::Object::take(fcgi_client);
         // TODO: remove all clients with same socket path
         // Possible implementation:
         // Return error in FcgiClientHandler::recycle when self.socket_path is younger than FcgiClient

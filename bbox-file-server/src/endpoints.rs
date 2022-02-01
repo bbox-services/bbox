@@ -96,7 +96,7 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
         }
     }
 
-    cfg.data(plugins_index.clone());
+    cfg.app_data(web::Data::new(plugins_index.clone()));
 
     for repo in &static_cfg.repo {
         let dir = app_dir(&repo.dir);

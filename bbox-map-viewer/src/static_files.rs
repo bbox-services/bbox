@@ -1,8 +1,8 @@
 use actix_web::{
+    body::BoxBody,
     http::{header, StatusCode},
-    Error, HttpMessage, HttpRequest, HttpResponse, Responder,
+    HttpMessage, HttpRequest, HttpResponse, Responder,
 };
-use futures_util::future::{ready, Ready};
 use rust_embed::RustEmbed;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
@@ -112,7 +112,7 @@ impl EmbedFile {
         let r = EmbedFile {
             content: E::get(filename)?.into_owned(),
             content_type,
-            etag: etag.map(|etag| header::EntityTag::strong(format!("{:x}", etag))),
+            etag: etag.map(|etag| header::EntityTag::new_strong(format!("{:x}", etag))),
         };
         Some(r)
     }
@@ -124,20 +124,20 @@ impl EmbedFile {
             StatusCode::OK
         };
 
-        HttpResponse::build(status_code)
-            .set(header::ContentType(self.content_type))
-            .if_some(self.etag, |etag, resp| {
-                resp.set(header::ETag(etag));
-            })
-            .body(self.content)
+        let mut resp = HttpResponse::Ok();
+        resp.status(status_code);
+        resp.insert_header(header::ContentType(self.content_type));
+        if let Some(etag) = self.etag {
+            resp.insert_header(header::ETag(etag));
+        }
+        resp.body(self.content)
     }
 }
 
 impl Responder for EmbedFile {
-    type Error = Error;
-    type Future = Ready<Result<HttpResponse, Error>>;
+    type Body = BoxBody;
 
-    fn respond_to(self, req: &HttpRequest) -> Self::Future {
-        ready(Ok(self.into_response(req)))
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
+        self.into_response(req)
     }
 }

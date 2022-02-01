@@ -143,8 +143,8 @@ async fn collections(req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(collections)
 }
 
-async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
-    if collection_id == "buildings" {
+async fn collection(req: HttpRequest, collection_id: web::Path<String>) -> HttpResponse {
+    if *collection_id == "buildings" {
         let collection = CoreCollection {
             id: "buildings".to_string(),
             title: Some("Buildings".to_string()),
@@ -194,8 +194,8 @@ async fn collection(req: HttpRequest, web::Path(collection_id): web::Path<String
     }
 }
 
-async fn features(req: HttpRequest, web::Path(collection_id): web::Path<String>) -> HttpResponse {
-    if collection_id == "buildings" {
+async fn features(req: HttpRequest, collection_id: web::Path<String>) -> HttpResponse {
+    if *collection_id == "buildings" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
             id: Some("123".to_string()),
@@ -228,10 +228,8 @@ async fn features(req: HttpRequest, web::Path(collection_id): web::Path<String>)
     }
 }
 
-async fn feature(
-    req: HttpRequest,
-    web::Path((collection_id, feature_id)): web::Path<(String, String)>,
-) -> HttpResponse {
+async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
+    let (collection_id, feature_id) = path.into_inner();
     if collection_id == "buildings" && feature_id == "123" {
         let feature = CoreFeature {
             type_: "Feature".to_string(),
@@ -283,19 +281,16 @@ pub fn register(cfg: &mut web::ServiceConfig) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::{http, test, Error};
+    use actix_web::{body, http, test, Error};
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_index() -> Result<(), Error> {
         let req = test::TestRequest::default().to_http_request();
         let resp = index(req).await;
 
         assert_eq!(resp.status(), http::StatusCode::OK);
 
-        let response_body = match resp.body().as_ref() {
-            Some(actix_web::body::Body::Bytes(bytes)) => bytes,
-            _ => panic!("Response error"),
-        };
+        let response_body = body::to_bytes(resp.into_body()).await?;
 
         assert_eq!(response_body, "{\"title\":\"Buildings in Bonn\",\"description\":\"Access to data about buildings in the city of Bonn via a Web API that conforms to the OGC API Features specification\",\"links\":[{\"href\":\"http://localhost:8080/\",\"rel\":\"self\",\"type\":\"application/json\",\"title\":\"this document\"},{\"href\":\"http://localhost:8080/api\",\"rel\":\"service-desc\",\"type\":\"application/vnd.oai.openapi+json;version=3.0\",\"title\":\"the API definition\"},{\"href\":\"http://localhost:8080/conformance\",\"rel\":\"conformance\",\"type\":\"application/json\",\"title\":\"OGC API conformance classes implemented by this server\"},{\"href\":\"http://localhost:8080/collections\",\"rel\":\"data\",\"type\":\"application/json\",\"title\":\"Information about the feature collections\"}]}");
 

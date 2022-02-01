@@ -8,7 +8,7 @@ edition = "2018"
 bbox-common = { path = "../bbox-common" }
 bbox-map-server = { path = "../bbox-map-server" }
 bbox-feature-server = { path = "../bbox-feature-server" }
-actix-web = "3"
+actix-web = "4.0.0-rc.1"
 log = "0.4"
 minijinja = { version = "0.8.2", features = ["source"] }
 rand = "0.7.3"
@@ -17,7 +17,6 @@ serde = "1.0.116"
 serde_json = "1.0.57"
 
 rust-embed = { version = "5.6.0", features = ["compression"] }
-futures-util = "0.3.5"
 mime = "0.3.16"
 mime_guess = "2.0.3"
 fxhash = "0.2.1"
