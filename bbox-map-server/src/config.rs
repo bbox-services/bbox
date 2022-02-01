@@ -40,7 +40,7 @@ fn default_fcgi_client_pool_size() -> usize {
 
 fn default_search_projects() -> bool {
     // we want an inventory for the map viewer
-    cfg!(feature = "map-viewer")
+    cfg!(feature = "inventory")
 }
 
 impl Default for WmsServerCfg {

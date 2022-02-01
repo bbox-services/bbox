@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
+[features]
+inventory = []
+
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 actix-web = "4.0.0-rc.1"

@@ -24,7 +24,7 @@ path = "qgis"
 path = "/wms"                # Base path of WMS endpoints
 # num_fcgi_processes = 4     # Default: number of CPU cores
 # wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s
-search_projects = true       # Scan directories and build inventory 
+# search_projects = false    # Scan directories and build inventory. Default: true
 
 [wmsserver.qgis_backend]
 # QGIS Server settings

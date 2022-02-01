@@ -8,7 +8,7 @@ default = ["file-server"]
 map-server = ["bbox-map-server"]
 file-server = ["bbox-file-server"]
 feature-server = ["bbox-feature-server"]
-map-viewer = ["bbox-map-viewer"]
+map-viewer = ["bbox-map-viewer", "bbox-map-server/inventory"]
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }
