@@ -23,8 +23,8 @@ path = "qgis"
 # Environment variable prefix: BBOX_WMSSERVER__
 path = "/wms"                # Base path of WMS endpoints
 # num_fcgi_processes = 4     # Default: number of CPU cores
-# fcgi_client_pool_size = 1  # FCGI client pool size. Default: 1
-search_projects = true       # Scan directories and build inventory
+# wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s
+search_projects = true       # Scan directories and build inventory 
 
 [wmsserver.qgis_backend]
 # QGIS Server settings

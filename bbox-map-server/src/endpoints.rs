@@ -58,7 +58,7 @@ async fn wms_fcgi(
     // ---
 
     let fcgi_client_start = SystemTime::now();
-    let mut fcgi_client = pool.get().await.expect("Couldn't get FCGI client");
+    let fcgi_client = pool.get().await;
     let fcgi_client_wait_elapsed = fcgi_client_start.elapsed();
 
     // ---
@@ -78,6 +78,14 @@ async fn wms_fcgi(
             .observe(duration);
     }
     // --- <
+
+    let mut fcgi_client = match fcgi_client {
+        Ok(fcgi) => fcgi,
+        Err(_) => {
+            warn!("FCGI client timeout");
+            return Ok(HttpResponse::InternalServerError().finish());
+        }
+    };
 
     // --- >>
     let span = tracer.start("wms_fcgi");
@@ -183,7 +191,7 @@ pub fn register(
     fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
     inventory: &Inventory,
 ) {
-    let config = WmsserverCfg::from_config();
+    let config = WmsServerCfg::from_config();
     let metrics = wms_metrics(config.num_fcgi_processes());
 
     cfg.app_data(web::Data::new((*metrics).clone()));

@@ -146,7 +146,7 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 }
 
 pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
-    let config = WmsserverCfg::from_config();
+    let config = WmsServerCfg::from_config();
     let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
@@ -237,7 +237,7 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
 pub async fn init_service(
     prometheus: Option<&Registry>,
 ) -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
-    let config = WmsserverCfg::from_config();
+    let config = WmsServerCfg::from_config();
 
     if let Some(prometheus) = prometheus {
         let metrics = wms_metrics(config.num_fcgi_processes());
@@ -268,7 +268,7 @@ pub async fn init_service(
         .iter()
         .map(|process_pool| {
             (
-                web::Data::new(process_pool.client_dispatcher(config.fcgi_client_pool_size)),
+                web::Data::new(process_pool.client_dispatcher(&config)),
                 process_pool.suffixes.clone(),
             )
         })

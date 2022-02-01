@@ -14,6 +14,7 @@
 //! └────────────────────┘         └─────────────────┘
 //! ```
 
+use crate::config::WmsServerCfg;
 use crate::dispatcher::{DispatchConfig, Dispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
@@ -161,20 +162,19 @@ impl FcgiProcessPool {
     }
 
     /// Create client pool for each process and return dispatcher
-    pub fn client_dispatcher(&self, max_pool_size: usize) -> FcgiDispatcher {
+    pub fn client_dispatcher(&self, wms_config: &WmsServerCfg) -> FcgiDispatcher {
         debug!("Creating {} FcgiDispatcher", self.backend_name);
         let config = DispatchConfig::new();
-        let pool_config = deadpool::managed::PoolConfig::new(max_pool_size);
-        // pool_config.timeouts.create = Some(Duration::from_millis(500));
-        // pool_config.timeouts.wait = Some(Duration::from_secs(120));
-        // pool_config.timeouts.recycle = Some(Duration::from_millis(500));
-        // pool_config.runtime = deadpool::Runtime::Tokio1;
         let pools = (0..self.num_processes)
             .map(|no| {
                 let socket_path = Self::socket_path(&self.backend_name, no);
                 let handler = FcgiClientHandler { socket_path };
                 FcgiClientPool::builder(handler)
-                    .config(pool_config)
+                    .max_size(wms_config.fcgi_client_pool_size)
+                    .runtime(deadpool::Runtime::Tokio1)
+                    .wait_timeout(wms_config.wait_timeout.map(Duration::from_millis))
+                    .create_timeout(wms_config.create_timeout.map(Duration::from_millis))
+                    .recycle_timeout(wms_config.recycle_timeout.map(Duration::from_millis))
                     .build()
                     .expect("FcgiClientPool::builder")
             })

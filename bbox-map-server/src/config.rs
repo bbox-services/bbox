@@ -4,11 +4,14 @@ use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct WmsserverCfg {
+pub struct WmsServerCfg {
     pub path: String,
     num_fcgi_processes: Option<usize>,
     #[serde(default = "default_fcgi_client_pool_size")]
     pub fcgi_client_pool_size: usize,
+    pub wait_timeout: Option<u64>,
+    pub create_timeout: Option<u64>,
+    pub recycle_timeout: Option<u64>,
     pub qgis_backend: Option<QgisBackendCfg>,
     pub umn_backend: Option<UmnBackendCfg>,
     pub mock_backend: Option<MockBackendCfg>,
@@ -40,12 +43,15 @@ fn default_search_projects() -> bool {
     cfg!(feature = "map-viewer")
 }
 
-impl Default for WmsserverCfg {
+impl Default for WmsServerCfg {
     fn default() -> Self {
-        WmsserverCfg {
+        WmsServerCfg {
             path: "/wms".to_string(),
             num_fcgi_processes: None,
             fcgi_client_pool_size: default_fcgi_client_pool_size(),
+            wait_timeout: Some(90000),
+            create_timeout: Some(500),
+            recycle_timeout: Some(500),
             qgis_backend: Some(QgisBackendCfg {
                 project_basedir: None,
             }),
@@ -58,7 +64,7 @@ impl Default for WmsserverCfg {
     }
 }
 
-impl WmsserverCfg {
+impl WmsServerCfg {
     pub fn from_config() -> Self {
         let config = bbox_common::config::app_config();
         if config.find_value("wmsserver").is_ok() {
