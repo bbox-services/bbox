@@ -8,7 +8,7 @@ edition = "2018"
 bbox-common = { path = "../bbox-common" }
 bbox-map-server = { path = "../bbox-map-server" }
 bbox-feature-server = { path = "../bbox-feature-server" }
-actix-web = "4.0.0-rc.1"
+actix-web = "4.0.0"
 log = "0.4"
 minijinja = { version = "0.8.2", features = ["source"] }
 rand = "0.7.3"

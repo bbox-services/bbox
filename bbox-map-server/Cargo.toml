@@ -9,7 +9,7 @@ inventory = []
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }
-actix-web = "4.0.0-rc.1"
+actix-web = "4.0.0"
 async-process = "1.0.0"
 fastcgi-client = { version = "0.5.0", default-features = false }
 bufstream = "0.1.4"
