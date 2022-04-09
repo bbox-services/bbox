@@ -16,6 +16,10 @@ Features:
 
     x-www-browser http://127.0.0.1:8080/
 
-View API in Swagger editor:
+Built-in Swagger UI:
+
+http://localhost:8080/swagger-ui/
+
+View API in external Swagger editor:
 
 https://editor.swagger.io/?url=http://localhost:8080/api
