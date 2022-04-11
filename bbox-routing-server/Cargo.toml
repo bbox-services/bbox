@@ -1,0 +1,20 @@
+[package]
+name = "bbox-routing-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#fast_paths = { git = "https://github.com/easbar/fast_paths" }
+fast_paths = { version = "0.3.0-SNAPSHOT" }
+futures = "0.3.21"
+geo = "0.19.0"
+geojson = "0.22.3"
+geozero = { version = "0.8.0", features = [ "with-gpkg" ] }
+rstar = "0.9.2"
+sqlx = { version = "0.5.11", default-features = false, features = [ "runtime-tokio-native-tls", "sqlite" ] }
+
+[dev-dependencies]
+flate2 = "1.0.22"
+tokio = { version = "1.17.0", features = ["full"] }
