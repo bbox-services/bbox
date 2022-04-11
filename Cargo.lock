@@ -613,15 +613,18 @@ dependencies = [
 name = "bbox-routing-server"
 version = "0.1.0"
 dependencies = [
+ "actix-web",
+ "bbox-common",
  "fast_paths",
- "flate2",
  "futures",
  "geo",
  "geojson",
  "geozero",
  "rstar 0.9.3",
+ "serde",
+ "serde_json",
  "sqlx",
- "tokio",
+ "utoipa",
 ]
 
 [[package]]
@@ -3210,19 +3213,7 @@ dependencies = [
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
- "tokio-macros",
  "winapi",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b557f72f448c511a979e2564e55d74e6c4432fc96ff4f6241bc6bded342643b7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
