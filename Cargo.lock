@@ -610,6 +610,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bbox-processes-server"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "bbox-common",
+ "serde",
+ "serde_json",
+ "utoipa",
+]
+
+[[package]]
 name = "bbox-routing-server"
 version = "0.1.0"
 dependencies = [

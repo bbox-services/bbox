@@ -6,6 +6,7 @@ members = [
     "bbox-map-server",
     "bbox-map-server/mock-fcgi-wms",
     "bbox-map-viewer",
+    "bbox-processes-server",
     "bbox-routing-server",
     "bbox-server",
 ]
