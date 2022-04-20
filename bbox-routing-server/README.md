@@ -1,7 +1,7 @@
 BBOX Routing Service
 ====================
 
-Routing services with Contraction Hierarchy .
+Routing services with Contraction Hierarchy.
 
 Features:
 - [ ] OGC API - Routes - Part 1: Core
