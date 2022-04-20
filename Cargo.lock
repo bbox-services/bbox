@@ -650,6 +650,7 @@ dependencies = [
  "bbox-file-server",
  "bbox-map-server",
  "bbox-map-viewer",
+ "bbox-processes-server",
  "bbox-routing-server",
  "num_cpus",
  "opentelemetry 0.17.0",

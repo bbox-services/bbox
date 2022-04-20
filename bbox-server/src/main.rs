@@ -2,12 +2,16 @@ mod config;
 mod endpoints;
 
 use crate::config::*;
+use crate::endpoints::ApiDoc;
 use actix_web::web;
 use actix_web::{middleware, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
+use bbox_common::api::OgcApiInventory;
+use bbox_common::ogcapi::ApiLink;
 use opentelemetry::{
     global, sdk::propagation::TraceContextPropagator, sdk::trace::Tracer, trace::TraceError,
 };
+use utoipa::OpenApi;
 
 fn init_tracer(config: &MetricsCfg) -> Result<Tracer, TraceError> {
     if let Some(cfg) = &config.jaeger {
@@ -36,6 +40,54 @@ async fn webserver() -> std::io::Result<()> {
     let exporter = opentelemetry_prometheus::exporter().init();
     let prometheus = metrics_cfg.prometheus.as_ref().map(|_| exporter.registry());
 
+    let landing_page_links = vec![
+        ApiLink {
+            href: "/".to_string(),
+            rel: Some("self".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("this document".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: "/api".to_string(),
+            rel: Some("service-desc".to_string()),
+            type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
+            title: Some("the API definition".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: "/conformance".to_string(),
+            rel: Some("conformance".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("OGC API conformance classes implemented by this server".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: "/collections".to_string(),
+            rel: Some("data".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("Information about the feature collections".to_string()),
+            hreflang: None,
+            length: None,
+        },
+    ];
+    let conformance_classes = vec![
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
+    ];
+
+    let mut ogcapi = OgcApiInventory {
+        landing_page_links,
+        conformance_classes,
+        collections: Vec::new(),
+    };
+
+    let mut openapi = ApiDoc::openapi();
+
     #[cfg(feature = "map-server")]
     let (fcgi_clients, inventory) = bbox_map_server::init_service(prometheus).await;
 
@@ -56,6 +108,9 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
 
+    #[cfg(feature = "file-server")]
+    bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(RequestTracing::new())
@@ -63,7 +118,8 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(web::resource("/health").to(health))
-            .configure(endpoints::register);
+            .app_data(web::Data::new(ogcapi.clone()))
+            .configure(|mut cfg| endpoints::register(&mut cfg, openapi.clone()));
 
         #[cfg(feature = "map-server")]
         {
@@ -87,6 +143,11 @@ async fn webserver() -> std::io::Result<()> {
             app = app.configure(|mut cfg| {
                 bbox_file_server::endpoints::register(&mut cfg, &plugins_index)
             });
+        }
+
+        #[cfg(feature = "processes-server")]
+        {
+            app = app.configure(bbox_processes_server::endpoints::register);
         }
 
         app

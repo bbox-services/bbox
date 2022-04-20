@@ -1,3 +1,4 @@
+pub mod api;
 pub mod config;
 pub mod file_search;
 pub mod logger;

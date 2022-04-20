@@ -1,7 +1,9 @@
 use actix_web::{web, HttpRequest, HttpResponse};
+use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
+use bbox_common::ogcapi::ApiLink;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use utoipa::Component;
+use utoipa::{Component, OpenApi};
 
 /// Information about the available processes
 #[derive(Debug, Deserialize, Serialize, Component)]
@@ -91,12 +93,28 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(resp)
 }
 
-// #[derive(OpenApi)]
-// #[openapi(
-//     handlers(processes),
-//     components(),
-// )]
-// pub struct ApiDoc;
+#[derive(OpenApi)]
+#[openapi(handlers(processes), components())]
+pub struct ApiDoc;
+
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
+    api.landing_page_links.push(ApiLink {
+        href: "/processes".to_string(),
+        rel: Some("processes".to_string()),
+        type_: Some("application/json".to_string()),
+        title: Some("OGC API processes list".to_string()),
+        hreflang: None,
+        length: None,
+    });
+    api.conformance_classes.extend(vec![
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core".to_string(),
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description"
+            .to_string(),
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+    ]);
+    openapi.extend(ApiDoc::openapi());
+}
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/processes").route(web::get().to(processes)));

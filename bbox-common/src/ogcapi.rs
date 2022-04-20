@@ -11,7 +11,7 @@ pub struct CoreLandingPage {
     pub links: Vec<ApiLink>,
 }
 
-#[derive(Debug, Serialize, Component)]
+#[derive(Clone, Debug, Serialize, Component)]
 /// http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
 pub struct ApiLink {
     pub href: String,
@@ -42,7 +42,7 @@ pub struct CoreCollections {
     pub collections: Vec<CoreCollection>,
 }
 
-#[derive(Debug, Serialize, Component)]
+#[derive(Clone, Debug, Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 /// /collections/{collectionId}.
 /// https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_collection_
@@ -62,7 +62,7 @@ pub struct CoreCollection {
     pub crs: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Component)]
+#[derive(Clone, Debug, Serialize, Component)]
 pub struct CoreExtent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spatial: Option<CoreExtentSpatial>,
@@ -70,14 +70,14 @@ pub struct CoreExtent {
     pub temporal: Option<CoreExtentTemporal>,
 }
 
-#[derive(Debug, Serialize, Component)]
+#[derive(Clone, Debug, Serialize, Component)]
 pub struct CoreExtentSpatial {
     pub bbox: Vec<Vec<f64>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crs: Option<String>,
 }
 
-#[derive(Debug, Serialize, Component)]
+#[derive(Clone, Debug, Serialize, Component)]
 pub struct CoreExtentTemporal {
     pub interval: Vec<Vec<Option<String>>>, // date-time
     #[serde(skip_serializing_if = "Option::is_none")]
