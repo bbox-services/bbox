@@ -1,5 +1,4 @@
 mod endpoints;
-mod ogcapi;
 
 use actix_web::{middleware, App, HttpServer};
 

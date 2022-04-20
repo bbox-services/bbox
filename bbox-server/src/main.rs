@@ -1,4 +1,5 @@
 mod config;
+mod endpoints;
 
 use crate::config::*;
 use actix_web::web;
@@ -61,7 +62,8 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(request_metrics.clone())
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .service(web::resource("/health").to(health));
+            .service(web::resource("/health").to(health))
+            .configure(endpoints::register);
 
         #[cfg(feature = "map-server")]
         {
@@ -72,8 +74,7 @@ async fn webserver() -> std::io::Result<()> {
 
         #[cfg(feature = "feature-server")]
         {
-            app = app
-                .service(web::scope("/ogcapi").configure(bbox_feature_server::endpoints::register));
+            app = app.configure(bbox_feature_server::endpoints::register);
         }
 
         #[cfg(feature = "map-viewer")]

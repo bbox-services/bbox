@@ -30,6 +30,7 @@ pub struct UmnBackendCfg {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)] // `MockBackendCfg` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
 pub struct MockBackendCfg {
     active: Option<bool>,
 }

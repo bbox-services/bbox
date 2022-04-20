@@ -1,7 +1,10 @@
 pub mod config;
 pub mod file_search;
 pub mod logger;
+pub mod ogcapi;
 pub mod templates;
+
+// pub use utoipa::{path as api_path, Component as ApiComponent, OpenApi};
 
 use std::env;
 use std::path::Path;
