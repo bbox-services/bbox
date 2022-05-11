@@ -1,0 +1,29 @@
+name: Publish bbox-qgis-server docker image
+
+on: [push]
+
+jobs:
+
+    build:
+      runs-on: ubuntu-latest
+      if: github.event_name == 'push'
+      steps:
+
+      - uses: actions/checkout@master
+
+      - name: Get version tag
+        id: get_tag
+        run: |
+          if [ ${{ startsWith(github.ref, 'refs/tags/') }} = true ]; then
+            echo ::set-output name=tag::latest,${GITHUB_REF:10}
+          else
+            echo ::set-output name=tag::latest
+          fi
+      - name: Publish to Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.18
+        with:
+          name: sourcepole/bbox-qgis-server
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          tags: "${{ steps.get_tag.outputs.tag }}"
+          dockerfile: Dockerfile-qgis-server
