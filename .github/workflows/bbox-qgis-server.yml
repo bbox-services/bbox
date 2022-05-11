@@ -19,7 +19,7 @@ jobs:
           else
             echo ::set-output name=tag::latest
           fi
-      - name: Publish to Registry
+      - name: Build and Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@2.18
         with:
           name: sourcepole/bbox-qgis-server
