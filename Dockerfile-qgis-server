@@ -8,8 +8,8 @@ FROM debian:bullseye-slim as qgis-server
 
 ARG DEBIAN_REPO=debian
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y -y ca-certificates gnupg2 curl apt-utils gosu && \
-    curl https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
+    apt-get install --no-install-recommends -y ca-certificates gnupg2 curl apt-utils gosu && \
+    curl -L https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
     echo "deb https://qgis.org/$DEBIAN_REPO bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
     apt-get update && \
