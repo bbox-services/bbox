@@ -12,5 +12,5 @@ members = [
 ]
 default-members = ["bbox-server"]
 
-[patch.crates-io]
-fast_paths = { path = "../fast_paths" }
+#[patch.crates-io]
+#fast_paths = { path = "../fast_paths" }
