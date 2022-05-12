@@ -4,10 +4,10 @@ COPY . .
 RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y libcurl4 gosu cgi-mapserver && \
+RUN apt-get update && apt-get install -y libcurl4 cgi-mapserver && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 
 WORKDIR /var/www
-
-CMD ["gosu", "www-data", "bbox-server"]
+USER www-data
+CMD ["bbox-server"]
