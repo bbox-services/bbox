@@ -19,8 +19,8 @@ struct RepositoryOrError {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Job {
-    name: String,
-    description: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
 }
 
 const GRAPHQL_URL: &str = "http://localhost:3000/graphql";

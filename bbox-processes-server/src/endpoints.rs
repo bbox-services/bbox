@@ -1,3 +1,4 @@
+use crate::dagster;
 use actix_web::{web, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::ApiLink;
@@ -24,20 +25,30 @@ pub struct Processes {}
     ),
 )]
 async fn processes(_req: HttpRequest) -> HttpResponse {
-    let resp = json!({
+    let jobs = dagster::query_jobs().await;
+    let processes = jobs
+        .iter()
+        .map(|job|
+        json!({
+          "id": job.name,
+          "version": "1.0.0",
+          "description": job.description
+        }))
+        .collect::<Vec<_>>();
+    /* Example:
+    {
       "processes": [
         {
-          "title": "string",
-          "description": "string",
-          "keywords": [
-            "string"
+          "id": "EchoProcess",
+          "title": "EchoProcess",
+          "version": "1.0.0",
+          "jobControlOptions": [
+            "async-execute",
+            "sync-execute"
           ],
-          "metadata": [
-            {
-              "title": "string",
-              "role": "string",
-              "href": "string"
-            }
+          "outputTransmission": [
+            "value",
+            "reference"
           ],
           "additionalParameters": {
             "title": "string",
@@ -58,36 +69,33 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
               }
             ]
           },
-          "id": "string",
-          "version": "string",
-          "jobControlOptions": [
-            "sync-execute"
-          ],
-          "outputTransmission": [
-            [
-              "value"
-            ]
-          ],
           "links": [
             {
-              "href": "string",
-              "rel": "service",
+              "href": "https://processing.example.org/oapi-p/processes/EchoProcess",
               "type": "application/json",
-              "hreflang": "en",
-              "title": "string"
+              "rel": "self",
+              "title": "process description"
             }
           ]
         }
       ],
       "links": [
         {
-          "href": "string",
-          "rel": "service",
-          "type": "application/json",
-          "hreflang": "en",
-          "title": "string"
+          "href": "https://processing.example.org/oapi-p/processes?f=json",
+          "rel": "self",
+          "type": "application/json"
+        },
+        {
+          "href": "https://processing.example.org/oapi-p/processes?f=html",
+          "rel": "alternate",
+          "type": "text/html"
         }
       ]
+    }
+    */
+    let resp = json!({
+      "processes": processes,
+      "links": []
     });
 
     HttpResponse::Ok().json(resp)
@@ -139,7 +147,7 @@ mod tests {
 
         let response_body = body::to_bytes(resp.into_body()).await?;
 
-        assert_eq!(response_body, "{\"links\":[{\"href\":\"string\",\"hreflang\":\"en\",\"rel\":\"service\",\"title\":\"string\",\"type\":\"application/json\"}],\"processes\":[{\"additionalParameters\":{\"href\":\"string\",\"parameters\":[{\"name\":\"string\",\"value\":[\"string\",0,0,[null],{}]}],\"role\":\"string\",\"title\":\"string\"},\"description\":\"string\",\"id\":\"string\",\"jobControlOptions\":[\"sync-execute\"],\"keywords\":[\"string\"],\"links\":[{\"href\":\"string\",\"hreflang\":\"en\",\"rel\":\"service\",\"title\":\"string\",\"type\":\"application/json\"}],\"metadata\":[{\"href\":\"string\",\"role\":\"string\",\"title\":\"string\"}],\"outputTransmission\":[[\"value\"]],\"title\":\"string\",\"version\":\"string\"}]}");
+        assert!(response_body.starts_with(b"{\"links\":["));
 
         Ok(())
     }
