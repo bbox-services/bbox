@@ -40,6 +40,6 @@ build_images:
       fi
   only:
     - tags 
-    - master
+    - main
   tags:
     - dockerbuild
