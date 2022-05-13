@@ -1112,6 +1112,7 @@ checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
 [[package]]
 name = "fast_paths"
 version = "0.3.0-SNAPSHOT"
+source = "git+https://github.com/pka/fast_paths?branch=edges-access#b311da1304d084fc5819f34204945e1a336da3a2"
 dependencies = [
  "log",
  "priority-queue",

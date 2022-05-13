@@ -8,8 +8,7 @@ edition = "2021"
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 actix-web = "4.0.0"
-#fast_paths = { git = "https://github.com/easbar/fast_paths" }
-fast_paths = { version = "0.3.0-SNAPSHOT" }
+fast_paths = { git = "https://github.com/pka/fast_paths", branch="edges-access" }
 futures = "0.3.21"
 geo = "0.19.0"
 geojson = "0.22.3"
