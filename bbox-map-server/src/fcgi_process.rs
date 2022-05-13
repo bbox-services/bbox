@@ -184,6 +184,7 @@ impl FcgiProcessPool {
             backend_name: self.backend_name.clone(),
             pools,
             dispatcher,
+            request_timeout: wms_config.request_timeout.unwrap_or(u64::MAX),
         }
     }
 
@@ -281,6 +282,8 @@ pub struct FcgiDispatcher {
     pools: Vec<FcgiClientPool>,
     /// Mode-dependent dispatcher
     dispatcher: Dispatcher,
+    /// FCGI request timeout (ms)
+    pub request_timeout: u64,
 }
 
 impl FcgiDispatcher {

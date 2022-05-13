@@ -11,6 +11,7 @@ use opentelemetry::{
 use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
+use tokio::time::timeout;
 
 /// OGC WMS 1.x endpoint
 async fn wms_fcgi(
@@ -113,12 +114,19 @@ async fn wms_fcgi(
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
     // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
     let fcgi_start = SystemTime::now();
-    let output = fcgi_client
-        .execute(fastcgi_client::Request::new(
-            params,
-            &mut tokio::io::empty(),
-        ))
-        .await;
+    let mut stdin = tokio::io::empty();
+    let fcgi_req = fcgi_client.execute(fastcgi_client::Request::new(params, &mut stdin));
+    let output = timeout(
+        Duration::from_millis(fcgi_dispatcher.request_timeout),
+        fcgi_req,
+    )
+    .await;
+    if let Err(_) = output {
+        warn!("FCGI timeout");
+        // TODO: terminate FCGI process
+        return Ok(HttpResponse::InternalServerError().finish());
+    }
+    let output = output.unwrap();
     if let Err(ref e) = output {
         warn!("FCGI error: {}", e);
         // Remove probably broken FCGI client from pool
