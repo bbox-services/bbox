@@ -19,13 +19,13 @@ use crate::dispatcher::{DispatchConfig, Dispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
-use bufstream::BufStream;
 use fastcgi_client::Client;
 use log::{debug, error, info, warn};
 use std::os::unix::io::{AsRawFd, FromRawFd};
-use std::os::unix::net::{UnixListener, UnixStream};
+use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tokio::net::UnixStream;
 
 // --- FCGI Process ---
 
@@ -232,15 +232,15 @@ pub struct FcgiClientHandler {
 }
 
 impl FcgiClientHandler {
-    fn fcgi_client(&self) -> std::io::Result<FcgiClient> {
-        let stream = UnixStream::connect(&self.socket_path)?;
-        // let stream = TcpStream::connect(("127.0.0.1", 9000)).unwrap();
+    async fn fcgi_client(&self) -> std::io::Result<FcgiClient> {
+        let stream = UnixStream::connect(&self.socket_path).await?;
+        // let stream = TcpStream::connect(("127.0.0.1", 9000)).await.unwrap();
         let fcgi_client = Client::new(stream, true);
         Ok(fcgi_client)
     }
 }
 
-pub type FcgiClient = fastcgi_client::Client<BufStream<UnixStream>>;
+pub type FcgiClient = fastcgi_client::Client<UnixStream>;
 
 // --- FCGI Client Pool ---
 
@@ -252,7 +252,7 @@ impl deadpool::managed::Manager for FcgiClientHandler {
     type Error = FcgiClientPoolError;
     async fn create(&self) -> Result<FcgiClient, FcgiClientPoolError> {
         debug!("deadpool::managed::Manager::create {}", &self.socket_path);
-        let client = self.fcgi_client();
+        let client = self.fcgi_client().await;
         if let Err(ref e) = client {
             debug!("Failed to create client {}: {}", &self.socket_path, e);
         }

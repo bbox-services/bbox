@@ -12,6 +12,7 @@ use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
+/// OGC WMS 1.x endpoint
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
@@ -98,7 +99,7 @@ async fn wms_fcgi(
         "Forwarding query to FCGI process {}: {}",
         fcgino, &fcgi_query
     );
-    let mut params = fastcgi_client::Params::new()
+    let mut params = fastcgi_client::Params::default()
         .set_request_method(req.method().as_str())
         .set_request_uri(req.path())
         .set_server_name(host_port.get(0).unwrap_or(&""))
@@ -112,7 +113,12 @@ async fn wms_fcgi(
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
     // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
     let fcgi_start = SystemTime::now();
-    let output = fcgi_client.do_request(&params, &mut std::io::empty());
+    let output = fcgi_client
+        .execute(fastcgi_client::Request::new(
+            params,
+            &mut tokio::io::empty(),
+        ))
+        .await;
     if let Err(ref e) = output {
         warn!("FCGI error: {}", e);
         // Remove probably broken FCGI client from pool
