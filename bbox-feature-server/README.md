@@ -18,7 +18,7 @@ Features:
 
 Built-in Swagger UI:
 
-http://localhost:8080/swagger-ui/
+http://localhost:8080/openapi/
 
 View API in external Swagger editor:
 

@@ -11,7 +11,7 @@ use utoipa::OpenApi;
 /// Processes offers, including the link to a more detailed description
 /// of the process.
 #[utoipa::path(
-    post,
+    get,
     path = "/processes",
     operation_id = "ProcessList",
     tag = "processes",
@@ -96,7 +96,7 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
 }
 
 #[derive(OpenApi)]
-#[openapi(handlers(processes), components())]
+#[openapi(handlers(processes), components(ProcessList))]
 pub struct ApiDoc;
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
