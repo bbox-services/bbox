@@ -6,8 +6,7 @@ Asynchronous map server with FCGI backend.
 Features:
 - [x] OGC WMS 1.3 Server
 - [ ] OGC Map API Server
-- [X] QGIS Server backend
-- [X] UNN Mapserver backend
+- [X] Map rendering backends: QGIS Server + UNN Mapserver
 - [ ] Instrumentation data for WMS backends
 - [ ] Intelligent process dispatching (slow query detection)
 
@@ -43,7 +42,7 @@ Development
 Documentation of main libriaries:
 * Actix: https://actix.rs/
 * Async Process: https://docs.rs/async-process/
-* QGIS Server plugins: https://docs.qgis.org/3.22/en/docs/server_manual/plugins.html
+* QGIS Server plugins: https://docs.qgis.org/3.10/en/docs/user_manual/working_with_ogc/server/plugins.html
 
 Fast CGI:
 * Fast CGI: https://fastcgi-archives.github.io/FastCGI_Specification.html

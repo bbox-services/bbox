@@ -11,9 +11,7 @@ use opentelemetry::{
 use std::io::{BufRead, Cursor, Read};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
-use tokio::time::timeout;
 
-/// OGC WMS 1.x endpoint
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
@@ -100,7 +98,7 @@ async fn wms_fcgi(
         "Forwarding query to FCGI process {}: {}",
         fcgino, &fcgi_query
     );
-    let mut params = fastcgi_client::Params::default()
+    let mut params = fastcgi_client::Params::new()
         .set_request_method(req.method().as_str())
         .set_request_uri(req.path())
         .set_server_name(host_port.get(0).unwrap_or(&""))
@@ -114,19 +112,7 @@ async fn wms_fcgi(
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
     // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
     let fcgi_start = SystemTime::now();
-    let mut stdin = tokio::io::empty();
-    let fcgi_req = fcgi_client.execute(fastcgi_client::Request::new(params, &mut stdin));
-    let output = timeout(
-        Duration::from_millis(fcgi_dispatcher.request_timeout),
-        fcgi_req,
-    )
-    .await;
-    if let Err(_) = output {
-        warn!("FCGI timeout");
-        // TODO: terminate FCGI process
-        return Ok(HttpResponse::InternalServerError().finish());
-    }
-    let output = output.unwrap();
+    let output = fcgi_client.do_request(&params, &mut std::io::empty());
     if let Err(ref e) = output {
         warn!("FCGI error: {}", e);
         // Remove probably broken FCGI client from pool

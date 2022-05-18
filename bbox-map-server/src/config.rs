@@ -12,7 +12,6 @@ pub struct WmsServerCfg {
     pub wait_timeout: Option<u64>,
     pub create_timeout: Option<u64>,
     pub recycle_timeout: Option<u64>,
-    pub request_timeout: Option<u64>,
     pub qgis_backend: Option<QgisBackendCfg>,
     pub umn_backend: Option<UmnBackendCfg>,
     pub mock_backend: Option<MockBackendCfg>,
@@ -54,7 +53,6 @@ impl Default for WmsServerCfg {
             wait_timeout: Some(90000),
             create_timeout: Some(500),
             recycle_timeout: Some(500),
-            request_timeout: Some(45000),
             qgis_backend: Some(QgisBackendCfg {
                 project_basedir: None,
             }),
