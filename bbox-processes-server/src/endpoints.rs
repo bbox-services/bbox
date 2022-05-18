@@ -1,14 +1,9 @@
 use crate::dagster;
+use crate::models::*;
 use actix_web::{web, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::ApiLink;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use utoipa::{Component, OpenApi};
-
-/// Information about the available processes
-#[derive(Debug, Deserialize, Serialize, Component)]
-pub struct Processes {}
+use utoipa::OpenApi;
 
 /// retrieve the list of available processes
 ///
@@ -21,19 +16,18 @@ pub struct Processes {}
     operation_id = "ProcessList",
     tag = "processes",
     responses(
-        (status = 200, body = Processes),
+        (status = 200, body = ProcessList),
     ),
 )]
 async fn processes(_req: HttpRequest) -> HttpResponse {
     let jobs = dagster::query_jobs().await;
     let processes = jobs
         .iter()
-        .map(|job|
-        json!({
-          "id": job.name,
-          "version": "1.0.0",
-          "description": job.description
-        }))
+        .map(|job| {
+            let mut process = ProcessSummary::new(job.name.clone(), "1.0.0".to_string());
+            process.description = job.description.clone();
+            process
+        })
         .collect::<Vec<_>>();
     /* Example:
     {
@@ -93,10 +87,10 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
       ]
     }
     */
-    let resp = json!({
-      "processes": processes,
-      "links": []
-    });
+    let resp = ProcessList {
+        processes,
+        links: Vec::new(),
+    };
 
     HttpResponse::Ok().json(resp)
 }
