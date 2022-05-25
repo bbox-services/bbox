@@ -1,5 +1,6 @@
 mod dagster;
 mod endpoints;
+mod error;
 mod models;
 
 use actix_web::{middleware, App, HttpServer};

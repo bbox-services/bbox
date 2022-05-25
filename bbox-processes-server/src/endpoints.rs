@@ -3,6 +3,7 @@ use crate::models::*;
 use actix_web::{web, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::ApiLink;
+use log::warn;
 use utoipa::OpenApi;
 
 /// retrieve the list of available processes
@@ -20,7 +21,10 @@ use utoipa::OpenApi;
     ),
 )]
 async fn processes(_req: HttpRequest) -> HttpResponse {
-    let jobs = dagster::query_jobs().await;
+    let jobs = dagster::query_jobs().await.unwrap_or_else(|e| {
+        warn!("Dagster backend error: {e}");
+        Vec::new()
+    });
     let processes = jobs
         .iter()
         .map(|job| {

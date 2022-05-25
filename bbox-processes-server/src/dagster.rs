@@ -1,3 +1,4 @@
+use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -25,7 +26,7 @@ pub struct Job {
 
 const GRAPHQL_URL: &str = "http://localhost:3000/graphql";
 
-pub async fn query_jobs() -> Vec<Job> {
+pub async fn query_jobs() -> Result<Vec<Job>> {
     let client = awc::Client::default();
     let request = json!({
         "operationName":"JobsQuery",
@@ -34,12 +35,12 @@ pub async fn query_jobs() -> Vec<Job> {
             "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos"}},
         "query": JOBS_QUERY
     });
-    let mut response = client.post(GRAPHQL_URL).send_json(&request).await.unwrap();
-    let resp: JobsQueryResponse = response.json().await.unwrap();
-    resp.data.repository_or_error.jobs
+    let mut response = client.post(GRAPHQL_URL).send_json(&request).await?;
+    let resp: JobsQueryResponse = response.json().await?;
+    Ok(resp.data.repository_or_error.jobs)
 }
 
-pub async fn query_job_args(job_name: &str) -> serde_json::Value {
+pub async fn query_job_args(job_name: &str) -> Result<serde_json::Value> {
     let client = awc::Client::default();
     let request = json!({
         "operationName":"OpSelectorQuery",
@@ -50,8 +51,8 @@ pub async fn query_job_args(job_name: &str) -> serde_json::Value {
         }},
         "query": JOB_ARGS_QUERY
     });
-    let mut response = client.post(GRAPHQL_URL).send_json(&request).await.unwrap();
-    response.json().await.unwrap()
+    let mut response = client.post(GRAPHQL_URL).send_json(&request).await?;
+    Ok(response.json().await?)
 }
 
 /// Get list of jobs in repository
@@ -269,7 +270,7 @@ mod tests {
 
     #[actix_web::test]
     async fn query_test() {
-        let jobs = query_jobs().await;
+        let jobs = query_jobs().await.unwrap();
         assert_eq!(jobs[0].name, "get_gemeinde");
         let job_args = query_job_args(&jobs[0].name).await;
         dbg!(&job_args);
