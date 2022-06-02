@@ -1,3 +1,5 @@
+//! Endpoints according to <https://ogcapi.ogc.org/processes/> API
+
 use crate::dagster;
 use crate::models::*;
 use actix_web::{web, HttpRequest, HttpResponse};

@@ -2,7 +2,7 @@ use serde::Serialize;
 use utoipa::Component;
 
 #[derive(Debug, Serialize, Component)]
-/// http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_api_landing_page
+/// <http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_api_landing_page>
 pub struct CoreLandingPage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -12,7 +12,7 @@ pub struct CoreLandingPage {
 }
 
 #[derive(Clone, Debug, Serialize, Component)]
-/// http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml
+/// <http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/link.yaml>
 pub struct ApiLink {
     pub href: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -29,14 +29,14 @@ pub struct ApiLink {
 
 #[derive(Debug, Serialize, Component)]
 #[serde(rename_all = "camelCase")]
-/// http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
+/// <http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes>
 pub struct CoreConformsTo {
     pub conforms_to: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Component)]
 /// /collections
-/// http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_collections_
+/// <http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_collections_>
 pub struct CoreCollections {
     pub links: Vec<ApiLink>,
     pub collections: Vec<CoreCollection>,
@@ -45,8 +45,8 @@ pub struct CoreCollections {
 #[derive(Clone, Debug, Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 /// /collections/{collectionId}.
-/// https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_collection_
-/// http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml
+/// <https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_collection_>
+/// <http://schemas.opengis.net/ogcapi/features/part1/1.0/openapi/schemas/collection.yaml>
 pub struct CoreCollection {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -87,7 +87,7 @@ pub struct CoreExtentTemporal {
 #[derive(Debug, Serialize, Component)]
 #[serde(rename_all = "camelCase")]
 /// /collections/{collectionId}/items
-/// https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_response_6
+/// <https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_response_6>
 pub struct CoreFeatures {
     // featureCollectionGeoJSON
     #[serde(rename = "type")]
@@ -106,7 +106,7 @@ pub struct CoreFeatures {
 
 #[derive(Debug, Serialize, Component)]
 /// /collections/{collectionId}/items/{featureId}
-/// https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_feature_
+/// <https://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_feature_>
 pub struct CoreFeature {
     #[serde(rename = "type")]
     pub type_: String, // Feature

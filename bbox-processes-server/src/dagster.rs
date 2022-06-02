@@ -1,3 +1,5 @@
+//! Backend for <https://dagster.io/>
+
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
