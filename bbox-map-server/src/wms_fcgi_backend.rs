@@ -104,6 +104,9 @@ impl FcgiBackendType for UmnFcgiBackend {
             .clone()
             .unwrap_or(app_dir("")) // TODO: env::current_dir
     }
+    fn env_defaults(&self) -> Vec<(&str, &str)> {
+        vec![("MS_ERRORFILE", "stderr")]
+    }
 }
 
 pub struct MockFcgiBackend {
