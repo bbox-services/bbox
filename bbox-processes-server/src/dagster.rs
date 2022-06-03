@@ -1,17 +1,17 @@
 //! Backend for <https://dagster.io/>
 
-use crate::error::Result;
+use crate::error::{self, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct JobsQueryResponse {
-    data: Data,
+    data: JobsQueryResponseData,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Data {
-    #[serde(rename = "repositoryOrError")]
+#[serde(rename_all = "camelCase")]
+struct JobsQueryResponseData {
     repository_or_error: RepositoryOrError,
 }
 
@@ -55,6 +55,76 @@ pub async fn query_job_args(job_name: &str) -> Result<serde_json::Value> {
     });
     let mut response = client.post(GRAPHQL_URL).send_json(&request).await?;
     Ok(response.json().await?)
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Execute {
+    pub inputs: Option<serde_json::Value>,
+    pub outputs: Option<serde_json::Value>,
+    pub response: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct LaunchRunResponse {
+    data: LaunchRunResponseData,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct LaunchRunResponseData {
+    launch_run: LaunchRun,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+enum LaunchRun {
+    #[allow(non_snake_case)]
+    Run {
+        runId: String,
+    },
+    Errors(Vec<ErrorMessage>),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ErrorMessage {
+    message: String,
+}
+
+pub async fn execute_job(job_name: &str, params: &Execute) -> Result<String> {
+    let client = awc::Client::default();
+    let inputs = params.inputs.as_ref().map(|o| o.to_string());
+    let request = json!({
+        "operationName":"LaunchRunMutation",
+        "body": "json",
+        "variables": {
+            "selector":{
+                "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos",
+                "jobName": job_name
+            },
+            "runConfigData": inputs
+        },
+        "query": EXECUTE_JOB_QUERY
+    });
+    let mut response = client.post(GRAPHQL_URL).send_json(&request).await?;
+    // {"data":{"launchRun":{"run":{"runId":"d719c08f-d38e-4dbf-ac10-8fc3cf8412e3"}}}
+    // {"data":{"launchRun":{}}
+    // {"data":{"launchRun":{"errors":[{"message":"Received unexpected config entry \"XXXget_gemeinde_json\" at path root:ops. Expected: \"{ get_gemeinde_json: { config?: Any inputs: { fixpunkt_X: (Int | { json: { path: String } pickle: { path: String } value: Int }) fixpunkt_Y: (Int | { json: { path: String } pickle: { path: String } value: Int }) } outputs?: [{ result?: { json: { path: String } pickle: { path: String } } }] } }\".","reason":"FIELD_NOT_DEFINED"},{"message":"Missing required config entry \"get_gemeinde_json\" at path root:ops. Sample config for missing entry: {'get_gemeinde_json': {'inputs': {'fixpunkt_X': 0, 'fixpunkt_Y': 0}}}","reason":"MISSING_REQUIRED_FIELD"}]}}
+    let resp = response.json::<LaunchRunResponse>().await;
+    match resp {
+        Err(_) => Err(error::Error::BackendExecutionError(format!(
+            "Process `{job_name}` not found"
+        ))),
+        Ok(resp) => match resp.data.launch_run {
+            LaunchRun::Run { runId } => Ok(runId),
+            LaunchRun::Errors(messages) => Err(error::Error::BackendExecutionError(
+                messages
+                    .iter()
+                    .map(|m| m.message.clone())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            )),
+        },
+    }
 }
 
 /// Get list of jobs in repository
@@ -263,6 +333,33 @@ fragment OpNodeDefinitionFragment on ISolidDefinition {
       __typename
     }
     __typename
+  }
+}"#;
+
+/// Execute a job
+// Example variables: {"selector":{"repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos","jobName":"get_gemeinde"},"runConfigData": "{\"ops\": {\"get_gemeinde_json\": {\"inputs\": {\"fixpunkt_X\": 2607545, \"fixpunkt_Y\": 1171421}}}}"}
+const EXECUTE_JOB_QUERY: &str = r#"
+mutation LaunchRunMutation($selector: JobOrPipelineSelector!, $runConfigData: RunConfigData) {
+  launchRun(
+    executionParams: {
+      selector: $selector
+      runConfigData: $runConfigData
+    }
+  ) {
+    ... on LaunchRunSuccess {
+      run {
+        runId
+      }
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        reason
+      }
+    }
+    ... on PythonError {
+      message
+    }
   }
 }"#;
 

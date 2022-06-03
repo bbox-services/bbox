@@ -17,3 +17,8 @@ Usage
 Request examples:
 
     curl 'http://localhost:8080/processes'
+
+    curl -v --header "Content-Type: application/json" \
+         --request POST \
+         --data '{"inputs": {"ops": {"get_gemeinde_json": {"inputs": {"fixpunkt_X": 2607545, "fixpunkt_Y": 1171421}}}}}' \
+      http://localhost:8080/processes/get_gemeinde/execution

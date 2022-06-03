@@ -2,10 +2,10 @@
 
 use crate::dagster;
 use crate::models::*;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::ApiLink;
-use log::warn;
+use log::{info, warn};
 use utoipa::OpenApi;
 
 /// retrieve the list of available processes
@@ -101,8 +101,42 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(resp)
 }
 
+/// execute a process
+///
+/// Create a new job.
+// For more information, see [Section 7.11](https://docs.ogc.org/is/18-062/18-062.html#sc_create_job).
+#[utoipa::path(
+    post,
+    path = "/processes/{processID}/execution",
+    operation_id = "execute",
+    tag = "Execute",
+    responses(
+        (status = 200),
+    ),
+)]
+async fn execute(
+    process_id: web::Path<String>,
+    parameters: web::Json<dagster::Execute>,
+) -> HttpResponse {
+    info!("Process parameters: {parameters:?}");
+    match dagster::execute_job(&process_id, &*parameters).await {
+        /* responses:
+                200:
+                  $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
+                201:
+                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteAsync.yaml"
+                404:
+                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
+                500:
+                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ServerError.yaml"
+        */
+        Ok(job_id) => HttpResponse::build(StatusCode::CREATED).json(job_id), // TODO: type ExecuteAsync
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+    }
+}
+
 #[derive(OpenApi)]
-#[openapi(handlers(processes), components(ProcessList))]
+#[openapi(handlers(processes, execute), components(ProcessList))]
 pub struct ApiDoc;
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
@@ -125,7 +159,8 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/processes").route(web::get().to(processes)));
+    cfg.service(web::resource("/processes").route(web::get().to(processes)))
+        .service(web::resource("/processes/{processID}/execution").route(web::post().to(execute)));
 }
 
 #[cfg(test)]
