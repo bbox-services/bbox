@@ -239,7 +239,7 @@ async fn get_status(job_id: web::Path<String>) -> HttpResponse {
 //   500:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
-    HttpResponse::Ok().json(job_id.to_string())
+    HttpResponse::InternalServerError().json(job_id.to_string())
 }
 
 /// retrieve the result(s) of a job
@@ -265,7 +265,10 @@ async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
 //   500:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn get_result(job_id: web::Path<String>) -> HttpResponse {
-    HttpResponse::Ok().json(job_id.to_string())
+    match dagster::get_result(&job_id).await {
+        Ok(status) => HttpResponse::Ok().json(status), // TODO: type Results
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+    }
 }
 
 #[derive(OpenApi)]

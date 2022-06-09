@@ -162,14 +162,36 @@ struct RunsOrError {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct AssetMaterializations {
+    asset_materializations: Vec<AssetMaterialization>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct AssetMaterialization {
+    label: String,
+    metadata_entries: Vec<MetadataEntry>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct MetadataEntry {
+    label: String,
+    path: Option<String>,
+    json_string: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct RunResult {
     status: String,
+    assets: Vec<AssetMaterializations>,
 }
 
 pub async fn get_status(job_id: &str) -> Result<String> {
     let variables = json!({ "runId": job_id });
     let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
-    // {"data":{"runsOrError":{"results":[{"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
+    // {"data":{"runsOrError":{"results":[{"assets":[],"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
     // {"data":{"runsOrError":{"results":[]}}}
     let resp = response.json::<FilteredRunResponse>().await;
     debug!("get_status response: {resp:?}");
@@ -183,7 +205,59 @@ pub async fn get_status(job_id: &str) -> Result<String> {
                 Ok(results[0].status.clone())
             } else {
                 Err(error::Error::BackendExecutionError(format!(
-                    "Job `{job_id}` not found"
+                    "RunResult missing"
+                )))
+            }
+        }
+    }
+}
+
+pub async fn get_result(job_id: &str) -> Result<String> {
+    let variables = json!({ "runId": job_id });
+    let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
+    // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"get_gemeinde","metadataEntries":[{"jsonString":"{\"gemeinden\": [{\"bfs_nummer\": 770, \"gemeinde\": \"Stocken-H\\u00f6fen\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 763, \"gemeinde\": \"Erlenbach im Simmental\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 761, \"gemeinde\": \"D\\u00e4rstetten\", \"kanton\": \"BE\"}], \"lk_blatt\": 3451}"}]}],"id":"AssetKey(['get_gemeinde'])"}],"jobName":"get_gemeinde","runId":"c54ca13c-48ff-470e-8123-8f8f162208bd","stats":{"endTime":1654269774.36158,"startTime":1654269773.145739,"stepsFailed":0},"status":"SUCCESS"}]}}}
+    // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_create_schema","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/KGKCGC_FPDS2_V1_0_ili2pg_create_schema.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_create_schema'])"},{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_import","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/Testdaten/DM_FPDS2_GR_ili2pg.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_import'])"}],"jobName":"import_fpds2_testdata","runId":"c1babe60-6f83-4122-a190-5c25f31a5c4d","stats":{"endTime":1653996610.788731,"startTime":1653996599.752907,"stepsFailed":0},"status":"SUCCESS"}]}}}
+    let resp = response.json::<FilteredRunResponse>().await;
+    debug!("get_result response: {resp:?}");
+    match resp {
+        Err(_) => Err(error::Error::BackendExecutionError(format!(
+            "Job `{job_id}` not found"
+        ))),
+        Ok(resp) => {
+            let results = resp.data.runs_or_error.results;
+            if results.len() == 1 {
+                if let Some(asset) = results[0].assets.get(0) {
+                    if asset.asset_materializations.len() > 0 {
+                        let entries = &asset.asset_materializations[0].metadata_entries;
+                        if entries.len() > 0 {
+                            if let Some(path) = &entries[0].path {
+                                Ok(path.clone()) // TODO: return file content
+                            } else if let Some(json_string) = &entries[0].json_string {
+                                Ok(json_string.clone()) // TODO: convert to json
+                            } else {
+                                Err(error::Error::BackendExecutionError(format!(
+                                    "Unknown metadata entry `{:?}`",
+                                    entries[0]
+                                )))
+                            }
+                        } else {
+                            Err(error::Error::BackendExecutionError(format!(
+                                "MetadataEntry missing"
+                            )))
+                        }
+                    } else {
+                        Err(error::Error::BackendExecutionError(format!(
+                            "AssetMaterialization missing"
+                        )))
+                    }
+                } else {
+                    Err(error::Error::BackendExecutionError(format!(
+                        "AssetMaterializations missing"
+                    )))
+                }
+            } else {
+                Err(error::Error::BackendExecutionError(format!(
+                    "RunResult missing"
                 )))
             }
         }
@@ -455,6 +529,25 @@ query FilteredRunsQuery($runId: String) {
         runId
         jobName
         status
+        assets {
+          ... on Asset {
+            id
+            assetMaterializations(limit: 1) {
+            ... on MaterializationEvent {
+              label
+              metadataEntries {
+                label
+                ... on PathMetadataEntry {
+                  path
+                }
+                ... on JsonMetadataEntry {
+                  jsonString
+                }
+              }
+            }
+            }
+          }
+        }
         stats {
           ... on RunStatsSnapshot {
             startTime
