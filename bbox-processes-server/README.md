@@ -27,10 +27,10 @@ Execute process (asynchronous):
          --data '{"inputs": {"ops": {"get_gemeinde_json": {"inputs": {"fixpunkt_X": 2607545, "fixpunkt_Y": 1171421}}}}}' \
       http://localhost:8080/processes/get_gemeinde/execution
 
-List jobs:
+Get job status:
 
-    curl 'http://localhost:8080/jobs'
+    curl 'http://localhost:8080/jobs/4a979b42-5831-4368-9913-685293a22ebc'
 
 Return result of a job:
 
-    curl 'http://localhost:8080/jobs/999/results'
+    curl 'http://localhost:8080/jobs/4a979b42-5831-4368-9913-685293a22ebc/results'

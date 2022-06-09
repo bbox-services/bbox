@@ -210,7 +210,10 @@ async fn get_jobs(_req: HttpRequest) -> HttpResponse {
 //   500:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn get_status(job_id: web::Path<String>) -> HttpResponse {
-    HttpResponse::Ok().json(job_id.to_string())
+    match dagster::get_status(&job_id).await {
+        Ok(status) => HttpResponse::Ok().json(status), // TODO: type Status
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+    }
 }
 
 /// cancel a job execution, remove a finished job

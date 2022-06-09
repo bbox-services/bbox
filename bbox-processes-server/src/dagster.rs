@@ -7,6 +7,7 @@
 // https://docs.dagster.io/concepts/dagit/graphql#using-the-graphql-api
 
 use crate::error::{self, Result};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -58,11 +59,10 @@ pub async fn process_list() -> Result<Vec<Job>> {
     let resp: JobsQueryResponse = response.json().await?;
     Ok(resp.data.repository_or_error.jobs)
 }
-
-pub async fn get_process_description(job_name: &str) -> Result<serde_json::Value> {
+pub async fn get_process_description(process_id: &str) -> Result<serde_json::Value> {
     let variables = json!({"selector":{
             "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos",
-            "pipelineName": job_name
+            "pipelineName": process_id
     }});
     let mut response = graphql_query("OpSelectorQuery", variables, JOB_ARGS_QUERY).await?;
     Ok(response.json().await?)
@@ -117,6 +117,7 @@ pub async fn execute(job_name: &str, params: &Execute) -> Result<String> {
     // {"data":{"launchRun":{}}
     // {"data":{"launchRun":{"errors":[{"message":"Received unexpected config entry \"XXXget_gemeinde_json\" at path root:ops. Expected: \"{ get_gemeinde_json: { config?: Any inputs: { fixpunkt_X: (Int | { json: { path: String } pickle: { path: String } value: Int }) fixpunkt_Y: (Int | { json: { path: String } pickle: { path: String } value: Int }) } outputs?: [{ result?: { json: { path: String } pickle: { path: String } } }] } }\".","reason":"FIELD_NOT_DEFINED"},{"message":"Missing required config entry \"get_gemeinde_json\" at path root:ops. Sample config for missing entry: {'get_gemeinde_json': {'inputs': {'fixpunkt_X': 0, 'fixpunkt_Y': 0}}}","reason":"MISSING_REQUIRED_FIELD"}]}}
     let resp = response.json::<LaunchRunResponse>().await;
+    debug!("execute response: {resp:?}");
     match resp {
         Err(_) => Err(error::Error::BackendExecutionError(format!(
             "Process `{job_name}` not found"
@@ -138,6 +139,55 @@ pub async fn get_jobs() -> Result<serde_json::Value> {
     let variables = json!({});
     let mut response = graphql_query("RunsQuery", variables, RUNS_QUERY).await?;
     Ok(response.json().await?)
+}
+
+// --- get_status ---
+
+#[derive(Serialize, Deserialize, Debug)]
+struct FilteredRunResponse {
+    data: FilteredRunResponseData,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct FilteredRunResponseData {
+    runs_or_error: RunsOrError,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct RunsOrError {
+    results: Vec<RunResult>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct RunResult {
+    status: String,
+}
+
+pub async fn get_status(job_id: &str) -> Result<String> {
+    let variables = json!({ "runId": job_id });
+    let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
+    // {"data":{"runsOrError":{"results":[{"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
+    // {"data":{"runsOrError":{"results":[]}}}
+    let resp = response.json::<FilteredRunResponse>().await;
+    debug!("get_status response: {resp:?}");
+    match resp {
+        Err(_) => Err(error::Error::BackendExecutionError(format!(
+            "Job `{job_id}` not found"
+        ))),
+        Ok(resp) => {
+            let results = resp.data.runs_or_error.results;
+            if results.len() == 1 {
+                Ok(results[0].status.clone())
+            } else {
+                Err(error::Error::BackendExecutionError(format!(
+                    "Job `{job_id}` not found"
+                )))
+            }
+        }
+    }
 }
 
 /// Get list of jobs in repository
@@ -379,13 +429,32 @@ mutation LaunchRunMutation($selector: JobOrPipelineSelector!, $runConfigData: Ru
 const RUNS_QUERY: &str = r#"
 query RunsQuery {
   runsOrError {
-    __typename
     ... on Runs {
       results {
         runId
         jobName
         status
         runConfigYaml
+        stats {
+          ... on RunStatsSnapshot {
+            startTime
+            endTime
+            stepsFailed
+          }
+        }
+      }
+    }
+  }
+}"#;
+
+const FILTERED_RUNS_QUERY: &str = r#"
+query FilteredRunsQuery($runId: String) {
+  runsOrError(filter: { runIds: [$runId] }) {
+    ... on Runs {
+      results {
+        runId
+        jobName
+        status
         stats {
           ... on RunStatsSnapshot {
             startTime
