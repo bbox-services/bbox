@@ -22,8 +22,8 @@ use utoipa::OpenApi;
         (status = 200, body = ProcessList),
     ),
 )]
-async fn processes(_req: HttpRequest) -> HttpResponse {
-    let jobs = dagster::query_jobs().await.unwrap_or_else(|e| {
+async fn process_list(_req: HttpRequest) -> HttpResponse {
+    let jobs = dagster::process_list().await.unwrap_or_else(|e| {
         warn!("Dagster backend error: {e}");
         Vec::new()
     });
@@ -105,15 +105,15 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
 ///
 /// The process description contains information about inputs and outputs and a link to the execution-endpoint for the process. The Core does not mandate the use of a specific process description to specify the interface of a process.
 // For more information, see [Section 7.10](https://docs.ogc.org/is/18-062/18-062.html#sc_process_description).
-// #[utoipa::path(
-//     get,
-//     path = "/processes/{processID}",
-//     operation_id = "getProcessDescription",
-//     tag = "ProcessDescription",
-//     responses(
-//         (status = 200),
-//     ),
-// )]
+#[utoipa::path(
+    get,
+    path = "/processes/{processID}",
+    operation_id = "getProcessDescription",
+    tag = "ProcessDescription",
+    responses(
+        (status = 200),
+    ),
+)]
 // parameters:
 //   - $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/parameters/processIdPathParam.yaml"
 // responses:
@@ -121,9 +121,12 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
 //     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ProcessDescription.yaml"
 //   404:
 //     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
-// async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
-//     HttpResponse::Ok().json(process_id.to_string())
-// }
+async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
+    match dagster::get_process_description(&process_id).await {
+        Ok(descr) => HttpResponse::Ok().json(descr), // TODO: type ProcessDescription
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+    }
+}
 
 /// execute a process
 ///
@@ -143,7 +146,7 @@ async fn execute(
     parameters: web::Json<dagster::Execute>,
 ) -> HttpResponse {
     info!("Process parameters: {parameters:?}");
-    match dagster::execute_job(&process_id, &*parameters).await {
+    match dagster::execute(&process_id, &*parameters).await {
         /* responses:
                 200:
                   $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
@@ -172,13 +175,16 @@ async fn execute(
         (status = 200),
     ),
 )]
-//     responses:
-//       200:
-//         $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
-//       404:
-//         $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+// responses:
+//   200:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
+//   404:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
 async fn get_jobs(_req: HttpRequest) -> HttpResponse {
-    HttpResponse::Ok().json(Vec::<u32>::new())
+    match dagster::get_jobs().await {
+        Ok(jobs) => HttpResponse::Ok().json(jobs), // TODO: type JobList
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+    }
 }
 
 /// retrieve the status of a job
@@ -261,7 +267,7 @@ async fn get_result(job_id: web::Path<String>) -> HttpResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    handlers(processes, execute, get_jobs, get_status, dismiss, get_result),
+    handlers(process_list, execute, get_jobs, get_status, dismiss, get_result),
     components(ProcessList)
 )]
 pub struct ApiDoc;
@@ -286,7 +292,10 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/processes").route(web::get().to(processes)))
+    cfg.service(web::resource("/processes").route(web::get().to(process_list)))
+        .service(
+            web::resource("/processes/{processID}").route(web::get().to(get_process_description)),
+        )
         .service(web::resource("/processes/{processID}/execution").route(web::post().to(execute)))
         .service(web::resource("/jobs").route(web::get().to(get_jobs)))
         .service(web::resource("/jobs/{jobId}").route(web::get().to(get_status)))
@@ -300,9 +309,10 @@ mod tests {
     use actix_web::{body, dev::Service, http, test, App, Error};
 
     #[actix_web::test]
+    #[ignore]
     async fn test_process_list() -> Result<(), Error> {
         let app = test::init_service(
-            App::new().service(web::resource("/processes").route(web::get().to(processes))),
+            App::new().service(web::resource("/processes").route(web::get().to(process_list))),
         )
         .await;
 
@@ -312,8 +322,8 @@ mod tests {
         assert_eq!(resp.status(), http::StatusCode::OK);
 
         let response_body = body::to_bytes(resp.into_body()).await?;
-
-        assert!(response_body.starts_with(b"{\"links\":["));
+        println!("{response_body:?}");
+        assert!(response_body.starts_with(b"{\"processes\":["));
 
         Ok(())
     }
