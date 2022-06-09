@@ -1,6 +1,7 @@
 //! Endpoints according to <https://ogcapi.ogc.org/processes/> API
 
 use crate::dagster;
+use crate::error;
 use crate::models::*;
 use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
@@ -124,7 +125,8 @@ async fn process_list(_req: HttpRequest) -> HttpResponse {
 async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
     match dagster::get_process_description(&process_id).await {
         Ok(descr) => HttpResponse::Ok().json(descr), // TODO: type ProcessDescription
-        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
+        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
 }
 
@@ -150,15 +152,10 @@ async fn execute(
         /* responses:
                 200:
                   $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
-                201:
-                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteAsync.yaml"
-                404:
-                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
-                500:
-                  $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ServerError.yaml"
         */
-        Ok(job_id) => HttpResponse::build(StatusCode::CREATED).json(job_id), // TODO: type ExecuteAsync
-        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+        Ok(status) => HttpResponse::build(StatusCode::CREATED).json(status),
+        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
+        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
 }
 
@@ -183,7 +180,7 @@ async fn execute(
 async fn get_jobs(_req: HttpRequest) -> HttpResponse {
     match dagster::get_jobs().await {
         Ok(jobs) => HttpResponse::Ok().json(jobs), // TODO: type JobList
-        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
 }
 
@@ -200,19 +197,11 @@ async fn get_jobs(_req: HttpRequest) -> HttpResponse {
         (status = 200),
     ),
 )]
-// parameters:
-//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
-// responses:
-//   200:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
-//   404:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-//   500:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn get_status(job_id: web::Path<String>) -> HttpResponse {
     match dagster::get_status(&job_id).await {
-        Ok(status) => HttpResponse::Ok().json(status), // TODO: type Status
-        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+        Ok(status) => HttpResponse::Ok().json(status),
+        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
+        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
 }
 
@@ -255,19 +244,14 @@ async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
         (status = 200),
     ),
 )]
-// parameters:
-//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
 // responses:
 //   200:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Results.yaml"
-//   404:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-//   500:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn get_result(job_id: web::Path<String>) -> HttpResponse {
     match dagster::get_result(&job_id).await {
         Ok(status) => HttpResponse::Ok().json(status), // TODO: type Results
-        Err(e) => HttpResponse::InternalServerError().json(e.to_string()), // TODO: type ServerError
+        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
+        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
 }
 
@@ -289,8 +273,8 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
     });
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description"
-            .to_string(),
+        // "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description"
+        //     .to_string(),
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
     ]);

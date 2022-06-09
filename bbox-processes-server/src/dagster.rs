@@ -7,6 +7,7 @@
 // https://docs.dagster.io/concepts/dagit/graphql#using-the-graphql-api
 
 use crate::error::{self, Result};
+use crate::models::{self, StatusCode};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -103,12 +104,12 @@ struct ErrorMessage {
     message: String,
 }
 
-pub async fn execute(job_name: &str, params: &Execute) -> Result<String> {
+pub async fn execute(process_id: &str, params: &Execute) -> Result<models::StatusInfo> {
     let inputs = params.inputs.as_ref().map(|o| o.to_string());
     let variables = json!({
             "selector":{
                 "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos",
-                "jobName": job_name
+                "jobName": process_id
             },
             "runConfigData": inputs
     });
@@ -119,11 +120,19 @@ pub async fn execute(job_name: &str, params: &Execute) -> Result<String> {
     let resp = response.json::<LaunchRunResponse>().await;
     debug!("execute response: {resp:?}");
     match resp {
-        Err(_) => Err(error::Error::BackendExecutionError(format!(
-            "Process `{job_name}` not found"
-        ))),
+        Err(_) => Err(error::Error::NotFound(
+            "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-process"
+                .to_string(),
+        )),
         Ok(resp) => match resp.data.launch_run {
-            LaunchRun::Run { runId } => Ok(runId),
+            LaunchRun::Run { runId } => {
+                let status = models::StatusInfo::new(
+                    "process".to_string(),
+                    runId,
+                    models::StatusCode::ACCEPTED,
+                );
+                Ok(status)
+            }
             LaunchRun::Errors(messages) => Err(error::Error::BackendExecutionError(
                 messages
                     .iter()
@@ -188,7 +197,7 @@ struct RunResult {
     assets: Vec<AssetMaterializations>,
 }
 
-pub async fn get_status(job_id: &str) -> Result<String> {
+pub async fn get_status(job_id: &str) -> Result<models::StatusInfo> {
     let variables = json!({ "runId": job_id });
     let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
     // {"data":{"runsOrError":{"results":[{"assets":[],"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
@@ -196,17 +205,26 @@ pub async fn get_status(job_id: &str) -> Result<String> {
     let resp = response.json::<FilteredRunResponse>().await;
     debug!("get_status response: {resp:?}");
     match resp {
-        Err(_) => Err(error::Error::BackendExecutionError(format!(
-            "Job `{job_id}` not found"
-        ))),
+        Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
         Ok(resp) => {
             let results = resp.data.runs_or_error.results;
             if results.len() == 1 {
-                Ok(results[0].status.clone())
+                let status = match results[0].status.as_str() {
+                    "QUEUED" | "NOT_STARTED" | "MANAGED" | "STARTING" => StatusCode::ACCEPTED,
+                    "STARTED" => StatusCode::RUNNING,
+                    "SUCCESS" => StatusCode::SUCCESSFUL,
+                    "FAILURE" => StatusCode::FAILED,
+                    "CANCELING" | "CANCELED" => StatusCode::DISMISSED,
+                    _ => StatusCode::DISMISSED,
+                };
+                let status =
+                    models::StatusInfo::new("process".to_string(), job_id.to_string(), status);
+                Ok(status)
             } else {
-                Err(error::Error::BackendExecutionError(format!(
-                    "RunResult missing"
-                )))
+                Err(error::Error::NotFound(
+                    "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
+                        .to_string(),
+                ))
             }
         }
     }
@@ -220,9 +238,7 @@ pub async fn get_result(job_id: &str) -> Result<String> {
     let resp = response.json::<FilteredRunResponse>().await;
     debug!("get_result response: {resp:?}");
     match resp {
-        Err(_) => Err(error::Error::BackendExecutionError(format!(
-            "Job `{job_id}` not found"
-        ))),
+        Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
         Ok(resp) => {
             let results = resp.data.runs_or_error.results;
             if results.len() == 1 {
@@ -256,9 +272,10 @@ pub async fn get_result(job_id: &str) -> Result<String> {
                     )))
                 }
             } else {
-                Err(error::Error::BackendExecutionError(format!(
-                    "RunResult missing"
-                )))
+                Err(error::Error::NotFound(
+                    "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
+                        .to_string(),
+                ))
             }
         }
     }
