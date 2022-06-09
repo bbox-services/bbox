@@ -6,6 +6,7 @@
 //
 // https://docs.dagster.io/concepts/dagit/graphql#using-the-graphql-api
 
+use crate::endpoints::JobResult;
 use crate::error::{self, Result};
 use crate::models::{self, StatusCode};
 use log::debug;
@@ -230,7 +231,7 @@ pub async fn get_status(job_id: &str) -> Result<models::StatusInfo> {
     }
 }
 
-pub async fn get_result(job_id: &str) -> Result<String> {
+pub async fn get_result(job_id: &str) -> Result<JobResult> {
     let variables = json!({ "runId": job_id });
     let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
     // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"get_gemeinde","metadataEntries":[{"jsonString":"{\"gemeinden\": [{\"bfs_nummer\": 770, \"gemeinde\": \"Stocken-H\\u00f6fen\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 763, \"gemeinde\": \"Erlenbach im Simmental\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 761, \"gemeinde\": \"D\\u00e4rstetten\", \"kanton\": \"BE\"}], \"lk_blatt\": 3451}"}]}],"id":"AssetKey(['get_gemeinde'])"}],"jobName":"get_gemeinde","runId":"c54ca13c-48ff-470e-8123-8f8f162208bd","stats":{"endTime":1654269774.36158,"startTime":1654269773.145739,"stepsFailed":0},"status":"SUCCESS"}]}}}
@@ -247,9 +248,9 @@ pub async fn get_result(job_id: &str) -> Result<String> {
                         let entries = &asset.asset_materializations[0].metadata_entries;
                         if entries.len() > 0 {
                             if let Some(path) = &entries[0].path {
-                                Ok(path.clone()) // TODO: return file content
+                                Ok(JobResult::FilePath(path.clone()))
                             } else if let Some(json_string) = &entries[0].json_string {
-                                Ok(json_string.clone()) // TODO: convert to json
+                                Ok(JobResult::Json(serde_json::from_str(json_string)?))
                             } else {
                                 Err(error::Error::BackendExecutionError(format!(
                                     "Unknown metadata entry `{:?}`",

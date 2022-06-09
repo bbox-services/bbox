@@ -3,10 +3,12 @@
 use crate::dagster;
 use crate::error;
 use crate::models::*;
-use actix_web::{http::StatusCode, web, HttpRequest, HttpResponse};
+use actix_files::NamedFile;
+use actix_web::{http::StatusCode, web, Either, HttpRequest, HttpResponse};
 use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::ApiLink;
 use log::{info, warn};
+use serde_json::json;
 use utoipa::OpenApi;
 
 /// retrieve the list of available processes
@@ -231,6 +233,13 @@ async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
     HttpResponse::InternalServerError().json(job_id.to_string())
 }
 
+pub enum JobResult {
+    FilePath(String),
+    Json(serde_json::Value),
+}
+
+type JobResultResponse = Either<HttpResponse, std::result::Result<NamedFile, std::io::Error>>;
+
 /// retrieve the result(s) of a job
 ///
 /// Lists available results of a job. In case of a failure, lists exceptions instead.
@@ -244,14 +253,22 @@ async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
         (status = 200),
     ),
 )]
-// responses:
-//   200:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Results.yaml"
-async fn get_result(job_id: web::Path<String>) -> HttpResponse {
+async fn get_result(job_id: web::Path<String>) -> JobResultResponse {
     match dagster::get_result(&job_id).await {
-        Ok(status) => HttpResponse::Ok().json(status), // TODO: type Results
-        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
-        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
+        Ok(result) => match result {
+            JobResult::Json(json) => {
+                // qualifiedInputValue
+                Either::Left(HttpResponse::Ok().json(json!({ "result": {"value": json }})))
+            }
+            JobResult::FilePath(path) => {
+                info!("get_result from {path}");
+                Either::Right(NamedFile::open(path))
+            }
+        },
+        Err(error::Error::NotFound(type_)) => {
+            Either::Left(HttpResponse::NotFound().json(Exception::new(type_)))
+        }
+        Err(e) => Either::Left(HttpResponse::InternalServerError().json(Exception::from(e))),
     }
 }
 

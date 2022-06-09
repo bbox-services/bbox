@@ -623,6 +623,7 @@ dependencies = [
 name = "bbox-processes-server"
 version = "0.1.0"
 dependencies = [
+ "actix-files",
  "actix-web",
  "awc",
  "bbox-common",
