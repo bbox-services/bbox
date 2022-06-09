@@ -149,7 +149,7 @@ async fn execute(
     process_id: web::Path<String>,
     parameters: web::Json<dagster::Execute>,
 ) -> HttpResponse {
-    info!("Process parameters: {parameters:?}");
+    info!("Execute `{process_id}` with parameters `{parameters:?}`");
     match dagster::execute(&process_id, &*parameters).await {
         /* responses:
                 200:
