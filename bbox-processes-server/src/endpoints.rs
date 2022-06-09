@@ -101,6 +101,30 @@ async fn processes(_req: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().json(resp)
 }
 
+/// retrieve a process description
+///
+/// The process description contains information about inputs and outputs and a link to the execution-endpoint for the process. The Core does not mandate the use of a specific process description to specify the interface of a process.
+// For more information, see [Section 7.10](https://docs.ogc.org/is/18-062/18-062.html#sc_process_description).
+// #[utoipa::path(
+//     get,
+//     path = "/processes/{processID}",
+//     operation_id = "getProcessDescription",
+//     tag = "ProcessDescription",
+//     responses(
+//         (status = 200),
+//     ),
+// )]
+// parameters:
+//   - $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/parameters/processIdPathParam.yaml"
+// responses:
+//   200:
+//     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ProcessDescription.yaml"
+//   404:
+//     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
+// async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
+//     HttpResponse::Ok().json(process_id.to_string())
+// }
+
 /// execute a process
 ///
 /// Create a new job.
@@ -135,8 +159,111 @@ async fn execute(
     }
 }
 
+/// retrieve the list of jobs
+///
+/// Lists available jobs.
+// For more information, see [Section 12](http://docs.ogc.org/DRAFTS/18-062.html#Job_list).
+#[utoipa::path(
+    get,
+    path = "/jobs",
+    operation_id = "getJobs",
+    tag = "JobList",
+    responses(
+        (status = 200),
+    ),
+)]
+//     responses:
+//       200:
+//         $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
+//       404:
+//         $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+async fn get_jobs(_req: HttpRequest) -> HttpResponse {
+    HttpResponse::Ok().json(Vec::<u32>::new())
+}
+
+/// retrieve the status of a job
+///
+/// Shows the status of a job.
+// For more information, see [Section 7.10](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_status_info).
+#[utoipa::path(
+    get,
+    path = "/jobs/{jobId}",
+    operation_id = "getStatus",
+    tag = "Status",
+    responses(
+        (status = 200),
+    ),
+)]
+// parameters:
+//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+// responses:
+//   200:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
+//   404:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+//   500:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+async fn get_status(job_id: web::Path<String>) -> HttpResponse {
+    HttpResponse::Ok().json(job_id.to_string())
+}
+
+/// cancel a job execution, remove a finished job
+///
+/// Cancel a job execution and remove it from the jobs list.
+// For more information, see [Section 14](http://docs.ogc.org/DRAFTS/18-062.html#Dismiss).
+#[utoipa::path(
+    delete,
+    path = "/jobs/{jobId}",
+    operation_id = "dismiss",
+    tag = "Dismiss",
+    responses(
+        (status = 200),
+    ),
+)]
+// parameters:
+//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+// responses:
+//   200:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
+//   404:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+//   500:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
+    HttpResponse::Ok().json(job_id.to_string())
+}
+
+/// retrieve the result(s) of a job
+///
+/// Lists available results of a job. In case of a failure, lists exceptions instead.
+// For more information, see [Section 7.11](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_job_results).
+#[utoipa::path(
+    get,
+    path = "/jobs/{jobId}/results",
+    operation_id = "getResult",
+    tag = "Result",
+    responses(
+        (status = 200),
+    ),
+)]
+// parameters:
+//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+// responses:
+//   200:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Results.yaml"
+//   404:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+//   500:
+//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+async fn get_result(job_id: web::Path<String>) -> HttpResponse {
+    HttpResponse::Ok().json(job_id.to_string())
+}
+
 #[derive(OpenApi)]
-#[openapi(handlers(processes, execute), components(ProcessList))]
+#[openapi(
+    handlers(processes, execute, get_jobs, get_status, dismiss, get_result),
+    components(ProcessList)
+)]
 pub struct ApiDoc;
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
@@ -160,7 +287,11 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/processes").route(web::get().to(processes)))
-        .service(web::resource("/processes/{processID}/execution").route(web::post().to(execute)));
+        .service(web::resource("/processes/{processID}/execution").route(web::post().to(execute)))
+        .service(web::resource("/jobs").route(web::get().to(get_jobs)))
+        .service(web::resource("/jobs/{jobId}").route(web::get().to(get_status)))
+        .service(web::resource("/jobs/{jobId}").route(web::delete().to(dismiss)))
+        .service(web::resource("/jobs/{jobId}/results").route(web::get().to(get_result)));
 }
 
 #[cfg(test)]

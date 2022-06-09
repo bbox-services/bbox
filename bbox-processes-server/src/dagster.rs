@@ -1,4 +1,8 @@
 //! Backend for <https://dagster.io/>
+//!
+//! Term mapping (OGC -> Dagster):
+//! * Process -> Job
+//! * Job -> Run
 
 use crate::error::{self, Result};
 use serde::{Deserialize, Serialize};
