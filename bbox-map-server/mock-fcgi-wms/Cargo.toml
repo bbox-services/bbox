@@ -8,3 +8,7 @@ edition = "2018"
 fastcgi = "1.0.0"
 opentelemetry = { version = "0.13", default-features = false, features = ["trace"] }
 opentelemetry-jaeger = { version = "0.12.0", features = ["collector_client"] }
+
+[[bin]]
+name = "mock-fcgi-wms"
+path = "src/main.rs"

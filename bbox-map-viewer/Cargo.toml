@@ -22,3 +22,6 @@ mime_guess = "2.0.3"
 fxhash = "0.2.1"
 
 [dev-dependencies]
+
+[lib]
+path = "src/lib.rs"

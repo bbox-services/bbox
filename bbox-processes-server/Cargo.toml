@@ -3,8 +3,6 @@ name = "bbox-processes-server"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 actix-web = "4.0.0"
@@ -17,3 +15,7 @@ swagger = { version = "6.1", features = ["serdejson"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0.31"
 log = "0.4.17"
+
+[[bin]]
+name = "bbox-processes-server"
+path = "src/main.rs"

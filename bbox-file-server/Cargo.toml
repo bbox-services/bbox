@@ -15,3 +15,7 @@ rust-embed = { version = "5.6.0", features = ["compression"] }
 tempfile = "3.2.0"
 zip = { version = "0.5.13", default-features = false, features = ["deflate"] }
 configparser = "3.0.0"
+
+[[bin]]
+name = "bbox-file-server"
+path = "src/main.rs"

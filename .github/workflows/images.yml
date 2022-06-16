@@ -1,4 +1,4 @@
-name: Publish bbox-qgis-server docker image
+name: Docker images
 
 on: [push]
 
@@ -19,8 +19,22 @@ jobs:
           else
             echo ::set-output name=tag::latest
           fi
-      - name: Build and Publish to Registry
-        uses: elgohr/Publish-Docker-Github-Action@2.18
+
+      - name: Build and publish processes-server
+        uses: elgohr/Publish-Docker-Github-Action@v4
+        env:
+          APP: bbox-processes-server
+          BUILD_DIR: bbox-server
+          BUILD_FEATURES: "--no-default-features --features=processes-server"
+        with:
+          name: sourcepole/bbox-processes-server
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          buildargs: BUILD_DIR,BUILD_FEATURES
+          tags: "${{ steps.get_tag.outputs.tag }}"
+
+      - name: Build and Publish bbox-qgis-server
+        uses: elgohr/Publish-Docker-Github-Action@v4
         with:
           name: sourcepole/bbox-qgis-server
           username: ${{ secrets.DOCKER_HUB_USER }}
