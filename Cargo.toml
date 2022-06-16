@@ -9,6 +9,7 @@ members = [
     "bbox-processes-server",
     "bbox-routing-server",
     "bbox-server",
+    "bbox-tile-server",
 ]
 default-members = ["bbox-server"]
 

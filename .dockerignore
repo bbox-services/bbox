@@ -4,4 +4,6 @@
 /Dockerfile*
 README.md
 /bbox.toml
+/data
 /bbox.sublime-*
+/bbox-tile-server/s3data
