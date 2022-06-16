@@ -1,4 +1,5 @@
 use actix_web::{web, HttpRequest, HttpResponse};
+use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
 use bbox_common::ogcapi::*;
 use serde_json::json;
 use utoipa::OpenApi;
@@ -235,6 +236,67 @@ async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpRes
     ),
 )]
 pub struct ApiDoc;
+
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
+    api.conformance_classes.extend(vec![
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
+    ]);
+    let collection = CoreCollection {
+        id: "buildings".to_string(),
+        title: Some("Buildings".to_string()),
+        description: Some("Buildings in the city of Bonn.".to_string()),
+        extent: Some(CoreExtent {
+            spatial: Some(CoreExtentSpatial {
+                bbox: vec![vec![7.01, 50.63, 7.22, 50.78]],
+                crs: None,
+            }),
+            temporal: Some(CoreExtentTemporal {
+                interval: vec![vec![Some("2010-02-15T12:34:56Z".to_string()), None]],
+                trs: None,
+            }),
+        }),
+        item_type: None,
+        crs: vec![],
+        links: vec![
+            ApiLink {
+                href: "/collections/buildings/items".to_string(), //relurl
+                rel: Some("items".to_string()),
+                type_: Some("application/geo+json".to_string()),
+                title: Some("Buildings".to_string()),
+                hreflang: None,
+                length: None,
+            },
+            ApiLink {
+                href: "https://creativecommons.org/publicdomain/zero/1.0/".to_string(),
+                rel: Some("license".to_string()),
+                type_: Some("text/html".to_string()),
+                title: Some("CC0-1.0".to_string()),
+                hreflang: None,
+                length: None,
+            },
+            ApiLink {
+                href: "https://creativecommons.org/publicdomain/zero/1.0/".to_string(),
+                rel: Some("license".to_string()),
+                type_: Some("text/html".to_string()),
+                title: Some("CC0-1.0".to_string()),
+                hreflang: None,
+                length: None,
+            },
+            ApiLink {
+                href: "https://creativecommons.org/publicdomain/zero/1.0/rdf".to_string(),
+                rel: Some("license".to_string()),
+                type_: Some("application/rdf+xml".to_string()),
+                title: Some("CC0-1.0".to_string()),
+                hreflang: None,
+                length: None,
+            },
+        ],
+    };
+    api.collections.extend(vec![collection]);
+    openapi.extend(ApiDoc::openapi());
+}
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))

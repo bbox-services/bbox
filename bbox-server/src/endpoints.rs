@@ -74,9 +74,6 @@ async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
 }
 
 /// the feature collections in the dataset
-///
-/// A list of all conformance classes specified in a standard that the
-/// server conforms to.
 #[utoipa::path(
     get,
     path = "/collections",
@@ -87,50 +84,7 @@ async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
         (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
     )
 )]
-async fn collections(req: HttpRequest) -> HttpResponse {
-    let collection = CoreCollection {
-        id: "buildings".to_string(),
-        title: Some("Buildings".to_string()),
-        description: Some("Buildings in the city of Bonn.".to_string()),
-        extent: Some(CoreExtent {
-            spatial: Some(CoreExtentSpatial {
-                bbox: vec![vec![7.01, 50.63, 7.22, 50.78]],
-                crs: None,
-            }),
-            temporal: Some(CoreExtentTemporal {
-                interval: vec![vec![Some("2010-02-15T12:34:56Z".to_string()), None]],
-                trs: None,
-            }),
-        }),
-        item_type: None,
-        crs: vec![],
-        links: vec![
-            ApiLink {
-                href: relurl(&req, "/collections/buildings/items"),
-                rel: Some("items".to_string()),
-                type_: Some("application/geo+json".to_string()),
-                title: Some("Buildings".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "https://creativecommons.org/publicdomain/zero/1.0/".to_string(),
-                rel: Some("license".to_string()),
-                type_: Some("text/html".to_string()),
-                title: Some("CC0-1.0".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "https://creativecommons.org/publicdomain/zero/1.0/rdf".to_string(),
-                rel: Some("license".to_string()),
-                type_: Some("application/rdf+xml".to_string()),
-                title: Some("CC0-1.0".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ],
-    };
+async fn collections(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> HttpResponse {
     let collections = CoreCollections {
         links: vec![ApiLink {
             href: relurl(&req, "/collections"),
@@ -140,7 +94,7 @@ async fn collections(req: HttpRequest) -> HttpResponse {
             hreflang: None,
             length: None,
         }],
-        collections: vec![collection],
+        collections: ogcapi.collections.to_vec(), //TODO: convert urls with relurl (?)
     };
     HttpResponse::Ok().json(collections)
 }

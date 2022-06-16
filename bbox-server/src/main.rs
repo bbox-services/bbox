@@ -74,15 +74,10 @@ async fn webserver() -> std::io::Result<()> {
             length: None,
         },
     ];
-    let conformance_classes = vec![
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
-    ];
 
     let mut ogcapi = OgcApiInventory {
         landing_page_links,
-        conformance_classes,
+        conformance_classes: Vec::new(),
         collections: Vec::new(),
     };
 
@@ -107,6 +102,9 @@ async fn webserver() -> std::io::Result<()> {
 
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
+
+    #[cfg(feature = "feature-server")]
+    bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi);
 
     #[cfg(feature = "processes-server")]
     bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
