@@ -84,3 +84,9 @@ Initial sequential implementation:
     time ../target/release/bbox-tile-seeder /home/pi/code/gis/vogeldatenbank/tiles/ s3://tiles
 
     -> real    0m53.257s
+
+Parallel tasks:
+
+    Default values (8+2 threads / 256 tasks)
+
+    -> real    0m13.578s (10s-20s)

@@ -12,6 +12,7 @@ rusoto_s3 = "0.47.0"
 futures = "0.3"
 num_cpus = "1.13.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
+futures-util = "0.3.21"
 
 [[bin]]
 name = "bbox-tile-seeder"

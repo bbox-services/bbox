@@ -693,6 +693,7 @@ dependencies = [
  "bbox-common",
  "clap",
  "futures",
+ "futures-util",
  "num_cpus",
  "rusoto_core",
  "rusoto_s3",
