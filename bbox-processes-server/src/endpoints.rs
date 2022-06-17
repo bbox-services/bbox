@@ -1,6 +1,6 @@
 //! Endpoints according to <https://ogcapi.ogc.org/processes/> API
 
-use crate::dagster;
+use crate::dagster::{self, DagsterBackend};
 use crate::error;
 use crate::models::*;
 use actix_files::NamedFile;
@@ -26,7 +26,8 @@ use utoipa::OpenApi;
     ),
 )]
 async fn process_list(_req: HttpRequest) -> HttpResponse {
-    let jobs = dagster::process_list().await.unwrap_or_else(|e| {
+    let backend = DagsterBackend::new();
+    let jobs = backend.process_list().await.unwrap_or_else(|e| {
         warn!("Dagster backend error: {e}");
         Vec::new()
     });
@@ -125,7 +126,8 @@ async fn process_list(_req: HttpRequest) -> HttpResponse {
 //   404:
 //     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
 async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
-    match dagster::get_process_description(&process_id).await {
+    let backend = DagsterBackend::new();
+    match backend.get_process_description(&process_id).await {
         Ok(descr) => HttpResponse::Ok().json(descr), // TODO: type ProcessDescription
         Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
         Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
@@ -150,7 +152,8 @@ async fn execute(
     parameters: web::Json<dagster::Execute>,
 ) -> HttpResponse {
     info!("Execute `{process_id}` with parameters `{parameters:?}`");
-    match dagster::execute(&process_id, &*parameters).await {
+    let backend = DagsterBackend::new();
+    match backend.execute(&process_id, &*parameters).await {
         /* responses:
                 200:
                   $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
@@ -180,7 +183,8 @@ async fn execute(
 //   404:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
 async fn get_jobs(_req: HttpRequest) -> HttpResponse {
-    match dagster::get_jobs().await {
+    let backend = DagsterBackend::new();
+    match backend.get_jobs().await {
         Ok(jobs) => HttpResponse::Ok().json(jobs), // TODO: type JobList
         Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
     }
@@ -200,7 +204,8 @@ async fn get_jobs(_req: HttpRequest) -> HttpResponse {
     ),
 )]
 async fn get_status(job_id: web::Path<String>) -> HttpResponse {
-    match dagster::get_status(&job_id).await {
+    let backend = DagsterBackend::new();
+    match backend.get_status(&job_id).await {
         Ok(status) => HttpResponse::Ok().json(status),
         Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
         Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
@@ -254,7 +259,8 @@ type JobResultResponse = Either<HttpResponse, std::result::Result<NamedFile, std
     ),
 )]
 async fn get_result(job_id: web::Path<String>) -> JobResultResponse {
-    match dagster::get_result(&job_id).await {
+    let backend = DagsterBackend::new();
+    match backend.get_result(&job_id).await {
         Ok(result) => match result {
             JobResult::Json(json) => {
                 // qualifiedInputValue

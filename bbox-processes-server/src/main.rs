@@ -1,3 +1,4 @@
+mod config;
 mod dagster;
 mod endpoints;
 mod error;

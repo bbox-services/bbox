@@ -40,6 +40,13 @@ path = "/wms"                # Base path of WMS endpoints
 # Enable FCGI mockup backend (for testing)
 # Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
 
+[processes.dagster_backend]
+# Dagster backend settings
+# Environment variable prefix: BBOX_PROCESSES__
+graphql_url = "http://localhost:3000/graphql"
+repository_name = "fpds2_processing_repository"
+repository_location_name = "fpds2_processing.repos"
+
 [metrics.prometheus]
 # Prometheus metrics endpoint
 # Environment variable prefix: BBOX_METRICS__PROMETHEUS__

@@ -6,6 +6,7 @@
 //
 // https://docs.dagster.io/concepts/dagit/graphql#using-the-graphql-api
 
+use crate::config::{DagsterBackendCfg, ProcessesServerCfg};
 use crate::endpoints::JobResult;
 use crate::error::{self, Result};
 use crate::models::{self, StatusCode};
@@ -13,21 +14,32 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-const GRAPHQL_URL: &str = "http://localhost:3000/graphql";
+pub struct DagsterBackend {
+    config: DagsterBackendCfg,
+}
 
-fn graphql_query(
-    operation_name: &str,
-    variables: serde_json::Value,
-    query: &str,
-) -> awc::SendClientRequest {
-    let client = awc::Client::default();
-    let request = json!({
-        "operationName": operation_name,
-        "body": "json",
-        "variables": variables,
-        "query": query
-    });
-    client.post(GRAPHQL_URL).send_json(&request)
+impl DagsterBackend {
+    pub fn new() -> Self {
+        let config = ProcessesServerCfg::from_config()
+            .dagster_backend
+            .expect("Backend config missing");
+        DagsterBackend { config }
+    }
+    fn graphql_query(
+        &self,
+        operation_name: &str,
+        variables: serde_json::Value,
+        query: &str,
+    ) -> awc::SendClientRequest {
+        let client = awc::Client::default();
+        let request = json!({
+            "operationName": operation_name,
+            "body": "json",
+            "variables": variables,
+            "query": query
+        });
+        client.post(&self.config.graphql_url).send_json(&request)
+    }
 }
 
 // --- process_list ---
@@ -54,20 +66,29 @@ pub struct Job {
     pub description: Option<String>,
 }
 
-pub async fn process_list() -> Result<Vec<Job>> {
-    let variables = json!({"selector":{
-            "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos"}});
-    let mut response = graphql_query("JobsQuery", variables, JOBS_QUERY).await?;
-    let resp: JobsQueryResponse = response.json().await?;
-    Ok(resp.data.repository_or_error.jobs)
-}
-pub async fn get_process_description(process_id: &str) -> Result<serde_json::Value> {
-    let variables = json!({"selector":{
-            "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos",
-            "pipelineName": process_id
-    }});
-    let mut response = graphql_query("OpSelectorQuery", variables, JOB_ARGS_QUERY).await?;
-    Ok(response.json().await?)
+impl DagsterBackend {
+    pub async fn process_list(&self) -> Result<Vec<Job>> {
+        let variables = json!({"selector":{
+            "repositoryName": &self.config.repository_name,
+            "repositoryLocationName": &self.config.repository_location_name
+        }});
+        let mut response = self
+            .graphql_query("JobsQuery", variables, JOBS_QUERY)
+            .await?;
+        let resp: JobsQueryResponse = response.json().await?;
+        Ok(resp.data.repository_or_error.jobs)
+    }
+    pub async fn get_process_description(&self, process_id: &str) -> Result<serde_json::Value> {
+        let variables = json!({"selector":{
+                "repositoryName": &self.config.repository_name,
+                "repositoryLocationName": &self.config.repository_location_name,
+                "pipelineName": process_id
+        }});
+        let mut response = self
+            .graphql_query("OpSelectorQuery", variables, JOB_ARGS_QUERY)
+            .await?;
+        Ok(response.json().await?)
+    }
 }
 
 // --- execute ---
@@ -105,50 +126,57 @@ struct ErrorMessage {
     message: String,
 }
 
-pub async fn execute(process_id: &str, params: &Execute) -> Result<models::StatusInfo> {
-    let inputs = params.inputs.as_ref().map(|o| o.to_string());
-    let variables = json!({
-            "selector":{
-                "repositoryName":"fpds2_processing_repository","repositoryLocationName":"fpds2_processing.repos",
-                "jobName": process_id
-            },
-            "runConfigData": inputs
-    });
-    let mut response = graphql_query("LaunchRunMutation", variables, EXECUTE_JOB_QUERY).await?;
-    // {"data":{"launchRun":{"run":{"runId":"d719c08f-d38e-4dbf-ac10-8fc3cf8412e3"}}}
-    // {"data":{"launchRun":{}}
-    // {"data":{"launchRun":{"errors":[{"message":"Received unexpected config entry \"XXXget_gemeinde_json\" at path root:ops. Expected: \"{ get_gemeinde_json: { config?: Any inputs: { fixpunkt_X: (Int | { json: { path: String } pickle: { path: String } value: Int }) fixpunkt_Y: (Int | { json: { path: String } pickle: { path: String } value: Int }) } outputs?: [{ result?: { json: { path: String } pickle: { path: String } } }] } }\".","reason":"FIELD_NOT_DEFINED"},{"message":"Missing required config entry \"get_gemeinde_json\" at path root:ops. Sample config for missing entry: {'get_gemeinde_json': {'inputs': {'fixpunkt_X': 0, 'fixpunkt_Y': 0}}}","reason":"MISSING_REQUIRED_FIELD"}]}}
-    let resp = response.json::<LaunchRunResponse>().await;
-    debug!("execute response: {resp:?}");
-    match resp {
-        Err(_) => Err(error::Error::NotFound(
-            "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-process"
-                .to_string(),
-        )),
-        Ok(resp) => match resp.data.launch_run {
-            LaunchRun::Run { runId } => {
-                let status = models::StatusInfo::new(
-                    "process".to_string(),
-                    runId,
-                    models::StatusCode::ACCEPTED,
-                );
-                Ok(status)
-            }
-            LaunchRun::Errors(messages) => Err(error::Error::BackendExecutionError(
-                messages
-                    .iter()
-                    .map(|m| m.message.clone())
-                    .collect::<Vec<_>>()
-                    .join(" "),
+impl DagsterBackend {
+    pub async fn execute(&self, process_id: &str, params: &Execute) -> Result<models::StatusInfo> {
+        let inputs = params.inputs.as_ref().map(|o| o.to_string());
+        let variables = json!({
+                "selector":{
+                    "repositoryName": &self.config.repository_name,
+                    "repositoryLocationName": &self.config.repository_location_name,
+                    "jobName": process_id
+                },
+                "runConfigData": inputs
+        });
+        let mut response = self
+            .graphql_query("LaunchRunMutation", variables, EXECUTE_JOB_QUERY)
+            .await?;
+        // {"data":{"launchRun":{"run":{"runId":"d719c08f-d38e-4dbf-ac10-8fc3cf8412e3"}}}
+        // {"data":{"launchRun":{}}
+        // {"data":{"launchRun":{"errors":[{"message":"Received unexpected config entry \"XXXget_gemeinde_json\" at path root:ops. Expected: \"{ get_gemeinde_json: { config?: Any inputs: { fixpunkt_X: (Int | { json: { path: String } pickle: { path: String } value: Int }) fixpunkt_Y: (Int | { json: { path: String } pickle: { path: String } value: Int }) } outputs?: [{ result?: { json: { path: String } pickle: { path: String } } }] } }\".","reason":"FIELD_NOT_DEFINED"},{"message":"Missing required config entry \"get_gemeinde_json\" at path root:ops. Sample config for missing entry: {'get_gemeinde_json': {'inputs': {'fixpunkt_X': 0, 'fixpunkt_Y': 0}}}","reason":"MISSING_REQUIRED_FIELD"}]}}
+        let resp = response.json::<LaunchRunResponse>().await;
+        debug!("execute response: {resp:?}");
+        match resp {
+            Err(_) => Err(error::Error::NotFound(
+                "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-process"
+                    .to_string(),
             )),
-        },
+            Ok(resp) => match resp.data.launch_run {
+                LaunchRun::Run { runId } => {
+                    let status = models::StatusInfo::new(
+                        "process".to_string(),
+                        runId,
+                        models::StatusCode::ACCEPTED,
+                    );
+                    Ok(status)
+                }
+                LaunchRun::Errors(messages) => Err(error::Error::BackendExecutionError(
+                    messages
+                        .iter()
+                        .map(|m| m.message.clone())
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                )),
+            },
+        }
     }
-}
 
-pub async fn get_jobs() -> Result<serde_json::Value> {
-    let variables = json!({});
-    let mut response = graphql_query("RunsQuery", variables, RUNS_QUERY).await?;
-    Ok(response.json().await?)
+    pub async fn get_jobs(&self) -> Result<serde_json::Value> {
+        let variables = json!({});
+        let mut response = self
+            .graphql_query("RunsQuery", variables, RUNS_QUERY)
+            .await?;
+        Ok(response.json().await?)
+    }
 }
 
 // --- get_status ---
@@ -198,85 +226,91 @@ struct RunResult {
     assets: Vec<AssetMaterializations>,
 }
 
-pub async fn get_status(job_id: &str) -> Result<models::StatusInfo> {
-    let variables = json!({ "runId": job_id });
-    let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
-    // {"data":{"runsOrError":{"results":[{"assets":[],"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
-    // {"data":{"runsOrError":{"results":[]}}}
-    let resp = response.json::<FilteredRunResponse>().await;
-    debug!("get_status response: {resp:?}");
-    match resp {
-        Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
-        Ok(resp) => {
-            let results = resp.data.runs_or_error.results;
-            if results.len() == 1 {
-                let status = match results[0].status.as_str() {
-                    "QUEUED" | "NOT_STARTED" | "MANAGED" | "STARTING" => StatusCode::ACCEPTED,
-                    "STARTED" => StatusCode::RUNNING,
-                    "SUCCESS" => StatusCode::SUCCESSFUL,
-                    "FAILURE" => StatusCode::FAILED,
-                    "CANCELING" | "CANCELED" => StatusCode::DISMISSED,
-                    _ => StatusCode::DISMISSED,
-                };
-                let status =
-                    models::StatusInfo::new("process".to_string(), job_id.to_string(), status);
-                Ok(status)
-            } else {
-                Err(error::Error::NotFound(
-                    "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
-                        .to_string(),
-                ))
+impl DagsterBackend {
+    pub async fn get_status(&self, job_id: &str) -> Result<models::StatusInfo> {
+        let variables = json!({ "runId": job_id });
+        let mut response = self
+            .graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY)
+            .await?;
+        // {"data":{"runsOrError":{"results":[{"assets":[],"jobName":"create_db_schema_qwc","runId":"4a979b42-5831-4368-9913-685293a22ebc","stats":{"endTime":1654603294.525416,"startTime":1654603291.751443,"stepsFailed":1},"status":"FAILURE"}]}}}
+        // {"data":{"runsOrError":{"results":[]}}}
+        let resp = response.json::<FilteredRunResponse>().await;
+        debug!("get_status response: {resp:?}");
+        match resp {
+            Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
+            Ok(resp) => {
+                let results = resp.data.runs_or_error.results;
+                if results.len() == 1 {
+                    let status = match results[0].status.as_str() {
+                        "QUEUED" | "NOT_STARTED" | "MANAGED" | "STARTING" => StatusCode::ACCEPTED,
+                        "STARTED" => StatusCode::RUNNING,
+                        "SUCCESS" => StatusCode::SUCCESSFUL,
+                        "FAILURE" => StatusCode::FAILED,
+                        "CANCELING" | "CANCELED" => StatusCode::DISMISSED,
+                        _ => StatusCode::DISMISSED,
+                    };
+                    let status =
+                        models::StatusInfo::new("process".to_string(), job_id.to_string(), status);
+                    Ok(status)
+                } else {
+                    Err(error::Error::NotFound(
+                        "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
+                            .to_string(),
+                    ))
+                }
             }
         }
     }
-}
 
-pub async fn get_result(job_id: &str) -> Result<JobResult> {
-    let variables = json!({ "runId": job_id });
-    let mut response = graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY).await?;
-    // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"get_gemeinde","metadataEntries":[{"jsonString":"{\"gemeinden\": [{\"bfs_nummer\": 770, \"gemeinde\": \"Stocken-H\\u00f6fen\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 763, \"gemeinde\": \"Erlenbach im Simmental\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 761, \"gemeinde\": \"D\\u00e4rstetten\", \"kanton\": \"BE\"}], \"lk_blatt\": 3451}"}]}],"id":"AssetKey(['get_gemeinde'])"}],"jobName":"get_gemeinde","runId":"c54ca13c-48ff-470e-8123-8f8f162208bd","stats":{"endTime":1654269774.36158,"startTime":1654269773.145739,"stepsFailed":0},"status":"SUCCESS"}]}}}
-    // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_create_schema","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/KGKCGC_FPDS2_V1_0_ili2pg_create_schema.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_create_schema'])"},{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_import","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/Testdaten/DM_FPDS2_GR_ili2pg.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_import'])"}],"jobName":"import_fpds2_testdata","runId":"c1babe60-6f83-4122-a190-5c25f31a5c4d","stats":{"endTime":1653996610.788731,"startTime":1653996599.752907,"stepsFailed":0},"status":"SUCCESS"}]}}}
-    let resp = response.json::<FilteredRunResponse>().await;
-    debug!("get_result response: {resp:?}");
-    match resp {
-        Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
-        Ok(resp) => {
-            let results = resp.data.runs_or_error.results;
-            if results.len() == 1 {
-                if let Some(asset) = results[0].assets.get(0) {
-                    if asset.asset_materializations.len() > 0 {
-                        let entries = &asset.asset_materializations[0].metadata_entries;
-                        if entries.len() > 0 {
-                            if let Some(path) = &entries[0].path {
-                                Ok(JobResult::FilePath(path.clone()))
-                            } else if let Some(json_string) = &entries[0].json_string {
-                                Ok(JobResult::Json(serde_json::from_str(json_string)?))
+    pub async fn get_result(&self, job_id: &str) -> Result<JobResult> {
+        let variables = json!({ "runId": job_id });
+        let mut response = self
+            .graphql_query("FilteredRunsQuery", variables, FILTERED_RUNS_QUERY)
+            .await?;
+        // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"get_gemeinde","metadataEntries":[{"jsonString":"{\"gemeinden\": [{\"bfs_nummer\": 770, \"gemeinde\": \"Stocken-H\\u00f6fen\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 763, \"gemeinde\": \"Erlenbach im Simmental\", \"kanton\": \"BE\"}, {\"bfs_nummer\": 761, \"gemeinde\": \"D\\u00e4rstetten\", \"kanton\": \"BE\"}], \"lk_blatt\": 3451}"}]}],"id":"AssetKey(['get_gemeinde'])"}],"jobName":"get_gemeinde","runId":"c54ca13c-48ff-470e-8123-8f8f162208bd","stats":{"endTime":1654269774.36158,"startTime":1654269773.145739,"stepsFailed":0},"status":"SUCCESS"}]}}}
+        // {"data":{"runsOrError":{"results":[{"assets":[{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_create_schema","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/KGKCGC_FPDS2_V1_0_ili2pg_create_schema.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_create_schema'])"},{"assetMaterializations":[{"label":"import_fpds2_testdata_ili2pg_import","metadataEntries":[{"label":"log_file_path","path":"/data/Interlis/Testdaten/DM_FPDS2_GR_ili2pg.log"}]}],"id":"AssetKey(['import_fpds2_testdata_ili2pg_import'])"}],"jobName":"import_fpds2_testdata","runId":"c1babe60-6f83-4122-a190-5c25f31a5c4d","stats":{"endTime":1653996610.788731,"startTime":1653996599.752907,"stepsFailed":0},"status":"SUCCESS"}]}}}
+        let resp = response.json::<FilteredRunResponse>().await;
+        debug!("get_result response: {resp:?}");
+        match resp {
+            Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
+            Ok(resp) => {
+                let results = resp.data.runs_or_error.results;
+                if results.len() == 1 {
+                    if let Some(asset) = results[0].assets.get(0) {
+                        if asset.asset_materializations.len() > 0 {
+                            let entries = &asset.asset_materializations[0].metadata_entries;
+                            if entries.len() > 0 {
+                                if let Some(path) = &entries[0].path {
+                                    Ok(JobResult::FilePath(path.clone()))
+                                } else if let Some(json_string) = &entries[0].json_string {
+                                    Ok(JobResult::Json(serde_json::from_str(json_string)?))
+                                } else {
+                                    Err(error::Error::BackendExecutionError(format!(
+                                        "Unknown metadata entry `{:?}`",
+                                        entries[0]
+                                    )))
+                                }
                             } else {
                                 Err(error::Error::BackendExecutionError(format!(
-                                    "Unknown metadata entry `{:?}`",
-                                    entries[0]
+                                    "MetadataEntry missing"
                                 )))
                             }
                         } else {
                             Err(error::Error::BackendExecutionError(format!(
-                                "MetadataEntry missing"
+                                "AssetMaterialization missing"
                             )))
                         }
                     } else {
                         Err(error::Error::BackendExecutionError(format!(
-                            "AssetMaterialization missing"
+                            "AssetMaterializations missing"
                         )))
                     }
                 } else {
-                    Err(error::Error::BackendExecutionError(format!(
-                        "AssetMaterializations missing"
-                    )))
+                    Err(error::Error::NotFound(
+                        "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
+                            .to_string(),
+                    ))
                 }
-            } else {
-                Err(error::Error::NotFound(
-                    "http://www.opengis.net/def/exceptions/ogcapi-processes-1/1.0/no-such-job"
-                        .to_string(),
-                ))
             }
         }
     }
@@ -585,9 +619,10 @@ mod tests {
     #[actix_web::test]
     #[ignore]
     async fn query_test() {
-        let jobs = process_list().await.unwrap();
+        let backend = DagsterBackend::new();
+        let jobs = backend.process_list().await.unwrap();
         assert_eq!(jobs[0].name, "get_gemeinde");
-        let job_args = get_process_description(&jobs[0].name).await;
+        let job_args = backend.get_process_description(&jobs[0].name).await;
         dbg!(&job_args);
     }
 }
