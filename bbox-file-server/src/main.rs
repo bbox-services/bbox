@@ -1,3 +1,4 @@
+mod config;
 mod endpoints;
 mod qgis_plugins;
 

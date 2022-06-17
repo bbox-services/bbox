@@ -1,42 +1,13 @@
+use crate::config::FileserverCfg;
 use crate::qgis_plugins::*;
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, Result};
 use bbox_common::app_dir;
-use bbox_common::config::config_error_exit;
 use log::{info, warn};
-use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use tempfile::tempfile;
-
-#[derive(Deserialize, Default, Debug)]
-pub struct FileserverCfg {
-    #[serde(rename = "static", default)]
-    pub static_: Vec<StaticDirCfg>,
-    #[serde(default)]
-    pub repo: Vec<QgisPluginRepoCfg>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct StaticDirCfg {
-    pub path: String,
-    pub dir: String,
-}
-
-impl FileserverCfg {
-    pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("fileserver").is_ok() {
-            config
-                .extract_inner("fileserver")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
-    }
-}
 
 type PluginIndex = HashMap<String, Vec<PathBuf>>;
 
