@@ -42,7 +42,7 @@ path = "/wms"                # Base path of WMS endpoints
 
 [processes.dagster_backend]
 # Dagster backend settings
-# Environment variable prefix: BBOX_PROCESSES__
+# Environment variable prefix: BBOX_PROCESSES__DAGSTER_BACKEND__
 graphql_url = "http://localhost:3000/graphql"
 repository_name = "fpds2_processing_repository"
 repository_location_name = "fpds2_processing.repos"

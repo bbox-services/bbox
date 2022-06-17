@@ -13,6 +13,7 @@ use crate::models::{self, StatusCode};
 use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::time::Duration;
 
 pub struct DagsterBackend {
     config: DagsterBackendCfg,
@@ -168,6 +169,24 @@ impl DagsterBackend {
                 )),
             },
         }
+    }
+
+    pub async fn execute_sync(&self, process_id: &str, params: &Execute) -> Result<JobResult> {
+        let mut status_info = self.execute(process_id, params).await?;
+        let job_id = status_info.job_id.clone();
+        while status_info.status == StatusCode::ACCEPTED
+            || status_info.status == StatusCode::RUNNING
+        {
+            status_info = self.get_status(&job_id).await?;
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        if status_info.status != StatusCode::SUCCESSFUL {
+            return Err(error::Error::BackendExecutionError(format!(
+                "Job {job_id} failed with status {}",
+                status_info.status
+            )));
+        }
+        self.get_result(&job_id).await
     }
 
     pub async fn get_jobs(&self) -> Result<serde_json::Value> {

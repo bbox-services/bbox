@@ -150,17 +150,38 @@ async fn get_process_description(process_id: web::Path<String>) -> HttpResponse 
 async fn execute(
     process_id: web::Path<String>,
     parameters: web::Json<dagster::Execute>,
-) -> HttpResponse {
+    req: HttpRequest,
+) -> JobResultResponse {
     info!("Execute `{process_id}` with parameters `{parameters:?}`");
     let backend = DagsterBackend::new();
-    match backend.execute(&process_id, &*parameters).await {
-        /* responses:
-                200:
-                  $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
-        */
-        Ok(status) => HttpResponse::build(StatusCode::CREATED).json(status),
-        Err(error::Error::NotFound(type_)) => HttpResponse::NotFound().json(Exception::new(type_)),
-        Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
+    let prefer_async = req
+        .headers()
+        .get("Prefer")
+        .and_then(|headerval| {
+            headerval
+                .to_str()
+                .ok()
+                .and_then(|headerstr| Some(headerstr.contains("respond-async")))
+        })
+        .unwrap_or(false);
+    // TODO: support sync/async-only processes
+    if prefer_async {
+        let resp = match backend.execute(&process_id, &*parameters).await {
+            /* responses:
+                    200:
+                      $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
+            */
+            Ok(status) => HttpResponse::build(StatusCode::CREATED).json(status),
+            Err(error::Error::NotFound(type_)) => {
+                HttpResponse::NotFound().json(Exception::new(type_))
+            }
+            Err(e) => HttpResponse::InternalServerError().json(Exception::from(e)),
+        };
+        Either::Left(resp)
+    } else {
+        let job_result = backend.execute_sync(&process_id, &*parameters).await;
+        // TODO: respect parameters.response != "raw"
+        job_result_response(job_result)
     }
 }
 
@@ -182,7 +203,7 @@ async fn execute(
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
 //   404:
 //     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-async fn get_jobs(_req: HttpRequest) -> HttpResponse {
+async fn get_jobs() -> HttpResponse {
     let backend = DagsterBackend::new();
     match backend.get_jobs().await {
         Ok(jobs) => HttpResponse::Ok().json(jobs), // TODO: type JobList
@@ -260,7 +281,12 @@ type JobResultResponse = Either<HttpResponse, std::result::Result<NamedFile, std
 )]
 async fn get_result(job_id: web::Path<String>) -> JobResultResponse {
     let backend = DagsterBackend::new();
-    match backend.get_result(&job_id).await {
+    let job_result = backend.get_result(&job_id).await;
+    job_result_response(job_result)
+}
+
+fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResultResponse {
+    match job_result {
         Ok(result) => match result {
             JobResult::Json(json) => {
                 // qualifiedInputValue
