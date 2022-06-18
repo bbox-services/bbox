@@ -1,4 +1,5 @@
 use crate::Cli;
+use crate::S3Writer;
 use bbox_common::file_search;
 use crossbeam::channel;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
@@ -34,8 +35,9 @@ pub async fn put_files_seq(args: &Cli) -> anyhow::Result<()> {
     let (bucket, region) = s3cfg(args)?;
     let client = S3Client::new(region);
 
-    let prefix = PathBuf::from(format!("{}/", args.srcdir.to_string_lossy()));
-    let files = file_search::search(&args.srcdir, "*");
+    let srcdir = args.srcdir.as_ref().unwrap();
+    let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
+    let files = file_search::search(&srcdir, "*");
     for path in files {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
         let mut input: Box<dyn std::io::Read + Send + Sync> =
@@ -80,19 +82,20 @@ pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
     //     }
     // };
 
-    let prefix = PathBuf::from(format!("{}/", args.srcdir.to_string_lossy()));
-    let files = file_search::search(&args.srcdir, "*");
+    let srcdir = args.srcdir.as_ref().unwrap();
+    let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
+    let files = file_search::search(&srcdir, "*");
     for path in files {
         let bucket = bucket.clone();
         let prefix = prefix.clone();
         let client = S3Client::new(region.clone());
+        let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
+        let mut input: Box<dyn std::io::Read + Send + Sync> =
+            Box::new(match std::fs::File::open(&path) {
+                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+                Ok(x) => x,
+            });
         tasks.push(task::spawn(async move {
-            let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-            let mut input: Box<dyn std::io::Read + Send + Sync> =
-                Box::new(match std::fs::File::open(&path) {
-                    Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
-                    Ok(x) => x,
-                });
             let mut data = Vec::with_capacity(4096);
             let content_length = match input.read_to_end(&mut data) {
                 Ok(len) => len as i64,
@@ -120,6 +123,38 @@ pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
     }
     // Finish remaining tasks
     futures_util::future::join_all(tasks).await;
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub async fn put_files(args: &Cli) -> anyhow::Result<()> {
+    // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
+    let task_queue_size = args.tasks.unwrap_or(256);
+    let mut tasks = Vec::with_capacity(task_queue_size);
+
+    let s3 = S3Writer::from_args(args)?;
+
+    let srcdir = args.srcdir.as_ref().unwrap();
+    let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
+    let files = file_search::search(&srcdir, "*");
+    for path in files {
+        let prefix = prefix.clone();
+        let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
+        let input: Box<dyn std::io::Read + Send + Sync> =
+            Box::new(match std::fs::File::open(&path) {
+                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+                Ok(x) => x,
+            });
+        let s3 = s3.clone();
+        tasks.push(task::spawn(async move { s3.put_tile(key, input).await }));
+        if tasks.len() >= task_queue_size {
+            tasks = await_one_task(tasks).await;
+        }
+    }
+
+    // Finish remaining tasks
+    futures_util::future::join_all(tasks).await;
+
     Ok(())
 }
 
@@ -152,8 +187,9 @@ pub async fn put_files_channels(args: &Cli) -> anyhow::Result<()> {
         }
         Ok(())
     };
-    let prefix = PathBuf::from(format!("{}/", args.srcdir.to_string_lossy()));
-    let files = file_search::search(&args.srcdir, "*");
+    let srcdir = args.srcdir.as_ref().unwrap();
+    let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
+    let files = file_search::search(&srcdir, "*");
     for path in files {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
 

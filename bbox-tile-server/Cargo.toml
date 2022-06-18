@@ -14,6 +14,9 @@ num_cpus = "1.13.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 futures-util = "0.3.21"
 crossbeam = "0.8.1"
+reqwest = "0.11.11"
+bytes = "1.1.0"
+tile-grid = "0.3.0"
 
 [[bin]]
 name = "bbox-tile-seeder"
