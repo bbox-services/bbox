@@ -1,5 +1,5 @@
 use crate::Cli;
-use log::info;
+use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use std::env;
 
@@ -45,7 +45,7 @@ impl S3Writer {
             Ok(len) => len as i64,
             Err(e) => anyhow::bail!("Reading input failed: {e}"),
         };
-        info!("cp {key} ({content_length} bytes)");
+        debug!("cp {key} ({content_length} bytes)");
 
         if let Err(e) = {
             let request = PutObjectRequest {

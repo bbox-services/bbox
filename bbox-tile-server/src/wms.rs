@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use log::info;
+use log::debug;
 use tile_grid::{Extent, Grid};
 
 #[derive(Clone, Debug)]
@@ -40,7 +40,7 @@ impl WmsRequest {
 
     pub async fn get_map(&self, grid: &Grid, extent: &Extent) -> reqwest::Result<Bytes> {
         let req = self.get_map_request(grid, extent);
-        info!("Request {req}");
+        debug!("Request {req}");
         let response = self.client.get(req).send().await.unwrap();
         // if !response.status().is_success() {
         //     return Err();

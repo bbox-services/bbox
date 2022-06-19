@@ -2,6 +2,8 @@ use crate::Cli;
 use crate::S3Writer;
 use bbox_common::file_search;
 use crossbeam::channel;
+use indicatif::ProgressIterator;
+use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use std::env;
 use std::path::PathBuf;
@@ -37,8 +39,8 @@ pub async fn put_files_seq(args: &Cli) -> anyhow::Result<()> {
 
     let srcdir = args.srcdir.as_ref().unwrap();
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*");
-    for path in files {
+    let files = file_search::search(&srcdir, "*").into_iter();
+    for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
         let mut input: Box<dyn std::io::Read + Send + Sync> =
             Box::new(match std::fs::File::open(&path) {
@@ -50,7 +52,7 @@ pub async fn put_files_seq(args: &Cli) -> anyhow::Result<()> {
             Ok(len) => len as i64,
             Err(e) => anyhow::bail!("Reading file {:?} failed: {e}", &path),
         };
-        println!("cp {key} ({content_length} bytes)");
+        debug!("cp {key} ({content_length} bytes)");
 
         if let Err(e) = {
             let request = PutObjectRequest {
@@ -84,8 +86,8 @@ pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
 
     let srcdir = args.srcdir.as_ref().unwrap();
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*");
-    for path in files {
+    let files = file_search::search(&srcdir, "*").into_iter();
+    for path in files.progress() {
         let bucket = bucket.clone();
         let prefix = prefix.clone();
         let client = S3Client::new(region.clone());
@@ -101,7 +103,7 @@ pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
                 Ok(len) => len as i64,
                 Err(e) => anyhow::bail!("Reading file {:?} failed: {e}", &path),
             };
-            println!("cp {key} ({content_length} bytes)");
+            debug!("cp {key} ({content_length} bytes)");
 
             if let Err(e) = {
                 let request = PutObjectRequest {
@@ -136,8 +138,8 @@ pub async fn put_files(args: &Cli) -> anyhow::Result<()> {
 
     let srcdir = args.srcdir.as_ref().unwrap();
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*");
-    for path in files {
+    let files = file_search::search(&srcdir, "*").into_iter();
+    for path in files.progress() {
         let prefix = prefix.clone();
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
         let input: Box<dyn std::io::Read + Send + Sync> =
@@ -189,8 +191,8 @@ pub async fn put_files_channels(args: &Cli) -> anyhow::Result<()> {
     };
     let srcdir = args.srcdir.as_ref().unwrap();
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*");
-    for path in files {
+    let files = file_search::search(&srcdir, "*").into_iter();
+    for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
 
         wait_for_tile()?;
@@ -213,7 +215,7 @@ pub async fn put_files_channels(args: &Cli) -> anyhow::Result<()> {
         let token_sender = token_sender.clone();
         tokio::spawn(async move {
             let client = S3Client::new(region);
-            println!("cp {key} ({content_length} bytes)");
+            debug!("cp {key} ({content_length} bytes)");
             let mut retry_count = 0;
             let result = loop {
                 let request = PutObjectRequest {

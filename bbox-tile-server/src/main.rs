@@ -5,6 +5,8 @@ mod wms;
 use crate::s3::S3Writer;
 use crate::wms::WmsRequest;
 use clap::Parser;
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
 use std::io::Cursor;
 use tile_grid::{Grid, GridIterator};
 use tokio::task;
@@ -111,7 +113,17 @@ pub enum Mode {
     --overwrite=[false|true] 'Overwrite previously cached tiles'")
 */
 
+fn progress_bar() -> ProgressBar {
+    let progress = ProgressBar::new_spinner();
+    progress.set_style(
+        ProgressStyle::default_spinner()
+            .template("{elapsed_precise} ({per_sec}) {spinner} {pos} {msg}"),
+    );
+    progress
+}
+
 async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
+    let progress = progress_bar();
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
     let threads = args.threads.unwrap_or(num_cpus::get());
     let task_queue_size = args.tasks.unwrap_or(threads * 2); // use higher default value for file copy: 256
@@ -128,6 +140,8 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     for (z, x, y) in griditer {
         let extent = grid.tile_extent(x, y, z);
         let key = format!("{}/{}/{}.png", z, x, y);
+        progress.set_message(key.clone());
+        progress.inc(1);
         let grid = grid.clone();
         let wms = wms.clone();
         let s3 = s3.clone();
@@ -144,6 +158,11 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
 
     // Finish remaining tasks
     futures_util::future::join_all(tasks).await;
+
+    progress.set_style(
+        ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
+    );
+    progress.finish_with_message(format!("{} tiles generated", progress.position()));
 
     Ok(())
 }
