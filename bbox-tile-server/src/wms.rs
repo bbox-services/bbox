@@ -1,6 +1,8 @@
 use bytes::Bytes;
+use log::info;
 use tile_grid::{Extent, Grid};
 
+#[derive(Clone, Debug)]
 pub struct WmsRequest {
     client: reqwest::Client,
     pub wms_url: String,
@@ -15,7 +17,7 @@ impl WmsRequest {
             client,
             wms_url: "http://localhost:8080/wms/qgs/ne".to_string(),
             layers: vec!["country".to_string()],
-            image_type: "image/png;%20mode=8bit".to_string(),
+            image_type: "image/png; mode=8bit".to_string(),
         }
     }
 
@@ -37,12 +39,9 @@ impl WmsRequest {
     }
 
     pub async fn get_map(&self, grid: &Grid, extent: &Extent) -> reqwest::Result<Bytes> {
-        let response = self
-            .client
-            .get(self.get_map_request(grid, extent))
-            .send()
-            .await
-            .unwrap();
+        let req = self.get_map_request(grid, extent);
+        info!("Request {req}");
+        let response = self.client.get(req).send().await.unwrap();
         // if !response.status().is_success() {
         //     return Err();
         response.bytes().await

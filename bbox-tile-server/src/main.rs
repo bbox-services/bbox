@@ -113,7 +113,8 @@ pub enum Mode {
 
 async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
-    let task_queue_size = args.tasks.unwrap_or(256);
+    let threads = args.threads.unwrap_or(num_cpus::get());
+    let task_queue_size = args.tasks.unwrap_or(threads * 2); // use higher default value for file copy: 256
     let mut tasks = Vec::with_capacity(task_queue_size);
 
     let wms = WmsRequest::new();
@@ -126,11 +127,16 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     let griditer = GridIterator::new(minzoom, maxzoom, tile_limits);
     for (z, x, y) in griditer {
         let extent = grid.tile_extent(x, y, z);
-        let bytes = wms.get_map(&grid, &extent).await?;
         let key = format!("{}/{}/{}.png", z, x, y);
-        let input: Box<dyn std::io::Read + Send + Sync> = Box::new(Cursor::new(bytes));
+        let grid = grid.clone();
+        let wms = wms.clone();
         let s3 = s3.clone();
-        tasks.push(task::spawn(async move { s3.put_tile(key, input).await }));
+        tasks.push(task::spawn(async move {
+            let bytes = wms.get_map(&grid, &extent).await?;
+            let input: Box<dyn std::io::Read + Send + Sync> = Box::new(Cursor::new(bytes));
+
+            s3.put_tile(key, input).await
+        }));
         if tasks.len() >= task_queue_size {
             tasks = await_one_task(tasks).await;
         }
@@ -151,6 +157,7 @@ async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHan
 
 fn main() {
     let args = Cli::parse();
+    bbox_common::logger::init();
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     // let threads = args.threads.unwrap_or(num_cpus::get());

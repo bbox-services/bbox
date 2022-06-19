@@ -696,6 +696,7 @@ dependencies = [
  "crossbeam",
  "futures",
  "futures-util",
+ "log",
  "num_cpus",
  "reqwest",
  "rusoto_core",
