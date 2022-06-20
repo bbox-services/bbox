@@ -56,3 +56,21 @@ path = "/metrics"
 # Jaeger tracing
 # Environment variable prefix: BBOX_METRICS__JAEGER__
 agent_endpoint = "localhost:6831"
+
+
+[grid.user]
+width = 256
+height = 256
+extent = { minx = 2420000.0, miny = 1030000.0, maxx = 2920000.0, maxy = 1350000.0 }
+srid = 2056
+units = "m"
+resolutions = [4000,3750,3500,3250,3000,2750,2500,2250,2000,1750,1500,1250,1000,750,650,500,250,100,50,20,10,5,2.5,2,1.5,1,0.5,0.25,0.125,0.1,0.0625]
+origin = "TopLeft"
+
+[tile.wms]
+#baseurl = "http://localhost/cgi-bin/qgis_mapserv.fcgi?MAP=/opt/qgis_server_data/ch_051_1_version1_7_mn95.qgz&version=1.1.1&transparent=True&srs=EPSG:2056&styles="
+#layers = "ch.ti.051_1.piano_registro_fondiario_colori"
+#format = "image/png"
+baseurl = "http://localhost:8080/wms/qgs/ne?version=1.3.0"
+layers = "country"
+format = "image/png; mode=8bit"

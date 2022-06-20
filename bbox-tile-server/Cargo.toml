@@ -19,6 +19,7 @@ bytes = "1.1.0"
 tile-grid = "0.3.0"
 log = "0.4.17"
 indicatif = "0.16.2"
+serde = "1.0.137"
 
 [[bin]]
 name = "bbox-tile-seeder"

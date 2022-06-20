@@ -19,6 +19,23 @@ Features:
 - [ ] Storage Backend: Local files
 
 
+### Usage
+
+Build:
+
+    cargo build --release
+
+Set S3 env vars:
+
+    export S3_ENDPOINT_URL="http://localhost:9000"
+    export AWS_ACCESS_KEY_ID=miniostorage
+    export AWS_SECRET_ACCESS_KEY=miniostorage
+
+Run:
+
+    ../target/release/bbox-tile-seeder --maxzoom=5 s3://tiles    
+
+
 ### Local S3 tests
 
 Install [MinIO Client](https://github.com/minio/mc):

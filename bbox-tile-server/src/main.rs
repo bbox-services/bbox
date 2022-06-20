@@ -1,7 +1,9 @@
+mod config;
 mod s3;
 mod s3putfiles;
 mod wms;
 
+use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
 use crate::s3::S3Writer;
 use crate::wms::WmsRequest;
 use clap::Parser;
@@ -129,10 +131,20 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     let task_queue_size = args.tasks.unwrap_or(threads * 2); // use higher default value for file copy: 256
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let wms = WmsRequest::new();
+    let grid = if let Some(cfg) = GridCfg::from_config() {
+        Grid::from_config(&cfg).unwrap()
+    } else {
+        Grid::web_mercator()
+    };
+
+    let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
+        WmsRequest::from_config(&cfg, &grid)
+    } else {
+        anyhow::bail!("[tile.wms] config missing")
+    };
+
     let s3 = S3Writer::from_args(args)?;
 
-    let grid = Grid::web_mercator();
     let tile_limits = grid.tile_limits(grid.extent.clone(), 0);
     let minzoom = args.minzoom.unwrap_or(0);
     let maxzoom = args.maxzoom.unwrap_or(grid.maxzoom());
@@ -142,11 +154,10 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
         let key = format!("{}/{}/{}.png", z, x, y);
         progress.set_message(key.clone());
         progress.inc(1);
-        let grid = grid.clone();
         let wms = wms.clone();
         let s3 = s3.clone();
         tasks.push(task::spawn(async move {
-            let bytes = wms.get_map(&grid, &extent).await?;
+            let bytes = wms.get_map(&extent).await?;
             let input: Box<dyn std::io::Read + Send + Sync> = Box::new(Cursor::new(bytes));
 
             s3.put_tile(key, input).await

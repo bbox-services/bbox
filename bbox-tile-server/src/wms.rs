@@ -1,3 +1,4 @@
+use crate::config::BackendWmsCfg;
 use bytes::Bytes;
 use log::debug;
 use tile_grid::{Extent, Grid};
@@ -5,41 +6,33 @@ use tile_grid::{Extent, Grid};
 #[derive(Clone, Debug)]
 pub struct WmsRequest {
     client: reqwest::Client,
-    pub wms_url: String,
-    pub layers: Vec<String>,
-    pub image_type: String,
+    pub req_url: String,
 }
 
 impl WmsRequest {
-    pub fn new() -> Self {
+    pub fn from_config(cfg: &BackendWmsCfg, grid: &Grid) -> Self {
         let client = reqwest::Client::new();
-        WmsRequest {
-            client,
-            wms_url: "http://localhost:8080/wms/qgs/ne".to_string(),
-            layers: vec!["country".to_string()],
-            image_type: "image/png; mode=8bit".to_string(),
-        }
-    }
-
-    fn get_map_request(&self, _grid: &Grid, extent: &Extent) -> String {
-        let layers = self.layers.join(",");
-        let bbox = format!(
-            "{},{},{},{}",
-            extent.minx, extent.miny, extent.maxx, extent.maxy
-        );
-        format!(
-            "{}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX={}&CRS=EPSG:900913&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&FORMAT={}",
-            &self.wms_url,
-            bbox,
+        let req_url = format!(
+            "{}&SERVICE=WMS&REQUEST=GetMap&CRS=EPSG:{}&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&FORMAT={}",
+            cfg.baseurl,
+            grid.srid,
             256, //grid.width,
             256, //grid.height,
-            layers,
-            &self.image_type,
+            cfg.layers,
+            cfg.format,
+        );
+        WmsRequest { client, req_url }
+    }
+
+    fn get_map_request(&self, extent: &Extent) -> String {
+        format!(
+            "{}&BBOX={},{},{},{}",
+            self.req_url, extent.minx, extent.miny, extent.maxx, extent.maxy
         )
     }
 
-    pub async fn get_map(&self, grid: &Grid, extent: &Extent) -> reqwest::Result<Bytes> {
-        let req = self.get_map_request(grid, extent);
+    pub async fn get_map(&self, extent: &Extent) -> reqwest::Result<Bytes> {
+        let req = self.get_map_request(extent);
         debug!("Request {req}");
         let response = self.client.get(req).send().await.unwrap();
         // if !response.status().is_success() {

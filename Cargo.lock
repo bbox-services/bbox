@@ -702,6 +702,7 @@ dependencies = [
  "reqwest",
  "rusoto_core",
  "rusoto_s3",
+ "serde",
  "tile-grid",
  "tokio",
 ]
