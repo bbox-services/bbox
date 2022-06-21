@@ -10,7 +10,7 @@ use clap::Parser;
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
 use std::io::Cursor;
-use tile_grid::{Grid, GridIterator};
+use tile_grid::{Extent, Grid, GridIterator};
 use tokio::task;
 
 /*
@@ -78,6 +78,9 @@ pub struct Cli {
     /// Maximum zoom level
     #[clap(long, value_parser)]
     maxzoom: Option<u8>,
+    /// Extent minx,miny,maxx,maxy (in grid reference system)
+    #[clap(long, value_parser)]
+    extent: Option<String>,
     /// S3 path to upload to (e.g. s3://tiles)
     #[clap(value_parser)]
     s3_path: String,
@@ -136,6 +139,26 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     } else {
         Grid::web_mercator()
     };
+    let bbox = if let Some(numlist) = &args.extent {
+        let arr: Vec<f64> = numlist
+            .split(",")
+            .map(|v| {
+                v.parse()
+                    .expect("Error parsing 'extent' as list of float values")
+            })
+            .collect();
+        if arr.len() != 4 {
+            anyhow::bail!("Invalid extent (minx,miny,maxx,maxy)");
+        }
+        Extent {
+            minx: arr[0],
+            miny: arr[1],
+            maxx: arr[2],
+            maxy: arr[3],
+        }
+    } else {
+        grid.extent.clone()
+    };
 
     let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
         WmsRequest::from_config(&cfg, &grid)
@@ -145,7 +168,7 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
 
     let s3 = S3Writer::from_args(args)?;
 
-    let tile_limits = grid.tile_limits(grid.extent.clone(), 0);
+    let tile_limits = grid.tile_limits(bbox, 0);
     let minzoom = args.minzoom.unwrap_or(0);
     let maxzoom = args.maxzoom.unwrap_or(grid.maxzoom());
     let griditer = GridIterator::new(minzoom, maxzoom, tile_limits);
