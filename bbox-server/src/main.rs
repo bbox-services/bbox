@@ -2,16 +2,15 @@ mod config;
 mod endpoints;
 
 use crate::config::*;
-use crate::endpoints::ApiDoc;
 use actix_web::web;
 use actix_web::{middleware, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
 use bbox_common::api::OgcApiInventory;
+use bbox_common::api::{OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::ApiLink;
 use opentelemetry::{
     global, sdk::propagation::TraceContextPropagator, sdk::trace::Tracer, trace::TraceError,
 };
-use utoipa::OpenApi;
 
 fn init_tracer(config: &MetricsCfg) -> Result<Tracer, TraceError> {
     if let Some(cfg) = &config.jaeger {
@@ -81,7 +80,7 @@ async fn webserver() -> std::io::Result<()> {
         collections: Vec::new(),
     };
 
-    let mut openapi = ApiDoc::openapi();
+    let mut openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), "/");
 
     #[cfg(feature = "map-server")]
     let (fcgi_clients, inventory) = bbox_map_server::init_service(prometheus).await;
@@ -117,7 +116,8 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .service(web::resource("/health").to(health))
             .app_data(web::Data::new(ogcapi.clone()))
-            .configure(|mut cfg| endpoints::register(&mut cfg, openapi.clone()));
+            .app_data(web::Data::new(openapi.clone()))
+            .configure(endpoints::register);
 
         #[cfg(feature = "map-server")]
         {

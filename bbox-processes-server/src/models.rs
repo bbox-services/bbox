@@ -2625,7 +2625,7 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
 }
 
 /// Information about the available processes
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, utoipa::Component)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProcessList {
     #[serde(rename = "processes")]
     pub processes: Vec<ProcessSummary>,

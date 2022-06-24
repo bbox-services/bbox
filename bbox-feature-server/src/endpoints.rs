@@ -1,8 +1,8 @@
 use actix_web::{web, HttpRequest, HttpResponse};
-use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
+#[cfg(feature = "ogcapi")]
+use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::*;
 use serde_json::json;
-use utoipa::OpenApi;
 
 fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -29,22 +29,6 @@ fn relurl(req: &HttpRequest, path: &str) -> String {
 }
 
 /// describe the feature collection with id `collectionId`
-#[utoipa::path(
-    get,
-    path = "/collections/{collectionId}",
-    operation_id = "describeCollection",
-    tag = "Capabilities",
-    responses(
-        (status = 200, body = CoreCollection), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/Collection"
-        (status = 404), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/NotFound"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    ),
-    // "parameters": [
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/collectionId"
-    //   }
-    // ],
-)]
 async fn collection(req: HttpRequest, collection_id: web::Path<String>) -> HttpResponse {
     if *collection_id == "buildings" {
         let collection = CoreCollection {
@@ -97,40 +81,6 @@ async fn collection(req: HttpRequest, collection_id: web::Path<String>) -> HttpR
 }
 
 /// fetch features
-///
-/// Fetch features of the feature collection with id `collectionId`.
-///
-/// Every feature in a dataset belongs to a collection. A dataset may
-/// consist of multiple feature collections. A feature collection is often a
-/// collection of features of a similar type, based on a common schema.
-///
-/// Use content negotiation to request HTML or GeoJSON.
-#[utoipa::path(
-    get,
-    path = "/collections/{collectionId}/items",
-    operation_id = "getFeatures",
-    tag = "Data",
-    responses(
-        (status = 200, body = CoreFeatures), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/Features"
-        (status = 400), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/InvalidParameter"
-        (status = 404), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/NotFound"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    ),
-    // "parameters": [
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/collectionId"
-    //   },
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/limit"
-    //   },
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/bbox"
-    //   },
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/datetime"
-    //   }
-    // ],
-)]
 async fn features(req: HttpRequest, collection_id: web::Path<String>) -> HttpResponse {
     if *collection_id == "buildings" {
         let feature = CoreFeature {
@@ -166,30 +116,6 @@ async fn features(req: HttpRequest, collection_id: web::Path<String>) -> HttpRes
 }
 
 /// fetch a single feature
-///
-/// Fetch the feature with id `featureId` in the feature collection
-/// with id `collectionId`.
-///
-/// Use content negotiation to request HTML or GeoJSON.
-#[utoipa::path(
-    get,
-    path = "/collections/{collectionId}/items/{featureId}",
-    operation_id = "getFeature",
-    tag = "Data",
-    responses(
-        (status = 200, body = CoreFeature), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/Feature"
-        (status = 404), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/NotFound"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    ),
-    // "parameters": [
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/collectionId"
-    //   },
-    //   {
-    //     "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/parameters/featureId"
-    //   }
-    // ],
-)]
 async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpResponse {
     let (collection_id, feature_id) = path.into_inner();
     if collection_id == "buildings" && feature_id == "123" {
@@ -227,17 +153,8 @@ async fn feature(req: HttpRequest, path: web::Path<(String, String)>) -> HttpRes
     }
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    handlers(collection, features, feature),
-    components(),
-    tags(
-        (name = "Data", description = "access to data (features)"),
-    ),
-)]
-pub struct ApiDoc;
-
-pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
+#[cfg(feature = "ogcapi")]
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
@@ -295,7 +212,7 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
         ],
     };
     api.collections.extend(vec![collection]);
-    openapi.extend(ApiDoc::openapi());
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {

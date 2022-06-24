@@ -1,6 +1,6 @@
 use crate::qwc2_config::*;
-use crate::static_files::EmbedFile;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
+use bbox_common::static_files::EmbedFile;
 use bbox_common::templates::create_env_embedded;
 use bbox_map_server::inventory::{Inventory, WmsService};
 use minijinja::{context, Environment};

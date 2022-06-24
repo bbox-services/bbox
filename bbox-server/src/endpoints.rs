@@ -1,8 +1,9 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use bbox_common::api::OgcApiInventory;
+use actix_web::{web, Error, HttpRequest, HttpResponse};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::*;
-use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
+use bbox_common::static_files::EmbedFile;
+use rust_embed::RustEmbed;
+use std::path::PathBuf;
 
 fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -29,19 +30,6 @@ fn relurl(req: &HttpRequest, path: &str) -> String {
 }
 
 /// landing page
-///
-/// The landing page provides links to the API definition, the conformance
-/// statements and to the feature collections in this dataset.
-#[utoipa::path(
-    get,
-    path = "/ogcapi/",
-    operation_id = "getLandingPage",
-    tag = "Capabilities",
-    responses(
-        (status = 200, body = CoreLandingPage), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/LandingPage"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    )
-)]
 async fn index(ogcapi: web::Data<OgcApiInventory>, _req: HttpRequest) -> HttpResponse {
     let links = ogcapi.landing_page_links.to_vec(); //TODO: convert urls with relurl (?)
     let landing_page = CoreLandingPage {
@@ -53,19 +41,6 @@ async fn index(ogcapi: web::Data<OgcApiInventory>, _req: HttpRequest) -> HttpRes
 }
 
 /// information about specifications that this API conforms to
-///
-/// A list of all conformance classes specified in a standard that the
-/// server conforms to.
-#[utoipa::path(
-    get,
-    path = "/conformance",
-    operation_id = "getConformanceDeclaration",
-    tag = "Capabilities",
-    responses(
-        (status = 200, body = CoreConformsTo), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ConformanceDeclaration"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    )
-)]
 async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
     let conforms_to = CoreConformsTo {
         conforms_to: ogcapi.conformance_classes.to_vec(),
@@ -74,16 +49,6 @@ async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
 }
 
 /// the feature collections in the dataset
-#[utoipa::path(
-    get,
-    path = "/collections",
-    operation_id = "getCollections",
-    tag = "Capabilities",
-    responses(
-        (status = 200, body = CoreCollections), // "$ref": https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/Collections"
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    )
-)]
 async fn collections(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> HttpResponse {
     let collections = CoreCollections {
         links: vec![ApiLink {
@@ -99,39 +64,36 @@ async fn collections(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> Ht
     HttpResponse::Ok().json(collections)
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    handlers(index, conformance, collections),
-    components(CoreLandingPage,ApiLink,CoreConformsTo,CoreCollections,CoreCollection,CoreExtent,CoreExtentSpatial,CoreExtentTemporal,CoreFeatures,CoreFeature),
-    tags(
-        (name = "Capabilities", description = "essential characteristics of this API")
-    ),
-  // "info": {
-  //   "title": "OGC API - Features",
-  //   "version": "1.0.0",
-  //   "description": "This is an OpenAPI definition that conforms to the conformance\nclasses \"Core\", \"GeoJSON\" and \"OpenAPI 3.0\" of the\nstandard \"OGC API - Features - Part 1: Core\".",
-  //   "contact": {
-  //     "name": "Acme Corporation",
-  //     "email": "info@example.org",
-  //     "url": "http://example.org/"
-  //   },
-  //   "license": {
-  //     "name": "CC-BY 4.0 license",
-  //     "url": "https://creativecommons.org/licenses/by/4.0/"
-  //   }
-  // },
-  // "servers": [
-  //   {
-  //     "url": "https://data.example.org/",
-  //     "description": "BBOX feature server"
-  //   }
-  // ],
-)]
-pub struct ApiDoc;
+/// Serve openapi.yaml
+async fn openapi_yaml(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type("application/x-yaml")
+        .body(openapi.as_yaml())
+}
 
-pub fn register(cfg: &mut web::ServiceConfig, apidoc: utoipa::openapi::OpenApi) {
+/// Serve openapi.json
+async fn openapi_json(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
+    HttpResponse::Ok().json(openapi.as_json())
+}
+
+#[derive(RustEmbed)]
+#[folder = "static/"]
+struct Statics;
+
+async fn swaggerui() -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(&Statics, PathBuf::from("swaggerui.html"))?)
+}
+
+async fn redoc() -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(&Statics, PathBuf::from("redoc.html"))?)
+}
+
+pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/ogcapi/").route(web::get().to(index)))
-        .service(SwaggerUi::new("/openapi/{_:.*}").url("/api", apidoc))
+        .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
+        .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
+        .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
+        .service(web::resource("/redoc.html").route(web::get().to(redoc)))
         .service(web::resource("/conformance").route(web::get().to(conformance)))
         .service(web::resource("/collections").route(web::get().to(collections)));
 }

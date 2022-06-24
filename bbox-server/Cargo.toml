@@ -14,11 +14,11 @@ routing-server = ["bbox-routing-server"]
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }
-bbox-feature-server = { path = "../bbox-feature-server", optional = true }
+bbox-feature-server = { path = "../bbox-feature-server", features=["ogcapi"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
-bbox-processes-server = { path = "../bbox-processes-server", optional = true }
+bbox-processes-server = { path = "../bbox-processes-server", features=["ogcapi"], optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", optional = true }
 actix-web = "4.0.0"
 actix-service = "2.0.2"
@@ -27,10 +27,9 @@ opentelemetry = { version = "0.17", default-features = false, features = ["trace
 opentelemetry-prometheus = { version = "0.10" }
 opentelemetry-jaeger = { version = "0.16" }
 num_cpus = "1.0"
+rust-embed = { version = "5.6.0", features = ["compression"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
-utoipa = { version = "0.2.0", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "0.3.0", features = ["actix-web"] }
 
 [[bin]]
 name = "bbox-server"

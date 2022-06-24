@@ -4,12 +4,14 @@ version = "0.1.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
+[features]
+ogcapi = []
+
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 actix-web = "4.0.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
-utoipa = { version = "0.2.0", features = ["actix_extras"] }
 
 [[bin]]
 name = "bbox-feature-server"

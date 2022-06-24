@@ -5,26 +5,12 @@ use crate::error;
 use crate::models::*;
 use actix_files::NamedFile;
 use actix_web::{http::StatusCode, web, Either, HttpRequest, HttpResponse};
-use bbox_common::api::{ExtendApiDoc, OgcApiInventory};
-use bbox_common::ogcapi::ApiLink;
+#[cfg(feature = "ogcapi")]
+use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use log::{info, warn};
 use serde_json::json;
-use utoipa::OpenApi;
 
 /// retrieve the list of available processes
-///
-/// The list of processes contains a summary of each process the OGC API -
-/// Processes offers, including the link to a more detailed description
-/// of the process.
-#[utoipa::path(
-    get,
-    path = "/processes",
-    operation_id = "ProcessList",
-    tag = "processes",
-    responses(
-        (status = 200, body = ProcessList),
-    ),
-)]
 async fn process_list(_req: HttpRequest) -> HttpResponse {
     let backend = DagsterBackend::new();
     let jobs = backend.process_list().await.unwrap_or_else(|e| {
@@ -106,25 +92,6 @@ async fn process_list(_req: HttpRequest) -> HttpResponse {
 }
 
 /// retrieve a process description
-///
-/// The process description contains information about inputs and outputs and a link to the execution-endpoint for the process. The Core does not mandate the use of a specific process description to specify the interface of a process.
-// For more information, see [Section 7.10](https://docs.ogc.org/is/18-062/18-062.html#sc_process_description).
-#[utoipa::path(
-    get,
-    path = "/processes/{processID}",
-    operation_id = "getProcessDescription",
-    tag = "ProcessDescription",
-    responses(
-        (status = 200),
-    ),
-)]
-// parameters:
-//   - $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/parameters/processIdPathParam.yaml"
-// responses:
-//   200:
-//     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ProcessDescription.yaml"
-//   404:
-//     $ref: "http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/NotFound.yaml"
 async fn get_process_description(process_id: web::Path<String>) -> HttpResponse {
     let backend = DagsterBackend::new();
     match backend.get_process_description(&process_id).await {
@@ -135,18 +102,6 @@ async fn get_process_description(process_id: web::Path<String>) -> HttpResponse 
 }
 
 /// execute a process
-///
-/// Create a new job.
-// For more information, see [Section 7.11](https://docs.ogc.org/is/18-062/18-062.html#sc_create_job).
-#[utoipa::path(
-    post,
-    path = "/processes/{processID}/execution",
-    operation_id = "execute",
-    tag = "Execute",
-    responses(
-        (status = 200),
-    ),
-)]
 async fn execute(
     process_id: web::Path<String>,
     parameters: web::Json<dagster::Execute>,
@@ -186,23 +141,6 @@ async fn execute(
 }
 
 /// retrieve the list of jobs
-///
-/// Lists available jobs.
-// For more information, see [Section 12](http://docs.ogc.org/DRAFTS/18-062.html#Job_list).
-#[utoipa::path(
-    get,
-    path = "/jobs",
-    operation_id = "getJobs",
-    tag = "JobList",
-    responses(
-        (status = 200),
-    ),
-)]
-// responses:
-//   200:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
-//   404:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
 async fn get_jobs() -> HttpResponse {
     let backend = DagsterBackend::new();
     match backend.get_jobs().await {
@@ -212,18 +150,6 @@ async fn get_jobs() -> HttpResponse {
 }
 
 /// retrieve the status of a job
-///
-/// Shows the status of a job.
-// For more information, see [Section 7.10](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_status_info).
-#[utoipa::path(
-    get,
-    path = "/jobs/{jobId}",
-    operation_id = "getStatus",
-    tag = "Status",
-    responses(
-        (status = 200),
-    ),
-)]
 async fn get_status(job_id: web::Path<String>) -> HttpResponse {
     let backend = DagsterBackend::new();
     match backend.get_status(&job_id).await {
@@ -234,27 +160,6 @@ async fn get_status(job_id: web::Path<String>) -> HttpResponse {
 }
 
 /// cancel a job execution, remove a finished job
-///
-/// Cancel a job execution and remove it from the jobs list.
-// For more information, see [Section 14](http://docs.ogc.org/DRAFTS/18-062.html#Dismiss).
-#[utoipa::path(
-    delete,
-    path = "/jobs/{jobId}",
-    operation_id = "dismiss",
-    tag = "Dismiss",
-    responses(
-        (status = 200),
-    ),
-)]
-// parameters:
-//   - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
-// responses:
-//   200:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
-//   404:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-//   500:
-//     $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
 async fn dismiss(job_id: web::Path<String>) -> HttpResponse {
     HttpResponse::InternalServerError().json(job_id.to_string())
 }
@@ -267,18 +172,6 @@ pub enum JobResult {
 type JobResultResponse = Either<HttpResponse, std::result::Result<NamedFile, std::io::Error>>;
 
 /// retrieve the result(s) of a job
-///
-/// Lists available results of a job. In case of a failure, lists exceptions instead.
-// For more information, see [Section 7.11](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_job_results).
-#[utoipa::path(
-    get,
-    path = "/jobs/{jobId}/results",
-    operation_id = "getResult",
-    tag = "Result",
-    responses(
-        (status = 200),
-    ),
-)]
 async fn get_result(job_id: web::Path<String>) -> JobResultResponse {
     let backend = DagsterBackend::new();
     let job_result = backend.get_result(&job_id).await;
@@ -304,14 +197,10 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
     }
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    handlers(process_list, execute, get_jobs, get_status, dismiss, get_result),
-    components(ProcessList)
-)]
-pub struct ApiDoc;
+#[cfg(feature = "ogcapi")]
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    use bbox_common::ogcapi::ApiLink;
 
-pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::OpenApi) {
     api.landing_page_links.push(ApiLink {
         href: "/processes".to_string(),
         rel: Some("processes".to_string()),
@@ -322,12 +211,18 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut utoipa::openapi::Op
     });
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description"
-        //     .to_string(),
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+        // |Core|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core|
+        // |OGC Process Description|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description|
+        // |JSON|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json|
+        // |HTML|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html|
+        // |OpenAPI Specification 3.0|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30|
+        // |Job list|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list|
+        // |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
+        // |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
     ]);
-    openapi.extend(ApiDoc::openapi());
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
