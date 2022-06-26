@@ -1,204 +1,1097 @@
 openapi: 3.0.3
 info:
-  title: The OGC API - Processes
-  version: 1.0-draft.7-SNAPSHOT
-  description: |-
-    WARNING - THIS IS WORK IN PROGRESS
+  title: 'A sample API conforming to the standard OGC API - Processes - Part 1: Core'
+  version: 1.0.0
+  description: This document is an API definition document provided alongside the OGC API - Processes standard. The OGC API - Processes Standard specifies a processing interface to communicate over a RESTful protocol using JavaScript Object Notation (JSON) encodings. The specification allows for the wrapping of computational tasks into executable processes that can be offered by a server and be invoked by a client application.
   contact:
-    name: Benjamin Pross
-    email: b.pross@52north.org
+    name: Open Geospatial Consortium (OGC)
+    email: standards-team@ogc.org
+    url: 'https://www.ogc.org/contacts'
   license:
     name: OGC license
-    url: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/LICENSE"
+    url: 'http://www.ogc.org/legal/'
 paths:
   /:
     get:
       summary: landing page of this API
-      description: >-
-         The landing page provides links to the:
-           * The APIDefinition (no fixed path),
-           * The Conformance statements (path /conformance),
-           * The processes metadata (path /processes),
-           * The endpoint for job monitoring (path /jobs).
+      description: |-
+        The landing page provides links to the:
+          * The APIDefinition (no fixed path),
+          * The Conformance statements (path /conformance),
+          * The processes metadata (path /processes),
+          * The endpoint for job monitoring (path /jobs).
 
-         For more information, see [Section 7.2](http://docs.ogc.org/DRAFTS/18-062.html#sc_landing_page).
+        For more information, see [Section 7.2](https://docs.ogc.org/is/18-062/18-062.html#sc_landing_page).
       operationId: getLandingPage
       tags:
         - Capabilities
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/LandingPage.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+        '200':
+          $ref: '#/components/responses/LandingPage'
+        '500':
+          $ref: '#/components/responses/ServerError'
   /conformance:
     get:
       summary: information about standards that this API conforms to
       description: |
-         A list of all conformance classes, specified in a standard, that the server conforms to.
+        A list of all conformance classes, specified in a standard, that the server conforms to.
 
-         | Conformance class | URI |
-         |-----------|-------|
-         |Core|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core|
-         |OGC Process Description|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description|
-         |JSON|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json|
-         |HTML|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html|
-         |OpenAPI Specification 3.0|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30|
-         |Job list|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list|
-         |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
-         |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
+        | Conformance class | URI |
+        |-----------|-------|
+        |Core|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core|
+        |OGC Process Description|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description|
+        |JSON|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json|
+        |HTML|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html|
+        |OpenAPI Specification 3.0|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30|
+        |Job list|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list|
+        |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
+        |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
 
-         For more information, see [Section 7.4](http://docs.ogc.org/DRAFTS/18-062.html#sc_conformance_classes).
+        For more information, see [Section 7.4](https://docs.ogc.org/is/18-062/18-062.html#sc_conformance_classes).
       operationId: getConformanceClasses
       tags:
         - ConformanceDeclaration
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ConformanceDeclaration.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+        '200':
+          $ref: '#/components/responses/ConformanceDeclaration'
+        '500':
+          $ref: '#/components/responses/ServerError'
   /processes:
     get:
       summary: retrieve the list of available processes
       description: |
-         The list of processes contains a summary of each process the OGC API - Processes offers, including the link to a more detailed description of the process.
+        The list of processes contains a summary of each process the OGC API - Processes offers, including the link to a more detailed description of the process.
 
-         For more information, see [Section 7.7](http://docs.ogc.org/DRAFTS/18-062.html#sc_process_list).
+        For more information, see [Section 7.9](https://docs.ogc.org/is/18-062/18-062.html#sc_process_list).
       operationId: getProcesses
       tags:
         - ProcessList
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ProcessList.yaml"
-  /processes/{processID}:
+        '200':
+          $ref: '#/components/responses/ProcessList'
+  '/processes/{processID}':
     get:
       summary: retrieve a process description
-      description:  |
-         The process description contains information about inputs and outputs and a link to the execution-endpoint for the process. The Core does not mandate the use of a specific process description to specify the interface of a process. That said, the Core requirements class makes the following recommendation:
+      description: |
+        The process description contains information about inputs and outputs and a link to the execution-endpoint for the process. The Core does not mandate the use of a specific process description to specify the interface of a process. That said, the Core requirements class makes the following recommendation:
 
-         Implementations SHOULD consider supporting the OGC process description.
+        Implementations SHOULD consider supporting the OGC process description.
 
-         For more information, see [Section 7.8](http://docs.ogc.org/DRAFTS/18-062.html#sc_process_description).
+        For more information, see [Section 7.10](https://docs.ogc.org/is/18-062/18-062.html#sc_process_description).
       operationId: getProcessDescription
       tags:
         - ProcessDescription
       parameters:
-        - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/processIdPathParam.yaml"
+        - $ref: '#/components/parameters/processIdPathParam'
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ProcessDescription.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
+        '200':
+          $ref: '#/components/responses/ProcessDescription'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /jobs:
     get:
       summary: retrieve the list of jobs.
       description: |
         Lists available jobs.
 
-        For more information, see [Section 12](http://docs.ogc.org/DRAFTS/18-062.html#Job_list).
+        For more information, see [Section 11](https://docs.ogc.org/is/18-062/18-062.html#sc_job_list).
       operationId: getJobs
       tags:
         - JobList
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/JobList.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-  /processes/{processID}/execution:
+        '200':
+          $ref: '#/components/responses/JobList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  '/processes/{processID}/execution':
     post:
       summary: execute a process.
       description: |
         Create a new job.
 
-        For more information, see [Section 7.9](http://docs.ogc.org/DRAFTS/18-062.html#sc_create_job).
+        For more information, see [Section 7.11](https://docs.ogc.org/is/18-062/18-062.html#sc_create_job).
       operationId: execute
       tags:
         - Execute
       parameters:
-        - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/processIdPathParam.yaml"
+        - $ref: '#/components/parameters/processIdPathParam'
       requestBody:
         description: Mandatory execute request JSON
         required: true
         content:
           application/json:
             schema:
-              $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/execute.yaml"
+              $ref: '#/components/schemas/execute'
       responses:
-        200:
-          $ref: 'https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ExecuteSync.yaml'
-        201:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ExecuteAsync.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+        '200':
+          $ref: '#/components/responses/ExecuteSync'
+        '201':
+          $ref: '#/components/responses/ExecuteAsync'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
       callbacks:
         jobCompleted:
-          "{$request.body#/subscriber/successUri}":
+          '{$request.body#/subscriber/successUri}':
             post:
               requestBody:
                 content:
                   application/json:
                     schema:
-                      $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/schemas/results.yaml"
+                      $ref: '#/components/schemas/results'
               responses:
-                200:
+                '200':
                   description: Results received successfully
-  /jobs/{jobId}:
+  '/jobs/{jobId}':
     get:
       summary: retrieve the status of a job
       description: |
         Shows the status of a job.
 
-         For more information, see [Section 7.10](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_status_info).
+         For more information, see [Section 7.12](https://docs.ogc.org/is/18-062/18-062.html#sc_retrieve_status_info).
       operationId: getStatus
       tags:
         - Status
       parameters:
-        - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+        - $ref: '#/components/parameters/jobId'
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+        '200':
+          $ref: '#/components/responses/Status'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
     delete:
-      summary: cancel a job execution, remove a finished job
+      summary: 'cancel a job execution, remove a finished job'
       description: |
         Cancel a job execution and remove it from the jobs list.
 
-        For more information, see [Section 14](http://docs.ogc.org/DRAFTS/18-062.html#Dismiss).
+        For more information, see [Section 13](https://docs.ogc.org/is/18-062/18-062.html#Dismiss).
       operationId: dismiss
       tags:
         - Dismiss
       parameters:
-        - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+        - $ref: '#/components/parameters/jobId'
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Status.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
-  /jobs/{jobId}/results:
+        '200':
+          $ref: '#/components/responses/Status'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  '/jobs/{jobId}/results':
     get:
       summary: retrieve the result(s) of a job
       description: |
         Lists available results of a job. In case of a failure, lists exceptions instead.
 
-        For more information, see [Section 7.11](http://docs.ogc.org/DRAFTS/18-062.html#sc_retrieve_job_results).
+        For more information, see [Section 7.13](https://docs.ogc.org/is/18-062/18-062.html#sc_retrieve_job_results).
       operationId: getResult
       tags:
         - Result
       parameters:
-        - $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/parameters/jobID.yaml"
+        - $ref: '#/components/parameters/jobId'
       responses:
-        200:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/Results.yaml"
-        404:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/NotFound.yaml"
-        500:
-          $ref: "https://raw.githubusercontent.com/opengeospatial/ogcapi-processes/master/core/openapi/responses/ServerError.yaml"
+        '200':
+          $ref: '#/components/responses/Results'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
 servers:
-  - description: 52°North demo server
-    url: http://geoprocessing.demo.52north.org:8080/javaps/rest/
+  - description: Example server
+    url: 'http://example.org/ogcapi'
+components:
+  responses:
+    Status:
+      description: The status of a job.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/statusInfo'
+    NotFound:
+      description: The requested URI was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    Results:
+      description: The results of a job.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/results'
+    JobList:
+      description: A list of jobs for this process.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/jobList'
+    LandingPage:
+      description: |-
+        The landing page provides links to the API definition
+        (link relations `service-desc` and `service-doc`),
+        the Conformance declaration (path `/conformance`,
+        link relation `http://www.opengis.net/def/rel/ogc/1.0/conformance`), and to other resources.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/landingPage'
+        text/html:
+          schema:
+            type: string
+    NotAllowed:
+      description: The method is not allowed at the path.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    ServerError:
+      description: A server error occurred.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    ProcessList:
+      description: Information about the available processes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/processList'
+    ExecuteSync:
+      description: Result of synchronous execution
+      content:
+        /*:
+          schema:
+            oneOf:
+              - type: string
+              - type: number
+              - type: integer
+              - type: object
+                nullable: true
+              - type: array
+              - type: boolean
+              - type: string
+                format: binary
+              - $ref: '#/components/schemas/results'
+                description: 'Negotiate synchronous execution, response=document,any txMode and no. outputs'
+    NotSupported:
+      description: None of the requested media types is supported at the path.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    ExecuteSyncRawRef:
+      description: 'Response when negotiate synchronous execution, response=raw, transmissionMode=reference and for any number of output values.'
+      headers:
+        Link:
+          schema:
+            type: string
+          description: One or more Link headers pointing to each raw output.
+    ExecuteAsync:
+      description: Started asynchronous execution. Created job.
+      headers:
+        Location:
+          schema:
+            type: string
+          description: URL to check the status of the execution/job.
+        Preference-Applied:
+          schema:
+            type: string
+          description: The preference applied to execute the process asynchronously (see. RFC 2740).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/statusInfo'
+    swagger:
+      ProcessDescription:
+        description: A process description.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/swagger/process'
+            examples:
+              processDecription:
+                summary: A Process Description example
+                externalValue: ../../../examples/json/ProcessDescription.json
+    InvalidParameter:
+      description: A query parameter has an invalid value.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    ProcessDescription:
+      description: A process description.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/process'
+          examples:
+            processDecription:
+              summary: A Process Description example
+              externalValue: ../../examples/json/ProcessDescription.json
+    ConformanceDeclaration:
+      description: |-
+        The URIs of all conformance classes supported by the server.
+
+        To support "generic" clients that want to access multiple
+        OGC API - Processes implementations - and not "just" a specific
+        API / server, the server declares the conformance
+        classes it implements and conforms to.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/confClasses'
+          example:
+            conformsTo:
+              - 'http://www.opengis.net/spec/ogcapi-processes/1.0/conf/core'
+        text/html:
+          schema:
+            type: string
+  schemas:
+    bbox:
+      type: object
+      required:
+        - bbox
+      properties:
+        bbox:
+          type: array
+          oneOf:
+            - minItems: 4
+              maxItems: 4
+            - minItems: 6
+              maxItems: 6
+          items:
+            type: number
+        crs:
+          type: string
+          format: uri
+          default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+          enum:
+            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+            - 'http://www.opengis.net/def/crs/OGC/0/CRS84h'
+    confClasses:
+      type: object
+      required:
+        - conformsTo
+      properties:
+        conformsTo:
+          type: array
+          items:
+            type: string
+            example: 'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core'
+    statusCode:
+      type: string
+      nullable: false
+      enum:
+        - accepted
+        - running
+        - successful
+        - failed
+        - dismissed
+    inlineOrRefData:
+      oneOf:
+        - $ref: '#/components/schemas/inputValueNoObject'
+        - $ref: '#/components/schemas/qualifiedInputValue'
+        - $ref: '#/components/schemas/link'
+    schema:
+      oneOf:
+        - $ref: '#/components/schemas/reference'
+        - type: object
+          properties:
+            title:
+              type: string
+            multipleOf:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            maximum:
+              type: number
+            exclusiveMaximum:
+              type: boolean
+              default: false
+            minimum:
+              type: number
+            exclusiveMinimum:
+              type: boolean
+              default: false
+            maxLength:
+              type: integer
+              minimum: 0
+            minLength:
+              type: integer
+              minimum: 0
+              default: 0
+            pattern:
+              type: string
+              format: regex
+            maxItems:
+              type: integer
+              minimum: 0
+            minItems:
+              type: integer
+              minimum: 0
+              default: 0
+            uniqueItems:
+              type: boolean
+              default: false
+            maxProperties:
+              type: integer
+              minimum: 0
+            minProperties:
+              type: integer
+              minimum: 0
+              default: 0
+            required:
+              type: array
+              items:
+                type: string
+              minItems: 1
+              uniqueItems: true
+            enum:
+              type: array
+              items: {}
+              minItems: 1
+              uniqueItems: false
+            type:
+              type: string
+              enum:
+                - array
+                - boolean
+                - integer
+                - number
+                - object
+                - string
+            not:
+              oneOf:
+                - $ref: '#/components/schemas/schema'
+                - $ref: '#/components/schemas/reference'
+            allOf:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/schema'
+                  - $ref: '#/components/schemas/reference'
+            oneOf:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/schema'
+                  - $ref: '#/components/schemas/reference'
+            anyOf:
+              type: array
+              items:
+                oneOf:
+                  - $ref: '#/components/schemas/schema'
+                  - $ref: '#/components/schemas/reference'
+            items:
+              oneOf:
+                - $ref: '#/components/schemas/schema'
+                - $ref: '#/components/schemas/reference'
+            properties:
+              type: object
+              additionalProperties:
+                oneOf:
+                  - $ref: '#/components/schemas/schema'
+                  - $ref: '#/components/schemas/reference'
+            additionalProperties:
+              oneOf:
+                - $ref: '#/components/schemas/schema'
+                - $ref: '#/components/schemas/reference'
+                - type: boolean
+              default: true
+            description:
+              type: string
+            format:
+              type: string
+            default: {}
+            nullable:
+              type: boolean
+              default: false
+            readOnly:
+              type: boolean
+              default: false
+            writeOnly:
+              type: boolean
+              default: false
+            example: {}
+            deprecated:
+              type: boolean
+              default: false
+            contentMediaType:
+              type: string
+            contentEncoding:
+              type: string
+            contentSchema:
+              type: string
+          additionalProperties: false
+    binaryInputValue:
+      type: string
+      format: byte
+    outputDescription:
+      allOf:
+        - $ref: '#/components/schemas/descriptionType'
+        - type: object
+          required:
+            - schema
+          properties:
+            schema:
+              $ref: '#/components/schemas/schema'
+    jobList:
+      type: object
+      required:
+        - jobs
+        - links
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/statusInfo'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+    descriptionType:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/metadata'
+        additionalParameters:
+          allOf:
+            - $ref: '#/components/schemas/metadata'
+            - type: object
+              properties:
+                parameters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/additionalParameter'
+    inputValue:
+      oneOf:
+        - $ref: '#/components/schemas/inputValueNoObject'
+        - type: object
+    jobControlOptions:
+      type: string
+      enum:
+        - sync-execute
+        - async-execute
+        - dismiss
+    reference:
+      type: object
+      required:
+        - $ref
+      properties:
+        $ref:
+          type: string
+          format: uri-reference
+    metadata:
+      type: object
+      properties:
+        title:
+          type: string
+        role:
+          type: string
+        href:
+          type: string
+    processList:
+      type: object
+      required:
+        - processes
+        - links
+      properties:
+        processes:
+          type: array
+          items:
+            $ref: '#/components/schemas/processSummary'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+    link:
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+        rel:
+          type: string
+          example: service
+        type:
+          type: string
+          example: application/json
+        hreflang:
+          type: string
+          example: en
+        title:
+          type: string
+    qualifiedInputValue:
+      allOf:
+        - $ref: '#/components/schemas/format'
+        - type: object
+          required:
+            - value
+          properties:
+            value:
+              $ref: '#/components/schemas/inputValue'
+    transmissionMode:
+      type: string
+      enum:
+        - value
+        - reference
+      default:
+        - value
+    inputDescription:
+      allOf:
+        - $ref: '#/components/schemas/descriptionType'
+        - type: object
+          required:
+            - schema
+          properties:
+            minOccurs:
+              type: integer
+              default: 1
+            maxOccurs:
+              oneOf:
+                - type: integer
+                  default: 1
+                - type: string
+                  enum:
+                    - unbounded
+            schema:
+              $ref: '#/components/schemas/schema'
+    execute:
+      type: object
+      properties:
+        inputs:
+          additionalProperties:
+            oneOf:
+              - $ref: '#/components/schemas/inlineOrRefData'
+              - type: array
+                items:
+                  $ref: '#/components/schemas/inlineOrRefData'
+        outputs:
+          additionalProperties:
+            $ref: '#/components/schemas/output'
+        response:
+          type: string
+          enum:
+            - raw
+            - document
+          default:
+            - raw
+        subscriber:
+          $ref: '#/components/schemas/subscriber'
+    format:
+      type: object
+      properties:
+        mediaType:
+          type: string
+        encoding:
+          type: string
+        schema:
+          oneOf:
+            - type: string
+              format: url
+            - type: object
+    processSummary:
+      allOf:
+        - $ref: '#/components/schemas/descriptionType'
+        - type: object
+          required:
+            - id
+            - version
+          properties:
+            id:
+              type: string
+            version:
+              type: string
+            jobControlOptions:
+              type: array
+              items:
+                $ref: '#/components/schemas/jobControlOptions'
+            outputTransmission:
+              type: array
+              items:
+                $ref: '#/components/schemas/transmissionMode'
+            links:
+              type: array
+              items:
+                $ref: '#/components/schemas/link'
+    inputValueNoObject:
+      oneOf:
+        - type: string
+        - type: number
+        - type: integer
+        - type: boolean
+        - type: array
+        - $ref: '#/components/schemas/binaryInputValue'
+        - $ref: '#/components/schemas/bbox'
+    statusInfo:
+      type: object
+      required:
+        - jobID
+        - status
+        - type
+      properties:
+        processID:
+          type: string
+        type:
+          type: string
+          enum:
+            - process
+        jobID:
+          type: string
+        status:
+          $ref: '#/components/schemas/statusCode'
+        message:
+          type: string
+        created:
+          type: string
+          format: date-time
+        started:
+          type: string
+          format: date-time
+        finished:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+    results:
+      additionalProperties:
+        $ref: '#/components/schemas/inlineOrRefData'
+    landingPage:
+      type: object
+      required:
+        - links
+      properties:
+        title:
+          type: string
+          example: Example processing server
+        description:
+          type: string
+          example: Example server implementing the OGC API - Processes 1.0 Standard
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+    exception:
+      title: Exception Schema
+      description: JSON schema for exceptions based on RFC 7807
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+      additionalProperties: true
+    subscriber:
+      description: |-
+        Optional URIs for callbacks for this job.
+
+        Support for this parameter is not required and the parameter may be
+        removed from the API definition, if conformance class **'callback'**
+        is not listed in the conformance declaration under `/conformance`.
+      type: object
+      required:
+        - successUrl
+      properties:
+        successUri:
+          type: string
+          format: uri
+        inProgressUri:
+          type: string
+          format: uri
+        failedUri:
+          type: string
+          format: uri
+    swagger:
+      schema:
+        oneOf:
+          - $ref: '#/components/schemas/reference'
+          - type: object
+            properties:
+              title:
+                type: string
+              multipleOf:
+                type: number
+                minimum: 0
+                exclusiveMinimum: true
+              maximum:
+                type: number
+              exclusiveMaximum:
+                type: boolean
+                default: false
+              minimum:
+                type: number
+              exclusiveMinimum:
+                type: boolean
+                default: false
+              maxLength:
+                type: integer
+                minimum: 0
+              minLength:
+                type: integer
+                minimum: 0
+                default: 0
+              pattern:
+                type: string
+                format: regex
+              maxItems:
+                type: integer
+                minimum: 0
+              minItems:
+                type: integer
+                minimum: 0
+                default: 0
+              uniqueItems:
+                type: boolean
+                default: false
+              maxProperties:
+                type: integer
+                minimum: 0
+              minProperties:
+                type: integer
+                minimum: 0
+                default: 0
+              required:
+                type: array
+                items:
+                  type: string
+                minItems: 1
+                uniqueItems: true
+              enum:
+                type: array
+                items: {}
+                minItems: 1
+                uniqueItems: false
+              type:
+                type: string
+                enum:
+                  - array
+                  - boolean
+                  - integer
+                  - number
+                  - object
+                  - string
+              properties:
+                type: object
+                additionalProperties:
+                  type: boolean
+                  default: true
+              additionalProperties:
+                type: boolean
+                default: true
+              description:
+                type: string
+              format:
+                type: string
+              default: {}
+              nullable:
+                type: boolean
+                default: false
+              readOnly:
+                type: boolean
+                default: false
+              writeOnly:
+                type: boolean
+                default: false
+              example: {}
+              deprecated:
+                type: boolean
+                default: false
+              contentMediaType:
+                type: string
+              contentEncoding:
+                type: string
+              contentSchema:
+                type: string
+            additionalProperties: false
+      outputDescription:
+        allOf:
+          - $ref: '#/components/schemas/descriptionType'
+          - type: object
+            required:
+              - schema
+            properties:
+              schema:
+                $ref: '#/components/schemas/schema'
+      inputDescription:
+        allOf:
+          - $ref: '#/components/schemas/descriptionType'
+          - type: object
+            required:
+              - schema
+            properties:
+              minOccurs:
+                type: integer
+                default: 1
+              maxOccurs:
+                oneOf:
+                  - type: integer
+                    default: 1
+                  - type: string
+                    enum:
+                      - unbounded
+              schema:
+                $ref: '#/components/schemas/schema'
+      process:
+        allOf:
+          - $ref: '#/components/schemas/processSummary'
+          - type: object
+            properties:
+              inputs:
+                additionalProperties:
+                  $ref: '#/components/schemas/inputDescription'
+              outputs:
+                additionalProperties:
+                  $ref: '#/components/schemas/outputDescription'
+    process:
+      allOf:
+        - $ref: '#/components/schemas/processSummary'
+        - type: object
+          properties:
+            inputs:
+              additionalProperties:
+                $ref: '#/components/schemas/inputDescription'
+            outputs:
+              additionalProperties:
+                $ref: '#/components/schemas/outputDescription'
+    output:
+      type: object
+      properties:
+        format:
+          $ref: '#/components/schemas/format'
+        transmissionMode:
+          $ref: '#/components/schemas/transmissionMode'
+    additionalParameter:
+      type: object
+      required:
+        - name
+        - value
+      properties:
+        name:
+          type: string
+        value:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+              - type: integer
+              - type: array
+                items: {}
+              - type: object
+  parameters:
+    type:
+      name: type
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - process
+    jobId:
+      name: jobId
+      in: path
+      description: local identifier of a job
+      required: true
+      schema:
+        type: string
+    maxDuration:
+      name: maxDuration
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: integer
+    datetime:
+      name: datetime
+      in: query
+      required: false
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 10
+    minDuration:
+      name: minDuration
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: integer
+    status:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/statusCode'
+    processIdPathParam:
+      name: processID
+      in: path
+      required: true
+      schema:
+        type: string
+    processIdQueryParam:
+      name: processID
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
