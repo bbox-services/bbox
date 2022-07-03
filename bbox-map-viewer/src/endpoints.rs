@@ -26,7 +26,9 @@ async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
         ]
     ;
     let index = template
-        .render(context!(wms_services => &inventory.wms_services, links => links))
+        .render(
+            context!(cur_menu => "Maps", wms_services => &inventory.wms_services, links => links),
+        )
         .expect("index.hmtl render failed");
     Ok(HttpResponse::Ok().content_type("text/html").body(index))
 }
