@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8">
+    <title>BBOX - {% block title %}Home{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
+    {% block head %}
+    {% endblock %}
+   </head>
+<body onload="{% block onload %}{% endblock %}">
+  <div class="sidebar">
+    <div class="logo-details">
+      <i class='bx bx-border-outer'></i>
+      <span class="logo_name">BBOX</span>
+    </div>
+      <ul class="nav-links">
+        {% for item in menu_items %}
+        <li>
+          <a href="{{ item.href }}" {% if cur_menu == item.title %}class="active"{% endif %}>
+            <i class='{{ item.icon }}' ></i>
+            <span class="links_name">{{ item.title }}</span>
+          </a>
+        </li>
+        {% else %}
+        <li>
+          <a href="#" {% if cur_menu == "Home" %}class="active"{% endif %}>
+            <i class='bx bx-grid-alt' ></i>
+            <span class="links_name">Home</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "Maps" %}class="active"{% endif %}>
+            <i class='bx bx-map-alt' ></i>
+            <span class="links_name">Maps</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "Routing" %}class="active"{% endif %}>
+            <i class='bx bx-navigation' ></i>
+            <span class="links_name">Routing</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "Processes" %}class="active"{% endif %}>
+            <i class='bx bx-git-branch' ></i>
+            <span class="links_name">Processes</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "Collections" %}class="active"{% endif %}>
+            <i class='bx bx-list-ul' ></i>
+            <span class="links_name">Collections</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "Catalog" %}class="active"{% endif %}>
+            <i class='bx bx-book-alt' ></i>
+            <span class="links_name">Catalog</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" {% if cur_menu == "API" %}class="active"{% endif %}>
+            <i class='bx bx-code-alt' ></i>
+            <span class="links_name">API</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class='bx bx-cog' ></i>
+            <span class="links_name">Admin</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+  </div>
+  <section class="home-section">
+    <nav>
+      <div class="sidebar-button">
+        <i class='bx bx-menu sidebarBtn'></i>
+        <span class="dashboard">{% block title %}{% endblock %}</span>
+      </div>
+    </nav>
+
+    <div class="home-content">
+      {% block body %}{% endblock %}
+    </div>
+  </section>
+
+  <script>
+   let sidebar = document.querySelector(".sidebar");
+let sidebarBtn = document.querySelector(".sidebarBtn");
+sidebarBtn.onclick = function() {
+  sidebar.classList.toggle("active");
+  if(sidebar.classList.contains("active")){
+  sidebarBtn.classList.replace("bx-menu" ,"bx-menu-alt-right");
+}else
+  sidebarBtn.classList.replace("bx-menu-alt-right", "bx-menu");
+}
+ </script>
+
+</body>
+</html>

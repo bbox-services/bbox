@@ -1,5 +1,11 @@
+use actix_web::HttpResponse;
 use minijinja::{Environment, Error, Source, State};
 use rust_embed::RustEmbed;
+use serde::Serialize;
+
+#[derive(RustEmbed)]
+#[folder = "templates/"]
+struct BaseTemplates;
 
 fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, Error> {
     let mut s = value.clone();
@@ -22,6 +28,9 @@ pub fn create_env(path: &str, extensions: &[&str]) -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
     let mut source = Source::new();
+    for f in BaseTemplates::iter() {
+        source.add_embedded_template(&BaseTemplates, &f);
+    }
     source.load_from_path(path, extensions).unwrap();
     env.set_source(source);
     env
@@ -31,9 +40,22 @@ pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
     let mut source = Source::new();
+    for f in BaseTemplates::iter() {
+        source.add_embedded_template(&BaseTemplates, &f);
+    }
     for f in E::iter() {
         source.add_embedded_template(e, &f);
     }
     env.set_source(source);
     env
+}
+
+pub async fn render_endpoint<S: Serialize>(
+    env: &Environment<'static>,
+    template: &str,
+    ctx: S,
+) -> actix_web::Result<HttpResponse, actix_web::Error> {
+    let template = env.get_template(template).expect("couln't load template");
+    let page = template.render(ctx).expect("template render failed");
+    Ok(HttpResponse::Ok().content_type("text/html").body(page))
 }

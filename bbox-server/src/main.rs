@@ -117,6 +117,7 @@ async fn webserver() -> std::io::Result<()> {
             .service(web::resource("/health").to(health))
             .app_data(web::Data::new(ogcapi.clone()))
             .app_data(web::Data::new(openapi.clone()))
+            .configure(bbox_common::static_assets::register_endpoints)
             .configure(endpoints::register);
 
         #[cfg(feature = "map-server")]

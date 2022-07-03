@@ -656,7 +656,9 @@ dependencies = [
  "bbox-map-viewer",
  "bbox-processes-server",
  "bbox-routing-server",
+ "minijinja",
  "num_cpus",
+ "once_cell",
  "opentelemetry 0.17.0",
  "opentelemetry-jaeger 0.16.0",
  "opentelemetry-prometheus",
@@ -2101,6 +2103,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
+name = "memo-map"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aec276c09560ce4447087aaefc19eb0c18d97e31bd05ebac38881c4723400c40"
+
+[[package]]
 name = "memoffset"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2127,10 +2135,11 @@ dependencies = [
 
 [[package]]
 name = "minijinja"
-version = "0.8.2"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c8de52c925a3f40bd30cb2041440eb3d11658b9a2b8564c1d66fba41c890dc6"
+checksum = "ccff60140963c1feb2858b2e3250187397a8aaaba14b36841ec00889039a97c3"
 dependencies = [
+ "memo-map",
  "self_cell",
  "serde",
 ]

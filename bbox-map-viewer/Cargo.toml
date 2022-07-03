@@ -10,7 +10,7 @@ bbox-map-server = { path = "../bbox-map-server" }
 bbox-feature-server = { path = "../bbox-feature-server" }
 actix-web = "4.0.0"
 log = "0.4"
-minijinja = { version = "0.8.2", features = ["source"] }
+minijinja = { version = "0.17.0", features = ["source"] }
 rand = "0.7.3"
 once_cell = "1.8.0"
 serde = "1.0.116"

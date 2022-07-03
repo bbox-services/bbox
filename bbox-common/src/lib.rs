@@ -3,6 +3,7 @@ pub mod config;
 pub mod file_search;
 pub mod logger;
 pub mod ogcapi;
+pub mod static_assets;
 pub mod static_files;
 pub mod templates;
 

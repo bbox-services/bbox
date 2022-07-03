@@ -1,9 +1,10 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::*;
-use bbox_common::static_files::EmbedFile;
+use bbox_common::templates::{create_env_embedded, render_endpoint};
+use minijinja::{context, Environment};
+use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
-use std::path::PathBuf;
 
 fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -77,15 +78,17 @@ async fn openapi_json(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
 }
 
 #[derive(RustEmbed)]
-#[folder = "static/"]
-struct Statics;
+#[folder = "templates/"]
+struct Templates;
 
-async fn swaggerui() -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(&Statics, PathBuf::from("swaggerui.html"))?)
+static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+
+async fn swaggerui() -> Result<HttpResponse, Error> {
+    render_endpoint(&TEMPLATE_ENV, "swaggerui.html", context!(cur_menu=>"API")).await
 }
 
-async fn redoc() -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(&Statics, PathBuf::from("redoc.html"))?)
+async fn redoc() -> Result<HttpResponse, Error> {
+    render_endpoint(&TEMPLATE_ENV, "redoc.html", context!(cur_menu=>"API")).await
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {

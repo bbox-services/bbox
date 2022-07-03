@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}OpenAPI Swagger UI{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/swagger-ui.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/swagger-ui-bundle.js"></script>
+  <script>
+    function render() {
+      api_url = './openapi.yaml';
+      var ui = SwaggerUIBundle({
+        url:  api_url,
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ]
+      });
+    }
+  </script>
+{% endblock %}
+
+{% block onload %}render(){% endblock %}
+
+{% block body %}
+  <div id="swagger-ui"></div>
+{% endblock %}
