@@ -5,12 +5,14 @@ use geo::LineString;
 use geozero::wkb;
 use rstar::primitives::GeomWithData;
 use rstar::RTree;
+use serde_json::json;
 use sqlx::sqlite::SqliteConnection;
 use sqlx::{Connection, Row};
 use std::convert::TryFrom;
 use std::io::Write;
 
 /// R-Tree for node lookups
+#[derive(Clone)]
 struct NodeIndex {
     tree: RTree<Node>,
     next_node_id: usize,
@@ -53,6 +55,7 @@ impl NodeIndex {
 }
 
 /// Routing engine using contraction hierarchies
+#[derive(Clone)]
 pub struct Router {
     index: NodeIndex,
     graph: FastGraph,
@@ -113,19 +116,18 @@ impl Router {
     }
 
     /// Output paths as GeoJSON
-    pub fn path_to_geojson(&self, out: &mut dyn Write, paths: Vec<ShortestPath>) {
+    pub fn path_to_geojson(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
         let features = paths.iter().map(|p| {
             let coords = p.get_nodes().iter().map(|node_id| {
                 let (x, y) = self.index.node_coords[*node_id];
-                format!("[{x}, {y}]")
-            }).collect::<Vec<_>>().join(",");
-            format!(r#"{{"type": "Feature", "geometry": {{"type": "LineString", "coordinates": [{coords}]}}}}"#)
-        }).collect::<Vec<_>>().join(",\n");
-        write!(
-            out,
-            r#"{{"type": "FeatureCollection", "features": [{features}]}}"#
-        )
-        .ok();
+                json!([x, y])
+            }).collect::<Vec<_>>();
+            json!({"type": "Feature", "geometry": {"type": "LineString", "coordinates": coords}})
+        }).collect::<Vec<_>>();
+        json!({
+          "type": "FeatureCollection",
+          "features": features
+        })
     }
 
     /// Output internal routing graph as GeoJSON (for checking correctness)
@@ -148,3 +150,33 @@ impl Router {
 //     static ROUTER: OnceCell<Router> = OnceCell::new();
 //     &ROUTER.get_or_init(|| async { Router::from_gpkg(gpkg, table, geom).await.unwrap() })
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn chgraph() {
+        let router = Router::from_gpkg("../data/railway-test.gpkg", "flows", "geom")
+            .await
+            .unwrap();
+
+        // let mut out = File::create("chgraph.json").unwrap();
+        // router.fast_graph_to_geojson(&mut out);
+
+        let shortest_path = router.calc_path(
+            (9.352133533333333, 47.09350116666666),
+            (9.3422712, 47.1011887),
+        );
+        match shortest_path {
+            Some(p) => {
+                let weight = p.get_weight();
+                let nodes = p.get_nodes();
+                dbg!(&weight, &nodes);
+            }
+            None => {
+                println!("No path found")
+            }
+        }
+    }
+}

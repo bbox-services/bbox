@@ -24,8 +24,8 @@ Request examples:
       "waypoints": {
         "type": "MultiPoint",
         "coordinates": [
-          [36.1234515, 32.6453783],
-          [36.1247213, 32.7106286]
+          [9.35213353, 47.0935012],
+          [9.3422712, 47.1011887]
         ]
       },
       "preference": "fastest",
