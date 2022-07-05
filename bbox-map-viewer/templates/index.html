@@ -3,28 +3,46 @@
 {% block title %}Maps{% endblock %}
 
 {% block body %}
-  <h1>WMS catalog</h1>
-  <ul>
-  {% for entry in wms_services %}
-    <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
-                              <a href="/map/{{ entry.id }}/">Viewer</a>
-    </li>
-  {% endfor %}
-  </ul>
-  <h1>Links</h1>
-  <ul>
-    <li><a href="/maps/">Map viewer</a></li>
-    <li><a href="/metrics">Metrics endpoint</a></li>
-  </ul>
-  <h1>WMS request examples</h1>
-  <ul>
-  {% for link in links %}
-    <li><a href="{{ link | safe }}">{{ link|truncate(20) }}</a></li>
-  {% endfor %}
-  </ul>
-  <h1>OGC API Features</h1>
-  <ul>
-    <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li>
-    <li><a href="/openapi.json">OpenAPI spec (JSON)</a></li>
-  </ul>
+  <div class="overview-boxes">
+    <div class="box">
+      <div class="right-side">
+        <h2>WMS catalog</h2>
+        <ul>
+        {% for entry in wms_services %}
+          <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
+                                    <a href="/map/{{ entry.id }}/">Viewer</a>
+          </li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="box">
+      <div class="right-side">
+        <h2>Links</h2>
+        <ul>
+          <li><a href="/maps/">Map viewer</a></li>
+          <li><a href="/metrics">Metrics endpoint</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="wide-boxes">
+    <div class="box">
+      <h2>WMS request examples</h2>
+      <div class="wide-details">
+        <ul class="details">
+        {% for link in links %}
+          <li><a href="{{ link | safe }}">{{ link|truncate(20) }}</a></li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="box">
+      <h2>OGC API Features</h2>
+      <ul>
+        <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li>
+        <li><a href="/openapi.json">OpenAPI spec (JSON)</a></li>
+      </ul>
+    </div>
+  </div>
 {% endblock %}
