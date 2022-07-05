@@ -19,7 +19,7 @@ bbox-file-server = { path = "../bbox-file-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", features=["ogcapi"], optional = true }
-bbox-routing-server = { path = "../bbox-routing-server", optional = true }
+bbox-routing-server = { path = "../bbox-routing-server", features=["ogcapi"], optional = true }
 actix-web = "4.0.0"
 actix-service = "2.0.2"
 actix-web-opentelemetry = { version = "0.11.0-beta.8", features = ["metrics"] }

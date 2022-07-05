@@ -108,6 +108,9 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "processes-server")]
     bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
 
+    #[cfg(feature = "routing-server")]
+    bbox_routing_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(RequestTracing::new())
@@ -147,6 +150,11 @@ async fn webserver() -> std::io::Result<()> {
         #[cfg(feature = "processes-server")]
         {
             app = app.configure(bbox_processes_server::endpoints::register);
+        }
+
+        #[cfg(feature = "routing-server")]
+        {
+            app = app.configure(bbox_routing_server::endpoints::register);
         }
 
         app

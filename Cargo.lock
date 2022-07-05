@@ -639,7 +639,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "utoipa",
 ]
 
 [[package]]
@@ -3784,31 +3783,6 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding 2.1.0",
-]
-
-[[package]]
-name = "utoipa"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21efa1674d11ec5df52e949d561d2f3a38dfd819f2dba0c42669843033c5d9f1"
-dependencies = [
- "serde",
- "serde_json",
- "utoipa-gen",
-]
-
-[[package]]
-name = "utoipa-gen"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22463714b2ef594316781e883a4d180d25d097d7360401fa4b3935506f2c5c25"
-dependencies = [
- "lazy_static",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "regex",
- "syn",
 ]
 
 [[package]]

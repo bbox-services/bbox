@@ -1,10 +1,10 @@
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use utoipa::Component;
 
 /// The definition of the route to compute.
-#[derive(Debug, Deserialize, Serialize, Component)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RouteDefinition {
     pub name: Option<String>,
     pub preference: Option<String>,
@@ -36,90 +36,11 @@ pub struct RouteParams {
 }
 
 /// compute a route
-///
-/// This creates a new route. The payload of the request specifies the
-/// definition of the new route.
-///
-/// At a minimum, a route is defined by two `waypoints`, the start and end
-/// point of the route.
-///
-/// Every API has to support at least 'fastest' and 'shortest' as the
-/// routing `preference`. The default value is 'fastest'.
-///
-/// An optional `name` for the route may be provided. The name will be
-/// used as the title in links to the route (e.g., in the response to
-/// `/routes`) and also included in the route itself.
-///
-/// More parameters and routing constraints can optionally be provided
-/// with the routing request:
-/// * Source dataset to use when processing the route
-/// * Routing engine to use when processing the route
-/// * Routing algorithm to use when processing the route
-/// * Obstacle requirements
-/// * Height restriction
-/// * Maximum load restriction
-/// * Time of departure or arrival
-///
-/// If the parameter `mode` is not provided or has a value 'async' the
-/// response returns a link the new route in the `Location` header. If
-/// the value is 'sync' no route resource is created on the server, but
-/// the connection is kept open until the route has been computed. The
-/// response contains the route. In synchronous mode the `subscriber`
-/// property is ignored.
-//
-// from https://app.swaggerhub.com/apis/cportele/wps-routing-api/1.0.0#/Option%20Routes/computeRoute
-#[utoipa::path(
-    post,
-    path = "/routes",
-    operation_id = "computeRoute",
-    tag = "Option Routes",
-    responses(
-          // description:
-          //   This response is only returned for synchronous processing (`mode=sync`).
-          //   The response is the route.
-          //
-          //   If the request included an `Accept-Language`, the server will try to 
-          //   honor the request and otherwise fall back to an available language.
-          // content:
-          //   application/geo+json:
-          //     schema:
-          //       $ref: '#/components/schemas/route'
-          // headers:
-          //   Content-Language:
-          //     schema:
-          //       type: string
-          //     description:
-          //       The language used for names, in particular road/street names.
-        (status = 200), // $ref: '#/components/schemas/route'
-          // description:
-          //   This response is only returned for asynchronous processing (`mode=async` 
-          //   or no `mode` parameter).
-          //   The route has been created and the route is being computed.
-          // headers:
-          //   Location:
-          //     schema:
-          //       type: string
-          //       format: uri
-          //     description:
-          //       URI of the new resource.
-        (status = 201),
-          // description:
-          //   Malformed route definition.
-        (status = 400),
-          // description:
-          //   Unprocessable request. The route definition document appears 
-          //   to be valid, but the server is incapable of processing 
-          //   the request.
-        (status = 422),
-        (status = 500), // "$ref": "https://raw.githubusercontent.com/opengeospatial/ogcapi-features/master/core/openapi/ogcapi-features-1.yaml#/components/responses/ServerError"
-    ),
-)]
-async fn routes(
-    _req: HttpRequest,
+async fn compute_route(
     mode: web::Query<RouteParams>,
     route: web::Json<RouteDefinition>,
 ) -> HttpResponse {
-    dbg!(&mode);
+    dbg!(&mode.mode);
     dbg!(&route);
     let resp = json!({
       "type": "FeatureCollection",
@@ -346,15 +267,38 @@ async fn routes(
     HttpResponse::Ok().json(resp)
 }
 
-// #[derive(OpenApi)]
-// #[openapi(
-//     handlers(routes),
-//     components(),
-// )]
-// pub struct ApiDoc;
+#[cfg(feature = "ogcapi")]
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    use bbox_common::ogcapi::ApiLink;
+
+    api.landing_page_links.push(ApiLink {
+        href: "/routes".to_string(),
+        rel: Some("routes".to_string()),
+        type_: Some("application/json".to_string()),
+        title: Some("OGC API routes".to_string()),
+        hreflang: None,
+        length: None,
+    });
+    api.conformance_classes.extend(vec![
+        // Core
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/req/core".to_string(),
+        // JSON
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
+        // OpenAPI Specification
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+        /*
+         * OGC Process Description - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description
+         * HTML - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html
+         * Job list - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list
+         * Callback - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback
+         * Dismiss - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss
+         */
+    ]);
+    openapi.extend(include_str!("openapi.yaml"), "/");
+}
 
 pub fn register(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/routes").route(web::post().to(routes)));
+    cfg.service(web::resource("/routes").route(web::post().to(compute_route)));
 }
 
 #[cfg(test)]
@@ -365,7 +309,7 @@ mod tests {
     #[actix_web::test]
     async fn test_route() -> Result<(), Error> {
         let app = test::init_service(
-            App::new().service(web::resource("/routes").route(web::post().to(routes))),
+            App::new().service(web::resource("/routes").route(web::post().to(compute_route))),
         )
         .await;
 

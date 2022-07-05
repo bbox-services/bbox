@@ -37,6 +37,7 @@ impl OpenApiDocCollection for OpenApiDoc {
         }
         if let Some(rhs_components) = rhs_yaml.get("components") {
             if let Some(components) = self.get_mut("components") {
+                // TODO: merge 1st level children
                 components
                     .as_mapping_mut()
                     .unwrap()
