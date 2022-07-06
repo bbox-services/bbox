@@ -194,7 +194,10 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
-pub fn register(cfg: &mut web::ServiceConfig) {
+pub fn register(cfg: &mut web::ServiceConfig, router: &Option<Router>) {
+    if let Some(router) = router {
+        cfg.app_data(web::Data::new(router.clone()));
+    }
     cfg.service(web::resource("/routes").route(web::post().to(compute_route)));
 }
 

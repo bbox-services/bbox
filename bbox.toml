@@ -47,6 +47,12 @@ graphql_url = "http://localhost:3000/graphql"
 repository_name = "fpds2_processing_repository"
 repository_location_name = "fpds2_processing.repos"
 
+[[routing.service]]
+profile = "railway"
+gpkg = "../data/railway-test.gpkg"
+table = "flows"
+geom = "geom"
+
 [metrics.prometheus]
 # Prometheus metrics endpoint
 # Environment variable prefix: BBOX_METRICS__PROMETHEUS__

@@ -1,8 +1,10 @@
+use crate::config::RoutingServiceCfg;
 use fast_paths::{FastGraph, InputGraph, ShortestPath};
 use futures::TryStreamExt;
 use geo::prelude::GeodesicLength;
 use geo::LineString;
 use geozero::wkb;
+use log::info;
 use rstar::primitives::GeomWithData;
 use rstar::RTree;
 use serde_json::json;
@@ -62,8 +64,13 @@ pub struct Router {
 }
 
 impl Router {
+    pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self, sqlx::Error> {
+        Self::from_gpkg(&config.gpkg, &config.table, &config.geom).await
+    }
+
     /// Create routing graph from GeoPackage line geometries
     pub async fn from_gpkg(gpkg: &str, table: &str, geom: &str) -> Result<Self, sqlx::Error> {
+        info!("Reading routing graph from {gpkg}");
         let mut index = NodeIndex::new();
         let mut input_graph = InputGraph::new();
 
@@ -72,7 +79,7 @@ impl Router {
         let mut rows = sqlx::query(&sql).fetch(&mut conn);
 
         while let Some(row) = rows.try_next().await? {
-            let wkb: wkb::Decode<geo::Geometry<f64>> = row.try_get("geom")?;
+            let wkb: wkb::Decode<geo::Geometry<f64>> = row.try_get(geom)?;
             let geom = wkb.geometry.unwrap();
             //println!("{}", geom.to_wkt().unwrap());
             let line = LineString::try_from(geom).unwrap();
@@ -85,8 +92,10 @@ impl Router {
             input_graph.add_edge_bidir(src_id, dst_id, weight);
         }
 
+        info!("Peparing routing graph");
         input_graph.freeze();
         let graph = fast_paths::prepare(&input_graph);
+        info!("Routing graph preparation finished");
 
         Ok(Router { index, graph })
     }
