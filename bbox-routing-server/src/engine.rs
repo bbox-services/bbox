@@ -139,6 +139,32 @@ impl Router {
         })
     }
 
+    pub fn path_to_valhalla_json(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
+        let coords = paths
+            .iter()
+            .map(|p| {
+                p.get_nodes().iter().map(|node_id| {
+                    let (x, y) = self.index.node_coords[*node_id];
+                    geo_types::Coordinate { x, y }
+                })
+            })
+            .flatten();
+        let polyline = polyline::encode_coordinates(coords, 6).unwrap();
+        json!({
+          "trip": {
+            "legs": [
+              {
+                "summary": {
+                  "time": 1.0,
+                  "length": 1.0
+                },
+                "shape": polyline
+              }
+            ],
+          }
+        })
+    }
+
     /// Output internal routing graph as GeoJSON (for checking correctness)
     pub fn fast_graph_to_geojson(&self, out: &mut dyn Write) {
         let features = self.graph.edges_fwd.iter().map(|edge| {

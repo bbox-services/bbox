@@ -634,9 +634,11 @@ dependencies = [
  "figment",
  "futures",
  "geo",
+ "geo-types",
  "geojson",
  "geozero",
  "log",
+ "polyline",
  "rstar 0.9.3",
  "serde",
  "serde_json",
@@ -1512,9 +1514,9 @@ dependencies = [
 
 [[package]]
 name = "geo-types"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5696e8138fbc44f64edc88b423afbe5a8f635df003376b3a57087e61a8ae7b66"
+checksum = "d9805fbfcea97de816e6408e938603241879cc41eea3fba3f84f122f4f6f9c54"
 dependencies = [
  "approx",
  "num-traits",
@@ -2601,6 +2603,15 @@ dependencies = [
  "log",
  "wepoll-ffi",
  "winapi",
+]
+
+[[package]]
+name = "polyline"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4fb271c371b801041a8eaa6046cf694f84dd21817610f5ba962efd273f47779"
+dependencies = [
+ "geo-types",
 ]
 
 [[package]]
