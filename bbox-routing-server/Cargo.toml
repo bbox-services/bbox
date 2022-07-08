@@ -22,6 +22,7 @@ log = "0.4.17"
 figment = "0.10.6"
 polyline = "0.9.0"
 geo-types = "0.7.6"
+bincode = "1.3.3"
 
 [dev-dependencies]
 tokio = { version = "1.19.2", features = ["full"] }

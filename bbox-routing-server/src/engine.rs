@@ -11,7 +11,9 @@ use serde_json::json;
 use sqlx::sqlite::SqliteConnection;
 use sqlx::{Connection, Row};
 use std::convert::TryFrom;
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Write};
+use std::path::Path;
 
 /// R-Tree for node lookups
 #[derive(Clone)]
@@ -30,6 +32,19 @@ impl NodeIndex {
             tree: RTree::new(),
             next_node_id: 0,
             node_coords: Vec::new(),
+        }
+    }
+    fn bulk_load(node_coords: Vec<(f64, f64)>) -> Self {
+        let nodes = node_coords
+            .iter()
+            .enumerate()
+            .map(|(id, (x, y))| Node::new([*x, *y], id))
+            .collect::<Vec<_>>();
+        let tree = RTree::bulk_load(nodes);
+        NodeIndex {
+            tree,
+            next_node_id: node_coords.len(),
+            node_coords,
         }
     }
     /// Find or insert node
@@ -65,7 +80,50 @@ pub struct Router {
 
 impl Router {
     pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self, sqlx::Error> {
-        Self::from_gpkg(&config.gpkg, &config.table, &config.geom).await
+        let cache_name = config.gpkg.clone();
+        let router = if Router::cache_exists(&cache_name) {
+            info!("Reading routing graph from disk");
+            Router::from_disk(&cache_name)?
+        } else {
+            let router = Router::from_gpkg(&config.gpkg, &config.table, &config.geom).await?;
+            info!("Saving routing graph");
+            router.save_to_disk(&cache_name).unwrap();
+            router
+        };
+        info!("Routing graph ready");
+        Ok(router)
+    }
+
+    fn cache_exists(base_name: &str) -> bool {
+        // TODO: check if cache is up-to-date!
+        Path::new(&format!("{base_name}.coords.bin")).exists()
+    }
+
+    fn from_disk(base_name: &str) -> Result<Self, std::io::Error> {
+        let fname = format!("{base_name}.coords.bin");
+        let reader = BufReader::new(File::open(fname)?);
+        let node_coords: Vec<(f64, f64)> = bincode::deserialize_from(reader).unwrap();
+
+        let index = NodeIndex::bulk_load(node_coords);
+
+        let fname = format!("{base_name}.graph.bin");
+        let reader = BufReader::new(File::open(fname)?);
+        let graph: FastGraph = bincode::deserialize_from(reader).unwrap();
+
+        Ok(Router { index, graph })
+    }
+
+    /// Saves graph and index to disk
+    fn save_to_disk(&self, base_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let fname = format!("{base_name}.graph.bin");
+        let writer = BufWriter::new(File::create(fname)?);
+        bincode::serialize_into(writer, &self.graph)?;
+
+        let fname = format!("{base_name}.coords.bin");
+        let writer = BufWriter::new(File::create(fname)?);
+        bincode::serialize_into(writer, &self.index.node_coords)?;
+
+        Ok(())
     }
 
     /// Create routing graph from GeoPackage line geometries
