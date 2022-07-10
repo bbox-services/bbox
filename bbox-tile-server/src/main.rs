@@ -1,10 +1,14 @@
 mod config;
+mod files;
 mod s3;
 mod s3putfiles;
+mod tile_writer;
 mod wms;
 
 use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
+use crate::files::FileWriter;
 use crate::s3::S3Writer;
+use crate::tile_writer::TileWriter;
 use crate::wms::WmsRequest;
 use clap::Parser;
 use indicatif::ProgressBar;
@@ -82,8 +86,11 @@ pub struct Cli {
     #[clap(long, value_parser)]
     extent: Option<String>,
     /// S3 path to upload to (e.g. s3://tiles)
-    #[clap(value_parser)]
-    s3_path: String,
+    #[clap(long, group = "output_s3", conflicts_with = "output_files")]
+    s3_path: Option<String>,
+    /// Base directory for file output
+    #[clap(long, group = "output_files", conflicts_with = "output_s3")]
+    base_dir: Option<String>,
     /// Base directory of input files
     #[clap(short, long, value_parser)]
     srcdir: Option<std::path::PathBuf>,
@@ -166,7 +173,13 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
         anyhow::bail!("[tile.wms] config missing")
     };
 
-    let s3 = S3Writer::from_args(args)?;
+    let writer: Box<dyn TileWriter + Sync + Send> = if args.s3_path.is_some() {
+        Box::new(S3Writer::from_args(args)?)
+    } else if args.base_dir.is_some() {
+        Box::new(FileWriter::from_args(args)?)
+    } else {
+        anyhow::bail!("output config missing")
+    };
 
     let tile_limits = grid.tile_limits(bbox, 0);
     let minzoom = args.minzoom.unwrap_or(0);
@@ -174,16 +187,16 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     let griditer = GridIterator::new(minzoom, maxzoom, tile_limits);
     for (z, x, y) in griditer {
         let extent = grid.tile_extent(x, y, z);
-        let key = format!("{}/{}/{}.png", z, x, y);
-        progress.set_message(key.clone());
+        let path = format!("{z}/{x}/{y}.png");
+        progress.set_message(path.clone());
         progress.inc(1);
         let wms = wms.clone();
-        let s3 = s3.clone();
+        let writer = writer.clone();
         tasks.push(task::spawn(async move {
             let bytes = wms.get_map(&extent).await?;
             let input: Box<dyn std::io::Read + Send + Sync> = Box::new(Cursor::new(bytes));
 
-            s3.put_tile(key, input).await
+            writer.put_tile(path, input).await
         }));
         if tasks.len() >= task_queue_size {
             tasks = await_one_task(tasks).await;

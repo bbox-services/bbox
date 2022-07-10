@@ -1,3 +1,4 @@
+use crate::tile_writer::TileWriter;
 use crate::Cli;
 use crate::S3Writer;
 use bbox_common::file_search;
@@ -11,7 +12,7 @@ use std::time::Duration;
 use tokio::task;
 
 fn s3cfg(args: &Cli) -> anyhow::Result<(String, rusoto_core::Region)> {
-    let bucket = match args.s3_path.strip_prefix("s3://") {
+    let bucket = match args.s3_path.as_ref().unwrap().strip_prefix("s3://") {
         None => anyhow::bail!("S3 path has to start with 's3://'"),
         Some(bucket) => {
             if bucket.contains('/') {

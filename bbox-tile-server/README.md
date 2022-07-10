@@ -98,7 +98,7 @@ Initial sequential implementation:
     export S3_ENDPOINT_URL="http://localhost:9000"
 
     cargo build --release
-    time ../target/release/bbox-tile-seeder /home/pi/code/gis/vogeldatenbank/tiles/ s3://tiles
+    time ../target/release/bbox-tile-seeder --srcdir=/home/pi/code/gis/vogeldatenbank/tiles/ --s3-path=s3://tiles
 
     -> real    0m53.257s
 
@@ -112,6 +112,10 @@ Parallel tasks:
 
 Local QGIS NaturalEarth WMS
 
-    time ../target/release/bbox-tile-seeder --maxzoom=5 s3://tiles
+    time ../target/release/bbox-tile-seeder --maxzoom=5 --s3-path=s3://tiles
 
     real    0m14.580s
+
+Local QGIS NaturalEarth WMS to local direcotry
+
+    time ../target/release/bbox-tile-seeder --maxzoom=5 --base-dir=/tmp

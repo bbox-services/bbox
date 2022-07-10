@@ -677,10 +677,12 @@ name = "bbox-tile-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bbox-common",
  "bytes 1.1.0",
  "clap",
  "crossbeam",
+ "dyn-clone",
  "futures",
  "futures-util",
  "indicatif",
@@ -1182,6 +1184,12 @@ name = "dotenv"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "140206b78fb2bc3edbcfc9b5ccbd0b30699cfe8d348b8b31b330e47df5291a5a"
 
 [[package]]
 name = "either"
