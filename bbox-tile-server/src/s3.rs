@@ -4,6 +4,9 @@ use async_trait::async_trait;
 use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use std::env;
+use std::fs::{self, File};
+use std::io::BufReader;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct S3Writer {
@@ -63,6 +66,20 @@ impl TileWriter for S3Writer {
             eprintln!("Upload failed: {}", e);
             anyhow::bail!("Upload failed {e}");
         }
+        Ok(())
+    }
+}
+
+impl S3Writer {
+    /// Put tile from temporary file
+    pub async fn put_file(&self, base_dir: &PathBuf, path: String) -> anyhow::Result<()> {
+        let mut fullpath = base_dir.clone();
+        fullpath.push(&path);
+        let p = fullpath.as_path();
+        let reader = Box::new(BufReader::new(File::open(p)?));
+        self.put_tile(path, reader).await?;
+        fs::remove_file(p)?;
+
         Ok(())
     }
 }

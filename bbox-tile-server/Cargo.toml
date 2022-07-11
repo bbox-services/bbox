@@ -22,6 +22,8 @@ indicatif = "0.16.2"
 serde = "1.0.137"
 async-trait = "0.1.56"
 dyn-clone = "1.0.6"
+async-channel = "1.6.1"
+tempfile = "3.3.0"
 
 [[bin]]
 name = "bbox-tile-seeder"

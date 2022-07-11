@@ -4,17 +4,26 @@ use async_trait::async_trait;
 use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufWriter};
-use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
 pub struct FileWriter {
-    base_dir: String,
+    base_dir: PathBuf,
+}
+
+impl FileWriter {
+    pub fn new(base_dir: PathBuf) -> Self {
+        FileWriter { base_dir }
+    }
+    pub fn remove_dir_all(&self) -> std::io::Result<()> {
+        fs::remove_dir_all(self.base_dir.as_path())
+    }
 }
 
 #[async_trait]
 impl TileWriter for FileWriter {
     fn from_args(args: &Cli) -> anyhow::Result<Self> {
-        let base_dir = args.base_dir.as_ref().unwrap().clone();
+        let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
 
         Ok(FileWriter { base_dir })
     }
@@ -24,10 +33,11 @@ impl TileWriter for FileWriter {
         path: String,
         mut input: Box<dyn std::io::Read + Send + Sync>,
     ) -> anyhow::Result<()> {
-        let fullpath = format!("{}/{}", &self.base_dir, &path);
-        let p = Path::new(&fullpath);
+        let mut fullpath = self.base_dir.clone();
+        fullpath.push(&path);
+        let p = fullpath.as_path();
         fs::create_dir_all(p.parent().unwrap())?;
-        debug!("cp {path} {fullpath}");
+        debug!("Writing {}", fullpath.to_string_lossy());
         let mut writer = BufWriter::new(File::create(fullpath)?);
         io::copy(&mut input, &mut writer)?;
         Ok(())

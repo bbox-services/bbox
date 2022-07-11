@@ -677,6 +677,7 @@ name = "bbox-tile-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-channel",
  "async-trait",
  "bbox-common",
  "bytes 1.1.0",
@@ -692,6 +693,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "serde",
+ "tempfile",
  "tile-grid",
  "tokio",
 ]

@@ -112,10 +112,12 @@ Parallel tasks:
 
 Local QGIS NaturalEarth WMS
 
-    time ../target/release/bbox-tile-seeder --maxzoom=5 --s3-path=s3://tiles
+    ../target/release/bbox-tile-seeder --maxzoom=18 --s3-path=s3://tiles
 
-    real    0m14.580s
+    -> 14s
 
-Local QGIS NaturalEarth WMS to local direcotry
+Local QGIS NaturalEarth WMS to local directory
 
-    time ../target/release/bbox-tile-seeder --maxzoom=5 --base-dir=/tmp
+    ../target/release/bbox-tile-seeder --maxzoom=18 --base-dir=/tmp
+
+    -> 13s
