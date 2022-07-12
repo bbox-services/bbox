@@ -1,7 +1,9 @@
 use crate::engine::Router;
+use crate::error;
 use actix_web::{web, HttpResponse};
 #[cfg(feature = "ogcapi")]
 use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -53,11 +55,11 @@ async fn compute_route(
     let shortest_path =
         router.calc_path((coords[0][0], coords[0][1]), (coords[1][0], coords[1][1]));
     let route = match shortest_path {
-        Some(p) => {
+        Ok(p) => {
             //let weight = p.get_weight();
             router.path_to_geojson(vec![p])
         }
-        None => {
+        Err(_) => {
             json!({
               "type": "FeatureCollection",
               "status": "failed",
@@ -164,6 +166,52 @@ async fn compute_route(
     HttpResponse::Ok().json(route)
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BasicQuery {
+    pub profile: Option<String>,
+    pub from_pos: String,
+    pub to_pos: String,
+}
+
+/// Basic from/to routing GET API endpoint
+/// <http://host/route?profile=medium&from_pos=lon1,lat1&to_pos=lon2,lat2>
+async fn basic_route(
+    router: web::Data<Router>,
+    query: web::Query<BasicQuery>,
+) -> actix_web::Result<HttpResponse, actix_web::Error> {
+    fn split_pair(numlist: &str) -> error::Result<(f64, f64)> {
+        let arr: Vec<f64> = numlist
+            .split(",")
+            .map(|v| {
+                v.parse()
+                    .expect("Error parsing `{numlist}` as list of float values")
+            })
+            .collect();
+        if arr.len() != 2 {
+            return Err(error::Error::ArgumentError(
+                "Error parsing `{numlist}` as list of float values".to_string(),
+            ));
+        }
+        Ok((arr[0], arr[1]))
+    }
+
+    let (from_lon, from_lat) = split_pair(&query.from_pos).unwrap();
+    let (to_lon, to_lat) = split_pair(&query.to_pos).unwrap();
+    let shortest_path = router.calc_path((from_lon, from_lat), (to_lon, to_lat));
+    let route = match shortest_path {
+        Ok(p) => router.path_to_geojson(vec![p]),
+        Err(e) => {
+            info!("{e}");
+            json!({
+              "type": "FeatureCollection",
+              "status": "failed",
+              "features": []
+            })
+        }
+    };
+    Ok(HttpResponse::Ok().json(route))
+}
+
 /// Valhalla route query (minimal fields)
 #[derive(Debug, Deserialize, Serialize)]
 pub struct VahlhallaQuery {
@@ -186,9 +234,9 @@ async fn valhalla_route(
     let loc1 = &query.locations[1];
     let shortest_path = router.calc_path((loc0.lon, loc0.lat), (loc1.lon, loc1.lat));
     let route = match shortest_path {
-        Some(p) => router.path_to_valhalla_json(vec![p]),
-        None => {
-            json!({"error_code":171,"error":"No route found","status_code":400,"status":"Bad Request"})
+        Ok(p) => router.path_to_valhalla_json(vec![p]),
+        Err(e) => {
+            json!({"error_code":171,"error":e.to_string(),"status_code":400,"status":"Bad Request"})
         }
     };
     HttpResponse::Ok().json(route)
@@ -229,6 +277,7 @@ pub fn register(cfg: &mut web::ServiceConfig, router: &Option<Router>) {
         cfg.app_data(web::Data::new(router.clone()));
     }
     cfg.service(web::resource("/routes").route(web::post().to(compute_route)));
+    cfg.service(web::resource("/routes/basic").route(web::get().to(basic_route)));
     cfg.service(web::resource("/routes/valhalla/route").route(web::post().to(valhalla_route)));
 }
 

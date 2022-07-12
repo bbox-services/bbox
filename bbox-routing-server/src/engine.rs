@@ -1,4 +1,5 @@
 use crate::config::RoutingServiceCfg;
+use crate::error::{self, Result};
 use fast_paths::{FastGraph, InputGraph, ShortestPath};
 use futures::TryStreamExt;
 use geo::prelude::GeodesicLength;
@@ -62,7 +63,7 @@ impl NodeIndex {
     }
     /// Find nearest node within max distance
     fn find(&self, x: f64, y: f64) -> Option<usize> {
-        let max = 0.001; // ~ 1km CH
+        let max = 0.01; // ~ 10km CH
         self.tree
             .nearest_neighbor_iter_with_distance_2(&[x, y])
             .next()
@@ -79,7 +80,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self, sqlx::Error> {
+    pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self> {
         let cache_name = config.gpkg.clone();
         let router = if Router::cache_exists(&cache_name) {
             info!("Reading routing graph from disk");
@@ -99,7 +100,7 @@ impl Router {
         Path::new(&format!("{base_name}.coords.bin")).exists()
     }
 
-    fn from_disk(base_name: &str) -> Result<Self, std::io::Error> {
+    fn from_disk(base_name: &str) -> Result<Self> {
         let fname = format!("{base_name}.coords.bin");
         let reader = BufReader::new(File::open(fname)?);
         let node_coords: Vec<(f64, f64)> = bincode::deserialize_from(reader).unwrap();
@@ -114,7 +115,7 @@ impl Router {
     }
 
     /// Saves graph and index to disk
-    fn save_to_disk(&self, base_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    fn save_to_disk(&self, base_name: &str) -> Result<()> {
         let fname = format!("{base_name}.graph.bin");
         let writer = BufWriter::new(File::create(fname)?);
         bincode::serialize_into(writer, &self.graph)?;
@@ -127,7 +128,7 @@ impl Router {
     }
 
     /// Create routing graph from GeoPackage line geometries
-    pub async fn from_gpkg(gpkg: &str, table: &str, geom: &str) -> Result<Self, sqlx::Error> {
+    pub async fn from_gpkg(gpkg: &str, table: &str, geom: &str) -> Result<Self> {
         info!("Reading routing graph from {gpkg}");
         let mut index = NodeIndex::new();
         let mut input_graph = InputGraph::new();
@@ -159,10 +160,16 @@ impl Router {
     }
 
     /// Calculates the shortest path from `source` to `target` coordinates.
-    pub fn calc_path(&self, source: (f64, f64), target: (f64, f64)) -> Option<ShortestPath> {
-        let src_id = self.index.find(source.0, source.1)?; // TODO: return error
-        let dst_id = self.index.find(target.0, target.1)?;
-        fast_paths::calc_path(&self.graph, src_id, dst_id)
+    pub fn calc_path(&self, source: (f64, f64), target: (f64, f64)) -> Result<ShortestPath> {
+        let src_id = self
+            .index
+            .find(source.0, source.1)
+            .ok_or(error::Error::NodeNotFound)?;
+        let dst_id = self
+            .index
+            .find(target.0, target.1)
+            .ok_or(error::Error::NodeNotFound)?;
+        fast_paths::calc_path(&self.graph, src_id, dst_id).ok_or(error::Error::NoRouteFound)
     }
 
     /// Calculates the shortest path from any of the `sources` to any of the `targets` coordinates.
@@ -262,13 +269,13 @@ mod tests {
             (9.3422712, 47.1011887),
         );
         match shortest_path {
-            Some(p) => {
+            Ok(p) => {
                 let weight = p.get_weight();
                 let nodes = p.get_nodes();
                 dbg!(&weight, &nodes);
             }
-            None => {
-                println!("No path found")
+            Err(e) => {
+                println!("{e}")
             }
         }
     }

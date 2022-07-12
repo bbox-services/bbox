@@ -1,6 +1,7 @@
 mod config;
 mod endpoints;
 mod engine;
+mod error;
 
 use actix_web::{middleware, App, HttpServer};
 

@@ -118,6 +118,6 @@ Local QGIS NaturalEarth WMS
 
 Local QGIS NaturalEarth WMS to local directory
 
-    ../target/release/bbox-tile-seeder --maxzoom=18 --base-dir=/tmp
+    ../target/release/bbox-tile-seeder --maxzoom=18 --base-dir=/tmp/tiles
 
     -> 13s
