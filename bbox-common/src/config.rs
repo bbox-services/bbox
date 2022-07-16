@@ -2,14 +2,16 @@ use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
 use once_cell::sync::OnceCell;
-use std::process;
+use std::{env, process};
 
 /// Application configuration singleton
 pub fn app_config() -> &'static Figment {
     static CONFIG: OnceCell<Figment> = OnceCell::new();
     &CONFIG.get_or_init(|| {
         Figment::new()
-            .merge(Toml::file("bbox.toml"))
+            .merge(Toml::file(
+                env::var("BBOX_CONFIG").unwrap_or("bbox.toml".to_string()),
+            ))
             .merge(Env::prefixed("BBOX_").split("__"))
     })
 }

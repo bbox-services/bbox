@@ -8,7 +8,33 @@ use actix_web_opentelemetry::RequestTracing;
 use bbox_common::api::OgcApiInventory;
 use bbox_common::api::{OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::ApiLink;
+use clap::Parser;
 use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
+use std::env;
+
+#[derive(Parser, Debug)]
+pub struct Cli {
+    /// Load from custom config file
+    #[clap(short, long, value_parser)]
+    config: Option<String>,
+}
+
+/* t-rex serve:
+OPTIONS:
+    --bind <IPADDRESS>                          Bind web server to this address (0.0.0.0 for all)
+    --cache <DIR>                               Use tile cache in DIR
+    --clip <true|false>                         Clip geometries
+-c, --config <FILE>                             Load from custom config file
+    --datasource <FILE_OR_GDAL_DS>              GDAL datasource specification
+    --dbconn <SPEC>                             PostGIS connection postgresql://USER@HOST/DBNAME
+    --detect-geometry-types <true|false>        Detect geometry types when undefined
+    --loglevel <error|warn|info|debug|trace>    Log level (Default: info)
+    --no-transform <true|false>                 Do not transform to grid SRS
+    --openbrowser <true|false>                  Open backend URL in browser
+    --port <PORT>                               Bind web server to this port
+    --qgs <FILE>                                QGIS project file
+    --simplify <true|false>                     Simplify geometries
+*/
 
 fn init_tracer(config: &MetricsCfg) {
     if let Some(cfg) = &config.jaeger {
@@ -166,6 +192,10 @@ async fn webserver() -> std::io::Result<()> {
 }
 
 fn main() {
+    let args = Cli::parse();
+    if let Some(config) = args.config {
+        env::set_var("BBOX_CONFIG", &config);
+    }
     bbox_common::logger::init();
     webserver().unwrap();
 }
