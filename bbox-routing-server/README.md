@@ -32,4 +32,6 @@ Request examples:
       "dataset": "OSM"
     }'
 
-    curl 'http://localhost:8080/routes/basic?profile=sync&from_pos=9.35213353,47.0935012&to_pos=9.3422712, 47.1011887'
+Basic from/to request:
+
+    curl 'http://localhost:8080/routes/basic?profile=railway&from_pos=9.35213353,47.0935012&to_pos=9.3422712,47.1011887'

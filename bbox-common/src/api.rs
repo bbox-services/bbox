@@ -14,7 +14,7 @@ pub trait OpenApiDocCollection {
     fn from_yaml(yaml: &str, prefix: &str) -> Self;
     fn extend(&mut self, yaml: &str, prefix: &str);
     fn as_yaml(&self) -> String;
-    fn as_json(&self) -> String;
+    fn as_json(&self) -> serde_json::Value;
 }
 
 impl OpenApiDocCollection for OpenApiDoc {
@@ -23,25 +23,13 @@ impl OpenApiDocCollection for OpenApiDoc {
     }
     fn extend(&mut self, yaml: &str, _prefix: &str) {
         let rhs_yaml: OpenApiDoc = serde_yaml::from_str(yaml).unwrap();
-        if let Some(rhs_paths) = rhs_yaml.get("paths") {
-            if let Some(paths) = self.get_mut("paths") {
-                paths
-                    .as_mapping_mut()
-                    .unwrap()
-                    .extend(rhs_paths.as_mapping().unwrap().clone().into_iter());
-            } else {
-                self.as_mapping_mut()
-                    .unwrap()
-                    .insert("paths".into(), rhs_paths.clone());
-            }
-        }
+        merge_level(self, &rhs_yaml, "paths");
         if let Some(rhs_components) = rhs_yaml.get("components") {
             if let Some(components) = self.get_mut("components") {
-                // TODO: merge 1st level children
-                components
-                    .as_mapping_mut()
-                    .unwrap()
-                    .extend(rhs_components.as_mapping().unwrap().clone().into_iter());
+                // merge 1st level children ("parameters", "responses", "schemas")
+                for (key, _val) in rhs_components.as_mapping().unwrap().iter() {
+                    merge_level(components, &rhs_components, key.as_str().unwrap());
+                }
             } else {
                 self.as_mapping_mut()
                     .unwrap()
@@ -52,8 +40,21 @@ impl OpenApiDocCollection for OpenApiDoc {
     fn as_yaml(&self) -> String {
         serde_yaml::to_string(self).unwrap()
     }
-    fn as_json(&self) -> String {
-        let json = serde_yaml::from_value::<serde_json::Value>(self.clone()).unwrap();
-        serde_json::to_string_pretty(&json).unwrap()
+    fn as_json(&self) -> serde_json::Value {
+        serde_yaml::from_value::<serde_json::Value>(self.clone()).unwrap()
+    }
+}
+
+fn merge_level(yaml: &mut serde_yaml::Value, rhs_yaml: &serde_yaml::Value, index: &str) {
+    if let Some(rhs_elem) = rhs_yaml.get(index) {
+        if let Some(elem) = yaml.get_mut(index) {
+            elem.as_mapping_mut()
+                .unwrap()
+                .extend(rhs_elem.as_mapping().unwrap().clone().into_iter());
+        } else {
+            yaml.as_mapping_mut()
+                .unwrap()
+                .insert(index.into(), rhs_elem.clone());
+        }
     }
 }

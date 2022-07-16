@@ -200,45 +200,45 @@ info:
     url: 'https://raw.githubusercontent.com/opengeospatial/WFS_FES/master/LICENSE'
 paths:
   /routes:
-    get:
-      summary: fetch the list of routes
-      description: |-
-        The list of all routes currently available on this server.
+    # get:
+    #   summary: fetch the list of routes
+    #   description: |-
+    #     The list of all routes currently available on this server.
 
-        The response contains a link to each route with the link 
-        relation type `item`. 
+    #     The response contains a link to each route with the link 
+    #     relation type `item`. 
 
-        If a route has a name, the name will be used in the `title`,
-        otherwise the `title` will be set by the server.
+    #     If a route has a name, the name will be used in the `title`,
+    #     otherwise the `title` will be set by the server.
 
-        A link to the canonical URI of this document is included, 
-        too, with the link relation type `self`. 
-      operationId: getRoutes
-      tags:
-        - Option Routes
-      responses:
-        '200':
-          description: The list of routes.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/routes'
-        '500':
-          description: A server error occurred.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - code
-                properties:
-                  code:
-                    type: string
-                  description:
-                    type: string
-            text/html:
-              schema:
-                type: string
+    #     A link to the canonical URI of this document is included, 
+    #     too, with the link relation type `self`. 
+    #   operationId: getRoutes
+    #   tags:
+    #     - Option Routes
+    #   responses:
+    #     '200':
+    #       description: The list of routes.
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: '#/components/schemas/routes'
+    #     '500':
+    #       description: A server error occurred.
+    #       content:
+    #         application/json:
+    #           schema:
+    #             type: object
+    #             required:
+    #               - code
+    #             properties:
+    #               code:
+    #                 type: string
+    #               description:
+    #                 type: string
+    #         text/html:
+    #           schema:
+    #             type: string
     post:
       summary: compute a route
       description: |-
@@ -319,7 +319,7 @@ paths:
             to be valid, but the server is incapable of processing 
             the request.
         '500':
-          $ref: '#/paths/~1routes/get/responses/500'
+          $ref: '#/components/responses/ServerError'
       callbacks:
         calculationCompleted:
           '{$request.body#/subscriber}':
@@ -333,453 +333,453 @@ paths:
               responses:
                 '202':
                   description: Route received successfully
-  '/routes/{routeId}':
-    get:
-      summary: fetch a route
-      description: |-
-        The route is represented as a GeoJSON feature collection.
-        Its contents will depend on the `status` of the processing.
+  # '/routes/{routeId}':
+  #   get:
+  #     summary: fetch a route
+  #     description: |-
+  #       The route is represented as a GeoJSON feature collection.
+  #       Its contents will depend on the `status` of the processing.
 
-        If the status is 'successful' the feature collection consists 
-        of the following informaton
-        * A `name`, if one was provided with the route definition.
-        * A link to the canonical URI of the route and its definition
-        (link relations `self` and `describedBy`)
-        * An array of features (the properties of each is to be decided)
-          * The route overview feature. This has a LineString 
-          geometry of the complete route from start to end location.
-          * The start point of the route with a Point geometry.
-          * A feature for every segment of the route. This has a 
-            Point geometry representing the last point of the segment.
-          * The end point of the route with a Point geometry.
+  #       If the status is 'successful' the feature collection consists 
+  #       of the following informaton
+  #       * A `name`, if one was provided with the route definition.
+  #       * A link to the canonical URI of the route and its definition
+  #       (link relations `self` and `describedBy`)
+  #       * An array of features (the properties of each is to be decided)
+  #         * The route overview feature. This has a LineString 
+  #         geometry of the complete route from start to end location.
+  #         * The start point of the route with a Point geometry.
+  #         * A feature for every segment of the route. This has a 
+  #           Point geometry representing the last point of the segment.
+  #         * The end point of the route with a Point geometry.
 
-        If the status is 'accepted', 'running' or 'failed' the 
-        feature collection has less information:
-        * The route overview has a `null` geometry.
-        * No segment features are included.
+  #       If the status is 'accepted', 'running' or 'failed' the 
+  #       feature collection has less information:
+  #       * The route overview has a `null` geometry.
+  #       * No segment features are included.
 
-        The parameter `resultSet` may be used to request only a subset
-        of the route.
-        * 'full' (default) returns the complete feature collection 
-        representing the route.
-        * 'overview' returns just the route overview feature.
-        * 'segments' returns the first segment feature with a 
-        link to the second segment (link relation `next`), if there
-        is more than one segment. It is up to the server how this is 
-        implemented. Options include another parameter to identify the
-        segment by index or temporary, opaque URIs. Every segment except
-        the first and the last segment will include two links (link
-        relations `prev` and `next`). The last segment will only have a
-        `prev` link (unless there is only a single segment in which case
-        there is no `prev` link).
+  #       The parameter `resultSet` may be used to request only a subset
+  #       of the route.
+  #       * 'full' (default) returns the complete feature collection 
+  #       representing the route.
+  #       * 'overview' returns just the route overview feature.
+  #       * 'segments' returns the first segment feature with a 
+  #       link to the second segment (link relation `next`), if there
+  #       is more than one segment. It is up to the server how this is 
+  #       implemented. Options include another parameter to identify the
+  #       segment by index or temporary, opaque URIs. Every segment except
+  #       the first and the last segment will include two links (link
+  #       relations `prev` and `next`). The last segment will only have a
+  #       `prev` link (unless there is only a single segment in which case
+  #       there is no `prev` link).
 
-        Support for the `resultSet` parameter is not required and the 
-        parameter may be removed from the API definition, if conformance 
-        class **'result-set'** is not listed in the conformance 
-        declaration (`/conformance`).
-      operationId: getRoute
-      tags:
-        - Option Routes
-      parameters:
-        - $ref: '#/components/parameters/routeId'
-        - $ref: '#/components/parameters/resultSet'
-      responses:
-        '200':
-          description: |-
-            The route or just the route overview or a segment of the route,
-            if parameter `resultSet` was used.
+  #       Support for the `resultSet` parameter is not required and the 
+  #       parameter may be removed from the API definition, if conformance 
+  #       class **'result-set'** is not listed in the conformance 
+  #       declaration (`/conformance`).
+  #     operationId: getRoute
+  #     tags:
+  #       - Option Routes
+  #     parameters:
+  #       - $ref: '#/components/parameters/routeId'
+  #       - $ref: '#/components/parameters/resultSet'
+  #     responses:
+  #       '200':
+  #         description: |-
+  #           The route or just the route overview or a segment of the route,
+  #           if parameter `resultSet` was used.
 
-            If the request included an `Accept-Language`, the server will try to 
-            honor the request and otherwise fall back to an available language.
-          content:
-            application/geo+json:
-              schema:
-                oneOf:
-                  - $ref: '#/components/schemas/route'
-                  - $ref: '#/components/schemas/route-overview'
-                  - $ref: '#/components/schemas/route-segment'
-          headers:
-            Content-Language:
-              schema:
-                type: string
-              description: 'The language used for names, in particular road/street names.'
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-    delete:
-      summary: delete a route
-      description: |-
-        Delete the route with identifier `routeId`. If the route is still in processing,
-        the routing process is canceled.
+  #           If the request included an `Accept-Language`, the server will try to 
+  #           honor the request and otherwise fall back to an available language.
+  #         content:
+  #           application/geo+json:
+  #             schema:
+  #               oneOf:
+  #                 - $ref: '#/components/schemas/route'
+  #                 - $ref: '#/components/schemas/route-overview'
+  #                 - $ref: '#/components/schemas/route-segment'
+  #         headers:
+  #           Content-Language:
+  #             schema:
+  #               type: string
+  #             description: 'The language used for names, in particular road/street names.'
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  #   delete:
+  #     summary: delete a route
+  #     description: |-
+  #       Delete the route with identifier `routeId`. If the route is still in processing,
+  #       the routing process is canceled.
 
-        Routing APIs are permitted to delete routes after some time automatically.
+  #       Routing APIs are permitted to delete routes after some time automatically.
 
-        Supporting the operation is optional and part of conformance class 
-        **'delete-route'**.
-      operationId: deleteRoute
-      tags:
-        - Option Routes
-      parameters:
-        - $ref: '#/components/parameters/routeId'
-      responses:
-        '204':
-          description: Route deleted.
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  '/routes/{routeId}/definition':
-    get:
-      summary: fetch the definition of a route
-      description: |-
-        This operation returns the original definition of the route that 
-        was submitted when the route was created using POST on `/routes`.
-      operationId: getRouteDefinition
-      tags:
-        - Option Routes
-      parameters:
-        - $ref: '#/components/parameters/routeId'
-      responses:
-        '200':
-          description: The route definition.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/routeDefinition'
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  /processes:
-    get:
-      summary: retrieve the processes available
-      description: |-
-        The response is a list of processes available on this server. 
-        In the Routing API Pilot there is only a single process that is
-        specified.
-      operationId: getProcesses
-      tags:
-        - Option WPS
-      responses:
-        '200':
-          description: Information about the available processes
-          content:
-            application/json:
-              example:
-                processes:
-                  - id: routing
-                    title: Compute routes
-                    description: |-
-                      The process computes and creates a new route. 
-                      At a minimum, a route is defined by two `waypoints`, the start and end  point of the route.
-                      Every process supports at least 'fastest' and 'shortest' as the routing `preference`. The default value is 'fastest'.
-                      An optional `name` for the route may be provided. The name will be  used as the title in links to the route and also included in the route  itself.
+  #       Supporting the operation is optional and part of conformance class 
+  #       **'delete-route'**.
+  #     operationId: deleteRoute
+  #     tags:
+  #       - Option Routes
+  #     parameters:
+  #       - $ref: '#/components/parameters/routeId'
+  #     responses:
+  #       '204':
+  #         description: Route deleted.
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # '/routes/{routeId}/definition':
+  #   get:
+  #     summary: fetch the definition of a route
+  #     description: |-
+  #       This operation returns the original definition of the route that 
+  #       was submitted when the route was created using POST on `/routes`.
+  #     operationId: getRouteDefinition
+  #     tags:
+  #       - Option Routes
+  #     parameters:
+  #       - $ref: '#/components/parameters/routeId'
+  #     responses:
+  #       '200':
+  #         description: The route definition.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/routeDefinition'
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # /processes:
+  #   get:
+  #     summary: retrieve the processes available
+  #     description: |-
+  #       The response is a list of processes available on this server. 
+  #       In the Routing API Pilot there is only a single process that is
+  #       specified.
+  #     operationId: getProcesses
+  #     tags:
+  #       - Option WPS
+  #     responses:
+  #       '200':
+  #         description: Information about the available processes
+  #         content:
+  #           application/json:
+  #             example:
+  #               processes:
+  #                 - id: routing
+  #                   title: Compute routes
+  #                   description: |-
+  #                     The process computes and creates a new route. 
+  #                     At a minimum, a route is defined by two `waypoints`, the start and end  point of the route.
+  #                     Every process supports at least 'fastest' and 'shortest' as the routing `preference`. The default value is 'fastest'.
+  #                     An optional `name` for the route may be provided. The name will be  used as the title in links to the route and also included in the route  itself.
 
-                      More parameters and routing constraints can optionally be provided with the routing request: 
+  #                     More parameters and routing constraints can optionally be provided with the routing request: 
 
-                      * Source dataset to use when processing the route 
-                      * Routing engine to use when processing the route 
-                      * Routing algorithm to use when processing the route 
-                      * Obstacle requirements  
-                      * Height restriction 
-                      * Maximum load restriction 
-                      * Time of departure or arrival
-                    keywords:
-                      - routing
-                    version: '1.0'
-                    jobControlOptions:
-                      - async-execute
-                    outputTransmission:
-                      - value
-                    links:
-                      - href: 'https://example.org/api/wps/v1/processes/routing'
-                        rel: '???'
-                        title: execution endpoint
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  /processes/routing:
-    get:
-      summary: retrieve a process description
-      operationId: getProcessDescription
-      tags:
-        - Option WPS
-      responses:
-        '200':
-          description: The description of the process.
-          content:
-            application/json:
-              example:
-                inputs:
-                  - id: waypoints
-                    title: Waypoints
-                    description: A list of points along the route. At least two points have to be provided (start and end point).
-                    formats:
-                      - mimeType: application/geo+json
-                        schema: 'https://geojson.org/schema/MultiPoint.json'
-                    minOccurs: 1
-                    maxOccurs: 1
-                  - id: preference
-                    title: Routing preference
-                    description: The routing preference.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      defaultValue: fastest
-                      allowedValues:
-                        - fastest
-                        - shortest
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: maxHeight
-                    title: Maximum height
-                    description: |-
-                      A height restriction for vehicles in meters 
-                      to consider when computing the route.
+  #                     * Source dataset to use when processing the route 
+  #                     * Routing engine to use when processing the route 
+  #                     * Routing algorithm to use when processing the route 
+  #                     * Obstacle requirements  
+  #                     * Height restriction 
+  #                     * Maximum load restriction 
+  #                     * Time of departure or arrival
+  #                   keywords:
+  #                     - routing
+  #                   version: '1.0'
+  #                   jobControlOptions:
+  #                     - async-execute
+  #                   outputTransmission:
+  #                     - value
+  #                   links:
+  #                     - href: 'https://example.org/api/wps/v1/processes/routing'
+  #                       rel: '???'
+  #                       title: execution endpoint
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # /processes/routing:
+  #   get:
+  #     summary: retrieve a process description
+  #     operationId: getProcessDescription
+  #     tags:
+  #       - Option WPS
+  #     responses:
+  #       '200':
+  #         description: The description of the process.
+  #         content:
+  #           application/json:
+  #             example:
+  #               inputs:
+  #                 - id: waypoints
+  #                   title: Waypoints
+  #                   description: A list of points along the route. At least two points have to be provided (start and end point).
+  #                   formats:
+  #                     - mimeType: application/geo+json
+  #                       schema: 'https://geojson.org/schema/MultiPoint.json'
+  #                   minOccurs: 1
+  #                   maxOccurs: 1
+  #                 - id: preference
+  #                   title: Routing preference
+  #                   description: The routing preference.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     defaultValue: fastest
+  #                     allowedValues:
+  #                       - fastest
+  #                       - shortest
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: maxHeight
+  #                   title: Maximum height
+  #                   description: |-
+  #                     A height restriction for vehicles in meters 
+  #                     to consider when computing the route.
 
-                      Support for this parameter is not required and the parameter may be
-                      removed from the API definition.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: double
-                      uom:
-                        name: meter
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: maxWeight
-                    title: Maximum weight
-                    description: |-
-                      A weight restriction for vehicles in tons 
-                      to consider when computing the route.
+  #                     Support for this parameter is not required and the parameter may be
+  #                     removed from the API definition.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: double
+  #                     uom:
+  #                       name: meter
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: maxWeight
+  #                   title: Maximum weight
+  #                   description: |-
+  #                     A weight restriction for vehicles in tons 
+  #                     to consider when computing the route.
 
-                      Support for this parameter is not required and the parameter may be
-                      removed from the API definition.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: double
-                      uom:
-                        name: tons
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: obstacle
-                    title: '???'
-                    description: '???.'
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      defaultValue: '???'
-                      allowedValues:
-                        - '???'
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: dataset
-                    title: source dataset
-                    description: The source dataset to use for calculating the route.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      allowedValues:
-                        - NSG
-                        - OSM
-                        - HERE
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: engine
-                    title: routing engine
-                    description: The routing engine to use for calculating the route.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      allowedValues:
-                        - Skymantics
-                        - Ecere
-                        - HERE
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: algorithm
-                    title: graph solving algorithm
-                    description: The routing / graph solving algorithm to use for calculating the route.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      defaultValue: Dikjstra
-                      allowedValues:
-                        - Dikjstra
-                        - Floyd Marshall
-                        - A*
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: when
-                    title: time of departure or arrival
-                    description: The time of departure or arrival. Default is "now".
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: dateTime
-                    minOccurs: 0
-                    maxOccurs: 1
-                  - id: deparr
-                    title: departure
-                    description: |-
-                      Specifies whether the value of `when` refers to the
-                      time of departure or arrival. Default is departure.
-                    formats:
-                      - mimeType: text/plain
-                    literalDataDomain:
-                      dataType: string
-                      defaultValue: departure
-                      allowedValues:
-                        - departure
-                        - arrival
-                    minOccurs: 0
-                    maxOccurs: 1
-                outputs:
-                  - id: route
-                    title: the route
-                    description: |-
-                      The route is represented by a GeoJSON feature collection
-                      that contains the following information:
+  #                     Support for this parameter is not required and the parameter may be
+  #                     removed from the API definition.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: double
+  #                     uom:
+  #                       name: tons
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: obstacle
+  #                   title: '???'
+  #                   description: '???.'
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     defaultValue: '???'
+  #                     allowedValues:
+  #                       - '???'
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: dataset
+  #                   title: source dataset
+  #                   description: The source dataset to use for calculating the route.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     allowedValues:
+  #                       - NSG
+  #                       - OSM
+  #                       - HERE
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: engine
+  #                   title: routing engine
+  #                   description: The routing engine to use for calculating the route.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     allowedValues:
+  #                       - Skymantics
+  #                       - Ecere
+  #                       - HERE
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: algorithm
+  #                   title: graph solving algorithm
+  #                   description: The routing / graph solving algorithm to use for calculating the route.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     defaultValue: Dikjstra
+  #                     allowedValues:
+  #                       - Dikjstra
+  #                       - Floyd Marshall
+  #                       - A*
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: when
+  #                   title: time of departure or arrival
+  #                   description: The time of departure or arrival. Default is "now".
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: dateTime
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #                 - id: deparr
+  #                   title: departure
+  #                   description: |-
+  #                     Specifies whether the value of `when` refers to the
+  #                     time of departure or arrival. Default is departure.
+  #                   formats:
+  #                     - mimeType: text/plain
+  #                   literalDataDomain:
+  #                     dataType: string
+  #                     defaultValue: departure
+  #                     allowedValues:
+  #                       - departure
+  #                       - arrival
+  #                   minOccurs: 0
+  #                   maxOccurs: 1
+  #               outputs:
+  #                 - id: route
+  #                   title: the route
+  #                   description: |-
+  #                     The route is represented by a GeoJSON feature collection
+  #                     that contains the following information:
 
-                      * A `name`, if one was provided with the route definition.
-                      * A link to the canonical URI of the route and its definition
-                      (link relations `self` and `describedBy`)
-                      * An array of features (the properties of each is to be decided)
-                      * The route overview feature. This has a LineString 
-                      geometry of the complete route from start to end location.
-                      * The start point of the route with a Point geometry.
-                      * A feature for every segment of the route. This has a 
-                      LineString geometry starting at the end of the previous 
-                      segment (or, for the first segment, the start point).
-                      * The end point of the route with a Point geometry.
-                    formats:
-                      - mimeType: application/geo+json
-                        schema: 'https://geojson.org/schema/FeatureCollection.json'
-                        default: true
-        '404':
-          description: The requested URI was not found.
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  /processes/routing/jobs:
-    get:
-      summary: retrieve the list of jobs for a process.
-      operationId: getJobList
-      tags:
-        - Option WPS
-      responses:
-        '200':
-          description: A list of jobs for this process.
-          content:
-            application/json: null
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-    post:
-      summary: execute a process.
-      operationId: execute
-      tags:
-        - Option WPS
-      requestBody:
-        description: Mandatory execute request JSON
-        required: true
-        content:
-          application/json:
-            example:
-              inputs:
-                - id: waypoints
-                  input:
-                    format:
-                      mimeType: application/geo+json
-                    value:
-                      inlineValue:
-                        type: MultiPoint
-                        coordinates:
-                          - - 36.1234515
-                            - 32.6453783
-                          - - 36.1214698
-                            - 32.655952
-                          - - 36.1247213
-                            - 32.7106286
-                - id: preference
-                  input:
-                    value: fastest
-                - id: maxHeight
-                  input:
-                    value: '4.5'
-                    uom:
-                      name: meter
-              outputs:
-                - id: route
-                  output:
-                    format:
-                      mimeType: application/geo+json
-                  transmissionMode: value
-      responses:
-        '201':
-          description: Started execution. Created job.
-          headers:
-            Location:
-              schema:
-                type: string
-                format: uri
-              description: URI of the new resource.
-        '400':
-          description: Malformed route definition.
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '422':
-          description: |-
-            Unprocessable request. The route definition document appears 
-            to be valid, but the server is incapable of processing 
-            the request.
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  '/processes/routing/jobs/{jobId}':
-    get:
-      summary: retrieve the status of a job
-      operationId: getStatus
-      tags:
-        - Option WPS
-      parameters:
-        - $ref: '#/components/parameters/jobId'
-      responses:
-        '200':
-          description: The status of a job.
-          content:
-            application/json: null
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
-  '/processes/routing/jobs/{jobId}/result':
-    get:
-      summary: retrieve the result(s) of a job
-      operationId: getResult
-      tags:
-        - Option WPS
-      parameters:
-        - $ref: '#/components/parameters/jobId'
-      responses:
-        '200':
-          description: The result of a job.
-          content:
-            application/json:
-              example:
-                outputs:
-                  - id: '1'
-                    value:
-                      inlineValue: {}
-        '404':
-          $ref: '#/paths/~1processes~1routing/get/responses/404'
-        '500':
-          $ref: '#/paths/~1routes/get/responses/500'
+  #                     * A `name`, if one was provided with the route definition.
+  #                     * A link to the canonical URI of the route and its definition
+  #                     (link relations `self` and `describedBy`)
+  #                     * An array of features (the properties of each is to be decided)
+  #                     * The route overview feature. This has a LineString 
+  #                     geometry of the complete route from start to end location.
+  #                     * The start point of the route with a Point geometry.
+  #                     * A feature for every segment of the route. This has a 
+  #                     LineString geometry starting at the end of the previous 
+  #                     segment (or, for the first segment, the start point).
+  #                     * The end point of the route with a Point geometry.
+  #                   formats:
+  #                     - mimeType: application/geo+json
+  #                       schema: 'https://geojson.org/schema/FeatureCollection.json'
+  #                       default: true
+  #       '404':
+  #         description: The requested URI was not found.
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # /processes/routing/jobs:
+  #   get:
+  #     summary: retrieve the list of jobs for a process.
+  #     operationId: getJobList
+  #     tags:
+  #       - Option WPS
+  #     responses:
+  #       '200':
+  #         description: A list of jobs for this process.
+  #         content:
+  #           application/json: null
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  #   post:
+  #     summary: execute a process.
+  #     operationId: execute
+  #     tags:
+  #       - Option WPS
+  #     requestBody:
+  #       description: Mandatory execute request JSON
+  #       required: true
+  #       content:
+  #         application/json:
+  #           example:
+  #             inputs:
+  #               - id: waypoints
+  #                 input:
+  #                   format:
+  #                     mimeType: application/geo+json
+  #                   value:
+  #                     inlineValue:
+  #                       type: MultiPoint
+  #                       coordinates:
+  #                         - - 36.1234515
+  #                           - 32.6453783
+  #                         - - 36.1214698
+  #                           - 32.655952
+  #                         - - 36.1247213
+  #                           - 32.7106286
+  #               - id: preference
+  #                 input:
+  #                   value: fastest
+  #               - id: maxHeight
+  #                 input:
+  #                   value: '4.5'
+  #                   uom:
+  #                     name: meter
+  #             outputs:
+  #               - id: route
+  #                 output:
+  #                   format:
+  #                     mimeType: application/geo+json
+  #                 transmissionMode: value
+  #     responses:
+  #       '201':
+  #         description: Started execution. Created job.
+  #         headers:
+  #           Location:
+  #             schema:
+  #               type: string
+  #               format: uri
+  #             description: URI of the new resource.
+  #       '400':
+  #         description: Malformed route definition.
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '422':
+  #         description: |-
+  #           Unprocessable request. The route definition document appears 
+  #           to be valid, but the server is incapable of processing 
+  #           the request.
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # '/processes/routing/jobs/{jobId}':
+  #   get:
+  #     summary: retrieve the status of a job
+  #     operationId: getStatus
+  #     tags:
+  #       - Option WPS
+  #     parameters:
+  #       - $ref: '#/components/parameters/jobId'
+  #     responses:
+  #       '200':
+  #         description: The status of a job.
+  #         content:
+  #           application/json: null
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
+  # '/processes/routing/jobs/{jobId}/result':
+  #   get:
+  #     summary: retrieve the result(s) of a job
+  #     operationId: getResult
+  #     tags:
+  #       - Option WPS
+  #     parameters:
+  #       - $ref: '#/components/parameters/jobId'
+  #     responses:
+  #       '200':
+  #         description: The result of a job.
+  #         content:
+  #           application/json:
+  #             example:
+  #               outputs:
+  #                 - id: '1'
+  #                   value:
+  #                     inlineValue: {}
+  #       '404':
+  #         $ref: '#/components/responses/NotFound'
+  #       '500':
+  #         $ref: '#/components/responses/ServerError'
 components:
   parameters:
     routeId:
