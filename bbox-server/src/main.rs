@@ -8,19 +8,16 @@ use actix_web_opentelemetry::RequestTracing;
 use bbox_common::api::OgcApiInventory;
 use bbox_common::api::{OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::ApiLink;
-use opentelemetry::{
-    global, sdk::propagation::TraceContextPropagator, sdk::trace::Tracer, trace::TraceError,
-};
+use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
 
-fn init_tracer(config: &MetricsCfg) -> Result<Tracer, TraceError> {
+fn init_tracer(config: &MetricsCfg) {
     if let Some(cfg) = &config.jaeger {
         global::set_text_map_propagator(TraceContextPropagator::new()); // default header: traceparent
         opentelemetry_jaeger::new_pipeline()
             .with_agent_endpoint(cfg.agent_endpoint.clone())
             .with_service_name("bbox")
-            .install_simple()
-    } else {
-        opentelemetry_jaeger::new_pipeline().install_simple() // is agent_endpoint configured by default?
+            .install_batch(opentelemetry::runtime::Tokio)
+            .expect("Failed to initialize tracer");
     }
 }
 
@@ -33,7 +30,7 @@ async fn webserver() -> std::io::Result<()> {
     let web_config = WebserverCfg::from_config();
     let metrics_cfg = MetricsCfg::from_config();
 
-    let _tracer = init_tracer(&metrics_cfg).expect("Failed to initialize tracer.");
+    init_tracer(&metrics_cfg);
 
     // Prometheus metrics
     let exporter = opentelemetry_prometheus::exporter().init();

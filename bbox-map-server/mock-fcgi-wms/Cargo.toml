@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 fastcgi = "1.0.0"
-opentelemetry = { version = "0.13", default-features = false, features = ["trace"] }
-opentelemetry-jaeger = { version = "0.12.0", features = ["collector_client"] }
+opentelemetry = { version = "0.17", default-features = false, features = ["trace"] }
+opentelemetry-jaeger = { version = "0.16", features = ["collector_client"] }
 
 [[bin]]
 name = "mock-fcgi-wms"
