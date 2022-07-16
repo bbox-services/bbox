@@ -1,3 +1,4 @@
+use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
 use once_cell::sync::OnceCell;
@@ -13,8 +14,8 @@ pub fn app_config() -> &'static Figment {
     })
 }
 
-pub fn config_error_exit(err: figment::Error) {
-    println!("Error reading configuration - {} ", err);
+pub fn config_error_exit<T: Display>(err: T) {
+    println!("Error reading configuration - {err}");
     process::exit(1)
 }
 

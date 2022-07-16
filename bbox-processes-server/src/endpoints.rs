@@ -1,5 +1,6 @@
 //! Endpoints according to <https://ogcapi.ogc.org/processes/> API
 
+use crate::config::ProcessesServerCfg;
 use crate::dagster::{self, DagsterBackend};
 use crate::error;
 use crate::models::*;
@@ -201,6 +202,11 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     use bbox_common::ogcapi::ApiLink;
 
+    let config = ProcessesServerCfg::from_config();
+    if !config.has_backend() {
+        return;
+    }
+
     api.landing_page_links.push(ApiLink {
         href: "/processes".to_string(),
         rel: Some("processes".to_string()),
@@ -226,6 +232,10 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
+    let config = ProcessesServerCfg::from_config();
+    if !config.has_backend() {
+        return;
+    }
     cfg.service(web::resource("/processes").route(web::get().to(process_list)))
         .service(
             web::resource("/processes/{processID}").route(web::get().to(get_process_description)),

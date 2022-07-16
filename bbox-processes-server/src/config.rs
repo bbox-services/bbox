@@ -21,12 +21,19 @@ impl ProcessesServerCfg {
     pub fn from_config() -> Self {
         let config = bbox_common::config::app_config();
         if config.find_value("processes").is_ok() {
-            config
+            let cfg: Self = config
                 .extract_inner("processes")
                 .map_err(|err| config_error_exit(err))
-                .unwrap()
+                .unwrap();
+            if !cfg.has_backend() {
+                config_error_exit("Processing backend configuration missing");
+            }
+            cfg
         } else {
             Default::default()
         }
+    }
+    pub fn has_backend(&self) -> bool {
+        self.dagster_backend.is_some()
     }
 }
