@@ -5,7 +5,9 @@ use crate::dagster::{self, DagsterBackend};
 use crate::error;
 use crate::models::*;
 use actix_files::NamedFile;
-use actix_web::{http::StatusCode, web, Either, HttpRequest, HttpResponse};
+use actix_web::{
+    http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
+};
 #[cfg(feature = "ogcapi")]
 use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use log::{info, warn};
@@ -188,7 +190,17 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
             }
             JobResult::FilePath(path) => {
                 info!("get_result from {path}");
-                Either::Right(NamedFile::open(path))
+                // Prevent file compression for now.
+                // With compression enabled, files are returned compressed with the following headers:
+                // * content-encoding: gzip
+                // * vary: accept-encoding
+                // * content-type: application/pdf
+                // * content-disposition: attachment; filename="12575280.pdf"
+                // This seems correct, but clients don't decompress the attached file!?
+                let file = NamedFile::open(path)
+                    .unwrap()
+                    .set_content_encoding(ContentEncoding::Identity);
+                Either::Right(Ok(file))
             }
         },
         Err(error::Error::NotFound(type_)) => {
