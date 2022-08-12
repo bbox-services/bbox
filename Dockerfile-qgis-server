@@ -9,7 +9,7 @@ FROM debian:bullseye-slim as qgis-server
 ARG DEBIAN_REPO=debian
 RUN apt-get update && \
     apt-get install --no-install-recommends -y ca-certificates gnupg2 curl apt-utils && \
-    curl -L https://qgis.org/downloads/qgis-2021.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
+    curl -L https://qgis.org/downloads/qgis-2022.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
     echo "deb https://qgis.org/$DEBIAN_REPO bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
     apt-get update && \
@@ -55,7 +55,7 @@ RUN echo "deb http://deb.debian.org/debian bullseye non-free" >> /etc/apt/source
 #
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y fontconfig unzip && rm -rf /var/lib/apt/lists/*
 RUN curl -s -L -o /tmp/Cadastra.zip \
- 'https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/dokumente_geodaten/dokumente-geodaten/Cadastra_neue_Normen.zip/download' && \
+ 'https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/dokumente_geodaten/dokumente-geodaten-1/Cadastra_neue_Normen.zip/@@download/file/Cadastra_neue_Normen.zip' && \
  unzip -d /usr/share/fonts/truetype /tmp/Cadastra.zip '*.ttf' && \
  rm /tmp/Cadastra.zip
 
