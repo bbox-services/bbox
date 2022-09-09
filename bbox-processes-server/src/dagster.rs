@@ -236,13 +236,39 @@ struct MetadataEntry {
     label: String,
     path: Option<String>,
     json_string: Option<String>,
+    text: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct EventConnection {
+    #[serde(default)]
+    events: Vec<Event>,
+}
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Event {
+    #[serde(rename = "__typename")]
+    typename: String,
+    message: Option<String>,
+    step_key: Option<String>,
+    failure_metadata: Option<FailureMetadata>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct FailureMetadata {
+    description: String,
+    metadata_entries: Vec<MetadataEntry>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct RunResult {
     status: String,
+    #[serde(default)]
     assets: Vec<AssetMaterializations>,
+    event_connection: EventConnection,
 }
 
 impl DagsterBackend {
@@ -293,20 +319,20 @@ impl DagsterBackend {
         match resp {
             Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
             Ok(resp) => {
-                let results = resp.data.runs_or_error.results;
-                if results.len() == 1 {
-                    if let Some(asset) = results[0].assets.get(0) {
+                if let Some(result) = resp.data.runs_or_error.results.first() {
+                    if let Some(asset) = result.assets.last() {
                         if asset.asset_materializations.len() > 0 {
-                            let entries = &asset.asset_materializations[0].metadata_entries;
-                            if entries.len() > 0 {
-                                if let Some(path) = &entries[0].path {
+                            if let Some(meta) =
+                                &asset.asset_materializations[0].metadata_entries.first()
+                            {
+                                if let Some(path) = &meta.path {
                                     Ok(JobResult::FilePath(path.clone()))
-                                } else if let Some(json_string) = &entries[0].json_string {
+                                } else if let Some(json_string) = &meta.json_string {
                                     Ok(JobResult::Json(serde_json::from_str(json_string)?))
                                 } else {
                                     Err(error::Error::BackendExecutionError(format!(
                                         "Unknown metadata entry `{:?}`",
-                                        entries[0]
+                                        meta
                                     )))
                                 }
                             } else {
@@ -320,9 +346,30 @@ impl DagsterBackend {
                             )))
                         }
                     } else {
-                        Err(error::Error::BackendExecutionError(format!(
-                            "AssetMaterializations missing"
-                        )))
+                        // Extract failure messages
+                        if let Some(event) = result
+                            .event_connection
+                            .events
+                            .iter()
+                            .find(|ev| ev.typename == "ExecutionStepFailureEvent")
+                        {
+                            if let Some(meta) = &event.failure_metadata {
+                                // meta.metadata_entries[0].label == "output"
+                                Ok(JobResult::Json(json!({
+                                    "message": event.message.as_ref().unwrap_or(&"".to_string()),
+                                    "description": meta.description,
+                                    "error": meta.metadata_entries[0].text.as_ref().unwrap_or(&"".to_string()),
+                                })))
+                            } else {
+                                Ok(JobResult::Json(json!({
+                                    "message": event.message.as_ref().unwrap_or(&"".to_string()),
+                                    "error": event.message.as_ref().unwrap_or(&"".to_string()),
+                                })))
+                            }
+                        } else {
+                            // No Assets and no ExecutionStepFailureEvent
+                            Ok(JobResult::Json(json!(result.status)))
+                        }
                     }
                 } else {
                     Err(error::Error::NotFound(
@@ -616,6 +663,26 @@ query FilteredRunsQuery($runId: String) {
                 }
               }
             }
+            }
+          }
+        }
+        eventConnection {
+          ... on EventConnection {
+            events {
+              __typename
+              ... on ExecutionStepFailureEvent {
+                message
+                stepKey
+                failureMetadata {
+                  description
+                  metadataEntries {
+                    ... on TextMetadataEntry {
+                      label
+                      text
+                    }
+                  }
+                }
+              }
             }
           }
         }
