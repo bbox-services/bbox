@@ -11,7 +11,7 @@ pub enum Error {
     BackendResponseError(#[from] awc::error::JsonPayloadError),
     #[error(transparent)]
     BackendJsonError(#[from] serde_json::Error),
-    #[error("Backend execution error `{0}`")]
+    #[error("Backend execution error - {0}")]
     BackendExecutionError(String),
     // General
     #[error("I/O error")]

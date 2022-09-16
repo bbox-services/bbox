@@ -182,8 +182,10 @@ impl DagsterBackend {
         }
         if status_info.status != StatusCode::SUCCESSFUL {
             return Err(error::Error::BackendExecutionError(format!(
-                "Job {job_id} failed with status {}",
-                status_info.status
+                "Job {job_id} failed - {}",
+                status_info
+                    .message
+                    .unwrap_or(format!("Status `{}`", status_info.status))
             )));
         }
         self.get_result(&job_id).await
@@ -284,7 +286,7 @@ impl DagsterBackend {
         match resp {
             Err(e) => Err(error::Error::BackendExecutionError(e.to_string())),
             Ok(resp) => {
-                let results = resp.data.runs_or_error.results;
+                let results = &resp.data.runs_or_error.results;
                 if results.len() == 1 {
                     let status = match results[0].status.as_str() {
                         "QUEUED" | "NOT_STARTED" | "MANAGED" | "STARTING" => StatusCode::ACCEPTED,
@@ -294,8 +296,12 @@ impl DagsterBackend {
                         "CANCELING" | "CANCELED" => StatusCode::DISMISSED,
                         _ => StatusCode::DISMISSED,
                     };
-                    let status =
+                    let mut status =
                         models::StatusInfo::new("process".to_string(), job_id.to_string(), status);
+                    if let Some((message, description, error)) = self.extract_error_message(&resp) {
+                        let message = [message, description, error].join(" - ");
+                        status.message = Some(message);
+                    }
                     Ok(status)
                 } else {
                     Err(error::Error::NotFound(
@@ -346,26 +352,14 @@ impl DagsterBackend {
                             )))
                         }
                     } else {
-                        // Extract failure messages
-                        if let Some(event) = result
-                            .event_connection
-                            .events
-                            .iter()
-                            .find(|ev| ev.typename == "ExecutionStepFailureEvent")
+                        if let Some((message, description, error)) =
+                            self.extract_error_message(&resp)
                         {
-                            if let Some(meta) = &event.failure_metadata {
-                                // meta.metadata_entries[0].label == "output"
-                                Ok(JobResult::Json(json!({
-                                    "message": event.message.as_ref().unwrap_or(&"".to_string()),
-                                    "description": meta.description,
-                                    "error": meta.metadata_entries[0].text.as_ref().unwrap_or(&"".to_string()),
-                                })))
-                            } else {
-                                Ok(JobResult::Json(json!({
-                                    "message": event.message.as_ref().unwrap_or(&"".to_string()),
-                                    "error": event.message.as_ref().unwrap_or(&"".to_string()),
-                                })))
-                            }
+                            Ok(JobResult::Json(json!({
+                                "message": message,
+                                "description": description,
+                                "error": error,
+                            })))
                         } else {
                             // No Assets and no ExecutionStepFailureEvent
                             Ok(JobResult::Json(json!(result.status)))
@@ -378,6 +372,44 @@ impl DagsterBackend {
                     ))
                 }
             }
+        }
+    }
+
+    /// Extract message, description and error from failure event
+    fn extract_error_message(
+        &self,
+        resp: &FilteredRunResponse,
+    ) -> Option<(String, String, String)> {
+        if let Some(result) = resp.data.runs_or_error.results.first() {
+            // Extract failure messages
+            if let Some(event) = result
+                .event_connection
+                .events
+                .iter()
+                .find(|ev| ev.typename == "ExecutionStepFailureEvent")
+            {
+                let message = event
+                    .message
+                    .as_ref()
+                    .unwrap_or(&"No FailureEvent message".to_string())
+                    .clone();
+                if let Some(meta) = &event.failure_metadata {
+                    // meta.metadata_entries[0].label == "output"
+                    let error = meta.metadata_entries[0]
+                        .text
+                        .as_ref()
+                        .unwrap_or(&"No FailureEvent Metadata text".to_string())
+                        .clone();
+                    Some((message, meta.description.clone(), error))
+                } else {
+                    Some((message, "".to_string(), "".to_string()))
+                }
+            } else {
+                // No ExecutionStepFailureEvent
+                None
+            }
+        } else {
+            None
         }
     }
 }
@@ -676,8 +708,8 @@ query FilteredRunsQuery($runId: String) {
                 failureMetadata {
                   description
                   metadataEntries {
+                    label
                     ... on TextMetadataEntry {
-                      label
                       text
                     }
                   }
