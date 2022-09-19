@@ -15,6 +15,8 @@ pub struct DagsterBackendCfg {
     pub repository_name: String,
     /// Dagster repository location (e.g. `fpds2_processing.repos`)
     pub repository_location_name: String,
+    /// Backend request timeout (ms) (Default: 10s)
+    pub request_timeout: Option<u64>,
 }
 
 impl ProcessesServerCfg {

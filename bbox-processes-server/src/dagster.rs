@@ -32,7 +32,11 @@ impl DagsterBackend {
         variables: serde_json::Value,
         query: &str,
     ) -> awc::SendClientRequest {
-        let client = awc::Client::default();
+        let client = awc::Client::builder()
+            .timeout(Duration::from_millis(
+                self.config.request_timeout.unwrap_or(10000),
+            ))
+            .finish();
         let request = json!({
             "operationName": operation_name,
             "body": "json",
@@ -181,12 +185,12 @@ impl DagsterBackend {
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
         if status_info.status != StatusCode::SUCCESSFUL {
-            return Err(error::Error::BackendExecutionError(format!(
-                "Job {job_id} failed - {}",
-                status_info
-                    .message
-                    .unwrap_or(format!("Status `{}`", status_info.status))
-            )));
+            return Err(error::Error::BackendExecutionError(
+                status_info.message.unwrap_or(format!(
+                    "Job {job_id} failed (Status `{}`)",
+                    status_info.status
+                )),
+            ));
         }
         self.get_result(&job_id).await
     }
