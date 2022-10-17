@@ -4,7 +4,8 @@ COPY . .
 RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
 
 FROM debian:bullseye-slim
-RUN apt-get update && apt-get install -y libcurl4 cgi-mapserver && \
+# procps provides `ps` which is useful to have for debugging
+RUN apt-get update && apt-get install -y libcurl4 cgi-mapserver procps && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
 
