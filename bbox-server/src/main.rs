@@ -106,7 +106,7 @@ async fn webserver() -> std::io::Result<()> {
     let mut openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), "/");
 
     #[cfg(feature = "map-server")]
-    let (fcgi_clients, inventory) = bbox_map_server::init_service(prometheus).await;
+    let (fcgi_clients, map_inventory) = bbox_map_server::init_service(prometheus).await;
 
     let endpoint = metrics_cfg.prometheus.map(|cfg| {
         let path = cfg.path.clone();
@@ -126,7 +126,7 @@ async fn webserver() -> std::io::Result<()> {
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     #[cfg(feature = "feature-server")]
-    bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+    let feature_inventory = bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi);
 
     #[cfg(feature = "processes-server")]
     bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
@@ -151,13 +151,15 @@ async fn webserver() -> std::io::Result<()> {
         #[cfg(feature = "map-server")]
         {
             app = app.configure(|mut cfg| {
-                bbox_map_server::endpoints::register(&mut cfg, &fcgi_clients, &inventory)
+                bbox_map_server::endpoints::register(&mut cfg, &fcgi_clients, &map_inventory)
             });
         }
 
         #[cfg(feature = "feature-server")]
         {
-            app = app.configure(bbox_feature_server::endpoints::register);
+            app = app.configure(|mut cfg| {
+                bbox_feature_server::endpoints::register(&mut cfg, &feature_inventory)
+            });
         }
 
         #[cfg(feature = "map-viewer")]

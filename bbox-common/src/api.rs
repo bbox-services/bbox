@@ -7,10 +7,21 @@ pub struct OgcApiInventory {
     pub collections: Vec<CoreCollection>,
 }
 
+impl OgcApiInventory {
+    pub fn new() -> Self {
+        OgcApiInventory {
+            landing_page_links: Vec::new(),
+            conformance_classes: Vec::new(),
+            collections: Vec::new(),
+        }
+    }
+}
+
 /// OpenAPi doc collection
 pub type OpenApiDoc = serde_yaml::Value;
 
 pub trait OpenApiDocCollection {
+    fn new() -> Self;
     fn from_yaml(yaml: &str, prefix: &str) -> Self;
     fn extend(&mut self, yaml: &str, prefix: &str);
     fn as_yaml(&self) -> String;
@@ -18,6 +29,9 @@ pub trait OpenApiDocCollection {
 }
 
 impl OpenApiDocCollection for OpenApiDoc {
+    fn new() -> Self {
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+    }
     fn from_yaml(yaml: &str, _prefix: &str) -> Self {
         serde_yaml::from_str(yaml).unwrap()
     }

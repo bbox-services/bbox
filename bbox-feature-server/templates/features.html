@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Features{% endblock %}
+
+{% block content %}
+<h2>{{ collection.title }}</h2>
+
+<a href="/collections/{{collection.id}}/items.json">JSON</a><br/>
+
+<table>
+  <thead>
+    <tr>
+    {% set first_feature = features.features | first %}
+    {% if first_feature %}
+      <th>id</th>
+      {% for prop in first_feature.properties %}
+      <th>{{prop}}</th>
+      {% endfor %}
+    {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for feature in features.features %}
+    <tr>
+      <td><a href="/collections/{{collection.id}}/items/{{ feature.id }}">{{ feature.id }}</a></td>
+      {% for prop in first_feature.properties %}
+      <td>{{feature.properties[prop]}}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

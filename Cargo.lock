@@ -559,6 +559,10 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "bbox-common",
+ "log",
+ "minijinja",
+ "once_cell",
+ "rust-embed",
  "serde",
  "serde_json",
 ]

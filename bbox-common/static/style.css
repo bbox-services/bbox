@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;600;700&display=swap');
 *{
-  margin: 0;
   /*
+  margin: 0;
   padding: 0;
   box-sizing: border-box;
   */
@@ -175,7 +175,7 @@ nav .profile-details i{
 }
 .home-section .home-content{
   position: relative;
-  padding-top: 104px;
+  padding: 104px 1em 1em 1em;
 }
 .home-content .overview-boxes{
   display: flex;

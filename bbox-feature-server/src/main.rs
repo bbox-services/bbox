@@ -1,14 +1,18 @@
 mod endpoints;
+mod inventory;
 
 use actix_web::{middleware, App, HttpServer};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
+    let inventory = endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new());
+
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(endpoints::register)
+            .configure(|mut cfg| endpoints::register(&mut cfg, &inventory))
     })
     .bind("127.0.0.1:8080")?
     .run()

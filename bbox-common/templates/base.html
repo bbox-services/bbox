@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <title>BBOX - {% block title %}Home{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# https://github.com/getbase/base #}
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/core.css">
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/code.css">
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/forms.css">
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/tables.css">
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/typography.css">
+    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/headings.css">
     <link rel="stylesheet" href="/style.css">
     <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
     {% block head %}
@@ -49,7 +56,7 @@
           </a>
         </li>
         <li>
-          <a href="#" {% if cur_menu == "Collections" %}class="active"{% endif %}>
+          <a href="/collections" {% if cur_menu == "Collections" %}class="active"{% endif %}>
             <i class='bx bx-list-ul' ></i>
             <span class="links_name">Collections</span>
           </a>
@@ -84,7 +91,7 @@
     </nav>
 
     <div class="home-content">
-      {% block body %}{% endblock %}
+      {% block content %}{% endblock %}
     </div>
   </section>
 

@@ -1,4 +1,4 @@
-use actix_web::HttpResponse;
+use actix_web::{http::header, web, FromRequest, HttpRequest, HttpResponse};
 use minijinja::{Environment, Error, Source, State};
 use rust_embed::RustEmbed;
 use serde::Serialize;
@@ -50,6 +50,7 @@ pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
     env
 }
 
+/// Return rendered template
 pub async fn render_endpoint<S: Serialize>(
     env: &Environment<'static>,
     template: &str,
@@ -58,4 +59,14 @@ pub async fn render_endpoint<S: Serialize>(
     let template = env.get_template(template).expect("couln't load template");
     let page = template.render(ctx).expect("template render failed");
     Ok(HttpResponse::Ok().content_type("text/html").body(page))
+}
+
+pub async fn html_accepted(req: &HttpRequest) -> bool {
+    if req.path().ends_with(".json") {
+        return false;
+    }
+    web::Header::<header::Accept>::extract(req)
+        .await
+        .map(|accept| &accept.preference().to_string() == "text/html")
+        .unwrap_or(false)
 }

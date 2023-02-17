@@ -1,7 +1,7 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
 use bbox_common::ogcapi::*;
-use bbox_common::templates::{create_env_embedded, render_endpoint};
+use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
@@ -50,10 +50,13 @@ async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
 }
 
 /// the feature collections in the dataset
-async fn collections(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> HttpResponse {
+async fn collections(
+    ogcapi: web::Data<OgcApiInventory>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
     let collections = CoreCollections {
         links: vec![ApiLink {
-            href: relurl(&req, "/collections"),
+            href: relurl(&req, "/collections.json"),
             rel: Some("self".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("this document".to_string()),
@@ -62,7 +65,16 @@ async fn collections(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> Ht
         }],
         collections: ogcapi.collections.to_vec(), //TODO: convert urls with relurl (?)
     };
-    HttpResponse::Ok().json(collections)
+    if html_accepted(&req).await {
+        render_endpoint(
+            &TEMPLATES,
+            "collections.html",
+            context!(cur_menu=>"Collections", collections => &collections),
+        )
+        .await
+    } else {
+        Ok(HttpResponse::Ok().json(collections))
+    }
 }
 
 /// Serve openapi.yaml
@@ -81,14 +93,14 @@ async fn openapi_json(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
 #[folder = "templates/"]
 struct Templates;
 
-static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 async fn swaggerui() -> Result<HttpResponse, Error> {
-    render_endpoint(&TEMPLATE_ENV, "swaggerui.html", context!(cur_menu=>"API")).await
+    render_endpoint(&TEMPLATES, "swaggerui.html", context!(cur_menu=>"API")).await
 }
 
 async fn redoc() -> Result<HttpResponse, Error> {
-    render_endpoint(&TEMPLATE_ENV, "redoc.html", context!(cur_menu=>"API")).await
+    render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
@@ -98,7 +110,8 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
         .service(web::resource("/redoc.html").route(web::get().to(redoc)))
         .service(web::resource("/conformance").route(web::get().to(conformance)))
-        .service(web::resource("/collections").route(web::get().to(collections)));
+        .service(web::resource("/collections").route(web::get().to(collections)))
+        .service(web::resource("/collections.json").route(web::get().to(collections)));
 }
 
 // #[cfg(test)]

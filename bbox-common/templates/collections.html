@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Collections{% endblock %}
+
+{% block content %}
+<table>
+  <thead>
+    <tr>
+      <th>Collection</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for collection in collections.collections %}
+    <tr>
+      <td><a href="/collections/{{ collection.id }}">{{ collection.title }}</a></td>
+      <td>{{ collection.description }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
