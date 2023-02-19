@@ -2,7 +2,7 @@ use crate::engine::Router;
 use crate::error;
 use actix_web::{web, HttpResponse};
 #[cfg(feature = "ogcapi")]
-use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;

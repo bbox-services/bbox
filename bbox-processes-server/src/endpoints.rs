@@ -9,7 +9,7 @@ use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
 #[cfg(feature = "ogcapi")]
-use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use log::{info, warn};
 use serde_json::json;
 

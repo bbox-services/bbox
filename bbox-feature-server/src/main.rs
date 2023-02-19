@@ -2,7 +2,7 @@ mod endpoints;
 mod inventory;
 
 use actix_web::{middleware, App, HttpServer};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {

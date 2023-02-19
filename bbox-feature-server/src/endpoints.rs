@@ -1,6 +1,6 @@
 use crate::inventory::Inventory;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc, OpenApiDocCollection};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;

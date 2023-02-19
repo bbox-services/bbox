@@ -6,7 +6,7 @@ use actix_web::web;
 use actix_web::{middleware, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
 use bbox_common::api::OgcApiInventory;
-use bbox_common::api::{OpenApiDoc, OpenApiDocCollection};
+use bbox_common::api::OpenApiDoc;
 use bbox_common::ogcapi::ApiLink;
 use clap::Parser;
 use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
