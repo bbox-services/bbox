@@ -1,6 +1,6 @@
+use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items};
 use bbox_common::ogcapi::*;
 use log::info;
-use serde_json::json;
 
 #[derive(Clone, Debug)]
 pub struct Inventory {
@@ -8,54 +8,10 @@ pub struct Inventory {
 }
 
 impl Inventory {
-    pub fn scan(base_dir: &str) -> Inventory {
+    pub async fn scan(base_dir: &str) -> Inventory {
         info!("Scanning '{base_dir}' for feature collections");
-        let collection = CoreCollection {
-            id: "buildings".to_string(),
-            title: Some("Buildings".to_string()),
-            description: Some("Buildings in the city of Bonn.".to_string()),
-            extent: Some(CoreExtent {
-                spatial: Some(CoreExtentSpatial {
-                    bbox: vec![vec![7.01, 50.63, 7.22, 50.78]],
-                    crs: None,
-                }),
-                temporal: Some(CoreExtentTemporal {
-                    interval: vec![vec![Some("2010-02-15T12:34:56Z".to_string()), None]],
-                    trs: None,
-                }),
-            }),
-            item_type: None,
-            crs: vec![],
-            links: vec![
-                ApiLink {
-                    href: "/collections/buildings/items".to_string(), //relurl
-                    rel: Some("items".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some("Buildings".to_string()),
-                    hreflang: None,
-                    length: None,
-                },
-                ApiLink {
-                    href: "https://creativecommons.org/publicdomain/zero/1.0/".to_string(),
-                    rel: Some("license".to_string()),
-                    type_: Some("text/html".to_string()),
-                    title: Some("CC0-1.0".to_string()),
-                    hreflang: None,
-                    length: None,
-                },
-                ApiLink {
-                    href: "https://creativecommons.org/publicdomain/zero/1.0/rdf".to_string(),
-                    rel: Some("license".to_string()),
-                    type_: Some("application/rdf+xml".to_string()),
-                    title: Some("CC0-1.0".to_string()),
-                    hreflang: None,
-                    length: None,
-                },
-            ],
-        };
-        Inventory {
-            collections: vec![collection],
-        }
+        let collections = gpkg_collections("../data/ne_extracts.gpkg").await.unwrap();
+        Inventory { collections }
     }
 
     pub fn get(&self, collection_id: &str) -> Option<&CoreCollection> {
@@ -64,65 +20,51 @@ impl Inventory {
             .find(|coll| &coll.id == collection_id)
     }
 
-    pub fn collection_items(&self, collection_id: &str) -> Option<CoreFeatures> {
-        self.get(collection_id).map(|_collection| {
-            let feature = CoreFeature {
-                type_: "Feature".to_string(),
-                id: Some("123".to_string()),
-                geometry: json!({"type": "Polygon", "coordinates": []}),
-                properties: Some(json!({
-                    "function": "residential",
-                    "floors": "2",
-                    "lastUpdate": "2015-08-01T12:34:56Z"
-                })),
-                links: vec![],
-            };
-            CoreFeatures {
-                type_: "FeatureCollection".to_string(),
-                links: vec![ApiLink {
-                    href: "/collections/buildings/items".to_string(),
-                    rel: Some("self".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some("this document".to_string()),
-                    hreflang: None,
-                    length: None,
-                }],
-                time_stamp: Some("2018-04-03T14:52:23Z".to_string()),
-                number_matched: Some(123),
-                number_returned: Some(10),
-                features: vec![feature],
-            }
-        })
+    pub async fn collection_items(&self, collection_id: &str) -> Option<CoreFeatures> {
+        let items = gpkg_items("../data/ne_extracts.gpkg", collection_id)
+            .await
+            .unwrap();
+        let features = CoreFeatures {
+            type_: "FeatureCollection".to_string(),
+            links: vec![ApiLink {
+                href: format!("/collections/{collection_id}/items"),
+                rel: Some("self".to_string()),
+                type_: Some("application/geo+json".to_string()),
+                title: Some("this document".to_string()),
+                hreflang: None,
+                length: None,
+            }],
+            time_stamp: Some("2018-04-03T14:52:23Z".to_string()),
+            number_matched: Some(123),
+            number_returned: Some(items.len() as u64),
+            features: items,
+        };
+        Some(features)
     }
 
-    pub fn collection_item(&self, collection_id: &str, _feature_id: &str) -> Option<CoreFeature> {
-        self.get(collection_id).map(|_collection| CoreFeature {
-            type_: "Feature".to_string(),
-            links: vec![
-                ApiLink {
-                    href: "/collections/buildings/items/123".to_string(),
-                    rel: Some("self".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some("this document".to_string()),
-                    hreflang: None,
-                    length: None,
-                },
-                ApiLink {
-                    href: "/collections/buildings".to_string(),
-                    rel: Some("collection".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some("the collection document".to_string()),
-                    hreflang: None,
-                    length: None,
-                },
-            ],
-            id: Some("123".to_string()),
-            geometry: json!({"type": "Polygon", "coordinates": []}),
-            properties: Some(json!({
-                "function": "residential",
-                "floors": "2",
-                "lastUpdate": "2015-08-01T12:34:56Z"
-            })),
-        })
+    pub async fn collection_item(
+        &self,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Option<CoreFeature> {
+        let feature = gpkg_item("../data/ne_extracts.gpkg", collection_id, feature_id)
+            .await
+            .unwrap_or(None);
+        feature
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn inventory_scan() {
+        let inventory = Inventory::scan("../data").await;
+        assert_eq!(inventory.collections.len(), 3);
+        assert_eq!(
+            inventory.get("ne_10m_lakes").map(|col| col.id.clone()),
+            Some("ne_10m_lakes".to_string())
+        );
     }
 }

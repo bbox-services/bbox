@@ -16,6 +16,12 @@ log = { workspace = true }
 rust-embed = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
+geozero = { workspace = true, features = [ "with-gpkg" ] }
+sqlx = { workspace = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
 
 [[bin]]
 name = "bbox-feature-server"

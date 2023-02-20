@@ -559,12 +559,16 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "bbox-common",
+ "futures",
+ "geozero",
  "log",
  "minijinja",
  "once_cell",
  "rust-embed",
  "serde",
  "serde_json",
+ "sqlx",
+ "tokio",
 ]
 
 [[package]]

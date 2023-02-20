@@ -1,3 +1,4 @@
+mod datasource;
 mod endpoints;
 mod inventory;
 
@@ -6,7 +7,8 @@ use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let inventory = endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new());
+    let inventory =
+        endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
 
     HttpServer::new(move || {
         App::new()

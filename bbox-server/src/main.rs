@@ -126,7 +126,8 @@ async fn webserver() -> std::io::Result<()> {
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     #[cfg(feature = "feature-server")]
-    let feature_inventory = bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+    let feature_inventory =
+        bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi).await;
 
     #[cfg(feature = "processes-server")]
     bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
