@@ -20,20 +20,20 @@ pub async fn gpkg_collections(gpkg: &str) -> Result<Vec<CoreCollection>> {
     let collections = rows
         .iter()
         .map(|row| {
-            let id: String = row.try_get("table_name").unwrap();
-            let title: String = row.try_get("identifier").unwrap();
+            let id: String = row.try_get("table_name")?;
+            let title: String = row.try_get("identifier")?;
 
-            CoreCollection {
+            let collection = CoreCollection {
                 id: id.clone(),
                 title: Some(title.clone()),
-                description: row.try_get("description").unwrap(),
+                description: row.try_get("description")?,
                 extent: Some(CoreExtent {
                     spatial: Some(CoreExtentSpatial {
                         bbox: vec![vec![
-                            row.try_get("min_x").unwrap(),
-                            row.try_get("min_y").unwrap(),
-                            row.try_get("max_x").unwrap(),
-                            row.try_get("max_y").unwrap(),
+                            row.try_get("min_x")?,
+                            row.try_get("min_y")?,
+                            row.try_get("max_x")?,
+                            row.try_get("max_y")?,
                         ]],
                         crs: None,
                     }),
@@ -49,9 +49,10 @@ pub async fn gpkg_collections(gpkg: &str) -> Result<Vec<CoreCollection>> {
                     hreflang: None,
                     length: None,
                 }],
-            }
+            };
+            Ok(collection)
         })
-        .collect();
+        .collect::<Result<Vec<_>>>()?;
     Ok(collections)
 }
 
@@ -63,8 +64,8 @@ pub async fn gpkg_items(gpkg: &str, table: &str) -> Result<Vec<CoreFeature>> {
     let rows = sqlx::query(&sql).fetch_all(&mut conn).await?;
     let items = rows
         .iter()
-        .map(|row| row_properties(&row, &table_info).unwrap().unwrap())
-        .collect();
+        .map(|row| row_to_feature(&row, &table_info))
+        .collect::<Result<Vec<_>>>()?;
     Ok(items)
 }
 
@@ -76,11 +77,12 @@ pub async fn gpkg_item(gpkg: &str, table: &str, feature_id: &str) -> Result<Opti
         "SELECT * FROM {table} WHERE {} = ?", // TODO: Sanitize table name
         table_info.pk_column.as_ref().unwrap()
     );
-    let row = sqlx::query(&sql)
+    if let Some(row) = sqlx::query(&sql)
         .bind(feature_id)
-        .fetch_one(&mut conn)
-        .await?;
-    let item = row_properties(&row, &table_info)?.and_then(|mut item| {
+        .fetch_optional(&mut conn)
+        .await?
+    {
+        let mut item = row_to_feature(&row, &table_info)?;
         item.links = vec![
             ApiLink {
                 href: format!("/collections/{table}/items/{feature_id}"),
@@ -99,9 +101,10 @@ pub async fn gpkg_item(gpkg: &str, table: &str, feature_id: &str) -> Result<Opti
                 length: None,
             },
         ];
-        Some(item)
-    });
-    Ok(item)
+        Ok(Some(item))
+    } else {
+        Ok(None)
+    }
 }
 
 struct TableInfo {
@@ -142,37 +145,27 @@ async fn table_info(conn: &mut SqliteConnection, table: &str) -> Result<TableInf
     })
 }
 
-fn row_properties(row: &SqliteRow, table_info: &TableInfo) -> Result<Option<CoreFeature>> {
-    let columns = row.columns();
-    let mut properties = json!({});
+fn row_to_feature(row: &SqliteRow, table_info: &TableInfo) -> Result<CoreFeature> {
     let mut id = None;
-    columns
-        .iter()
-        .filter(|col| col.name() != table_info.geom_column)
-        .for_each(|col| {
-            if col.name() == table_info.pk_column.as_ref().unwrap_or(&"".to_string()) {
-                // Get id as String
-                id = match col.type_info().name() {
-                    "TEXT" => Some(
-                        row.try_get::<&str, usize>(col.ordinal())
-                            .unwrap()
-                            .to_string(),
-                    ),
-                    "INTEGER" => Some(
-                        row.try_get::<i64, usize>(col.ordinal())
-                            .unwrap()
-                            .to_string(),
-                    ),
-                    _ => None,
-                }
-            } else {
-                properties[col.name()] = match col.type_info().name() {
-                    "TEXT" => json!(row.try_get::<&str, usize>(col.ordinal()).unwrap()),
-                    "INTEGER" => json!(row.try_get::<i64, usize>(col.ordinal()).unwrap()),
-                    ty => json!(format!("<{ty}>")),
-                }
+    let mut properties = json!({});
+    for col in row.columns() {
+        if col.name() == table_info.geom_column {
+            // Skip geometry
+        } else if col.name() == table_info.pk_column.as_ref().unwrap_or(&"".to_string()) {
+            // Get id as String
+            id = match col.type_info().name() {
+                "TEXT" => Some(row.try_get::<String, usize>(col.ordinal())?),
+                "INTEGER" => Some(row.try_get::<i64, usize>(col.ordinal())?.to_string()),
+                _ => None,
             }
-        });
+        } else {
+            properties[col.name()] = match col.type_info().name() {
+                "TEXT" => json!(row.try_get::<&str, usize>(col.ordinal())?),
+                "INTEGER" => json!(row.try_get::<i64, usize>(col.ordinal())?),
+                ty => json!(format!("<{ty}>")),
+            }
+        }
+    }
     let wkb: wkb::Decode<geojson::GeoJsonString> = row.try_get(table_info.geom_column.as_str())?;
     let geom = wkb.geometry.unwrap();
 
@@ -184,7 +177,7 @@ fn row_properties(row: &SqliteRow, table_info: &TableInfo) -> Result<Option<Core
         links: vec![],
     };
 
-    Ok(Some(item))
+    Ok(item)
 }
 
 #[cfg(test)]
