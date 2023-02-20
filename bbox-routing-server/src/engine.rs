@@ -210,7 +210,7 @@ impl Router {
             .map(|p| {
                 p.get_nodes().iter().map(|node_id| {
                     let (x, y) = self.index.node_coords[*node_id];
-                    geo_types::Coordinate { x, y }
+                    geo_types::Coord { x, y }
                 })
             })
             .flatten();

@@ -13,7 +13,7 @@ fast_paths = { git = "https://github.com/pka/fast_paths", branch="edges-access" 
 futures = "0.3.21"
 geo = "0.19.0"
 geojson = "0.22.3"
-geozero = { version = "0.8.0", features = [ "with-gpkg" ] }
+geozero = { version = "0.9.2", features = [ "with-gpkg" ] }
 rstar = "0.9.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
