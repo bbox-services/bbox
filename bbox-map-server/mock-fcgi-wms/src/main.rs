@@ -14,14 +14,13 @@ fn main() {
         .install_simple()
         .expect("opentelemetry_jaeger::new_pipeline");
     let pid = std::process::id();
-    let process_span = tracer.start("process");
+    let mut process_span = tracer.start("process");
     process_span.set_attribute(PID_KEY.i64(pid as i64));
     let process_span_cx = Context::current_with_span(process_span);
     fastcgi::run(move |mut req| {
-        let req_span = tracer
+        let mut req_span = tracer
             .span_builder("request")
-            .with_parent_context(process_span_cx.clone())
-            .start(&tracer);
+            .start_with_context(&tracer, &process_span_cx);
         req_span.set_attribute(PID_KEY.i64(pid as i64));
         let project = req
             .param("REQUEST_URI")
