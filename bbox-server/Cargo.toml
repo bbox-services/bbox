@@ -20,18 +20,18 @@ bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", features=["ogcapi"], optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", features=["ogcapi"], optional = true }
-actix-web = "4.0.0"
+actix-web = { workspace = true }
 actix-service = "2.0.2"
 actix-web-opentelemetry = { version = "0.12", features = ["metrics"] }
 opentelemetry = { version = "0.17", default-features = false, features = ["trace", "metrics", "rt-tokio"] }
 opentelemetry-prometheus = { version = "0.10" }
 opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
 num_cpus = "1.0"
-rust-embed = { version = "5.6.0", features = ["compression"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.57"
-minijinja = { version = "0.17.0", features = ["source"] }
-once_cell = "1.12.0"
+rust-embed = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+minijinja = { workspace = true }
+once_cell = { workspace = true }
 clap = { version = "3.1.18", features = ["derive"] }
 
 [[bin]]
