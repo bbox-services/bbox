@@ -8,8 +8,8 @@ use actix_files::NamedFile;
 use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
-#[cfg(feature = "ogcapi")]
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::ogcapi::ApiLink;
 use log::{info, warn};
 use serde_json::json;
 
@@ -210,10 +210,7 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
     }
 }
 
-#[cfg(feature = "ogcapi")]
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    use bbox_common::ogcapi::ApiLink;
-
     let config = ProcessesServerCfg::from_config();
     if !config.has_backend() {
         return;
@@ -230,7 +227,6 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
         // |Core|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core|
         // |OGC Process Description|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description|
         // |JSON|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json|
@@ -240,7 +236,13 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
         // |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
     ]);
-    openapi.extend(include_str!("openapi.yaml"), "/");
+    #[cfg(feature = "openapi")]
+    {
+        api.conformance_classes.extend(vec![
+            "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+        ]);
+        openapi.extend(include_str!("openapi.yaml"), "/");
+    }
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {

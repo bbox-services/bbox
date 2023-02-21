@@ -14,12 +14,12 @@ routing-server = ["bbox-routing-server"]
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }
-bbox-feature-server = { path = "../bbox-feature-server", features=["ogcapi"], optional = true }
+bbox-feature-server = { path = "../bbox-feature-server", features=["openapi"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
-bbox-processes-server = { path = "../bbox-processes-server", features=["ogcapi"], optional = true }
-bbox-routing-server = { path = "../bbox-routing-server", features=["ogcapi"], optional = true }
+bbox-processes-server = { path = "../bbox-processes-server", features=["openapi"], optional = true }
+bbox-routing-server = { path = "../bbox-routing-server", features=["openapi"], optional = true }
 actix-web = { workspace = true }
 actix-service = "2.0.2"
 actix-web-opentelemetry = { version = "0.12", features = ["metrics"] }

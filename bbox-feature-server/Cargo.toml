@@ -5,7 +5,7 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [features]
-ogcapi = []
+openapi = []
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }

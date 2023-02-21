@@ -1,8 +1,8 @@
 use crate::engine::Router;
 use crate::error;
 use actix_web::{web, HttpResponse};
-#[cfg(feature = "ogcapi")]
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::ogcapi::ApiLink;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -242,10 +242,7 @@ async fn valhalla_route(
     HttpResponse::Ok().json(route)
 }
 
-#[cfg(feature = "ogcapi")]
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    use bbox_common::ogcapi::ApiLink;
-
     api.landing_page_links.push(ApiLink {
         href: "/routes".to_string(),
         rel: Some("routes".to_string()),
@@ -269,7 +266,14 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
          * Dismiss - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss
          */
     ]);
-    openapi.extend(include_str!("openapi.yaml"), "/");
+    #[cfg(feature = "openapi")]
+    {
+        api.conformance_classes.extend(vec![
+            // OpenAPI Specification
+            "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+        ]);
+        openapi.extend(include_str!("openapi.yaml"), "/");
+    }
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, router: &Option<Router>) {

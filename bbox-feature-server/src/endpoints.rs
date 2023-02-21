@@ -92,12 +92,17 @@ static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(
 pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -> Inventory {
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
     ]);
     let inventory = Inventory::scan(".").await;
     api.collections.extend(inventory.collections.clone());
-    openapi.extend(include_str!("openapi.yaml"), "/");
+    #[cfg(feature = "openapi")]
+    {
+        api.conformance_classes.extend(vec![
+            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
+        ]);
+        openapi.extend(include_str!("openapi.yaml"), "/");
+    }
     inventory
 }
 
