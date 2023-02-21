@@ -211,11 +211,6 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
 }
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    let config = ProcessesServerCfg::from_config();
-    if !config.has_backend() {
-        return;
-    }
-
     api.landing_page_links.push(ApiLink {
         href: "/processes".to_string(),
         rel: Some("processes".to_string()),
@@ -248,6 +243,7 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
 pub fn register(cfg: &mut web::ServiceConfig) {
     let config = ProcessesServerCfg::from_config();
     if !config.has_backend() {
+        info!("Missing processing backend configuration - skipping endpoints");
         return;
     }
     cfg.service(web::resource("/processes").route(web::get().to(process_list)))
