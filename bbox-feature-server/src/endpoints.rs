@@ -43,7 +43,9 @@ async fn features(
                     context!(cur_menu=>"Collections", collection => &collection, features => &features),
                 ).await
             } else {
-                Ok(HttpResponse::Ok().json(features))
+                Ok(HttpResponse::Ok()
+                    .content_type("application/geo+json")
+                    .json(features))
             }
         } else {
             Ok(HttpResponse::NotFound().finish())
@@ -69,7 +71,9 @@ async fn feature(
                     context!(cur_menu=>"Collections", collection => &collection, feature => &feature),
                 ).await
             } else {
-                Ok(HttpResponse::Ok().json(feature))
+                Ok(HttpResponse::Ok()
+                    .content_type("application/geo+json")
+                    .json(feature))
             }
         } else {
             Ok(HttpResponse::NotFound().finish())
