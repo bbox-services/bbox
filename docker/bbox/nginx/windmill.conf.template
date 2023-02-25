@@ -1,0 +1,27 @@
+server {
+    #listen                  443 ssl http2;
+    listen                  8000;
+    server_name             _;
+
+    #ssl_certificate         /etc/ssl/certs/ssl-cert-snakeoil.pem;
+    #ssl_certificate_key     /etc/ssl/private/ssl-cert-snakeoil.key;
+
+    proxy_set_header X-Real-IP  $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header Host $http_host;
+
+    proxy_redirect off;
+
+    location /ws/ {
+        proxy_pass http://windmill_worker:3001/;
+    }
+    location / {
+        proxy_pass http://windmill:8000;
+    }
+
+    location = /50x.html {
+        root   html;
+    }
+
+}

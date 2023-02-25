@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  bbox:
+    image: sourcepole/bbox-qgis-server:latest
+    volumes:
+      - ./bbox-full.toml:/var/www/bbox.toml:ro
+
+networks:
+  default:
+    name: bbox

@@ -1,0 +1,72 @@
+# https://goauthentik.io/docs/installation/docker-compose
+---
+version: '3'
+
+services:
+  redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    #restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+  authentik_server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2023.2.2}
+    #restart: unless-stopped
+    command: server
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=${PG_HOST:-postgresql}
+      - AUTHENTIK_POSTGRESQL__USER=${PG_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__NAME=${PG_DB:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${PG_PASS}
+      - AUTHENTIK_DISABLE_UPDATE_CHECK="true"
+      - AUTHENTIK_ERROR_REPORTING__ENABLED="false"
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS="true"
+      - AUTHENTIK_AVATARS=none
+      - AUTHENTIK_SECRET_KEY
+      - AUTHENTIK_BOOTSTRAP_PASSWORD=akadmin
+    # volumes:
+    #   - ./media:/media
+    #   - ./custom-templates:/templates
+    #   - geoip:/geoip
+    # env_file:
+    #   - .env
+  authentik_worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2023.2.2}
+    #restart: unless-stopped
+    command: worker
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=${PG_HOST:-postgresql}
+      - AUTHENTIK_POSTGRESQL__USER=${PG_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__NAME=${PG_DB:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${PG_PASS}
+      - AUTHENTIK_SECRET_KEY
+    # This is optional, and can be removed. If you remove this, the following will happen
+    # - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    # - The docker socket can't be accessed anymore
+    # user: root
+    volumes:
+      # - ./media:/media
+      - ./certs:/certs
+    #   - /var/run/docker.sock:/var/run/docker.sock
+    #   - ./custom-templates:/templates
+    #   - geoip:/geoip
+    # env_file:
+    #   - .env
+
+volumes:
+  redis:
+    driver: local
+  geoip:
+    driver: local
+
+networks:
+  default:
+    name: bbox

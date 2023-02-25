@@ -7,6 +7,7 @@ jobs:
     build:
       runs-on: ubuntu-latest
       if: github.event_name == 'push'
+
       steps:
 
       - uses: actions/checkout@master
@@ -32,6 +33,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           buildargs: BUILD_DIR,BUILD_FEATURES
           tags: "${{ steps.get_tag.outputs.tag }}"
+          dockerfile: docker/Dockerfile
 
       - name: Build and Publish bbox-qgis-server
         uses: elgohr/Publish-Docker-Github-Action@v4
@@ -40,4 +42,4 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           tags: "${{ steps.get_tag.outputs.tag }}"
-          dockerfile: Dockerfile-qgis-server
+          dockerfile: docker/Dockerfile-qgis-server

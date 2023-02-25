@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  windmill:
+    image: ghcr.io/windmill-labs/windmill:1.66.1
+    # restart: unless-stopped
+    # ports:
+    #   - 8000:8000
+    environment:
+      - DATABASE_URL=postgres://windmill:${PG_PASS}@postgresql/windmill?sslmode=disable
+      - BASE_URL=http://${WM_BASE_URL}
+      - BASE_INTERNAL_URL=http://localhost:8000
+      - RUST_LOG=info
+      - NUM_WORKERS=0
+      - METRICS_ADDR=true
+      - TZ      
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    # volumes:
+      # - ./oauth.json/:/usr/src/app/oauth.json
+  
+  windmill_worker:
+    image: sourcepole/windmill-gdal:v2023.02.22.02
+    # Set privileged to true if enabling nsjail
+    privileged: false
+    # restart: unless-stopped
+    environment:
+      - TZ=Europe/Zurich
+      - DATABASE_URL=postgres://windmill:${PG_PASS}@postgresql/windmill?sslmode=disable
+      - BASE_URL=http://${WM_BASE_URL}
+      - BASE_INTERNAL_URL=http://windmill:8000
+      - RUST_LOG=info
+      - DISABLE_SERVER=true
+      - NUM_WORKERS=2
+      - KEEP_JOB_DIR=false
+      - DENO_PATH=/usr/bin/deno
+      - PYTHON_PATH=/usr/local/bin/python3
+      - METRICS_ADDR=true
+      - TZ
+      # for ease of use, nsjail which provide isolation in untrusted environment is disabled by default. 
+      # To enable it, uncomment the following line, set the container as privileged and
+      # rebuild the image with nsjail=true or use the enterprise edition
+      # - DISABLE_NSJAIL=false
+      # - DISABLE_NUSER=false
+      # - NSJAIL_PATH=nsjail
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    # to mount the worker folder to debug,, KEEP_JOB_DIR=true and mount /tmp/windmill
+    volumes:
+      - worker_dependency_cache:/tmp/windmill/cache
+      - ../../data:/data
+
+  lsp:
+    image: ghcr.io/windmill-labs/windmill-lsp:latest
+    # restart: unless-stopped
+
+volumes:
+  worker_dependency_cache: null
+
+networks:
+  default:
+    name: bbox
