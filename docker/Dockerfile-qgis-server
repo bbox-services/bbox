@@ -1,7 +1,8 @@
 FROM rust:bullseye as builder
 WORKDIR /usr/src/bbox
 COPY . .
-RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
+ARG BUILD_FEATURES="--no-default-features --features=map-server"
+RUN cd bbox-server && cargo install $BUILD_FEATURES --path .
 
 # ------
 FROM debian:bullseye-slim as qgis-server
@@ -21,9 +22,7 @@ RUN apt-get update && \
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y binutils && rm -rf /var/lib/apt/lists/* && \
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
-# Fix https://git.sourcepole.ch/sourcepole/qgiscloud-services/-/issues/360#note_28862
-# this occurs in proj-data 6.3.1-1 and should hopefully
-# be fixed in later releases?
+# Workaround for broken Proj data (last tested with proj-data 6.3.1-1)
 RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
 
 COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server

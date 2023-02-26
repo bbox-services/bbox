@@ -21,8 +21,21 @@ jobs:
             echo ::set-output name=tag::latest
           fi
 
+      - name: Build and Publish bbox-server-qgis
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        env:
+          BUILD_FEATURES: "--all-features"
+        with:
+          name: sourcepole/bbox-server-qgis
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          buildargs: BUILD_FEATURES
+          buildoptions: "--target qgis-server"
+          tags: "${{ steps.get_tag.outputs.tag }}"
+          dockerfile: docker/Dockerfile-qgis-server
+
       - name: Build and publish processes-server
-        uses: elgohr/Publish-Docker-Github-Action@v4
+        uses: elgohr/Publish-Docker-Github-Action@v5
         env:
           APP: bbox-processes-server
           BUILD_DIR: bbox-server
@@ -36,7 +49,7 @@ jobs:
           dockerfile: docker/Dockerfile
 
       - name: Build and Publish bbox-qgis-server
-        uses: elgohr/Publish-Docker-Github-Action@v4
+        uses: elgohr/Publish-Docker-Github-Action@v5
         with:
           name: sourcepole/bbox-qgis-server
           username: ${{ secrets.DOCKER_HUB_USER }}
