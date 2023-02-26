@@ -2,7 +2,7 @@ version: "3"
 
 services:
   bbox:
-    image: sourcepole/bbox-qgis-server:latest
+    image: sourcepole/bbox-server-qgis:latest
     volumes:
       - ./bbox-full.toml:/var/www/bbox.toml:ro
 

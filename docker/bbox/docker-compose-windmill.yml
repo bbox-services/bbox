@@ -21,7 +21,7 @@ services:
       # - ./oauth.json/:/usr/src/app/oauth.json
   
   windmill_worker:
-    image: sourcepole/windmill-gdal:v2023.02.22.02
+    image: sourcepole/windmill-gdal:bullseye
     # Set privileged to true if enabling nsjail
     privileged: false
     # restart: unless-stopped
@@ -38,6 +38,7 @@ services:
       - PYTHON_PATH=/usr/local/bin/python3
       - METRICS_ADDR=true
       - TZ
+      - PG_PASS
       # for ease of use, nsjail which provide isolation in untrusted environment is disabled by default. 
       # To enable it, uncomment the following line, set the container as privileged and
       # rebuild the image with nsjail=true or use the enterprise edition
