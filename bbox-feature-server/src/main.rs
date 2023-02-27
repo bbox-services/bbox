@@ -1,3 +1,4 @@
+mod config;
 mod datasource;
 mod endpoints;
 mod inventory;

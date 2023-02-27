@@ -28,6 +28,9 @@ path = "data"
 dir = "./plugins"
 path = "qgis"
 
+[featureserver]
+search_paths = ["../data"]
+
 [wmsserver]
 # WMS server settings
 # Environment variable prefix: BBOX_WMSSERVER__

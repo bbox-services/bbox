@@ -21,19 +21,21 @@ impl Inventory {
         }
     }
 
-    pub async fn scan(base_dir: &str) -> Inventory {
-        info!("Scanning '{base_dir}' for feature collections");
-        let files = file_search::search(&base_dir, &format!("*.gpkg"));
-        info!("Found {} matching file(s)", files.len());
+    pub async fn scan(base_dirs: &Vec<String>) -> Inventory {
         let mut inventory = Inventory::new();
-        for path in files {
-            let pathstr = path.as_os_str().to_string_lossy();
-            if let Ok(collections) = gpkg_collections(&pathstr).await {
-                let fc = FeatureCollection {
-                    gpkg_path: pathstr.to_string(),
-                    collections,
-                };
-                inventory.add_collections(fc);
+        for base_dir in base_dirs {
+            info!("Scanning '{base_dir}' for feature collections");
+            let files = file_search::search(&base_dir, &format!("*.gpkg"));
+            info!("Found {} matching file(s)", files.len());
+            for path in files {
+                let pathstr = path.as_os_str().to_string_lossy();
+                if let Ok(collections) = gpkg_collections(&pathstr).await {
+                    let fc = FeatureCollection {
+                        gpkg_path: pathstr.to_string(),
+                        collections,
+                    };
+                    inventory.add_collections(fc);
+                }
             }
         }
         inventory
