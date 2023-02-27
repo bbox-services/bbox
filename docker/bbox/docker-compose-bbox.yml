@@ -5,6 +5,7 @@ services:
     image: sourcepole/bbox-server-qgis:latest
     volumes:
       - ./bbox-full.toml:/var/www/bbox.toml:ro
+      - ../../data:/data
 
 networks:
   default:

@@ -20,7 +20,7 @@ server {
 
         # First attempt to serve request as file, then
         # as directory, then fall back to displaying a 404.
-        try_files $uri $uri/ =404;
+        #try_files $uri $uri/ =404;
 
         # authentik-specific config
         #auth_request        /outpost.goauthentik.io/auth/nginx;

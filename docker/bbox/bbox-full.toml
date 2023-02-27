@@ -18,7 +18,7 @@ agent_endpoint = "jaeger:6831"
 # Static file serving
 # Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
 # ./data/* -> http://localhost:8080/data/
-dir = "/data"
+dir = "./data"
 path = "data"
 
 [[fileserver.repo]]
@@ -42,7 +42,7 @@ num_fcgi_processes = 2     # Default: number of CPU cores
 [wmsserver.qgis_backend]
 # QGIS Server settings
 # Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
-# project_basedir = "."      # Base dir for project files (.qgs, .qgz)
+project_basedir = "/data"      # Base dir for project files (.qgs, .qgz)
 
 [wmsserver.umn_backend]
 # UMN MapServer settings
@@ -53,7 +53,7 @@ num_fcgi_processes = 2     # Default: number of CPU cores
 # Enable FCGI mockup backend (for testing)
 # Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
 
-[processes.dagster_backend]
+#[processes.dagster_backend]
 # Dagster backend settings
 # Environment variable prefix: BBOX_PROCESSES__DAGSTER_BACKEND__
 # graphql_url = "http://localhost:3000/dagster/graphql"
