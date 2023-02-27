@@ -12,7 +12,7 @@ async fn collection(
     req: HttpRequest,
     collection_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
-    if let Some(collection) = inventory.get(&collection_id) {
+    if let Some(collection) = inventory.collection(&collection_id) {
         if html_accepted(&req).await {
             render_endpoint(
                 &TEMPLATES,
@@ -34,7 +34,7 @@ async fn features(
     req: HttpRequest,
     collection_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
-    if let Some(collection) = inventory.get(&collection_id) {
+    if let Some(collection) = inventory.collection(&collection_id) {
         if let Some(features) = inventory.collection_items(&collection_id).await {
             if html_accepted(&req).await {
                 render_endpoint(
@@ -62,7 +62,7 @@ async fn feature(
     path: web::Path<(String, String)>,
 ) -> Result<HttpResponse, Error> {
     let (collection_id, feature_id) = path.into_inner();
-    if let Some(collection) = inventory.get(&collection_id) {
+    if let Some(collection) = inventory.collection(&collection_id) {
         if let Some(feature) = inventory.collection_item(&collection_id, &feature_id).await {
             if html_accepted(&req).await {
                 render_endpoint(
@@ -94,8 +94,8 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
     ]);
-    let inventory = Inventory::scan(".").await;
-    api.collections.extend(inventory.collections.clone());
+    let inventory = Inventory::scan("../data").await;
+    api.collections.extend(inventory.collections());
     #[cfg(feature = "openapi")]
     {
         api.conformance_classes.extend(vec![
