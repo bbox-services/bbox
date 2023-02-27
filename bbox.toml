@@ -57,11 +57,11 @@ path = "/wms"                # Base path of WMS endpoints
 #repository_name = "the_repository"
 #repository_location_name = "the.repos"
 
-[[routing.service]]
-profile = "railway"
-gpkg = "../data/railway-test.gpkg"
-table = "flows"
-geom = "geom"
+#[[routing.service]]
+#profile = "railway"
+#gpkg = "../data/railway-test.gpkg"
+#table = "flows"
+#geom = "geom"
 
 [grid]
 predefined = "web_mercator"
