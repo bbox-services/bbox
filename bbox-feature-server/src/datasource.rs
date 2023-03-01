@@ -177,14 +177,16 @@ fn row_to_feature(row: &SqliteRow, table_info: &TableInfo) -> Result<CoreFeature
         } else if col.name() == table_info.pk_column.as_ref().unwrap_or(&"".to_string()) {
             // Get id as String
             id = match col.type_info().name() {
-                "TEXT" => Some(row.try_get::<String, usize>(col.ordinal())?),
-                "INTEGER" => Some(row.try_get::<i64, usize>(col.ordinal())?.to_string()),
+                "TEXT" => Some(row.try_get::<String, _>(col.ordinal())?),
+                "INTEGER" => Some(row.try_get::<i64, _>(col.ordinal())?.to_string()),
                 _ => None,
             }
         } else {
             properties[col.name()] = match col.type_info().name() {
-                "TEXT" => json!(row.try_get::<&str, usize>(col.ordinal())?),
-                "INTEGER" => json!(row.try_get::<i64, usize>(col.ordinal())?),
+                "TEXT" => json!(row.try_get::<&str, _>(col.ordinal())?),
+                "INTEGER" => json!(row.try_get::<i64, _>(col.ordinal())?),
+                "REAL" => json!(row.try_get::<f64, _>(col.ordinal())?),
+                "DATETIME" => json!(row.try_get::<&str, _>(col.ordinal())?),
                 ty => json!(format!("<{ty}>")),
             }
         }
