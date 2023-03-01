@@ -6,6 +6,32 @@ use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
+use serde::Deserialize;
+
+#[derive(Deserialize, Default, Clone)]
+#[serde(deny_unknown_fields)] // http://docs.opengeospatial.org/DRAFTS/17-069r5.html#query_parameters
+pub struct FilterParams {
+    // Pagination
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+    // TODO: bbox, interval
+}
+
+impl FilterParams {
+    pub fn limit_or_default(&self) -> u32 {
+        self.limit.unwrap_or(50)
+    }
+    pub fn as_args(&self) -> String {
+        vec![
+            self.limit.map(|v| format!("limit={v}")),
+            self.offset.map(|v| format!("offset={v}")),
+        ]
+        .iter()
+        .filter_map(|v| v.clone())
+        .collect::<Vec<String>>()
+        .join("&")
+    }
+}
 
 /// describe the feature collection with id `collectionId`
 async fn collection(
@@ -34,9 +60,10 @@ async fn features(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
     collection_id: web::Path<String>,
+    filter: web::Query<FilterParams>,
 ) -> Result<HttpResponse, Error> {
     if let Some(collection) = inventory.collection(&collection_id) {
-        if let Some(features) = inventory.collection_items(&collection_id).await {
+        if let Some(features) = inventory.collection_items(&collection_id, &filter).await {
             if html_accepted(&req).await {
                 render_endpoint(
                     &TEMPLATES,

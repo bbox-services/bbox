@@ -1,4 +1,5 @@
 use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items};
+use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::info;
@@ -73,24 +74,68 @@ impl Inventory {
             .map(|fc| fc.gpkg_path.as_str())
     }
 
-    pub async fn collection_items(&self, collection_id: &str) -> Option<CoreFeatures> {
+    pub async fn collection_items(
+        &self,
+        collection_id: &str,
+        filter: &FilterParams,
+    ) -> Option<CoreFeatures> {
         if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let items = gpkg_items(gpkg_path, collection_id).await.unwrap();
-            let features = CoreFeatures {
+            let items = gpkg_items(gpkg_path, collection_id, filter).await.unwrap();
+            let mut features = CoreFeatures {
                 type_: "FeatureCollection".to_string(),
-                links: vec![ApiLink {
-                    href: format!("/collections/{collection_id}/items"),
-                    rel: Some("self".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some("this document".to_string()),
-                    hreflang: None,
-                    length: None,
-                }],
-                time_stamp: Some("2018-04-03T14:52:23Z".to_string()),
-                number_matched: Some(123),
-                number_returned: Some(items.len() as u64),
-                features: items,
+                links: vec![
+                    ApiLink {
+                        href: format!("/collections/{collection_id}/items"),
+                        rel: Some("self".to_string()),
+                        type_: Some("text/html".to_string()),
+                        title: Some("this document".to_string()),
+                        hreflang: None,
+                        length: None,
+                    },
+                    ApiLink {
+                        href: format!("/collections/{collection_id}/items.json"),
+                        rel: Some("self".to_string()),
+                        type_: Some("application/geo+json".to_string()),
+                        title: Some("this document".to_string()),
+                        hreflang: None,
+                        length: None,
+                    },
+                ],
+                time_stamp: None, // time when the response was generated
+                number_matched: Some(items.number_matched),
+                number_returned: Some(items.number_returned),
+                features: items.features,
             };
+            if items.number_matched > items.number_returned {
+                let offset = filter.offset.unwrap_or(0);
+                let limit = filter.limit_or_default();
+
+                let mut add_link = |offset: u32, rel: &str| {
+                    let mut link = filter.clone();
+                    link.offset = Some(offset);
+                    let mut params = link.as_args();
+                    if params.len() > 0 {
+                        params.insert(0, '?');
+                    }
+                    features.links.push(ApiLink {
+                        href: format!("/collections/{collection_id}/items{params}"),
+                        rel: Some(rel.to_string()),
+                        type_: Some("text/html".to_string()),
+                        title: Some(rel.to_string()),
+                        hreflang: None,
+                        length: None,
+                    });
+                };
+
+                if offset > 0 {
+                    let prev = offset.saturating_sub(limit);
+                    add_link(prev, "prev");
+                }
+                let next = offset.saturating_add(limit);
+                if (next as u64) < items.number_matched {
+                    add_link(next, "next");
+                }
+            }
             return Some(features);
         } else {
             None
@@ -119,7 +164,7 @@ mod tests {
 
     #[tokio::test]
     async fn inventory_scan() {
-        let inventory = Inventory::scan("../data").await;
+        let inventory = Inventory::scan(&vec!["../data".to_string()]).await;
         assert_eq!(inventory.collections().len(), 3);
         assert_eq!(
             inventory

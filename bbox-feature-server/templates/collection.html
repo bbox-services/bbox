@@ -17,7 +17,7 @@
 <h3>Links</h3>
 <ul>
 {% for link in collection.links %}
-  <li><a href="{{ link.href }}">{{ link.title }}</a> [{{link.rel}}] [{{link.type}}]</li>
+  <li><a href="{{ link.href }}">{{ link.title }}</a> [{{link.rel}}] ({{link.type}})</li>
 {% endfor %}
 </ul>
 

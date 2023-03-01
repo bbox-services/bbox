@@ -1,3 +1,4 @@
+use crate::endpoints::FilterParams;
 use bbox_common::ogcapi::*;
 use geozero::{geojson, wkb};
 use log::debug;
@@ -56,17 +57,37 @@ pub async fn gpkg_collections(gpkg: &str) -> Result<Vec<CoreCollection>> {
     Ok(collections)
 }
 
-pub async fn gpkg_items(gpkg: &str, table: &str) -> Result<Vec<CoreFeature>> {
+pub struct ItemsResult {
+    pub features: Vec<CoreFeature>,
+    pub number_matched: u64,
+    pub number_returned: u64,
+}
+
+pub async fn gpkg_items(gpkg: &str, table: &str, filter: &FilterParams) -> Result<ItemsResult> {
     let mut conn = SqliteConnection::connect(&format!("sqlite://{gpkg}")).await?;
     let table_info = table_info(&mut conn, table).await?;
 
-    let sql = format!("SELECT * FROM {table}"); // TODO: Sanitize table name
+    let limit = filter.limit_or_default();
+    let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table} LIMIT {limit}"); // TODO: Sanitize table name
+    if let Some(offset) = filter.offset {
+        sql.push_str(&format!(" OFFSET {offset}"));
+    }
     let rows = sqlx::query(&sql).fetch_all(&mut conn).await?;
+    let number_matched = rows
+        .first()
+        .map(|row| row.try_get::<u32, _>("__total_cnt").unwrap() as u64)
+        .unwrap_or(0);
+    let number_returned = rows.len() as u64;
     let items = rows
         .iter()
         .map(|row| row_to_feature(&row, &table_info))
         .collect::<Result<Vec<_>>>()?;
-    Ok(items)
+    let result = ItemsResult {
+        features: items,
+        number_matched,
+        number_returned,
+    };
+    Ok(result)
 }
 
 pub async fn gpkg_item(gpkg: &str, table: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
@@ -151,6 +172,8 @@ fn row_to_feature(row: &SqliteRow, table_info: &TableInfo) -> Result<CoreFeature
     for col in row.columns() {
         if col.name() == table_info.geom_column {
             // Skip geometry
+        } else if col.name() == "__total_cnt" {
+            // Skip count
         } else if col.name() == table_info.pk_column.as_ref().unwrap_or(&"".to_string()) {
             // Get id as String
             id = match col.type_info().name() {
@@ -203,9 +226,10 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_geom() {
-        let items = gpkg_items("../data/ne_extracts.gpkg", "ne_10m_lakes")
+        let filter = FilterParams::default();
+        let items = gpkg_items("../data/ne_extracts.gpkg", "ne_10m_lakes", &filter)
             .await
             .unwrap();
-        assert_eq!(items.len(), 1355);
+        assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 }
