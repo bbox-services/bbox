@@ -26,8 +26,8 @@ impl FilterParams {
             self.limit.map(|v| format!("limit={v}")),
             self.offset.map(|v| format!("offset={v}")),
         ]
-        .iter()
-        .filter_map(|v| v.clone())
+        .into_iter()
+        .filter_map(|v| v)
         .collect::<Vec<String>>()
         .join("&")
     }
@@ -152,4 +152,23 @@ pub fn register(cfg: &mut web::ServiceConfig, inventory: &Inventory) {
                 .route(web::get().to(feature)),
         );
     // endpoint /collections is in bbox-server
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn filter_to_args() {
+        let filter = FilterParams {
+            limit: Some(10),
+            offset: Some(20),
+        };
+        assert_eq!(filter.as_args(), "limit=10&offset=20");
+        let filter = FilterParams {
+            limit: None,
+            offset: Some(20),
+        };
+        assert_eq!(filter.as_args(), "offset=20");
+    }
 }
