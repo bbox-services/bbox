@@ -73,10 +73,11 @@ pub async fn gpkg_items(gpkg: &str, table: &str, filter: &FilterParams) -> Resul
         sql.push_str(&format!(" OFFSET {offset}"));
     }
     let rows = sqlx::query(&sql).fetch_all(&mut conn).await?;
-    let number_matched = rows
-        .first()
-        .map(|row| row.try_get::<u32, _>("__total_cnt").unwrap() as u64)
-        .unwrap_or(0);
+    let number_matched = if let Some(row) = rows.first() {
+        row.try_get::<u32, _>("__total_cnt")? as u64
+    } else {
+        0
+    };
     let number_returned = rows.len() as u64;
     let items = rows
         .iter()
