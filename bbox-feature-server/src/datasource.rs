@@ -67,8 +67,11 @@ pub async fn gpkg_items(gpkg: &str, table: &str, filter: &FilterParams) -> Resul
     let mut conn = SqliteConnection::connect(&format!("sqlite://{gpkg}")).await?;
     let table_info = table_info(&mut conn, table).await?;
 
+    let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table}"); // TODO: Sanitize table name
     let limit = filter.limit_or_default();
-    let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table} LIMIT {limit}"); // TODO: Sanitize table name
+    if limit > 0 {
+        sql.push_str(&format!(" LIMIT {limit}"));
+    }
     if let Some(offset) = filter.offset {
         sql.push_str(&format!(" OFFSET {offset}"));
     }
