@@ -107,12 +107,7 @@ impl Inventory {
                 features: items.features,
             };
             if items.number_matched > items.number_returned {
-                let offset = filter.offset.unwrap_or(0);
-                let limit = filter.limit_or_default();
-
-                let mut add_link = |offset: u32, rel: &str| {
-                    let mut link = filter.clone();
-                    link.offset = Some(offset);
+                let mut add_link = |link: FilterParams, rel: &str| {
                     let mut params = link.as_args();
                     if params.len() > 0 {
                         params.insert(0, '?');
@@ -127,12 +122,10 @@ impl Inventory {
                     });
                 };
 
-                if offset > 0 {
-                    let prev = offset.saturating_sub(limit);
+                if let Some(prev) = filter.prev() {
                     add_link(prev, "prev");
                 }
-                let next = offset.saturating_add(limit);
-                if (next as u64) < items.number_matched {
+                if let Some(next) = filter.next(items.number_matched) {
                     add_link(next, "next");
                 }
             }
