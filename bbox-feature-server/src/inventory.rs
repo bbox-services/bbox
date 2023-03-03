@@ -1,12 +1,14 @@
-use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items};
+use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items, DsConnections};
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
-use log::info;
+use log::{info, warn};
+use sqlx::SqlitePool;
 
 #[derive(Clone, Debug)]
 pub struct Inventory {
     feat_collections: Vec<FeatureCollection>,
+    ds_connections: DsConnections,
 }
 
 #[derive(Clone, Debug)]
@@ -19,6 +21,7 @@ impl Inventory {
     pub fn new() -> Self {
         Inventory {
             feat_collections: Vec::new(),
+            ds_connections: DsConnections::new(),
         }
     }
 
@@ -26,20 +29,32 @@ impl Inventory {
         let mut inventory = Inventory::new();
         for base_dir in base_dirs {
             info!("Scanning '{base_dir}' for feature collections");
-            let files = file_search::search(&base_dir, &format!("*.gpkg"));
+            let files = file_search::search(&base_dir, "*.gpkg");
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                if let Ok(collections) = gpkg_collections(&pathstr).await {
-                    let fc = FeatureCollection {
-                        gpkg_path: pathstr.to_string(),
-                        collections,
-                    };
-                    inventory.add_collections(fc);
+                if let Err(e) = inventory.ds_connections.add_pool(&pathstr).await {
+                    warn!("Failed to create connection pool for '{pathstr}': {e}");
+                    continue;
+                }
+                if let Some(ds) = inventory.ds_pool(&pathstr) {
+                    if let Ok(collections) = gpkg_collections(&ds).await {
+                        let fc = FeatureCollection {
+                            gpkg_path: pathstr.to_string(),
+                            collections,
+                        };
+                        inventory.add_collections(fc);
+                    }
                 }
             }
         }
+        // Close all connections, they will be reopendend on demand
+        inventory.ds_connections.reset_pool().await.ok();
         inventory
+    }
+
+    fn ds_pool(&self, gpkg: &str) -> Option<&SqlitePool> {
+        self.ds_connections.pool(gpkg)
     }
 
     fn add_collections(&mut self, feat_collections: FeatureCollection) {
@@ -80,7 +95,14 @@ impl Inventory {
         filter: &FilterParams,
     ) -> Option<CoreFeatures> {
         if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let items = gpkg_items(gpkg_path, collection_id, filter).await.unwrap();
+            let Some(ds) = self.ds_pool(gpkg_path) else {
+                warn!("Ignoring error getting pool for {gpkg_path}");
+                return None
+            };
+            let Ok(items) = gpkg_items(&ds, collection_id, filter).await else {
+                warn!("Ignoring error getting collection items for {gpkg_path}");
+                return None
+            };
             let mut features = CoreFeatures {
                 type_: "FeatureCollection".to_string(),
                 links: vec![
@@ -141,7 +163,11 @@ impl Inventory {
         feature_id: &str,
     ) -> Option<CoreFeature> {
         if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let feature = gpkg_item(gpkg_path, collection_id, feature_id)
+            let Some(ds) = self.ds_pool(gpkg_path) else {
+                warn!("Ignoring error getting pool for {gpkg_path}");
+                return None
+            };
+            let feature = gpkg_item(&ds, collection_id, feature_id)
                 .await
                 .unwrap_or(None);
             feature
