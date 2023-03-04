@@ -1,4 +1,4 @@
-use crate::config::FeatureServerCfg;
+use crate::config::DatasourceCfg;
 use crate::inventory::Inventory;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
@@ -145,8 +145,8 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
     ]);
-    let config = FeatureServerCfg::from_config();
-    let inventory = Inventory::scan(&config.search_paths).await;
+    let config = DatasourceCfg::from_config();
+    let inventory = Inventory::scan(&config).await;
     api.collections.extend(inventory.collections());
     #[cfg(feature = "openapi")]
     {

@@ -14,6 +14,9 @@ path = "/metrics"
 # Environment variable prefix: BBOX_METRICS__JAEGER__
 #agent_endpoint = "localhost:6831"
 
+[[datasource.directory]]
+path = "../data"
+
 [[fileserver.static]] 
 # Static file serving
 # Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
@@ -27,9 +30,6 @@ path = "data"
 # ./plugins/*.zip -> http://localhost:8080/qgis/plugins.xml
 dir = "./plugins"
 path = "qgis"
-
-[featureserver]
-search_paths = ["../data"]
 
 [wmsserver]
 # WMS server settings

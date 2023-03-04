@@ -1,3 +1,4 @@
+use crate::config::DatasourceCfg;
 use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items, DsConnections};
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
@@ -25,11 +26,12 @@ impl Inventory {
         }
     }
 
-    pub async fn scan(base_dirs: &Vec<String>) -> Inventory {
+    pub async fn scan(config: &DatasourceCfg) -> Inventory {
         let mut inventory = Inventory::new();
-        for base_dir in base_dirs {
+        for dir_ds in &config.directory {
+            let base_dir = &dir_ds.path;
             info!("Scanning '{base_dir}' for feature collections");
-            let files = file_search::search(&base_dir, "*.gpkg");
+            let files = file_search::search(base_dir, "*.gpkg");
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
@@ -183,7 +185,7 @@ mod tests {
 
     #[tokio::test]
     async fn inventory_scan() {
-        let inventory = Inventory::scan(&vec!["../data".to_string()]).await;
+        let inventory = Inventory::scan(&DatasourceCfg::from_path("../data")).await;
         // assert_eq!(inventory.collections().len(), 3);
         assert!(inventory.collections().len() >= 3);
         assert_eq!(

@@ -1,14 +1,48 @@
 use bbox_common::config::from_config_or_exit;
 use serde::Deserialize;
 
-/// Feature service configuration
 #[derive(Deserialize, Default, Debug)]
-pub struct FeatureServerCfg {
-    pub search_paths: Vec<String>,
+pub struct DatasourceCfg {
+    #[serde(default)]
+    pub directory: Vec<DsFiledirCfg>,
+    #[serde(default)]
+    pub postgis: Vec<DsPostgisCfg>,
 }
 
-impl FeatureServerCfg {
+#[derive(Deserialize, Debug)]
+pub struct DsFiledirCfg {
+    pub path: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DsPostgisCfg {
+    pub url: String,
+}
+
+impl DatasourceCfg {
     pub fn from_config() -> Self {
-        from_config_or_exit("featureserver")
+        from_config_or_exit("datasource")
+    }
+    pub fn from_path(path: &str) -> Self {
+        let mut cfg = DatasourceCfg::default();
+        cfg.directory.push(DsFiledirCfg {
+            path: path.to_string(),
+        });
+        cfg
     }
 }
+
+/*
+// t-rex Datasource (top-level Array)
+#[derive(Deserialize, Clone, Debug)]
+pub struct DatasourceCfg {
+    pub name: Option<String>,
+    pub default: Option<bool>,
+    // Postgis
+    pub dbconn: Option<String>,
+    pub pool: Option<u16>,
+    pub connection_timeout: Option<u64>,
+    // GDAL
+    pub path: Option<String>,
+}
+*/
