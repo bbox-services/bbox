@@ -1,5 +1,5 @@
-use crate::datasource::gpkg::SqliteConnections;
-use crate::datasource::postgis::PgConnections;
+use crate::datasource::gpkg::GpkgDatasource;
+use crate::datasource::postgis::PgDatasource;
 use bbox_common::ogcapi::*;
 use sqlx::Result;
 use std::collections::HashMap;
@@ -7,35 +7,35 @@ use std::collections::HashMap;
 pub mod gpkg;
 pub mod postgis;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct DsConnections {
-    sqlite_connections: HashMap<String, SqliteConnections>,
-    pg_connections: HashMap<String, PgConnections>,
+    gpkg_datasources: HashMap<String, GpkgDatasource>,
+    pg_datasources: HashMap<String, PgDatasource>,
 }
 
 impl DsConnections {
     pub fn new() -> Self {
         DsConnections {
-            sqlite_connections: HashMap::new(),
-            pg_connections: HashMap::new(),
+            gpkg_datasources: HashMap::new(),
+            pg_datasources: HashMap::new(),
         }
     }
-    pub async fn add_sqlite_pool(&mut self, gpkg: &str) -> Result<()> {
-        let pool = SqliteConnections::new_pool(gpkg).await?;
-        self.sqlite_connections.insert(gpkg.to_string(), pool);
+    pub async fn add_gpkg_ds(&mut self, gpkg: &str) -> Result<()> {
+        let pool = GpkgDatasource::new_pool(gpkg).await?;
+        self.gpkg_datasources.insert(gpkg.to_string(), pool);
         Ok(())
     }
-    pub fn sqlite_pool(&self, gpkg: &str) -> Option<&SqliteConnections> {
-        self.sqlite_connections.get(gpkg)
+    pub fn gpkg_ds(&self, gpkg: &str) -> Option<&GpkgDatasource> {
+        self.gpkg_datasources.get(gpkg)
     }
-    pub async fn add_pg_pool(&mut self, url: &str) -> Result<()> {
-        let pool = PgConnections::new_pool(url).await?;
-        self.pg_connections.insert(url.to_string(), pool);
+    pub async fn add_pg_ds(&mut self, url: &str) -> Result<()> {
+        let pool = PgDatasource::new_pool(url).await?;
+        self.pg_datasources.insert(url.to_string(), pool);
         Ok(())
     }
     /// Close all connections
     pub async fn reset_pool(&mut self) -> Result<()> {
-        for (_, _pool) in &self.sqlite_connections {
+        for (_, _pool) in &self.gpkg_datasources {
             //TODO
         }
         Ok(())

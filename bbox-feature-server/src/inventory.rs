@@ -1,12 +1,12 @@
 use crate::config::DatasourceCfg;
-use crate::datasource::gpkg::SqliteConnections;
+use crate::datasource::gpkg::GpkgDatasource;
 use crate::datasource::DsConnections;
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Inventory {
     feat_collections: Vec<FeatureCollection>,
     ds_connections: DsConnections,
@@ -35,11 +35,11 @@ impl Inventory {
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                if let Err(e) = inventory.ds_connections.add_sqlite_pool(&pathstr).await {
+                if let Err(e) = inventory.ds_connections.add_gpkg_ds(&pathstr).await {
                     warn!("Failed to create connection pool for '{pathstr}': {e}");
                     continue;
                 }
-                if let Some(ds) = inventory.ds_pool(&pathstr) {
+                if let Some(ds) = inventory.datasource(&pathstr) {
                     if let Ok(collections) = ds.collections().await {
                         let fc = FeatureCollection {
                             gpkg_path: pathstr.to_string(),
@@ -51,7 +51,7 @@ impl Inventory {
             }
         }
         for postgis_ds in &config.postgis {
-            if let Err(e) = inventory.ds_connections.add_pg_pool(&postgis_ds.url).await {
+            if let Err(e) = inventory.ds_connections.add_pg_ds(&postgis_ds.url).await {
                 warn!(
                     "Failed to create connection pool for '{}': {e}",
                     &postgis_ds.url
@@ -64,8 +64,8 @@ impl Inventory {
         inventory
     }
 
-    fn ds_pool(&self, gpkg: &str) -> Option<&SqliteConnections> {
-        self.ds_connections.sqlite_pool(gpkg)
+    fn datasource(&self, gpkg: &str) -> Option<&GpkgDatasource> {
+        self.ds_connections.gpkg_ds(gpkg)
     }
 
     fn add_collections(&mut self, feat_collections: FeatureCollection) {
@@ -106,7 +106,7 @@ impl Inventory {
         filter: &FilterParams,
     ) -> Option<CoreFeatures> {
         if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let Some(ds) = self.ds_pool(gpkg_path) else {
+            let Some(ds) = self.datasource(gpkg_path) else {
                 warn!("Ignoring error getting pool for {gpkg_path}");
                 return None
             };
@@ -174,7 +174,7 @@ impl Inventory {
         feature_id: &str,
     ) -> Option<CoreFeature> {
         if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let Some(ds) = self.ds_pool(gpkg_path) else {
+            let Some(ds) = self.datasource(gpkg_path) else {
                 warn!("Ignoring error getting pool for {gpkg_path}");
                 return None
             };

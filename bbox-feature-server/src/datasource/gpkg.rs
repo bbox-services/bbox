@@ -6,10 +6,10 @@ use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Result, Row, TypeInfo};
 
-#[derive(Clone, Debug)]
-pub struct SqliteConnections(SqlitePool);
+#[derive(Clone)]
+pub struct GpkgDatasource(SqlitePool);
 
-impl SqliteConnections {
+impl GpkgDatasource {
     pub async fn new_pool(gpkg: &str) -> Result<Self> {
         let conn_options = SqliteConnectOptions::new().filename(gpkg).read_only(true);
         let pool = SqlitePoolOptions::new()
@@ -17,11 +17,11 @@ impl SqliteConnections {
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(SqliteConnections(pool))
+        Ok(GpkgDatasource(pool))
     }
 }
 
-impl SqliteConnections {
+impl GpkgDatasource {
     pub async fn collections(&self) -> Result<Vec<CoreCollection>> {
         let sql = r#"
         SELECT contents.*
@@ -221,7 +221,7 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_content() {
-        let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
+        let pool = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
         let collections = pool.collections().await.unwrap();
@@ -242,7 +242,7 @@ mod tests {
     #[tokio::test]
     async fn gpkg_features() {
         let filter = FilterParams::default();
-        let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
+        let pool = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
         let items = pool.items("ne_10m_lakes", &filter).await.unwrap();
