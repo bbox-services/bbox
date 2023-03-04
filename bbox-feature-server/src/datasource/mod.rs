@@ -1,5 +1,6 @@
 use crate::datasource::gpkg::SqliteConnections;
 use crate::datasource::postgis::PgConnections;
+use bbox_common::ogcapi::*;
 use sqlx::Result;
 use std::collections::HashMap;
 
@@ -39,4 +40,16 @@ impl DsConnections {
         }
         Ok(())
     }
+}
+
+// pub trait DsCollection {
+//     async fn collections(&self) -> Result<Vec<CoreCollection>>;
+//     async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult>;
+//     async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
+// }
+
+pub struct ItemsResult {
+    pub features: Vec<CoreFeature>,
+    pub number_matched: u64,
+    pub number_returned: u64,
 }

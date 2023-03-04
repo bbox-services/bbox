@@ -1,5 +1,5 @@
 use crate::config::DatasourceCfg;
-use crate::datasource::gpkg::{gpkg_collections, gpkg_item, gpkg_items, SqliteConnections};
+use crate::datasource::gpkg::SqliteConnections;
 use crate::datasource::DsConnections;
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
@@ -40,7 +40,7 @@ impl Inventory {
                     continue;
                 }
                 if let Some(ds) = inventory.ds_pool(&pathstr) {
-                    if let Ok(collections) = gpkg_collections(&ds).await {
+                    if let Ok(collections) = ds.collections().await {
                         let fc = FeatureCollection {
                             gpkg_path: pathstr.to_string(),
                             collections,
@@ -110,7 +110,7 @@ impl Inventory {
                 warn!("Ignoring error getting pool for {gpkg_path}");
                 return None
             };
-            let Ok(items) = gpkg_items(&ds, collection_id, filter).await else {
+            let Ok(items) = ds.items(collection_id, filter).await else {
                 warn!("Ignoring error getting collection items for {gpkg_path}");
                 return None
             };
@@ -178,9 +178,7 @@ impl Inventory {
                 warn!("Ignoring error getting pool for {gpkg_path}");
                 return None
             };
-            let feature = gpkg_item(&ds, collection_id, feature_id)
-                .await
-                .unwrap_or(None);
+            let feature = ds.item(collection_id, feature_id).await.unwrap_or(None);
             feature
         } else {
             None

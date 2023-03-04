@@ -1,3 +1,4 @@
+use crate::datasource::ItemsResult;
 use crate::endpoints::FilterParams;
 use bbox_common::ogcapi::*;
 use geozero::{geojson, wkb};
@@ -20,132 +21,120 @@ impl SqliteConnections {
     }
 }
 
-pub async fn gpkg_collections(pool: &SqliteConnections) -> Result<Vec<CoreCollection>> {
-    let sql = r#"
+impl SqliteConnections {
+    pub async fn collections(&self) -> Result<Vec<CoreCollection>> {
+        let sql = r#"
         SELECT contents.*
         FROM gpkg_contents contents
           JOIN gpkg_spatial_ref_sys refsys ON refsys.srs_id = contents.srs_id
           --JOIN gpkg_geometry_columns geom_cols ON geom_cols.table_name = contents.table_name
         WHERE data_type='features'
     "#;
-    let rows = sqlx::query(&sql).fetch_all(&pool.0).await?;
-    let collections = rows
-        .iter()
-        .map(|row| {
-            let id: String = row.try_get("table_name")?;
-            let title: String = row.try_get("identifier")?;
+        let rows = sqlx::query(&sql).fetch_all(&self.0).await?;
+        let collections = rows
+            .iter()
+            .map(|row| {
+                let id: String = row.try_get("table_name")?;
+                let title: String = row.try_get("identifier")?;
 
-            let collection = CoreCollection {
-                id: id.clone(),
-                title: Some(title.clone()),
-                description: row.try_get("description")?,
-                extent: Some(CoreExtent {
-                    spatial: Some(CoreExtentSpatial {
-                        bbox: vec![vec![
-                            row.try_get("min_x")?,
-                            row.try_get("min_y")?,
-                            row.try_get("max_x")?,
-                            row.try_get("max_y")?,
-                        ]],
-                        crs: None,
+                let collection = CoreCollection {
+                    id: id.clone(),
+                    title: Some(title.clone()),
+                    description: row.try_get("description")?,
+                    extent: Some(CoreExtent {
+                        spatial: Some(CoreExtentSpatial {
+                            bbox: vec![vec![
+                                row.try_get("min_x")?,
+                                row.try_get("min_y")?,
+                                row.try_get("max_x")?,
+                                row.try_get("max_y")?,
+                            ]],
+                            crs: None,
+                        }),
+                        temporal: None,
                     }),
-                    temporal: None,
-                }),
-                item_type: None,
-                crs: vec![],
-                links: vec![ApiLink {
-                    href: format!("/collections/{id}/items"),
-                    rel: Some("items".to_string()),
+                    item_type: None,
+                    crs: vec![],
+                    links: vec![ApiLink {
+                        href: format!("/collections/{id}/items"),
+                        rel: Some("items".to_string()),
+                        type_: Some("application/geo+json".to_string()),
+                        title: Some(title),
+                        hreflang: None,
+                        length: None,
+                    }],
+                };
+                Ok(collection)
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(collections)
+    }
+
+    pub async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult> {
+        let table_info = table_info(&self.0, table).await?;
+
+        let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table}"); // TODO: Sanitize table name
+        let limit = filter.limit_or_default();
+        if limit > 0 {
+            sql.push_str(&format!(" LIMIT {limit}"));
+        }
+        if let Some(offset) = filter.offset {
+            sql.push_str(&format!(" OFFSET {offset}"));
+        }
+        let rows = sqlx::query(&sql).fetch_all(&self.0).await?;
+        let number_matched = if let Some(row) = rows.first() {
+            row.try_get::<u32, _>("__total_cnt")? as u64
+        } else {
+            0
+        };
+        let number_returned = rows.len() as u64;
+        let items = rows
+            .iter()
+            .map(|row| row_to_feature(&row, &table_info))
+            .collect::<Result<Vec<_>>>()?;
+        let result = ItemsResult {
+            features: items,
+            number_matched,
+            number_returned,
+        };
+        Ok(result)
+    }
+
+    pub async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
+        let table_info = table_info(&self.0, table).await?;
+
+        let sql = format!(
+            "SELECT * FROM {table} WHERE {} = ?", // TODO: Sanitize table name
+            table_info.pk_column.as_ref().unwrap()
+        );
+        if let Some(row) = sqlx::query(&sql)
+            .bind(feature_id)
+            .fetch_optional(&self.0)
+            .await?
+        {
+            let mut item = row_to_feature(&row, &table_info)?;
+            item.links = vec![
+                ApiLink {
+                    href: format!("/collections/{table}/items/{feature_id}"),
+                    rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
-                    title: Some(title),
+                    title: Some("this document".to_string()),
                     hreflang: None,
                     length: None,
-                }],
-            };
-            Ok(collection)
-        })
-        .collect::<Result<Vec<_>>>()?;
-    Ok(collections)
-}
-
-pub struct ItemsResult {
-    pub features: Vec<CoreFeature>,
-    pub number_matched: u64,
-    pub number_returned: u64,
-}
-
-pub async fn gpkg_items(
-    pool: &SqliteConnections,
-    table: &str,
-    filter: &FilterParams,
-) -> Result<ItemsResult> {
-    let table_info = table_info(pool, table).await?;
-
-    let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table}"); // TODO: Sanitize table name
-    let limit = filter.limit_or_default();
-    if limit > 0 {
-        sql.push_str(&format!(" LIMIT {limit}"));
-    }
-    if let Some(offset) = filter.offset {
-        sql.push_str(&format!(" OFFSET {offset}"));
-    }
-    let rows = sqlx::query(&sql).fetch_all(&pool.0).await?;
-    let number_matched = if let Some(row) = rows.first() {
-        row.try_get::<u32, _>("__total_cnt")? as u64
-    } else {
-        0
-    };
-    let number_returned = rows.len() as u64;
-    let items = rows
-        .iter()
-        .map(|row| row_to_feature(&row, &table_info))
-        .collect::<Result<Vec<_>>>()?;
-    let result = ItemsResult {
-        features: items,
-        number_matched,
-        number_returned,
-    };
-    Ok(result)
-}
-
-pub async fn gpkg_item(
-    pool: &SqliteConnections,
-    table: &str,
-    feature_id: &str,
-) -> Result<Option<CoreFeature>> {
-    let table_info = table_info(pool, table).await?;
-
-    let sql = format!(
-        "SELECT * FROM {table} WHERE {} = ?", // TODO: Sanitize table name
-        table_info.pk_column.as_ref().unwrap()
-    );
-    if let Some(row) = sqlx::query(&sql)
-        .bind(feature_id)
-        .fetch_optional(&pool.0)
-        .await?
-    {
-        let mut item = row_to_feature(&row, &table_info)?;
-        item.links = vec![
-            ApiLink {
-                href: format!("/collections/{table}/items/{feature_id}"),
-                rel: Some("self".to_string()),
-                type_: Some("application/geo+json".to_string()),
-                title: Some("this document".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: format!("/collections/{table}"),
-                rel: Some("collection".to_string()),
-                type_: Some("application/geo+json".to_string()),
-                title: Some("the collection document".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ];
-        Ok(Some(item))
-    } else {
-        Ok(None)
+                },
+                ApiLink {
+                    href: format!("/collections/{table}"),
+                    rel: Some("collection".to_string()),
+                    type_: Some("application/geo+json".to_string()),
+                    title: Some("the collection document".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+            ];
+            Ok(Some(item))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -157,7 +146,7 @@ struct TableInfo {
     pk_column: Option<String>,
 }
 
-async fn table_info(pool: &SqliteConnections, table: &str) -> Result<TableInfo> {
+async fn table_info(pool: &SqlitePool, table: &str) -> Result<TableInfo> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -170,7 +159,7 @@ async fn table_info(pool: &SqliteConnections, table: &str) -> Result<TableInfo> 
         .bind(table)
         .bind(table)
         .bind(table)
-        .fetch_one(&pool.0)
+        .fetch_one(pool)
         .await?;
     let geom_column: String = row.try_get("column_name")?;
     let geometry_type_name: String = row.try_get("geometry_type_name")?;
@@ -235,7 +224,7 @@ mod tests {
         let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
-        let collections = gpkg_collections(&pool).await.unwrap();
+        let collections = pool.collections().await.unwrap();
         assert_eq!(collections.len(), 3);
         assert_eq!(
             collections
@@ -256,7 +245,7 @@ mod tests {
         let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
-        let items = gpkg_items(&pool, "ne_10m_lakes", &filter).await.unwrap();
+        let items = pool.items("ne_10m_lakes", &filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 }
