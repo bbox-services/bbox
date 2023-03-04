@@ -1,10 +1,10 @@
 use crate::config::DatasourceCfg;
-use crate::datasource::{gpkg_collections, gpkg_item, gpkg_items, DsConnections};
+use crate::datasource::gpkg::{gpkg_collections, gpkg_item, gpkg_items, SqliteConnections};
+use crate::datasource::DsConnections;
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
-use sqlx::SqlitePool;
 
 #[derive(Clone, Debug)]
 pub struct Inventory {
@@ -35,7 +35,7 @@ impl Inventory {
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                if let Err(e) = inventory.ds_connections.add_pool(&pathstr).await {
+                if let Err(e) = inventory.ds_connections.add_sqlite_pool(&pathstr).await {
                     warn!("Failed to create connection pool for '{pathstr}': {e}");
                     continue;
                 }
@@ -50,13 +50,22 @@ impl Inventory {
                 }
             }
         }
+        for postgis_ds in &config.postgis {
+            if let Err(e) = inventory.ds_connections.add_pg_pool(&postgis_ds.url).await {
+                warn!(
+                    "Failed to create connection pool for '{}': {e}",
+                    &postgis_ds.url
+                );
+                continue;
+            }
+        }
         // Close all connections, they will be reopendend on demand
         inventory.ds_connections.reset_pool().await.ok();
         inventory
     }
 
-    fn ds_pool(&self, gpkg: &str) -> Option<&SqlitePool> {
-        self.ds_connections.pool(gpkg)
+    fn ds_pool(&self, gpkg: &str) -> Option<&SqliteConnections> {
+        self.ds_connections.sqlite_pool(gpkg)
     }
 
     fn add_collections(&mut self, feat_collections: FeatureCollection) {

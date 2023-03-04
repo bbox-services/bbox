@@ -4,46 +4,23 @@ use geozero::{geojson, wkb};
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Result, Row, TypeInfo};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
-pub struct DsConnections {
-    pools: HashMap<String, SqlitePool>,
-}
+pub struct SqliteConnections(SqlitePool);
 
-impl DsConnections {
-    pub fn new() -> Self {
-        DsConnections {
-            pools: HashMap::new(),
-        }
-    }
-    pub async fn new_pool(gpkg: &str) -> Result<SqlitePool> {
+impl SqliteConnections {
+    pub async fn new_pool(gpkg: &str) -> Result<Self> {
         let conn_options = SqliteConnectOptions::new().filename(gpkg).read_only(true);
         let pool = SqlitePoolOptions::new()
             .min_connections(0)
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(pool)
-    }
-    pub async fn add_pool(&mut self, gpkg: &str) -> Result<()> {
-        let pool = DsConnections::new_pool(gpkg).await?;
-        self.pools.insert(gpkg.to_string(), pool);
-        Ok(())
-    }
-    /// Close all connections
-    pub async fn reset_pool(&mut self) -> Result<()> {
-        for (_, _pool) in &self.pools {
-            //TODO
-        }
-        Ok(())
-    }
-    pub fn pool(&self, gpkg: &str) -> Option<&SqlitePool> {
-        self.pools.get(gpkg)
+        Ok(SqliteConnections(pool))
     }
 }
 
-pub async fn gpkg_collections(pool: &SqlitePool) -> Result<Vec<CoreCollection>> {
+pub async fn gpkg_collections(pool: &SqliteConnections) -> Result<Vec<CoreCollection>> {
     let sql = r#"
         SELECT contents.*
         FROM gpkg_contents contents
@@ -51,7 +28,7 @@ pub async fn gpkg_collections(pool: &SqlitePool) -> Result<Vec<CoreCollection>> 
           --JOIN gpkg_geometry_columns geom_cols ON geom_cols.table_name = contents.table_name
         WHERE data_type='features'
     "#;
-    let rows = sqlx::query(&sql).fetch_all(pool).await?;
+    let rows = sqlx::query(&sql).fetch_all(&pool.0).await?;
     let collections = rows
         .iter()
         .map(|row| {
@@ -98,7 +75,7 @@ pub struct ItemsResult {
 }
 
 pub async fn gpkg_items(
-    pool: &SqlitePool,
+    pool: &SqliteConnections,
     table: &str,
     filter: &FilterParams,
 ) -> Result<ItemsResult> {
@@ -112,7 +89,7 @@ pub async fn gpkg_items(
     if let Some(offset) = filter.offset {
         sql.push_str(&format!(" OFFSET {offset}"));
     }
-    let rows = sqlx::query(&sql).fetch_all(pool).await?;
+    let rows = sqlx::query(&sql).fetch_all(&pool.0).await?;
     let number_matched = if let Some(row) = rows.first() {
         row.try_get::<u32, _>("__total_cnt")? as u64
     } else {
@@ -132,7 +109,7 @@ pub async fn gpkg_items(
 }
 
 pub async fn gpkg_item(
-    pool: &SqlitePool,
+    pool: &SqliteConnections,
     table: &str,
     feature_id: &str,
 ) -> Result<Option<CoreFeature>> {
@@ -144,7 +121,7 @@ pub async fn gpkg_item(
     );
     if let Some(row) = sqlx::query(&sql)
         .bind(feature_id)
-        .fetch_optional(pool)
+        .fetch_optional(&pool.0)
         .await?
     {
         let mut item = row_to_feature(&row, &table_info)?;
@@ -180,7 +157,7 @@ struct TableInfo {
     pk_column: Option<String>,
 }
 
-async fn table_info(pool: &SqlitePool, table: &str) -> Result<TableInfo> {
+async fn table_info(pool: &SqliteConnections, table: &str) -> Result<TableInfo> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -193,7 +170,7 @@ async fn table_info(pool: &SqlitePool, table: &str) -> Result<TableInfo> {
         .bind(table)
         .bind(table)
         .bind(table)
-        .fetch_one(pool)
+        .fetch_one(&pool.0)
         .await?;
     let geom_column: String = row.try_get("column_name")?;
     let geometry_type_name: String = row.try_get("geometry_type_name")?;
@@ -255,7 +232,7 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_content() {
-        let pool = DsConnections::new_pool("../data/ne_extracts.gpkg")
+        let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
         let collections = gpkg_collections(&pool).await.unwrap();
@@ -276,7 +253,7 @@ mod tests {
     #[tokio::test]
     async fn gpkg_features() {
         let filter = FilterParams::default();
-        let pool = DsConnections::new_pool("../data/ne_extracts.gpkg")
+        let pool = SqliteConnections::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
         let items = gpkg_items(&pool, "ne_10m_lakes", &filter).await.unwrap();
