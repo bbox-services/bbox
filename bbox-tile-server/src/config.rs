@@ -1,4 +1,4 @@
-use bbox_common::config::config_error_exit;
+use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 use tile_grid::{Extent, Grid, Origin, Unit};
 
@@ -102,16 +102,7 @@ pub struct UserGridCfg {
 
 impl GridCfg {
     pub fn from_config() -> Option<Self> {
-        let config = bbox_common::config::app_config();
-        config
-            .find_value("grid")
-            .map(|_| {
-                config
-                    .extract_inner("grid")
-                    .map_err(|err| config_error_exit(err))
-                    .unwrap()
-            })
-            .ok()
+        from_config_opt_or_exit("grid")
     }
 }
 
@@ -126,16 +117,7 @@ pub struct BackendWmsCfg {
 
 impl BackendWmsCfg {
     pub fn from_config() -> Option<Self> {
-        let config = bbox_common::config::app_config();
-        config
-            .find_value("tile.wms")
-            .map(|_| {
-                config
-                    .extract_inner("tile.wms")
-                    .map_err(|err| config_error_exit(err))
-                    .unwrap()
-            })
-            .ok()
+        from_config_opt_or_exit("tile.wms")
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::engine::Router;
-use bbox_common::config::config_error_exit;
+use bbox_common::config::{config_error_exit, from_config_or_exit};
 use futures::executor;
 use log::warn;
 use serde::Deserialize;
@@ -20,15 +20,7 @@ pub struct RoutingServiceCfg {
 
 impl RoutingServerCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("routing").is_ok() {
-            config
-                .extract_inner("routing")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
+        from_config_or_exit("routing")
     }
 }
 

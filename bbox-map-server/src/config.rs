@@ -1,4 +1,4 @@
-use bbox_common::config::config_error_exit;
+use bbox_common::config::from_config_or_exit;
 use once_cell::sync::OnceCell;
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use serde::Deserialize;
@@ -67,15 +67,7 @@ impl Default for WmsServerCfg {
 
 impl WmsServerCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("wmsserver").is_ok() {
-            config
-                .extract_inner("wmsserver")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
+        from_config_or_exit("wmsserver")
     }
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())

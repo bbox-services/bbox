@@ -1,4 +1,4 @@
-use bbox_common::config::config_error_exit;
+use bbox_common::config::from_config_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -23,15 +23,7 @@ impl Default for WebserverCfg {
 
 impl WebserverCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("webserver").is_ok() {
-            config
-                .extract_inner("webserver")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
+        from_config_or_exit("webserver")
     }
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())
@@ -56,14 +48,6 @@ pub struct JaegerCfg {
 
 impl MetricsCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("metrics").is_ok() {
-            config
-                .extract_inner("metrics")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
+        from_config_or_exit("metrics")
     }
 }

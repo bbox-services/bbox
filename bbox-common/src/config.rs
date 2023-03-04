@@ -2,6 +2,7 @@ use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
 use once_cell::sync::OnceCell;
+use serde::Deserialize;
 use std::{env, process};
 
 /// Application configuration singleton
@@ -14,6 +15,31 @@ pub fn app_config() -> &'static Figment {
             ))
             .merge(Env::prefixed("BBOX_").split("__"))
     })
+}
+
+pub fn from_config_or_exit<'a, T: Default + Deserialize<'a>>(tag: &str) -> T {
+    let config = app_config();
+    if config.find_value(tag).is_ok() {
+        config
+            .extract_inner(tag)
+            .map_err(|err| config_error_exit(err))
+            .unwrap()
+    } else {
+        Default::default()
+    }
+}
+
+pub fn from_config_opt_or_exit<'a, T: Deserialize<'a>>(tag: &str) -> Option<T> {
+    let config = app_config();
+    config
+        .find_value(tag)
+        .map(|_| {
+            config
+                .extract_inner(tag)
+                .map_err(|err| config_error_exit(err))
+                .unwrap()
+        })
+        .ok()
 }
 
 pub fn config_error_exit<T: Display>(err: T) {

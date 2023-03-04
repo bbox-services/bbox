@@ -1,5 +1,5 @@
 use crate::qgis_plugins::QgisPluginRepoCfg;
-use bbox_common::config::config_error_exit;
+use bbox_common::config::from_config_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -18,14 +18,6 @@ pub struct StaticDirCfg {
 
 impl FileserverCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
-        if config.find_value("fileserver").is_ok() {
-            config
-                .extract_inner("fileserver")
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        } else {
-            Default::default()
-        }
+        from_config_or_exit("fileserver")
     }
 }
