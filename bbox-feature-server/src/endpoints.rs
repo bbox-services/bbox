@@ -62,7 +62,7 @@ async fn collection(
     req: HttpRequest,
     collection_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
-    if let Some(collection) = inventory.collection(&collection_id) {
+    if let Some(collection) = inventory.core_collection(&collection_id) {
         if html_accepted(&req).await {
             render_endpoint(
                 &TEMPLATES,
@@ -85,7 +85,7 @@ async fn features(
     collection_id: web::Path<String>,
     filter: web::Query<FilterParams>,
 ) -> Result<HttpResponse, Error> {
-    if let Some(collection) = inventory.collection(&collection_id) {
+    if let Some(collection) = inventory.core_collection(&collection_id) {
         if let Some(features) = inventory.collection_items(&collection_id, &filter).await {
             if html_accepted(&req).await {
                 render_endpoint(
@@ -113,7 +113,7 @@ async fn feature(
     path: web::Path<(String, String)>,
 ) -> Result<HttpResponse, Error> {
     let (collection_id, feature_id) = path.into_inner();
-    if let Some(collection) = inventory.collection(&collection_id) {
+    if let Some(collection) = inventory.core_collection(&collection_id) {
         if let Some(feature) = inventory.collection_item(&collection_id, &feature_id).await {
             if html_accepted(&req).await {
                 render_endpoint(

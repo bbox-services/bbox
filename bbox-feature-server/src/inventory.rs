@@ -1,6 +1,7 @@
 use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
 use crate::datasource::postgis::PgDatasource;
+use crate::datasource::CollectionInfo;
 use crate::datasource::{CollectionDatasource, Datasource};
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
@@ -12,11 +13,18 @@ use std::collections::HashMap;
 #[derive(Clone)]
 pub struct Inventory {
     // Key: collection_id
-    feat_collections: HashMap<String, CoreCollection>,
+    feat_collections: HashMap<String, FeatureCollection>,
     // Key: File path or URL
     datasources: HashMap<String, Datasource>,
     // Key: collection_id, Value: datasources key
     collections_ds: HashMap<String, String>,
+}
+
+#[derive(Clone)]
+pub struct FeatureCollection {
+    pub collection: CoreCollection,
+    //ds_id: &str,
+    pub info: CollectionInfo,
 }
 
 impl Inventory {
@@ -89,21 +97,30 @@ impl Inventory {
         inventory
     }
 
-    fn add_collections(&mut self, feat_collections: Vec<CoreCollection>, ds_key: &str) {
-        for collection in feat_collections {
-            let id = collection.id.clone();
+    fn add_collections(&mut self, feat_collections: Vec<FeatureCollection>, ds_key: &str) {
+        for fc in feat_collections {
+            let id = fc.collection.id.clone();
             // TODO: Handle name collisions
-            self.feat_collections.insert(id.clone(), collection);
+            self.feat_collections.insert(id.clone(), fc);
             self.collections_ds.insert(id, ds_key.to_string());
         }
     }
 
     /// Return all collections as vector
     pub fn collections(&self) -> Vec<CoreCollection> {
-        self.feat_collections.values().cloned().collect()
+        self.feat_collections
+            .values()
+            .map(|fc| fc.collection.clone())
+            .collect()
     }
 
-    pub fn collection(&self, collection_id: &str) -> Option<&CoreCollection> {
+    pub fn core_collection(&self, collection_id: &str) -> Option<&CoreCollection> {
+        self.feat_collections
+            .get(collection_id)
+            .map(|fc| &fc.collection)
+    }
+
+    fn collection(&self, collection_id: &str) -> Option<&FeatureCollection> {
         self.feat_collections.get(collection_id)
     }
 
@@ -112,11 +129,15 @@ impl Inventory {
         collection_id: &str,
         filter: &FilterParams,
     ) -> Option<CoreFeatures> {
-        let Some(ds) = self.datasource(collection_id) else {
-                warn!("Ignoring error getting datasource for {collection_id}");
+        let Some(fc) = self.collection(collection_id) else {
+                warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let Ok(items) = ds.items(collection_id, filter).await else {
+        let Some(ds) = self.datasource(collection_id) else {
+                warn!("Ignoring error getting datasource items for {collection_id}");
+                return None
+            };
+        let Ok(items) = ds.items(&fc.info, filter).await else {
                 warn!("Ignoring error getting collection items for {collection_id}");
                 return None
             };
@@ -176,11 +197,18 @@ impl Inventory {
         collection_id: &str,
         feature_id: &str,
     ) -> Option<CoreFeature> {
+        let Some(fc) = self.collection(collection_id) else {
+                warn!("Ignoring error getting collection {collection_id}");
+                return None
+            };
         let Some(ds) = self.datasource(collection_id) else {
                 warn!("Ignoring error getting datasource for {collection_id}");
                 return None
             };
-        let feature = ds.item(collection_id, feature_id).await.unwrap_or(None);
+        let feature = ds
+            .item(&fc.info, collection_id, feature_id)
+            .await
+            .unwrap_or(None);
         feature
     }
 }
@@ -196,7 +224,7 @@ mod tests {
         assert!(inventory.collections().len() >= 3);
         assert_eq!(
             inventory
-                .collection("ne_10m_lakes")
+                .core_collection("ne_10m_lakes")
                 .map(|col| col.id.clone()),
             Some("ne_10m_lakes".to_string())
         );

@@ -1,6 +1,7 @@
-use crate::datasource::gpkg::GpkgDatasource;
-use crate::datasource::postgis::PgDatasource;
+use crate::datasource::gpkg::{GpkgCollectionInfo, GpkgDatasource};
+use crate::datasource::postgis::{PgCollectionInfo, PgDatasource};
 use crate::endpoints::FilterParams;
+use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_common::ogcapi::*;
 use sqlx::Result;
@@ -14,11 +15,22 @@ pub enum Datasource {
     PgDatasource(PgDatasource),
 }
 
+#[derive(Clone, Debug)]
+pub enum CollectionInfo {
+    GpkgCollectionInfo(GpkgCollectionInfo),
+    PgCollectionInfo(PgCollectionInfo),
+}
+
 #[async_trait]
 pub trait CollectionDatasource {
-    async fn collections(&self) -> Result<Vec<CoreCollection>>;
-    async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult>;
-    async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
+    async fn collections(&self) -> Result<Vec<FeatureCollection>>;
+    async fn items(&self, info: &CollectionInfo, filter: &FilterParams) -> Result<ItemsResult>;
+    async fn item(
+        &self,
+        info: &CollectionInfo,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Result<Option<CoreFeature>>;
 }
 
 pub struct ItemsResult {
@@ -31,8 +43,7 @@ impl Datasource {
     pub fn collection_ds(&self) -> &dyn CollectionDatasource {
         match self {
             Datasource::GpkgDatasource(ds) => ds as &dyn CollectionDatasource,
-            // Datasource::PgDatasource(ds) => ds as &dyn CollectionDatasource
-            _ => todo!(),
+            Datasource::PgDatasource(ds) => ds as &dyn CollectionDatasource,
         }
     }
 }

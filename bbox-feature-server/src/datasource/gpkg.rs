@@ -1,14 +1,27 @@
-use crate::datasource::{CollectionDatasource, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
 use crate::endpoints::FilterParams;
+use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_common::ogcapi::*;
+use futures::TryStreamExt;
 use geozero::{geojson, wkb};
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Result, Row, TypeInfo};
 
 #[derive(Clone)]
-pub struct GpkgDatasource(SqlitePool);
+pub struct GpkgDatasource {
+    pool: SqlitePool,
+}
+
+#[derive(Clone, Debug)]
+pub struct GpkgCollectionInfo {
+    table: String,
+    geometry_column: String,
+    // geometry_type_name: String,
+    /// Primary key column, None if multi column key.
+    pk_column: Option<String>,
+}
 
 impl GpkgDatasource {
     pub async fn new_pool(gpkg: &str) -> Result<Self> {
@@ -18,64 +31,73 @@ impl GpkgDatasource {
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(GpkgDatasource(pool))
+        Ok(GpkgDatasource { pool })
     }
 }
 
 #[async_trait]
 impl CollectionDatasource for GpkgDatasource {
-    async fn collections(&self) -> Result<Vec<CoreCollection>> {
+    async fn collections(&self) -> Result<Vec<FeatureCollection>> {
+        let mut collections = Vec::new();
         let sql = r#"
-        SELECT contents.*
-        FROM gpkg_contents contents
-          JOIN gpkg_spatial_ref_sys refsys ON refsys.srs_id = contents.srs_id
-          --JOIN gpkg_geometry_columns geom_cols ON geom_cols.table_name = contents.table_name
-        WHERE data_type='features'
-    "#;
-        let rows = sqlx::query(&sql).fetch_all(&self.0).await?;
-        let collections = rows
-            .iter()
-            .map(|row| {
-                let id: String = row.try_get("table_name")?;
-                let title: String = row.try_get("identifier")?;
+            SELECT contents.*
+            FROM gpkg_contents contents
+              JOIN gpkg_spatial_ref_sys refsys ON refsys.srs_id = contents.srs_id
+              --JOIN gpkg_geometry_columns geom_cols ON geom_cols.table_name = contents.table_name
+            WHERE data_type='features'
+        "#;
+        let mut rows = sqlx::query(&sql).fetch(&self.pool);
+        while let Some(row) = rows.try_next().await? {
+            let table_name: &str = row.try_get("table_name")?;
+            let id = table_name.to_string();
+            let title: String = row.try_get("identifier")?;
 
-                let collection = CoreCollection {
-                    id: id.clone(),
-                    title: Some(title.clone()),
-                    description: row.try_get("description")?,
-                    extent: Some(CoreExtent {
-                        spatial: Some(CoreExtentSpatial {
-                            bbox: vec![vec![
-                                row.try_get("min_x")?,
-                                row.try_get("min_y")?,
-                                row.try_get("max_x")?,
-                                row.try_get("max_y")?,
-                            ]],
-                            crs: None,
-                        }),
-                        temporal: None,
+            let collection = CoreCollection {
+                id: id.clone(),
+                title: Some(title.clone()),
+                description: row.try_get("description")?,
+                extent: Some(CoreExtent {
+                    spatial: Some(CoreExtentSpatial {
+                        bbox: vec![vec![
+                            row.try_get("min_x")?,
+                            row.try_get("min_y")?,
+                            row.try_get("max_x")?,
+                            row.try_get("max_y")?,
+                        ]],
+                        crs: None,
                     }),
-                    item_type: None,
-                    crs: vec![],
-                    links: vec![ApiLink {
-                        href: format!("/collections/{id}/items"),
-                        rel: Some("items".to_string()),
-                        type_: Some("application/geo+json".to_string()),
-                        title: Some(title),
-                        hreflang: None,
-                        length: None,
-                    }],
-                };
-                Ok(collection)
-            })
-            .collect::<Result<Vec<_>>>()?;
+                    temporal: None,
+                }),
+                item_type: None,
+                crs: vec![],
+                links: vec![ApiLink {
+                    href: format!("/collections/{id}/items"),
+                    rel: Some("items".to_string()),
+                    type_: Some("application/geo+json".to_string()),
+                    title: Some(title),
+                    hreflang: None,
+                    length: None,
+                }],
+            };
+            let info = table_info(&self.pool, table_name).await?;
+            let fc = FeatureCollection {
+                collection,
+                info: CollectionInfo::GpkgCollectionInfo(info),
+            };
+            collections.push(fc);
+        }
         Ok(collections)
     }
 
-    async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult> {
-        let table_info = table_info(&self.0, table).await?;
+    async fn items(&self, info: &CollectionInfo, filter: &FilterParams) -> Result<ItemsResult> {
+        let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
+            panic!("Wrong CollectionInfo type");
+        };
 
-        let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table}"); // TODO: Sanitize table name
+        let mut sql = format!(
+            "SELECT *, count(*) OVER() AS __total_cnt FROM {}",
+            &table_info.table
+        ); // TODO: Sanitize table name
         let limit = filter.limit_or_default();
         if limit > 0 {
             sql.push_str(&format!(" LIMIT {limit}"));
@@ -83,7 +105,7 @@ impl CollectionDatasource for GpkgDatasource {
         if let Some(offset) = filter.offset {
             sql.push_str(&format!(" OFFSET {offset}"));
         }
-        let rows = sqlx::query(&sql).fetch_all(&self.0).await?;
+        let rows = sqlx::query(&sql).fetch_all(&self.pool).await?;
         let number_matched = if let Some(row) = rows.first() {
             row.try_get::<u32, _>("__total_cnt")? as u64
         } else {
@@ -102,8 +124,16 @@ impl CollectionDatasource for GpkgDatasource {
         Ok(result)
     }
 
-    async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
-        let table_info = table_info(&self.0, table).await?;
+    async fn item(
+        &self,
+        info: &CollectionInfo,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Result<Option<CoreFeature>> {
+        let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
+            panic!("Wrong CollectionInfo type");
+        };
+        let table = &table_info.table;
 
         let sql = format!(
             "SELECT * FROM {table} WHERE {} = ?", // TODO: Sanitize table name
@@ -111,13 +141,13 @@ impl CollectionDatasource for GpkgDatasource {
         );
         if let Some(row) = sqlx::query(&sql)
             .bind(feature_id)
-            .fetch_optional(&self.0)
+            .fetch_optional(&self.pool)
             .await?
         {
             let mut item = row_to_feature(&row, &table_info)?;
             item.links = vec![
                 ApiLink {
-                    href: format!("/collections/{table}/items/{feature_id}"),
+                    href: format!("/collections/{collection_id}/items/{feature_id}"),
                     rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("this document".to_string()),
@@ -125,7 +155,7 @@ impl CollectionDatasource for GpkgDatasource {
                     length: None,
                 },
                 ApiLink {
-                    href: format!("/collections/{table}"),
+                    href: format!("/collections/{collection_id}"),
                     rel: Some("collection".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("the collection document".to_string()),
@@ -140,15 +170,7 @@ impl CollectionDatasource for GpkgDatasource {
     }
 }
 
-struct TableInfo {
-    geom_column: String,
-    #[allow(dead_code)]
-    geometry_type_name: String,
-    /// Primary key column, None if multi column key.
-    pk_column: Option<String>,
-}
-
-async fn table_info(pool: &SqlitePool, table: &str) -> Result<TableInfo> {
+async fn table_info(pool: &SqlitePool, table: &str) -> Result<GpkgCollectionInfo> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -163,26 +185,26 @@ async fn table_info(pool: &SqlitePool, table: &str) -> Result<TableInfo> {
         .bind(table)
         .fetch_one(pool)
         .await?;
-    let geom_column: String = row.try_get("column_name")?;
-    let geometry_type_name: String = row.try_get("geometry_type_name")?;
+    let geometry_column: String = row.try_get("column_name")?;
+    let _geometry_type_name: String = row.try_get("geometry_type_name")?;
     let pksize: u16 = row.try_get("pksize")?;
     let pk_column: Option<String> = if pksize == 1 {
         Some(row.try_get("pk")?)
     } else {
         None
     };
-    Ok(TableInfo {
-        geom_column,
-        geometry_type_name,
+    Ok(GpkgCollectionInfo {
+        table: table.to_string(),
+        geometry_column,
         pk_column,
     })
 }
 
-fn row_to_feature(row: &SqliteRow, table_info: &TableInfo) -> Result<CoreFeature> {
+fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionInfo) -> Result<CoreFeature> {
     let mut id = None;
     let mut properties = json!({});
     for col in row.columns() {
-        if col.name() == table_info.geom_column {
+        if col.name() == table_info.geometry_column {
             // Skip geometry
         } else if col.name() == "__total_cnt" {
             // Skip count
@@ -203,7 +225,8 @@ fn row_to_feature(row: &SqliteRow, table_info: &TableInfo) -> Result<CoreFeature
             }
         }
     }
-    let wkb: wkb::Decode<geojson::GeoJsonString> = row.try_get(table_info.geom_column.as_str())?;
+    let wkb: wkb::Decode<geojson::GeoJsonString> =
+        row.try_get(table_info.geometry_column.as_str())?;
     let geom = wkb.geometry.unwrap();
 
     let item = CoreFeature {
@@ -231,7 +254,7 @@ mod tests {
         assert_eq!(
             collections
                 .iter()
-                .map(|col| col.id.clone())
+                .map(|col| col.collection.id.clone())
                 .collect::<Vec<_>>(),
             vec![
                 "ne_10m_rivers_lake_centerlines",
@@ -247,7 +270,15 @@ mod tests {
         let pool = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
-        let items = pool.items("ne_10m_lakes", &filter).await.unwrap();
+        let info = GpkgCollectionInfo {
+            table: "ne_10m_lakes".to_string(),
+            geometry_column: "geom".to_string(),
+            pk_column: Some("fid".to_string()),
+        };
+        let items = pool
+            .items(&CollectionInfo::GpkgCollectionInfo(info), &filter)
+            .await
+            .unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 }
