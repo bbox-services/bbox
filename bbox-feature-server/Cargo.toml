@@ -19,6 +19,7 @@ once_cell = { workspace = true }
 geozero = { workspace = true, features = [ "with-gpkg" ] }
 sqlx = { workspace = true }
 futures = { workspace = true }
+async-trait = "0.1.65"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }

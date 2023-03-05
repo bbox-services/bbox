@@ -1,5 +1,6 @@
-use crate::datasource::ItemsResult;
+use crate::datasource::{CollectionDatasource, ItemsResult};
 use crate::endpoints::FilterParams;
+use async_trait::async_trait;
 use bbox_common::ogcapi::*;
 use geozero::{geojson, wkb};
 use serde_json::json;
@@ -21,8 +22,9 @@ impl GpkgDatasource {
     }
 }
 
-impl GpkgDatasource {
-    pub async fn collections(&self) -> Result<Vec<CoreCollection>> {
+#[async_trait]
+impl CollectionDatasource for GpkgDatasource {
+    async fn collections(&self) -> Result<Vec<CoreCollection>> {
         let sql = r#"
         SELECT contents.*
         FROM gpkg_contents contents
@@ -70,7 +72,7 @@ impl GpkgDatasource {
         Ok(collections)
     }
 
-    pub async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult> {
+    async fn items(&self, table: &str, filter: &FilterParams) -> Result<ItemsResult> {
         let table_info = table_info(&self.0, table).await?;
 
         let mut sql = format!("SELECT *, count(*) OVER() AS __total_cnt FROM {table}"); // TODO: Sanitize table name
@@ -100,7 +102,7 @@ impl GpkgDatasource {
         Ok(result)
     }
 
-    pub async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
+    async fn item(&self, table: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
         let table_info = table_info(&self.0, table).await?;
 
         let sql = format!(

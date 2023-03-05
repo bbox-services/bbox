@@ -1,6 +1,5 @@
 use crate::config::DatasourceCfg;
-use crate::datasource::gpkg::GpkgDatasource;
-use crate::datasource::DsConnections;
+use crate::datasource::{CollectionDatasource, DsConnections};
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
@@ -64,8 +63,8 @@ impl Inventory {
         inventory
     }
 
-    fn datasource(&self, gpkg: &str) -> Option<&GpkgDatasource> {
-        self.ds_connections.gpkg_ds(gpkg)
+    fn datasource(&self, gpkg: &str) -> Option<&dyn CollectionDatasource> {
+        self.ds_connections.datasource(gpkg)
     }
 
     fn add_collections(&mut self, feat_collections: FeatureCollection) {
