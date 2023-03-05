@@ -1,28 +1,56 @@
 use crate::config::DatasourceCfg;
-use crate::datasource::{CollectionDatasource, DsConnections};
+use crate::datasource::gpkg::GpkgDatasource;
+use crate::datasource::postgis::PgDatasource;
+use crate::datasource::{CollectionDatasource, Datasource};
 use crate::endpoints::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
+use sqlx::Result;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct Inventory {
-    feat_collections: Vec<FeatureCollection>,
-    ds_connections: DsConnections,
-}
-
-#[derive(Clone, Debug)]
-struct FeatureCollection {
-    gpkg_path: String,
-    collections: Vec<CoreCollection>,
+    // Key: collection_id
+    feat_collections: HashMap<String, CoreCollection>,
+    // Key: File path or URL
+    datasources: HashMap<String, Datasource>,
+    // Key: collection_id, Value: datasources key
+    collections_ds: HashMap<String, String>,
 }
 
 impl Inventory {
     pub fn new() -> Self {
         Inventory {
-            feat_collections: Vec::new(),
-            ds_connections: DsConnections::new(),
+            feat_collections: HashMap::new(),
+            datasources: HashMap::new(),
+            collections_ds: HashMap::new(),
         }
+    }
+
+    async fn add_gpkg_ds(&mut self, gpkg: &str) -> Result<&dyn CollectionDatasource> {
+        let ds = Datasource::GpkgDatasource(GpkgDatasource::new_pool(gpkg).await?);
+        self.datasources.insert(gpkg.to_string(), ds);
+        let dsref = self.collections_ds(gpkg).expect("datasources HashMap");
+        Ok(dsref)
+    }
+
+    async fn add_pg_ds(&mut self, url: &str) -> Result<()> {
+        let ds = Datasource::PgDatasource(PgDatasource::new_pool(url).await?);
+        self.datasources.insert(url.to_string(), ds);
+        Ok(())
+    }
+
+    fn collections_ds(&self, ds_key: &str) -> Option<&dyn CollectionDatasource> {
+        self.datasources.get(ds_key).map(|ds| ds.collection_ds())
+    }
+
+    /// Get datasource of collection
+    fn datasource(&self, collection_id: &str) -> Option<&dyn CollectionDatasource> {
+        let Some(key) = self.collections_ds.get(collection_id) else {
+                return None
+            };
+        self.collections_ds(key)
     }
 
     pub async fn scan(config: &DatasourceCfg) -> Inventory {
@@ -34,23 +62,21 @@ impl Inventory {
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                if let Err(e) = inventory.ds_connections.add_gpkg_ds(&pathstr).await {
-                    warn!("Failed to create connection pool for '{pathstr}': {e}");
-                    continue;
-                }
-                if let Some(ds) = inventory.datasource(&pathstr) {
-                    if let Ok(collections) = ds.collections().await {
-                        let fc = FeatureCollection {
-                            gpkg_path: pathstr.to_string(),
-                            collections,
-                        };
-                        inventory.add_collections(fc);
+                match inventory.add_gpkg_ds(&pathstr).await {
+                    Ok(ds) => {
+                        if let Ok(collections) = ds.collections().await {
+                            inventory.add_collections(collections, &pathstr);
+                        }
+                    }
+                    Err(e) => {
+                        warn!("Failed to create connection pool for '{pathstr}': {e}");
+                        continue;
                     }
                 }
             }
         }
         for postgis_ds in &config.postgis {
-            if let Err(e) = inventory.ds_connections.add_pg_ds(&postgis_ds.url).await {
+            if let Err(e) = inventory.add_pg_ds(&postgis_ds.url).await {
                 warn!(
                     "Failed to create connection pool for '{}': {e}",
                     &postgis_ds.url
@@ -59,44 +85,26 @@ impl Inventory {
             }
         }
         // Close all connections, they will be reopendend on demand
-        inventory.ds_connections.reset_pool().await.ok();
+        // TODO: inventory.reset_pool().await.ok();
         inventory
     }
 
-    fn datasource(&self, gpkg: &str) -> Option<&dyn CollectionDatasource> {
-        self.ds_connections.datasource(gpkg)
+    fn add_collections(&mut self, feat_collections: Vec<CoreCollection>, ds_key: &str) {
+        for collection in feat_collections {
+            let id = collection.id.clone();
+            // TODO: Handle name collisions
+            self.feat_collections.insert(id.clone(), collection);
+            self.collections_ds.insert(id, ds_key.to_string());
+        }
     }
 
-    fn add_collections(&mut self, feat_collections: FeatureCollection) {
-        self.feat_collections.push(feat_collections);
-    }
-
+    /// Return all collections as vector
     pub fn collections(&self) -> Vec<CoreCollection> {
-        self.feat_collections
-            .iter()
-            .cloned()
-            .map(|fc| fc.collections)
-            .flatten()
-            .collect()
-    }
-
-    fn feat_collection(&self, collection_id: &str) -> Option<&FeatureCollection> {
-        self.feat_collections.iter().find(|fc| {
-            fc.collections
-                .iter()
-                .find(|coll| &coll.id == collection_id)
-                .is_some()
-        })
+        self.feat_collections.values().cloned().collect()
     }
 
     pub fn collection(&self, collection_id: &str) -> Option<&CoreCollection> {
-        self.feat_collection(collection_id)
-            .and_then(|fc| fc.collections.iter().find(|coll| &coll.id == collection_id))
-    }
-
-    pub fn collection_path(&self, collection_id: &str) -> Option<&str> {
-        self.feat_collection(collection_id)
-            .map(|fc| fc.gpkg_path.as_str())
+        self.feat_collections.get(collection_id)
     }
 
     pub async fn collection_items(
@@ -104,67 +112,63 @@ impl Inventory {
         collection_id: &str,
         filter: &FilterParams,
     ) -> Option<CoreFeatures> {
-        if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let Some(ds) = self.datasource(gpkg_path) else {
-                warn!("Ignoring error getting pool for {gpkg_path}");
+        let Some(ds) = self.datasource(collection_id) else {
+                warn!("Ignoring error getting datasource for {collection_id}");
                 return None
             };
-            let Ok(items) = ds.items(collection_id, filter).await else {
-                warn!("Ignoring error getting collection items for {gpkg_path}");
+        let Ok(items) = ds.items(collection_id, filter).await else {
+                warn!("Ignoring error getting collection items for {collection_id}");
                 return None
             };
-            let mut features = CoreFeatures {
-                type_: "FeatureCollection".to_string(),
-                links: vec![
-                    ApiLink {
-                        href: format!("/collections/{collection_id}/items"),
-                        rel: Some("self".to_string()),
-                        type_: Some("text/html".to_string()),
-                        title: Some("this document".to_string()),
-                        hreflang: None,
-                        length: None,
-                    },
-                    ApiLink {
-                        href: format!("/collections/{collection_id}/items.json"),
-                        rel: Some("self".to_string()),
-                        type_: Some("application/geo+json".to_string()),
-                        title: Some("this document".to_string()),
-                        hreflang: None,
-                        length: None,
-                    },
-                ],
-                time_stamp: None, // time when the response was generated
-                number_matched: Some(items.number_matched),
-                number_returned: Some(items.number_returned),
-                features: items.features,
+        let mut features = CoreFeatures {
+            type_: "FeatureCollection".to_string(),
+            links: vec![
+                ApiLink {
+                    href: format!("/collections/{collection_id}/items"),
+                    rel: Some("self".to_string()),
+                    type_: Some("text/html".to_string()),
+                    title: Some("this document".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+                ApiLink {
+                    href: format!("/collections/{collection_id}/items.json"),
+                    rel: Some("self".to_string()),
+                    type_: Some("application/geo+json".to_string()),
+                    title: Some("this document".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+            ],
+            time_stamp: None, // time when the response was generated
+            number_matched: Some(items.number_matched),
+            number_returned: Some(items.number_returned),
+            features: items.features,
+        };
+        if items.number_matched > items.number_returned {
+            let mut add_link = |link: FilterParams, rel: &str| {
+                let mut params = link.as_args();
+                if params.len() > 0 {
+                    params.insert(0, '?');
+                }
+                features.links.push(ApiLink {
+                    href: format!("/collections/{collection_id}/items{params}"),
+                    rel: Some(rel.to_string()),
+                    type_: Some("text/html".to_string()),
+                    title: Some(rel.to_string()),
+                    hreflang: None,
+                    length: None,
+                });
             };
-            if items.number_matched > items.number_returned {
-                let mut add_link = |link: FilterParams, rel: &str| {
-                    let mut params = link.as_args();
-                    if params.len() > 0 {
-                        params.insert(0, '?');
-                    }
-                    features.links.push(ApiLink {
-                        href: format!("/collections/{collection_id}/items{params}"),
-                        rel: Some(rel.to_string()),
-                        type_: Some("text/html".to_string()),
-                        title: Some(rel.to_string()),
-                        hreflang: None,
-                        length: None,
-                    });
-                };
 
-                if let Some(prev) = filter.prev() {
-                    add_link(prev, "prev");
-                }
-                if let Some(next) = filter.next(items.number_matched) {
-                    add_link(next, "next");
-                }
+            if let Some(prev) = filter.prev() {
+                add_link(prev, "prev");
             }
-            return Some(features);
-        } else {
-            None
+            if let Some(next) = filter.next(items.number_matched) {
+                add_link(next, "next");
+            }
         }
+        Some(features)
     }
 
     pub async fn collection_item(
@@ -172,16 +176,12 @@ impl Inventory {
         collection_id: &str,
         feature_id: &str,
     ) -> Option<CoreFeature> {
-        if let Some(gpkg_path) = self.collection_path(collection_id) {
-            let Some(ds) = self.datasource(gpkg_path) else {
-                warn!("Ignoring error getting pool for {gpkg_path}");
+        let Some(ds) = self.datasource(collection_id) else {
+                warn!("Ignoring error getting datasource for {collection_id}");
                 return None
             };
-            let feature = ds.item(collection_id, feature_id).await.unwrap_or(None);
-            feature
-        } else {
-            None
-        }
+        let feature = ds.item(collection_id, feature_id).await.unwrap_or(None);
+        feature
     }
 }
 
