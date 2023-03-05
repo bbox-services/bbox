@@ -16,15 +16,14 @@ pub struct Inventory {
     feat_collections: HashMap<String, FeatureCollection>,
     // Key: File path or URL
     datasources: HashMap<String, Datasource>,
-    // Key: collection_id, Value: datasources key
-    collections_ds: HashMap<String, String>,
 }
 
 #[derive(Clone)]
+/// Collection metadata with source specific infos like table name.
 pub struct FeatureCollection {
     pub collection: CoreCollection,
-    //ds_id: &str,
     pub info: CollectionInfo,
+    pub ds_id: String,
 }
 
 impl Inventory {
@@ -32,7 +31,6 @@ impl Inventory {
         Inventory {
             feat_collections: HashMap::new(),
             datasources: HashMap::new(),
-            collections_ds: HashMap::new(),
         }
     }
 
@@ -43,22 +41,23 @@ impl Inventory {
         Ok(dsref)
     }
 
-    async fn add_pg_ds(&mut self, url: &str) -> Result<()> {
+    async fn add_pg_ds(&mut self, url: &str) -> Result<&dyn CollectionDatasource> {
         let ds = Datasource::PgDatasource(PgDatasource::new_pool(url).await?);
         self.datasources.insert(url.to_string(), ds);
-        Ok(())
+        let dsref = self.collections_ds(url).expect("datasources HashMap");
+        Ok(dsref)
     }
 
-    fn collections_ds(&self, ds_key: &str) -> Option<&dyn CollectionDatasource> {
-        self.datasources.get(ds_key).map(|ds| ds.collection_ds())
+    fn collections_ds(&self, ds_id: &str) -> Option<&dyn CollectionDatasource> {
+        self.datasources.get(ds_id).map(|ds| ds.collection_ds())
     }
 
     /// Get datasource of collection
     fn datasource(&self, collection_id: &str) -> Option<&dyn CollectionDatasource> {
-        let Some(key) = self.collections_ds.get(collection_id) else {
+        let Some(ds_id) = self.collection(collection_id).map(|fc| &fc.ds_id) else {
                 return None
             };
-        self.collections_ds(key)
+        self.collections_ds(ds_id)
     }
 
     pub async fn scan(config: &DatasourceCfg) -> Inventory {
@@ -73,7 +72,7 @@ impl Inventory {
                 match inventory.add_gpkg_ds(&pathstr).await {
                     Ok(ds) => {
                         if let Ok(collections) = ds.collections().await {
-                            inventory.add_collections(collections, &pathstr);
+                            inventory.add_collections(collections);
                         }
                     }
                     Err(e) => {
@@ -84,12 +83,19 @@ impl Inventory {
             }
         }
         for postgis_ds in &config.postgis {
-            if let Err(e) = inventory.add_pg_ds(&postgis_ds.url).await {
-                warn!(
-                    "Failed to create connection pool for '{}': {e}",
-                    &postgis_ds.url
-                );
-                continue;
+            match inventory.add_pg_ds(&postgis_ds.url).await {
+                Ok(ds) => {
+                    if let Ok(collections) = ds.collections().await {
+                        inventory.add_collections(collections);
+                    }
+                }
+                Err(e) => {
+                    warn!(
+                        "Failed to create connection pool for '{}': {e}",
+                        &postgis_ds.url
+                    );
+                    continue;
+                }
             }
         }
         // Close all connections, they will be reopendend on demand
@@ -97,12 +103,11 @@ impl Inventory {
         inventory
     }
 
-    fn add_collections(&mut self, feat_collections: Vec<FeatureCollection>, ds_key: &str) {
+    fn add_collections(&mut self, feat_collections: Vec<FeatureCollection>) {
         for fc in feat_collections {
             let id = fc.collection.id.clone();
             // TODO: Handle name collisions
             self.feat_collections.insert(id.clone(), fc);
-            self.collections_ds.insert(id, ds_key.to_string());
         }
     }
 

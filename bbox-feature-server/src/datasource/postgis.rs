@@ -9,6 +9,7 @@ use sqlx::{Result, Row};
 
 #[derive(Clone)]
 pub struct PgDatasource {
+    id: String,
     pool: PgPool,
 }
 
@@ -26,7 +27,10 @@ impl PgDatasource {
             .max_connections(8)
             .connect(url)
             .await?;
-        Ok(PgDatasource { pool })
+        Ok(PgDatasource {
+            id: url.to_string(),
+            pool,
+        })
     }
 }
 
@@ -78,6 +82,7 @@ impl CollectionDatasource for PgDatasource {
             let fc = FeatureCollection {
                 collection,
                 info: CollectionInfo::PgCollectionInfo(info),
+                ds_id: self.id.clone(),
             };
             collections.push(fc);
         }

@@ -11,6 +11,7 @@ use sqlx::{Column, Result, Row, TypeInfo};
 
 #[derive(Clone)]
 pub struct GpkgDatasource {
+    id: String,
     pool: SqlitePool,
 }
 
@@ -31,7 +32,10 @@ impl GpkgDatasource {
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(GpkgDatasource { pool })
+        Ok(GpkgDatasource {
+            id: gpkg.to_string(),
+            pool,
+        })
     }
 }
 
@@ -83,6 +87,7 @@ impl CollectionDatasource for GpkgDatasource {
             let fc = FeatureCollection {
                 collection,
                 info: CollectionInfo::GpkgCollectionInfo(info),
+                ds_id: self.id.clone(),
             };
             collections.push(fc);
         }
