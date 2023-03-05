@@ -194,7 +194,7 @@ async fn table_info(pool: &SqlitePool, table: &str) -> Result<GpkgCollectionInfo
     let _geometry_type_name: String = row.try_get("geometry_type_name")?;
     let pksize: u16 = row.try_get("pksize")?;
     let pk_column: Option<String> = if pksize == 1 {
-        Some(row.try_get("pk")?)
+        row.try_get("pk")?
     } else {
         None
     };

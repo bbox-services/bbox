@@ -142,10 +142,13 @@ impl Inventory {
                 warn!("Ignoring error getting datasource items for {collection_id}");
                 return None
             };
-        let Ok(items) = ds.items(&fc.info, filter).await else {
-                warn!("Ignoring error getting collection items for {collection_id}");
-                return None
-            };
+        let items = match ds.items(&fc.info, filter).await {
+            Ok(items) => items,
+            Err(e) => {
+                warn!("Ignoring error getting collection items for {collection_id}: {e}");
+                return None;
+            }
+        };
         let mut features = CoreFeatures {
             type_: "FeatureCollection".to_string(),
             links: vec![
@@ -210,10 +213,13 @@ impl Inventory {
                 warn!("Ignoring error getting datasource for {collection_id}");
                 return None
             };
-        let feature = ds
-            .item(&fc.info, collection_id, feature_id)
-            .await
-            .unwrap_or(None);
+        let feature = match ds.item(&fc.info, collection_id, feature_id).await {
+            Ok(item) => item,
+            Err(e) => {
+                warn!("Ignoring error getting collection item for {collection_id}: {e}");
+                None
+            }
+        };
         feature
     }
 }

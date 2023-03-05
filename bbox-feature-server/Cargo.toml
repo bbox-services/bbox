@@ -16,7 +16,7 @@ log = { workspace = true }
 rust-embed = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
-geozero = { workspace = true, features = [ "with-gpkg" ] }
+geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 sqlx = { workspace = true }
 futures = { workspace = true }
 async-trait = "0.1.65"
