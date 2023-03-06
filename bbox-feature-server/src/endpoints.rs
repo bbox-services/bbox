@@ -14,7 +14,9 @@ pub struct FilterParams {
     // Pagination
     pub limit: Option<u32>,
     pub offset: Option<u32>,
-    // TODO: bbox, interval
+    // Filter
+    pub bbox: Option<String>,
+    // TODO: interval
 }
 
 impl FilterParams {
@@ -48,6 +50,7 @@ impl FilterParams {
         vec![
             self.limit.map(|v| format!("limit={v}")),
             self.offset.map(|v| format!("offset={v}")),
+            self.bbox.as_ref().map(|v| format!("bbox={v}")),
         ]
         .into_iter()
         .filter_map(|v| v)
@@ -186,11 +189,16 @@ mod tests {
         let filter = FilterParams {
             limit: Some(10),
             offset: Some(20),
+            bbox: Some("1.0,2.2,3.33,4.444".to_string()),
         };
-        assert_eq!(filter.as_args(), "limit=10&offset=20");
+        assert_eq!(
+            filter.as_args(),
+            "limit=10&offset=20&bbox=1.0,2.2,3.33,4.444"
+        );
         let filter = FilterParams {
             limit: None,
             offset: Some(20),
+            bbox: None,
         };
         assert_eq!(filter.as_args(), "offset=20");
     }

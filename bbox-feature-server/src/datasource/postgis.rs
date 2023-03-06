@@ -110,6 +110,23 @@ impl CollectionDatasource for PgDatasource {
                FROM "{schema}"."{table}" t"#,
             )
         };
+        if let Some(bboxstr) = &filter.bbox {
+            let bbox: Vec<f64> = bboxstr
+                .split(",")
+                .map(|v| v.parse().expect("Error parsing bbox float values"))
+                .collect();
+            if bbox.len() == 4 || bbox.len() == 6 {
+                sql.push_str(&format!(
+                    " WHERE {geometry_column} && ST_MakeEnvelope({xmin}, {ymin}, {xmax}, {ymax})",
+                    xmin = bbox[0],
+                    ymin = bbox[1],
+                    xmax = bbox[2],
+                    ymax = bbox[3],
+                ));
+            } else {
+                warn!("Ignoring invalid bbox length");
+            }
+        }
         let limit = filter.limit_or_default();
         if limit > 0 {
             sql.push_str(&format!(" LIMIT {limit}"));
@@ -316,5 +333,29 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
+    }
+
+    #[tokio::test]
+    async fn pg_bbox_filter() {
+        let filter = FilterParams {
+            limit: Some(50),
+            offset: None,
+            bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
+            // WGS84: 5.690918,45.890008,10.964355,47.665387
+        };
+        let pool = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+            .await
+            .unwrap();
+        let info = PgCollectionInfo {
+            table_schema: "ne".to_string(),
+            table_name: "ne_10m_rivers_lake_centerlines".to_string(),
+            geometry_column: "wkb_geometry".to_string(),
+            pk_column: Some("fid".to_string()),
+        };
+        let items = pool
+            .items(&CollectionInfo::PgCollectionInfo(info), &filter)
+            .await
+            .unwrap();
+        assert_eq!(items.features.len(), 10);
     }
 }

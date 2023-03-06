@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use bbox_common::ogcapi::*;
 use futures::TryStreamExt;
 use geozero::{geojson, wkb};
+use log::warn;
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Result, Row, TypeInfo};
@@ -98,11 +99,13 @@ impl CollectionDatasource for GpkgDatasource {
         let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
             panic!("Wrong CollectionInfo type");
         };
-
         let mut sql = format!(
-            "SELECT *, count(*) OVER() AS __total_cnt FROM {}",
-            &table_info.table
-        ); // TODO: Sanitize table name
+            "SELECT *, count(*) OVER() AS __total_cnt FROM {table}",
+            table = &table_info.table
+        );
+        if let Some(_bboxstr) = &filter.bbox {
+            warn!("Ignoring bbox filter (not supported for this datasource)");
+        }
         let limit = filter.limit_or_default();
         if limit > 0 {
             sql.push_str(&format!(" LIMIT {limit}"));
@@ -138,11 +141,13 @@ impl CollectionDatasource for GpkgDatasource {
         let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
             panic!("Wrong CollectionInfo type");
         };
-        let table = &table_info.table;
-
+        let Some(pk) = &table_info.pk_column else {
+            warn!("Ignoring error getting item for {collection_id} without single primary key");
+            return Ok(None)
+        };
         let sql = format!(
-            "SELECT * FROM {table} WHERE {} = ?", // TODO: Sanitize table name
-            table_info.pk_column.as_ref().unwrap()
+            "SELECT * FROM {table} WHERE {pk} = ?",
+            table = &table_info.table,
         );
         if let Some(row) = sqlx::query(&sql)
             .bind(feature_id)
