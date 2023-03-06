@@ -202,4 +202,33 @@ mod tests {
         };
         assert_eq!(filter.as_args(), "offset=20");
     }
+
+    #[test]
+    fn prev_next() {
+        let filter = FilterParams {
+            limit: Some(10),
+            offset: Some(20),
+            bbox: None,
+        };
+        assert_eq!(filter.prev().unwrap().offset, Some(10));
+        assert_eq!(filter.next(35).unwrap().offset, Some(30));
+        assert!(filter.next(20).is_none());
+        assert!(filter.next(19).is_none());
+
+        let filter = FilterParams {
+            limit: Some(10),
+            offset: Some(10),
+            bbox: None,
+        };
+        assert_eq!(filter.prev().unwrap().offset, Some(0));
+        assert_eq!(filter.next(35).unwrap().offset, Some(20));
+
+        let filter = FilterParams {
+            limit: Some(10),
+            offset: None,
+            bbox: None,
+        };
+        assert!(filter.prev().is_none());
+        assert_eq!(filter.next(35).unwrap().offset, Some(10));
+    }
 }
