@@ -1,5 +1,5 @@
 use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
-use crate::endpoints::FilterParams;
+use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_common::ogcapi::*;
@@ -110,12 +110,8 @@ impl CollectionDatasource for PgDatasource {
                FROM "{schema}"."{table}" t"#,
             )
         };
-        if let Some(bboxstr) = &filter.bbox {
-            let bbox: Vec<f64> = bboxstr
-                .split(",")
-                .map(|v| v.parse().expect("Error parsing bbox float values"))
-                .collect();
-            if bbox.len() == 4 || bbox.len() == 6 {
+        match filter.bbox() {
+            Ok(Some(bbox)) => {
                 sql.push_str(&format!(
                     " WHERE {geometry_column} && ST_MakeEnvelope({xmin}, {ymin}, {xmax}, {ymax})",
                     xmin = bbox[0],
@@ -123,8 +119,10 @@ impl CollectionDatasource for PgDatasource {
                     xmax = bbox[2],
                     ymax = bbox[3],
                 ));
-            } else {
-                warn!("Ignoring invalid bbox length");
+            }
+            Ok(None) => {}
+            Err(e) => {
+                warn!("Ignoring invalid bbox: {e}");
             }
         }
         let limit = filter.limit_or_default();
@@ -304,6 +302,7 @@ mod tests {
     // docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
 
     #[tokio::test]
+    #[ignore]
     async fn pg_content() {
         let pool = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
             .await
@@ -317,6 +316,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn pg_features() {
         let filter = FilterParams::default();
         let pool = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
@@ -336,6 +336,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn pg_bbox_filter() {
         let filter = FilterParams {
             limit: Some(50),

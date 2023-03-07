@@ -1,6 +1,7 @@
 mod config;
 mod datasource;
 mod endpoints;
+mod filter_params;
 mod inventory;
 
 use actix_web::{middleware, App, HttpServer};

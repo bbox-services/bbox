@@ -1,5 +1,5 @@
 use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
-use crate::endpoints::FilterParams;
+use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_common::ogcapi::*;

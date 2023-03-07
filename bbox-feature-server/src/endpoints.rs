@@ -1,4 +1,5 @@
 use crate::config::DatasourceCfg;
+use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
@@ -6,58 +7,6 @@ use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
-use serde::Deserialize;
-
-#[derive(Deserialize, Default, Clone)]
-#[serde(deny_unknown_fields)] // http://docs.opengeospatial.org/DRAFTS/17-069r5.html#query_parameters
-pub struct FilterParams {
-    // Pagination
-    pub limit: Option<u32>,
-    pub offset: Option<u32>,
-    // Filter
-    pub bbox: Option<String>,
-    // TODO: interval
-}
-
-impl FilterParams {
-    pub fn limit_or_default(&self) -> u32 {
-        self.limit.unwrap_or(50)
-    }
-    pub fn with_offset(&self, offset: u32) -> FilterParams {
-        let mut params = self.clone();
-        params.offset = Some(offset);
-        params
-    }
-    pub fn prev(&self) -> Option<FilterParams> {
-        let offset = self.offset.unwrap_or(0);
-        if offset > 0 {
-            let prev = offset.saturating_sub(self.limit_or_default());
-            Some(self.with_offset(prev))
-        } else {
-            None
-        }
-    }
-    pub fn next(&self, max: u64) -> Option<FilterParams> {
-        let offset = self.offset.unwrap_or(0);
-        let next = offset.saturating_add(self.limit_or_default());
-        if (next as u64) < max {
-            Some(self.with_offset(next))
-        } else {
-            None
-        }
-    }
-    pub fn as_args(&self) -> String {
-        vec![
-            self.limit.map(|v| format!("limit={v}")),
-            self.offset.map(|v| format!("offset={v}")),
-            self.bbox.as_ref().map(|v| format!("bbox={v}")),
-        ]
-        .into_iter()
-        .filter_map(|v| v)
-        .collect::<Vec<String>>()
-        .join("&")
-    }
-}
 
 /// describe the feature collection with id `collectionId`
 async fn collection(
@@ -178,57 +127,4 @@ pub fn register(cfg: &mut web::ServiceConfig, inventory: &Inventory) {
                 .route(web::get().to(feature)),
         );
     // endpoint /collections is in bbox-server
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn filter_to_args() {
-        let filter = FilterParams {
-            limit: Some(10),
-            offset: Some(20),
-            bbox: Some("1.0,2.2,3.33,4.444".to_string()),
-        };
-        assert_eq!(
-            filter.as_args(),
-            "limit=10&offset=20&bbox=1.0,2.2,3.33,4.444"
-        );
-        let filter = FilterParams {
-            limit: None,
-            offset: Some(20),
-            bbox: None,
-        };
-        assert_eq!(filter.as_args(), "offset=20");
-    }
-
-    #[test]
-    fn prev_next() {
-        let filter = FilterParams {
-            limit: Some(10),
-            offset: Some(20),
-            bbox: None,
-        };
-        assert_eq!(filter.prev().unwrap().offset, Some(10));
-        assert_eq!(filter.next(35).unwrap().offset, Some(30));
-        assert!(filter.next(20).is_none());
-        assert!(filter.next(19).is_none());
-
-        let filter = FilterParams {
-            limit: Some(10),
-            offset: Some(10),
-            bbox: None,
-        };
-        assert_eq!(filter.prev().unwrap().offset, Some(0));
-        assert_eq!(filter.next(35).unwrap().offset, Some(20));
-
-        let filter = FilterParams {
-            limit: Some(10),
-            offset: None,
-            bbox: None,
-        };
-        assert!(filter.prev().is_none());
-        assert_eq!(filter.next(35).unwrap().offset, Some(10));
-    }
 }

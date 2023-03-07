@@ -2,7 +2,7 @@ use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
 use crate::datasource::postgis::PgDatasource;
 use crate::datasource::{CollectionDatasource, CollectionInfo, Datasource};
-use crate::endpoints::FilterParams;
+use crate::filter_params::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
