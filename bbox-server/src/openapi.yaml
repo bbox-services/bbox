@@ -1,20 +1,9 @@
 openapi: 3.0.2
 info:
-  title: "A sample API conforming to the draft standard OGC API - Features - Part 1: Core"
+  title: "OGC API"
   version: '1.0.0'
   description: |-
-    This is a sample OpenAPI definition that conforms to the conformance
-    classes "Core", "GeoJSON", "HTML" and "OpenAPI 3.0" of the draft
-    standard "OGC API - Features - Part 1: Core".
-
-    This example is a generic OGC API Features definition that uses path
-    parameters to describe all feature collections and all features.
-    The generic OpenAPI definition does not provide any details on the
-    collections or the feature content. This information is only available
-    from accessing the feature collection resources.
-
-    There is [another example](ogcapi-features-1-example2.yaml)
-    that specifies each collection explicitly.
+    Common OpenAPI definition for OGC API implementations.
   contact:
     name: Acme Corporation
     email: info@example.org
@@ -31,9 +20,8 @@ tags:
   - name: Capabilities
     description: |-
       essential characteristics of this API
-  - name: Data
-    description: |-
-      access to data (features)
+  - name: Features
+    description: OGC API Features
 paths:
   '/':
     get:
@@ -66,7 +54,7 @@ paths:
   '/collections':
     get:
       tags:
-        - Capabilities
+        - Features
       summary: the feature collections in the dataset
       operationId: getCollections
       responses:

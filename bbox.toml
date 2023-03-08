@@ -17,8 +17,8 @@ path = "/metrics"
 [[datasource.directory]]
 path = "../data"
 
-[[datasource.postgis]]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+#[[datasource.postgis]]
+#url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[fileserver.static]] 
 # Static file serving

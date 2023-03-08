@@ -1,20 +1,17 @@
 openapi: 3.0.2
 info:
-  title: 'A sample API conforming to the draft standard OGC API - Features - Part 1: Core'
+  title: 'OGC API - Features - Part 1: Core'
   version: 1.0.0
   description: |-
-    This is a sample OpenAPI definition that conforms to the conformance
-    classes "Core", "GeoJSON", "HTML" and "OpenAPI 3.0" of the draft
+    OpenAPI definition that conforms to the conformance
+    classes "Core", "GeoJSON", "HTML" and "OpenAPI 3.0" of the
     standard "OGC API - Features - Part 1: Core".
 
-    This example is a generic OGC API Features definition that uses path
+    This is a generic OGC API Features definition that uses path
     parameters to describe all feature collections and all features.
     The generic OpenAPI definition does not provide any details on the
     collections or the feature content. This information is only available
     from accessing the feature collection resources.
-
-    There is [another example](ogcapi-features-1-example2.yaml)
-    that specifies each collection explicitly.
   contact:
     name: Acme Corporation
     email: info@example.org
@@ -28,10 +25,8 @@ servers:
   - url: 'https://dev.example.org/'
     description: Development server
 tags:
-  - name: Capabilities
-    description: essential characteristics of this API
-  - name: Data
-    description: access to data (features)
+  - name: Features
+    description: OGC API Features
 paths:
   # /:
   #   get:
@@ -64,7 +59,7 @@ paths:
   # /collections:
   #   get:
   #     tags:
-  #       - Capabilities
+  #       - Features
   #     summary: the feature collections in the dataset
   #     operationId: getCollections
   #     responses:
@@ -75,7 +70,7 @@ paths:
   '/collections/{collectionId}':
     get:
       tags:
-        - Capabilities
+        - Features
       summary: describe the feature collection with id `collectionId`
       operationId: describeCollection
       parameters:
@@ -90,7 +85,7 @@ paths:
   '/collections/{collectionId}/items':
     get:
       tags:
-        - Data
+        - Features
       summary: fetch features
       description: |-
         Fetch features of the feature collection with id `collectionId`.
@@ -118,7 +113,7 @@ paths:
   '/collections/{collectionId}/items/{featureId}':
     get:
       tags:
-        - Data
+        - Features
       summary: fetch a single feature
       description: |-
         Fetch the feature with id `featureId` in the feature collection

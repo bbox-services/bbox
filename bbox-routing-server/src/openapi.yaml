@@ -1,84 +1,10 @@
 openapi: 3.0.1
-servers:
-  - description: SwaggerHub API Auto Mocking
-    url: 'https://virtserver.swaggerhub.com/cportele/wps-routing-api/1.0.0'
 info:
-  title: OGC Routing Pilot - WPS Routing API (DRAFT)
+  title: 'OGC API - Routes - Part 1: Core'
   version: 1.0.0
   description: |-
-    This is a draft of the Routing API and the Route Exchange Model in 
-    the OGC Open Routing API Pilot. This document is also available in 
-    [GitHub](https://github.com/opengeospatial/RoutingAPIPilot/blob/master/routing-api.yaml). 
-    Send comments by email to the pilot mailing list or [create an
-    issue on GitHub](https://github.com/opengeospatial/RoutingAPIPilot/issues).
-
-    The current draft API does not yet include security considerations. Who
-    has access to which routes? How to share routes with others? Etc. This
-    will (probably) be out-of-scope for the pilot, but will be discussed in
-    the ER.
-
-    # WPS Profile
-
-    The Routing API is specified as a profile of OGC API Processes 
-    (formerly known as WPS). This profile will be defined under the 
-    tag "Option WPS". 
-
-    The profile has been derived from the OGC API Processes draft
-    by tailoring the schema definitions to what is needed for the 
-    routing process.
-
-    The profile has the following characteristics:
-
-    * The resources are processes and jobs, consistent with the 
-    OGC API Processes draft.
-    * The input to routing tasks (jobs) will be the start and end location 
-    plus optional routing parameters (intermediate waypoints, constraints, 
-    etc.). 
-    * In addition, if an API supports multiple options, the 
-    client may choose the engine, algorithm or source data. 
-    * The optional parameters are separate building blocks so that 
-    implementations may or may not support them. That is, additional 
-    parameters are packaged in separate conformance classes extending 
-    the Core conformance class.
-    *  The output / result of routing tasks is using the Route 
-    Exchange Model in GeoJSON.
-
-    Note that the input/output descriptions as part of 
-    the processOffering add an additional schema layer. 
-    Basically another (WPS-specific) schema description language 
-    is modelled as part of the API definition while the schema of
-    the routing parameters is then (only) described in the
-    `/processes/routing` response. 
-    In addition, the input values could be represented
-    more concisely, too. And the routing resources could be 
-    expressed more naturally in an API that uses the general 
-    Web API patterns for processing resources that are also 
-    used by OGC API Processes.
-
-    # Routes as first class objects of the API
-
-    As discussed in the WPS Profile above, the WPS resources (processes, 
-    jobs) are generic and as aresult, a Routing API that is a profile 
-    of a generic Processing API will likely feel complex for client 
-    developers that "just" want to use a Routing API. 
-
-    An alternative would be to specify a Routing API that has routes 
-    as first class resources and uses JSON Schema to specify input 
-    and output schemas. 
-
-    These resources are basically procedures
-    that operate on one or more source datasets, using a particular 
-    routing engine and algorithm. The Core does not expose these
-    backend options, but additional conformance classes will. 
-
-    This API approach has been specified under the tag "Option Routes".
-
-    The attempts to keep the API definition as simple as possible.
-
-    It should be straightforward to implement this option as a façade on 
-    top of an implementation that is based on OGC API Processes, but it 
-    would hide the WPS artefacts from the developer who is "just" 
-    interested in routing.
+    Routing API and the Route Exchange Model in 
+    the OGC Open Routing API Pilot.
 
     # Route definition
 
@@ -112,13 +38,10 @@ info:
 
     # Route Exchange Model
 
-    An initial proposal for discussion of the Route Exchange Model is 
-    described in the GET operation on `/routes/{routeId}`. The idea
-    is that this is a minimal model that everyone can / will support 
-    and that additional conformance classes or implementations can 
-    extend with additional information as needed.
+    The Route Exchange Model is 
+    described in the GET operation on `/routes/{routeId}`.
 
-    In the proposal a 'Route' is represented as a GeoJSON feature 
+    A 'Route' is represented as a GeoJSON feature 
     collection basically with the following informaton...
     * A `name`, if one was provided with the route definition.
     * An array of `features` (the properties of each feature is to 
@@ -147,57 +70,22 @@ info:
     If elevation is used in a route, all coordinates in the route 
     shall include the elevation information.
 
-    # Discussion of "Option WPS" vs. "Option Routes"
-
-    The Option WPS has several disadvantages from the view of a
-    developer that is not familiar with OGC API Processes - and
-    an important target group of the OGC API family are developers
-    that are not familiar with OGC standards and that do not have
-    a comprehensive toolset supporting all kinds of OGC standards.
-
-    * "Process" and "Job" are not the resources you would expect
-    in a dedicated rotuing API.
-    * The process description defines an OGC-specific schema language
-    while OpenAPI already uses a schema language (JSON Schema). As a
-    result, a developer das to understand the JSON Schema of the
-    OGC-specific schema language first to understand the input and
-    output schemas of the routing process.
-    * This also results in a more complex and verbose representation
-    in the OGC API Processes variant.
-
-    Moving to the OGC API family one option could be to mainly specify
-    guidance and patterns for API building blocks for processing 
-    geospatial data. That is, building blocks how to implement asynchronous
-    or synchronous processes, simple notifications using webhooks, more
-    advanced notifications using MQTT or AsyncAPI, how to specify
-    input and output schemas of processes, etc.
-
-    There are some aspects of the current WPS standard that might also
-    lead to standards. For example (this is an incomplete list!):
-
-    * One of the motivations for the WPS-specific process descriptions
-    was to limit the schema compelexity that WPS-implementations have to
-    support. One approach could be to specify a simple JSON Schema profile 
-    for OGC API processing resources that would be based on the existing
-    WPS standard. Since this would be an OGC standard, a key part of this
-    would be spatial and temporal components. 
-    I.e., existing WPS implementations would become 
-    backends for the rapid development of processing resources that follow
-    the OGC API guidance.
-    * Another capability that needs more thoughts is WPS-T, i.e., the 
-    capability to deploy new processing resources. With the uptake
-    of virtualization, containerazation, cloud infrastructures, etc.
-    it is obvious that this is more a general IT topic than an OGC topic
-    as there is nothing "geospatial" about deploying a new container
-    on a server.
-
-    See also [issue #16](https://github.com/opengeospatial/RoutingAPIPilot/issues/16).
   contact:
     name: Clemens Portele
     email: portele@interactive-instruments.de
   license:
     name: OGC License
     url: 'https://raw.githubusercontent.com/opengeospatial/WFS_FES/master/LICENSE'
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: 'https://virtserver.swaggerhub.com/cportele/wps-routing-api/1.0.0'
+tags:
+  # - name: Capabilities
+  #   description: Essential characteristics of this API.
+  - name: Routes
+    description: OFC API Routes
+  # - name: Option WPS
+  #   description: WPS profile
 paths:
   /routes:
     # get:
@@ -215,7 +103,7 @@ paths:
     #     too, with the link relation type `self`. 
     #   operationId: getRoutes
     #   tags:
-    #     - Option Routes
+    #     - Routes
     #   responses:
     #     '200':
     #       description: The list of routes.
@@ -273,7 +161,7 @@ paths:
         property is ignored.
       operationId: computeRoute
       tags:
-        - Option Routes
+        - Routes
       parameters:
         - $ref: '#/components/parameters/mode'
       requestBody:
@@ -379,7 +267,7 @@ paths:
   #       declaration (`/conformance`).
   #     operationId: getRoute
   #     tags:
-  #       - Option Routes
+  #       - Routes
   #     parameters:
   #       - $ref: '#/components/parameters/routeId'
   #       - $ref: '#/components/parameters/resultSet'
@@ -419,7 +307,7 @@ paths:
   #       **'delete-route'**.
   #     operationId: deleteRoute
   #     tags:
-  #       - Option Routes
+  #       - Routes
   #     parameters:
   #       - $ref: '#/components/parameters/routeId'
   #     responses:
@@ -437,7 +325,7 @@ paths:
   #       was submitted when the route was created using POST on `/routes`.
   #     operationId: getRouteDefinition
   #     tags:
-  #       - Option Routes
+  #       - Routes
   #     parameters:
   #       - $ref: '#/components/parameters/routeId'
   #     responses:
@@ -1560,10 +1448,3 @@ components:
         - running
         - successful
         - failed
-tags:
-  - name: Capabilities
-    description: Essential characteristics of this API.
-  - name: Option Routes
-    description: Routes as first class resources
-  - name: Option WPS
-    description: WPS profile

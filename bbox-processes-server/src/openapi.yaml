@@ -1,8 +1,17 @@
 openapi: 3.0.3
 info:
-  title: 'A sample API conforming to the standard OGC API - Processes - Part 1: Core'
+  title: 'OGC API - Processes - Part 1: Core'
   version: 1.0.0
-  description: This document is an API definition document provided alongside the OGC API - Processes standard. The OGC API - Processes Standard specifies a processing interface to communicate over a RESTful protocol using JavaScript Object Notation (JSON) encodings. The specification allows for the wrapping of computational tasks into executable processes that can be offered by a server and be invoked by a client application.
+  description: |-
+    The OGC API - Processes
+    Standard specifies a processing interface to communicate over a
+    RESTful protocol using JavaScript Object Notation (JSON) encodings.
+    The specification allows for the wrapping of computational tasks into
+    executable processes that can be offered by a server and be invoked
+    by a client application.
+    OpenAPI definition that conforms to the
+    conformance classes "Core", "GeoJSON", "HTML" and "OpenAPI 3.0" of
+    the standard "OGC API - Features - Part 1: Core".
   contact:
     name: Open Geospatial Consortium (OGC)
     email: standards-team@ogc.org
@@ -65,7 +74,7 @@ paths:
         For more information, see [Section 7.9](https://docs.ogc.org/is/18-062/18-062.html#sc_process_list).
       operationId: getProcesses
       tags:
-        - ProcessList
+        - Processes
       responses:
         '200':
           $ref: '#/components/responses/ProcessList'
@@ -80,7 +89,7 @@ paths:
         For more information, see [Section 7.10](https://docs.ogc.org/is/18-062/18-062.html#sc_process_description).
       operationId: getProcessDescription
       tags:
-        - ProcessDescription
+        - Processes
       parameters:
         - $ref: '#/components/parameters/processIdPathParam'
       responses:
@@ -97,7 +106,7 @@ paths:
         For more information, see [Section 11](https://docs.ogc.org/is/18-062/18-062.html#sc_job_list).
       operationId: getJobs
       tags:
-        - JobList
+        - Processes
       responses:
         '200':
           $ref: '#/components/responses/JobList'
@@ -112,7 +121,7 @@ paths:
         For more information, see [Section 7.11](https://docs.ogc.org/is/18-062/18-062.html#sc_create_job).
       operationId: execute
       tags:
-        - Execute
+        - Processes
       parameters:
         - $ref: '#/components/parameters/processIdPathParam'
       requestBody:
@@ -152,7 +161,7 @@ paths:
          For more information, see [Section 7.12](https://docs.ogc.org/is/18-062/18-062.html#sc_retrieve_status_info).
       operationId: getStatus
       tags:
-        - Status
+        - Processes
       parameters:
         - $ref: '#/components/parameters/jobId'
       responses:
@@ -170,7 +179,7 @@ paths:
         For more information, see [Section 13](https://docs.ogc.org/is/18-062/18-062.html#Dismiss).
       operationId: dismiss
       tags:
-        - Dismiss
+        - Processes
       parameters:
         - $ref: '#/components/parameters/jobId'
       responses:
@@ -189,7 +198,7 @@ paths:
         For more information, see [Section 7.13](https://docs.ogc.org/is/18-062/18-062.html#sc_retrieve_job_results).
       operationId: getResult
       tags:
-        - Result
+        - Processes
       parameters:
         - $ref: '#/components/parameters/jobId'
       responses:
