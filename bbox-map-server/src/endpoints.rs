@@ -1,7 +1,7 @@
 use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
-use crate::init::{wms_metrics, WmsMetrics};
 use crate::inventory::Inventory;
+use crate::metrics::{wms_metrics, WmsMetrics};
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use log::{debug, error, info, warn};
 use opentelemetry::{

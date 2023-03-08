@@ -4,6 +4,7 @@ mod endpoints;
 mod fcgi_process;
 mod init;
 mod inventory;
+mod metrics;
 mod wms_capabilities;
 mod wms_fcgi_backend;
 
