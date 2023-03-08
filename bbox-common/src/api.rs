@@ -51,6 +51,7 @@ impl OpenApiDoc {
     pub fn as_json(&self) -> serde_json::Value {
         serde_yaml::from_value::<serde_json::Value>(self.0.clone()).unwrap()
     }
+    pub fn nop(&self) {}
 }
 
 fn merge_level(yaml: &mut serde_yaml::Value, rhs_yaml: &serde_yaml::Value, key: &str) {

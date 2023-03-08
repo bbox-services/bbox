@@ -76,4 +76,5 @@ pub fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         ]);
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
+    openapi.nop();
 }

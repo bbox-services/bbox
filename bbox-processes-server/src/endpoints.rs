@@ -238,6 +238,7 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         ]);
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
+    openapi.nop();
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {

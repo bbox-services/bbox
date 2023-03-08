@@ -107,6 +107,7 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
         ]);
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
+    openapi.nop();
     inventory
 }
 
