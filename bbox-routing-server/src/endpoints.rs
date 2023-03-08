@@ -253,24 +253,29 @@ pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     });
     api.conformance_classes.extend(vec![
         // Core
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/req/core".to_string(),
-        // JSON
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
-        // OpenAPI Specification
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/core".to_string(),
         /*
-         * OGC Process Description - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description
-         * HTML - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html
-         * Job list - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list
-         * Callback - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback
-         * Dismiss - http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss
+        // Manage routes
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/manage-routes".to_string(),
+        // Modes
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/mode".to_string(),
+        // Intermediate waypoints
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/intermediate-waypoints".to_string(),
+        // Height restrictions
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/height".to_string(),
+        // Weight restrictions
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/weight".to_string(),
+        // Obstacles
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/obstacles".to_string(),
+        // Temporal constraints
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/time".to_string(),
          */
     ]);
     #[cfg(feature = "openapi")]
     {
         api.conformance_classes.extend(vec![
             // OpenAPI Specification
-            "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
+            "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/oas30".to_string(),
         ]);
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
