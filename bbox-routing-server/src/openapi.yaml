@@ -71,14 +71,15 @@ info:
     shall include the elevation information.
 
   contact:
-    name: Clemens Portele
-    email: portele@interactive-instruments.de
+    name: Acme Corporation
+    email: info@example.org
+    url: 'http://example.org/'
   license:
-    name: OGC License
-    url: 'https://raw.githubusercontent.com/opengeospatial/WFS_FES/master/LICENSE'
+    name: CC-BY 4.0 license
+    url: 'https://creativecommons.org/licenses/by/4.0/'
 servers:
-  - description: SwaggerHub API Auto Mocking
-    url: 'https://virtserver.swaggerhub.com/cportele/wps-routing-api/1.0.0'
+  - url: 'https://data.example.org/'
+    description: Production server
 tags:
   # - name: Capabilities
   #   description: Essential characteristics of this API.
