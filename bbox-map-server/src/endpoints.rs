@@ -1,5 +1,6 @@
-use crate::config::*;
+use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
+use crate::init::{wms_metrics, WmsMetrics};
 use crate::inventory::Inventory;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use log::{debug, error, info, warn};

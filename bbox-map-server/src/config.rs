@@ -1,6 +1,4 @@
 use bbox_common::config::from_config_or_exit;
-use once_cell::sync::OnceCell;
-use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -72,70 +70,4 @@ impl WmsServerCfg {
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())
     }
-}
-
-#[derive(Clone)]
-pub struct WmsMetrics {
-    pub wms_requests_counter: IntCounterVec,
-    pub fcgi_client_pool_available: Vec<IntGaugeVec>,
-    pub fcgi_client_wait_seconds: Vec<HistogramVec>,
-    pub fcgi_cache_count: Vec<IntGaugeVec>,
-    pub fcgi_cache_hit: Vec<IntGaugeVec>,
-}
-
-pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
-    static METRICS: OnceCell<WmsMetrics> = OnceCell::new();
-    &METRICS.get_or_init(|| {
-        let opts = prometheus::opts!("requests_total", "Total number of WMS requests")
-            .namespace("bbox_wms");
-        let wms_requests_counter =
-            IntCounterVec::new(opts, &["endpoint", "backend", "fcgino"]).unwrap();
-        let fcgi_cache_count = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_count_{}", fcgino),
-                    "FCGI project cache size"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        let fcgi_client_pool_available = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_client_pool_available_{}", fcgino),
-                    "FCGI clients available in pool"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        let fcgi_client_wait_seconds = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_client_wait_seconds_{}", fcgino),
-                    "FCGI client wait time"
-                )
-                .namespace("bbox_wms");
-                HistogramVec::new(opts.into(), &["backend"]).unwrap()
-            })
-            .collect();
-        let fcgi_cache_hit = (0..num_fcgi_processes)
-            .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_hit_{}", fcgino),
-                    "FCGI project cache hit"
-                )
-                .namespace("bbox_wms");
-                IntGaugeVec::new(opts, &["backend"]).unwrap()
-            })
-            .collect();
-        WmsMetrics {
-            wms_requests_counter,
-            fcgi_client_pool_available,
-            fcgi_client_wait_seconds,
-            fcgi_cache_count,
-            fcgi_cache_hit,
-        }
-    })
 }

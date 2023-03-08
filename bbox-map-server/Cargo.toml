@@ -5,6 +5,7 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [features]
+openapi = []
 inventory = []
 
 [dependencies]

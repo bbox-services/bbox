@@ -17,7 +17,7 @@ bbox-common = { path = "../bbox-common" }
 bbox-feature-server = { path = "../bbox-feature-server", features=["openapi"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
-bbox-map-server = { path = "../bbox-map-server", optional = true }
+bbox-map-server = { path = "../bbox-map-server", features=["openapi"], optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", features=["openapi"], optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", features=["openapi"], optional = true }
 actix-web = { workspace = true }

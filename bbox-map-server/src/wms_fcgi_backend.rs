@@ -4,7 +4,6 @@ use crate::inventory::*;
 use actix_web::web;
 use bbox_common::{app_dir, file_search};
 use log::info;
-use prometheus::Registry;
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::path::{Path, PathBuf};
@@ -237,35 +236,9 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     Ok((pools, inventory))
 }
 
-pub async fn init_service(
-    prometheus: Option<&Registry>,
+pub async fn init_wms_backend(
+    config: &WmsServerCfg,
 ) -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
-    let config = WmsServerCfg::from_config();
-
-    if let Some(prometheus) = prometheus {
-        let metrics = wms_metrics(config.num_fcgi_processes());
-        // We use the Prometheus API, using
-        // https://docs.rs/opentelemetry-prometheus/
-        // would be more portable
-        prometheus
-            .register(Box::new(metrics.wms_requests_counter.clone()))
-            .unwrap();
-        for no in 0..metrics.fcgi_cache_count.len() {
-            prometheus
-                .register(Box::new(metrics.fcgi_client_pool_available[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_client_wait_seconds[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_cache_count[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_cache_hit[no].clone()))
-                .unwrap();
-        }
-    }
-
     let (process_pools, inventory) = detect_backends().unwrap();
     let fcgi_clients = process_pools
         .iter()

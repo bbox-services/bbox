@@ -106,21 +106,8 @@ async fn webserver() -> std::io::Result<()> {
     let mut openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), "/");
 
     #[cfg(feature = "map-server")]
-    let (fcgi_clients, map_inventory) = bbox_map_server::init_service(prometheus).await;
-
-    let endpoint = metrics_cfg.prometheus.map(|cfg| {
-        let path = cfg.path.clone();
-        move |req: &actix_web::dev::ServiceRequest| {
-            req.path() == path && req.method() == actix_web::http::Method::GET
-        }
-    });
-    let request_metrics = actix_web_opentelemetry::RequestMetrics::new(
-        opentelemetry::global::meter("bbox"),
-        endpoint,
-        Some(exporter),
-    );
-
-    let workers = web_config.worker_threads();
+    let (fcgi_clients, map_inventory) =
+        bbox_map_server::init_service(&mut ogcapi, &mut openapi, prometheus).await;
 
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
@@ -136,6 +123,21 @@ async fn webserver() -> std::io::Result<()> {
     bbox_routing_server::endpoints::init_service(&mut ogcapi, &mut openapi);
     #[cfg(feature = "routing-server")]
     let router = bbox_routing_server::config::setup();
+
+    // Metrics endpoint
+    let endpoint = metrics_cfg.prometheus.map(|cfg| {
+        let path = cfg.path.clone();
+        move |req: &actix_web::dev::ServiceRequest| {
+            req.path() == path && req.method() == actix_web::http::Method::GET
+        }
+    });
+    let request_metrics = actix_web_opentelemetry::RequestMetrics::new(
+        opentelemetry::global::meter("bbox"),
+        endpoint,
+        Some(exporter),
+    );
+
+    let workers = web_config.worker_threads();
 
     HttpServer::new(move || {
         let mut app = App::new()

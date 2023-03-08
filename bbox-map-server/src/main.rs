@@ -2,15 +2,18 @@ mod config;
 mod dispatcher;
 mod endpoints;
 mod fcgi_process;
+mod init;
 mod inventory;
 mod wms_capabilities;
 mod wms_fcgi_backend;
 
 use actix_web::{middleware, App, HttpServer};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let (fcgi_clients, inventory) = wms_fcgi_backend::init_service(None).await;
+    let (fcgi_clients, inventory) =
+        init::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new(), None).await;
 
     HttpServer::new(move || {
         App::new()
