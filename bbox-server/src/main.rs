@@ -60,6 +60,7 @@ async fn webserver() -> std::io::Result<()> {
 
     // Prometheus metrics
     let exporter = opentelemetry_prometheus::exporter().init();
+    #[allow(unused_variables)]
     let prometheus = metrics_cfg.prometheus.as_ref().map(|_| exporter.registry());
 
     let landing_page_links = vec![
@@ -97,17 +98,18 @@ async fn webserver() -> std::io::Result<()> {
         },
     ];
 
+    #[allow(unused_mut)]
     let mut ogcapi = OgcApiInventory {
         landing_page_links,
         conformance_classes: Vec::new(),
         collections: Vec::new(),
     };
 
+    #[allow(unused_mut)]
     let mut openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), "/");
 
     #[cfg(feature = "map-server")]
-    let (fcgi_clients, map_inventory) =
-        bbox_map_server::init_service(&mut ogcapi, &mut openapi, prometheus).await;
+    let wms_backend = bbox_map_server::init_service(&mut ogcapi, &mut openapi, prometheus).await;
 
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
@@ -153,9 +155,8 @@ async fn webserver() -> std::io::Result<()> {
 
         #[cfg(feature = "map-server")]
         {
-            app = app.configure(|mut cfg| {
-                bbox_map_server::endpoints::register(&mut cfg, &fcgi_clients, &map_inventory)
-            });
+            app = app
+                .configure(|mut cfg| bbox_map_server::endpoints::register(&mut cfg, &wms_backend));
         }
 
         #[cfg(feature = "feature-server")]

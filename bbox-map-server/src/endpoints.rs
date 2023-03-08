@@ -1,7 +1,7 @@
 use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
-use crate::inventory::Inventory;
 use crate::metrics::{wms_metrics, WmsMetrics};
+use crate::wms_fcgi_backend::WmsBackend;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use log::{debug, error, info, warn};
 use opentelemetry::{
@@ -187,19 +187,15 @@ async fn wms_fcgi(
     Ok(response.body(body))
 }
 
-pub fn register(
-    cfg: &mut web::ServiceConfig,
-    fcgi_clients: &Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
-    inventory: &Inventory,
-) {
+pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &WmsBackend) {
     let config = WmsServerCfg::from_config();
     let metrics = wms_metrics(config.num_fcgi_processes());
 
     cfg.app_data(web::Data::new((*metrics).clone()));
 
-    cfg.app_data(web::Data::new(inventory.clone()));
+    cfg.app_data(web::Data::new(wms_backend.inventory.clone()));
 
-    for (fcgi_client, suffixes) in fcgi_clients {
+    for (fcgi_client, suffixes) in &wms_backend.fcgi_clients {
         for suffix in suffixes {
             let route = format!("{}/{}", &config.path, &suffix);
             info!("Registering WMS endpoint {}", &route);

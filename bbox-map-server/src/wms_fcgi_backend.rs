@@ -236,9 +236,14 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     Ok((pools, inventory))
 }
 
-pub async fn init_wms_backend(
-    config: &WmsServerCfg,
-) -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
+#[derive(Clone)]
+pub struct WmsBackend {
+    /// FCGI Client Dispatcher and registered suffixes
+    pub fcgi_clients: Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
+    pub inventory: Inventory,
+}
+
+pub async fn init_wms_backend(config: &WmsServerCfg) -> WmsBackend {
     let (process_pools, inventory) = detect_backends().unwrap();
     let fcgi_clients = process_pools
         .iter()
@@ -258,5 +263,8 @@ pub async fn init_wms_backend(
         }
     }
 
-    (fcgi_clients, inventory)
+    WmsBackend {
+        fcgi_clients,
+        inventory,
+    }
 }

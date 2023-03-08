@@ -1,9 +1,6 @@
 use crate::config::WmsServerCfg;
-use crate::fcgi_process::FcgiDispatcher;
-use crate::inventory::*;
 use crate::metrics::init_metrics;
-use crate::wms_fcgi_backend;
-use actix_web::web;
+use crate::wms_fcgi_backend::{init_wms_backend, WmsBackend};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use prometheus::Registry;
 
@@ -11,12 +8,12 @@ pub async fn init_service(
     api: &mut OgcApiInventory,
     openapi: &mut OpenApiDoc,
     prometheus: Option<&Registry>,
-) -> (Vec<(web::Data<FcgiDispatcher>, Vec<String>)>, Inventory) {
+) -> WmsBackend {
     let config = WmsServerCfg::from_config();
     init_metrics(&config, prometheus);
-    let (fcgi_clients, inventory) = wms_fcgi_backend::init_wms_backend(&config).await;
+    let wms_backend = init_wms_backend(&config).await;
     init_api(api, openapi);
-    (fcgi_clients, inventory)
+    wms_backend
 }
 
 pub fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
