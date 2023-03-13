@@ -10,7 +10,7 @@ pub struct Inventory {
 #[derive(Serialize, Clone, Debug)]
 pub struct WmsService {
     pub id: String,
-    /// WMS base path like `/wms/qgs/ne`
+    /// WMS base path like `/qgis/ne`
     pub wms_path: String,
     pub cap_type: CapType,
 }

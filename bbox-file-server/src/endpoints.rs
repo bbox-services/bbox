@@ -44,11 +44,11 @@ pub fn init_service() -> PluginIndex {
     for repo in &static_cfg.repo {
         let dir = app_dir(&repo.dir);
         if Path::new(&dir).is_dir() {
-            info!("Serving QGIS plugin repository from directory '{}'", &dir);
+            info!("Serving QGIS plugin repository from directory '{dir}'");
             let plugins = plugin_files(&dir);
             plugins_index.insert(format!("/{}/plugins.xml", repo.path), plugins);
         } else {
-            warn!("QGIS plugin repository file directory '{}' not found", &dir);
+            warn!("QGIS plugin repository file directory '{dir}' not found");
         }
     }
     plugins_index
@@ -60,10 +60,10 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
     for static_dir in &static_cfg.static_ {
         let dir = app_dir(&static_dir.dir);
         if Path::new(&dir).is_dir() {
-            info!("Serving static files from directory '{}'", &dir);
+            info!("Serving static files from directory '{dir}'");
             cfg.service(Files::new(&static_dir.path, &dir));
         } else {
-            warn!("Static file directory '{}' not found", &dir);
+            warn!("Static file directory '{dir}' not found");
         }
     }
 
@@ -72,9 +72,9 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
     for repo in &static_cfg.repo {
         let dir = app_dir(&repo.dir);
         if Path::new(&dir).is_dir() {
-            // info!("Serving QGIS plugin repository from directory '{}'", &dir);
+            info!("Serving QGIS plugin repository from directory '{dir}'");
             cfg.service(Files::new(
-                "/qgis/static",
+                &format!("/{}/static", repo.path),
                 app_dir("bbox-file-server/src/static"), // TODO: RustEmbed !
             ))
             .route(
@@ -84,7 +84,7 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
             // TODO: same prefix not possible?
             .service(Files::new(&format!("/plugins/{}", repo.path), &dir));
         } else {
-            // warn!("QGIS plugin repository file directory '{}' not found", &dir);
+            // warn!("QGIS plugin repository file directory '{dir}' not found");
         }
     }
 }

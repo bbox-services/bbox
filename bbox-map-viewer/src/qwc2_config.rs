@@ -394,7 +394,7 @@ static THEMES_JSON: Lazy<ThemesJson> = Lazy::new(|| {
         subdirs: vec![],
         items: vec![
             Theme {
-                url: "http://127.0.0.1:8080/wms/qgs/ne".to_string(),
+                url: "http://127.0.0.1:8080/qgis/ne".to_string(),
                 id: "ne".to_string(),
                 title: "Natural Earth".to_string(),
                 description: "".to_string(),
@@ -408,7 +408,7 @@ static THEMES_JSON: Lazy<ThemesJson> = Lazy::new(|| {
                 },
                 item_abstract: "".to_string(),
                 keywords: "".to_string(),
-                online_resource: "http://127.0.0.1:8080/wms/qgs/ne".to_string(),
+                online_resource: "http://127.0.0.1:8080/qgis/ne".to_string(),
                 contact: Contact {
                     person: "".to_string(),
                     organization: "".to_string(),
@@ -683,9 +683,9 @@ static THEMES_JSON: Lazy<ThemesJson> = Lazy::new(|| {
                     "state".to_string(),
                     "ne".to_string(),
                 ],
-                legend_url: "http://127.0.0.1:8080/wms/qgs/ne?".to_string(),
-                feature_info_url: "http://127.0.0.1:8080/wms/qgs/ne?".to_string(),
-                print_url: "http://127.0.0.1:8080/wms/qgs/ne?".to_string(),
+                legend_url: "http://127.0.0.1:8080/qgis/ne?".to_string(),
+                feature_info_url: "http://127.0.0.1:8080/qgis/ne?".to_string(),
+                print_url: "http://127.0.0.1:8080/qgis/ne?".to_string(),
                 skip_empty_feature_attributes: true,
                 edit_config: None,
                 thumbnail: "img/mapthumbs/default.jpg".to_string(),
@@ -838,7 +838,7 @@ mod test {
     "subdirs": [],
     "items": [
       {
-        "url": "http://127.0.0.1:8080/wms/qgs/ne",
+        "url": "http://127.0.0.1:8080/qgis/ne",
         "id": "ne",
         "title": "Natural Earth",
         "description": "",
@@ -848,7 +848,7 @@ mod test {
         },
         "abstract": "",
         "keywords": "",
-        "onlineResource": "http://127.0.0.1:8080/wms/qgs/ne",
+        "onlineResource": "http://127.0.0.1:8080/qgis/ne",
         "contact": {
           "person": "",
           "organization": "",
@@ -1031,9 +1031,9 @@ mod test {
           "state",
           "ne"
         ],
-        "legendUrl": "http://127.0.0.1:8080/wms/qgs/ne?",
-        "featureInfoUrl": "http://127.0.0.1:8080/wms/qgs/ne?",
-        "printUrl": "http://127.0.0.1:8080/wms/qgs/ne?",
+        "legendUrl": "http://127.0.0.1:8080/qgis/ne?",
+        "featureInfoUrl": "http://127.0.0.1:8080/qgis/ne?",
+        "printUrl": "http://127.0.0.1:8080/qgis/ne?",
         "skipEmptyFeatureAttributes": true,
         "editConfig": null,
         "thumbnail": "img/mapthumbs/default.jpg"

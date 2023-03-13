@@ -19,13 +19,12 @@ pub fn app_config() -> &'static Figment {
 
 pub fn from_config_or_exit<'a, T: Default + Deserialize<'a>>(tag: &str) -> T {
     let config = app_config();
-    if config.find_value(tag).is_ok() {
-        config
-            .extract_inner(tag)
-            .map_err(|err| config_error_exit(err))
-            .unwrap()
-    } else {
-        Default::default()
+    match config.extract_inner(tag) {
+        Ok(config) => config,
+        Err(err) => {
+            config_error_exit(err);
+            Default::default()
+        }
     }
 }
 

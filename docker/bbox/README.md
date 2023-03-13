@@ -64,7 +64,7 @@ https://www.robustperception.io/how-does-a-prometheus-histogram-work
 
 WMS Endpoint:
 
-    http_requests_duration_sum{endpoint="/wms/qgs/{project:.+}"}
+    http_requests_duration_sum{endpoint="/qgis/{project:.+}"}
 
 
 ### Jaeger tracing

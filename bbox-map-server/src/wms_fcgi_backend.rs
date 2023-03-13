@@ -9,11 +9,11 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 pub trait FcgiBackendType {
-    fn is_active(&self) -> bool;
     fn name(&self) -> &'static str;
     fn exe_locations(&self) -> Vec<&'static str>;
     fn project_files(&self) -> Vec<&'static str>;
-    fn project_basedir(&self) -> String;
+    fn project_basedir(&self) -> &str;
+    fn url_base(&self, suffix: &str) -> Option<&str>;
     fn env_defaults(&self) -> Vec<(&str, &str)> {
         Vec::new()
     }
@@ -29,20 +29,17 @@ pub trait FcgiBackendType {
 }
 
 pub struct QgisFcgiBackend {
-    config: Option<QgisBackendCfg>,
+    config: QgisBackendCfg,
     plugindir: String,
 }
 
 impl QgisFcgiBackend {
-    fn new(config: Option<QgisBackendCfg>) -> Self {
+    pub(crate) fn new(config: QgisBackendCfg) -> Self {
         let plugindir = app_dir("bbox-map-server/qgis/plugins");
         QgisFcgiBackend { config, plugindir }
     }
 }
 impl FcgiBackendType for QgisFcgiBackend {
-    fn is_active(&self) -> bool {
-        self.config.is_some()
-    }
     fn name(&self) -> &'static str {
         "qgis"
     }
@@ -52,13 +49,20 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
     }
-    fn project_basedir(&self) -> String {
-        self.config
-            .as_ref()
-            .expect("active")
-            .project_basedir
-            .clone()
-            .unwrap_or(app_dir("")) // TODO: env::current_dir
+    fn project_basedir(&self) -> &str {
+        &self.config.project_basedir
+    }
+    fn url_base(&self, suffix: &str) -> Option<&str> {
+        match suffix {
+            "qgs" => self.config.qgs.as_ref().map(|cfg| cfg.path.as_str()),
+            "qgz" => self
+                .config
+                .qgz
+                .as_ref()
+                .clone()
+                .map(|cfg| cfg.path.as_str()),
+            _ => None,
+        }
     }
     fn env_defaults(&self) -> Vec<(&str, &str)> {
         vec![
@@ -73,19 +77,16 @@ impl FcgiBackendType for QgisFcgiBackend {
 }
 
 pub struct UmnFcgiBackend {
-    config: Option<UmnBackendCfg>,
+    config: UmnBackendCfg,
 }
 
 impl UmnFcgiBackend {
-    fn new(config: Option<UmnBackendCfg>) -> Self {
+    pub(crate) fn new(config: UmnBackendCfg) -> Self {
         UmnFcgiBackend { config }
     }
 }
 
 impl FcgiBackendType for UmnFcgiBackend {
-    fn is_active(&self) -> bool {
-        self.config.is_some()
-    }
     fn name(&self) -> &'static str {
         "mapserver"
     }
@@ -95,13 +96,11 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
     }
-    fn project_basedir(&self) -> String {
-        self.config
-            .as_ref()
-            .expect("active")
-            .project_basedir
-            .clone()
-            .unwrap_or(app_dir("")) // TODO: env::current_dir
+    fn project_basedir(&self) -> &str {
+        &self.config.project_basedir
+    }
+    fn url_base(&self, _suffix: &str) -> Option<&str> {
+        Some(&self.config.path)
     }
     fn env_defaults(&self) -> Vec<(&str, &str)> {
         vec![("MS_ERRORFILE", "stderr")]
@@ -109,19 +108,16 @@ impl FcgiBackendType for UmnFcgiBackend {
 }
 
 pub struct MockFcgiBackend {
-    config: Option<MockBackendCfg>,
+    config: MockBackendCfg,
 }
 
 impl MockFcgiBackend {
-    fn new(config: Option<MockBackendCfg>) -> Self {
+    pub(crate) fn new(config: MockBackendCfg) -> Self {
         MockFcgiBackend { config }
     }
 }
 
 impl FcgiBackendType for MockFcgiBackend {
-    fn is_active(&self) -> bool {
-        self.config.is_some()
-    }
     fn name(&self) -> &'static str {
         "mock"
     }
@@ -131,8 +127,11 @@ impl FcgiBackendType for MockFcgiBackend {
     fn project_files(&self) -> Vec<&'static str> {
         vec!["mock"]
     }
-    fn project_basedir(&self) -> String {
-        ".".to_string()
+    fn project_basedir(&self) -> &str {
+        ""
+    }
+    fn url_base(&self, _suffix: &str) -> Option<&str> {
+        Some(&self.config.path)
     }
 }
 
@@ -152,46 +151,53 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
-    let qgis_backend = QgisFcgiBackend::new(config.qgis_backend);
-    let umn_backend = UmnFcgiBackend::new(config.umn_backend);
-    let mock_backend = MockFcgiBackend::new(config.mock_backend);
-    let backends: Vec<&dyn FcgiBackendType> = vec![&qgis_backend, &umn_backend, &mock_backend];
+    let mut backends: Vec<&dyn FcgiBackendType> = Vec::new();
+    let qgis_backend = config.qgis_backend.map(|b| b.backend());
+    if let Some(ref b) = qgis_backend {
+        backends.push(b)
+    }
+    let umn_backend = config.umn_backend.map(|b| b.backend());
+    if let Some(ref b) = umn_backend {
+        backends.push(b)
+    }
+    let mock_backend = config.mock_backend.map(|b| b.backend());
+    if let Some(ref b) = mock_backend {
+        backends.push(b)
+    }
     for backend in backends {
-        if !backend.is_active() {
-            continue;
-        }
         if let Some(exe_path) = detect_fcgi(backend) {
             let mut wms_inventory_files = HashMap::new();
             let base = backend.project_basedir();
             let basedir = if config.search_projects {
-                info!("Searching project files with project_basedir: {}", &base);
+                info!("Searching project files with project_basedir: {base}");
                 let mut all_paths = HashSet::new();
                 for suffix in backend.project_files() {
-                    let files = file_search::search(&base, &format!("*.{}", suffix));
-                    info!("Found {} file(s) matching *.{}", files.len(), suffix);
+                    let Some(url_base) = backend.url_base(suffix) else { continue; };
+                    let files = file_search::search(&base, &format!("*.{suffix}"));
+                    info!("Found {} file(s) matching *.{suffix}", files.len());
                     all_paths.extend(
                         files
                             .iter()
                             .map(|p| p.parent().expect("file in root").to_path_buf()),
                     );
-                    wms_inventory_files.insert(format!("{}/{}", &config.path, suffix), files);
+                    wms_inventory_files.insert(url_base, files);
                 }
-                let basedir = if all_paths.is_empty() {
-                    PathBuf::from(&base)
-                } else {
-                    file_search::longest_common_prefix(&all_paths.into_iter().collect())
-                };
+                // longest_common_prefix would need updating project_basedir in config (?)
+                // let basedir = if all_paths.is_empty() {
+                //     PathBuf::from(&base)
+                // } else {
+                //     file_search::longest_common_prefix(&all_paths.into_iter().collect())
+                // };
+                let basedir = PathBuf::from(&base);
                 for suffix in backend.project_files() {
-                    let prefix = format!("{}/", &config.path);
-                    let route = format!("{}{}", prefix, suffix);
-
+                    let Some(url_base) = backend.url_base(suffix) else { continue; };
                     wms_inventory.extend(
                         wms_inventory_files
-                            .get(&route)
+                            .get(url_base)
                             .expect("route entry missing")
                             .iter()
                             .map(|p| {
-                                // /basedir/data/project.qgs -> /wms/qgs/data/project
+                                // /basedir/data/project.qgs -> /qgis/data/project
                                 let project = p
                                     .file_stem()
                                     .expect("no file name")
@@ -205,11 +211,11 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
                                     .to_str()
                                     .expect("Invalid UTF-8 path name");
                                 let wms_path = if rel_path == "" {
-                                    format!("{}/{}", &route, project)
+                                    format!("{url_base}/{project}")
                                 } else {
-                                    format!("{}/{}/{}", &route, rel_path, project)
+                                    format!("{url_base}/{rel_path}/{project}")
                                 };
-                                let id = wms_path.replace(&prefix, "").replace('/', "_");
+                                let id = wms_path.replace(&url_base, "").replace('/', "_");
                                 let cap_type = backend.cap_type();
                                 WmsService {
                                     id,
@@ -221,9 +227,10 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
                 }
                 basedir
             } else {
+                info!("Searching project files disabled");
                 PathBuf::from(&base)
             };
-            info!("Setting base path to {:?}", basedir);
+            info!("Setting FCGI base path to {basedir:?}");
 
             let process_pool =
                 FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_fcgi_processes);
@@ -238,8 +245,8 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
 
 #[derive(Clone)]
 pub struct WmsBackend {
-    /// FCGI Client Dispatcher and registered suffixes
-    pub fcgi_clients: Vec<(web::Data<FcgiDispatcher>, Vec<String>)>,
+    // FcgiClientData is not Clone, so we have to wrap in web::Data already here
+    pub fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
     pub inventory: Inventory,
 }
 
@@ -247,12 +254,7 @@ pub async fn init_wms_backend(config: &WmsServerCfg) -> WmsBackend {
     let (process_pools, inventory) = detect_backends().unwrap();
     let fcgi_clients = process_pools
         .iter()
-        .map(|process_pool| {
-            (
-                web::Data::new(process_pool.client_dispatcher(&config)),
-                process_pool.suffixes.clone(),
-            )
-        })
+        .map(|process_pool| web::Data::new(process_pool.client_dispatcher(&config)))
         .collect::<Vec<_>>();
 
     for mut process_pool in process_pools {

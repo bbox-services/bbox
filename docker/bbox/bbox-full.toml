@@ -34,20 +34,22 @@ search_paths = ["/data"]
 [wmsserver]
 # WMS server settings
 # Environment variable prefix: BBOX_WMSSERVER__
-path = "/wms"                # Base path of WMS endpoints
 num_fcgi_processes = 2     # Default: number of CPU cores
 # wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s
-# search_projects = false    # Scan directories and build inventory. Default: true
+# search_projects = false    # Scan directories and build inventory
 
 [wmsserver.qgis_backend]
 # QGIS Server settings
 # Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
-project_basedir = "/data"      # Base dir for project files (.qgs, .qgz)
+project_basedir = "/data"    # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"           # WMS URL base path
+qgz.path = "/qgz"            # WMS URL base path
 
-[wmsserver.umn_backend]
+#[wmsserver.umn_backend]
 # UMN MapServer settings
 # Environment variable prefix: BBOX_WMSSERVER__UMN_BACKEND__
-# project_basedir = "."      # Base dir for project files (.map)
+#project_basedir = "/data"    # Base dir for project files (.map)
+#path = "/wms/map"            # WMS URL base path
 
 #[wmsserver.mock_backend]
 # Enable FCGI mockup backend (for testing)
@@ -73,6 +75,6 @@ origin = "TopLeft"
 #baseurl = "http://localhost/cgi-bin/qgis_mapserv.fcgi?MAP=/opt/qgis_server_data/ch_051_1_version1_7_mn95.qgz&version=1.1.1&transparent=True&srs=EPSG:2056&styles="
 #layers = "ch.ti.051_1.piano_registro_fondiario_colori"
 #format = "image/png"
-baseurl = "http://localhost:8080/wms/qgs/ne?version=1.3.0"
+baseurl = "http://localhost:8080/qgis/ne?version=1.3.0"
 layers = "country"
 format = "image/png; mode=8bit"

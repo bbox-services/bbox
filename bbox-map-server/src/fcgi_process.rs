@@ -109,9 +109,15 @@ pub struct FcgiProcessPool {
     base_dir: Option<PathBuf>,
     envs: Vec<(String, String)>,
     backend_name: String,
-    pub(crate) suffixes: Vec<String>,
+    suffixes: Vec<FcgiSuffixUrl>,
     num_processes: usize,
     processes: Vec<FcgiProcess>,
+}
+
+#[derive(Clone)]
+pub struct FcgiSuffixUrl {
+    pub suffix: String,
+    pub url_base: String,
 }
 
 impl FcgiProcessPool {
@@ -129,7 +135,12 @@ impl FcgiProcessPool {
             suffixes: backend
                 .project_files()
                 .iter()
-                .map(|s| s.to_string())
+                .flat_map(|s| {
+                    backend.url_base(&s).map(|b| FcgiSuffixUrl {
+                        suffix: s.to_string(),
+                        url_base: b.to_string(),
+                    })
+                })
                 .collect(),
             num_processes,
             processes: Vec::new(),
@@ -184,6 +195,7 @@ impl FcgiProcessPool {
             backend_name: self.backend_name.clone(),
             pools,
             dispatcher,
+            suffixes: self.suffixes.clone(),
         }
     }
 
@@ -281,6 +293,8 @@ pub struct FcgiDispatcher {
     pools: Vec<FcgiClientPool>,
     /// Mode-dependent dispatcher
     dispatcher: Dispatcher,
+    /// Suffix info for endpoint registration
+    pub(crate) suffixes: Vec<FcgiSuffixUrl>,
 }
 
 impl FcgiDispatcher {

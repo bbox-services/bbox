@@ -195,14 +195,15 @@ pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &WmsBackend) {
 
     cfg.app_data(web::Data::new(wms_backend.inventory.clone()));
 
-    for (fcgi_client, suffixes) in &wms_backend.fcgi_clients {
-        for suffix in suffixes {
-            let route = format!("{}/{}", &config.path, &suffix);
-            info!("Registering WMS endpoint {}", &route);
+    for fcgi_client in &wms_backend.fcgi_clients {
+        for suffix_info in &fcgi_client.suffixes {
+            let route = suffix_info.url_base.clone();
+            let suffix = suffix_info.suffix.clone();
+            info!("Registering WMS endpoint {route} (suffix: {suffix})");
             cfg.service(
                 web::resource(route + "/{project:.+}") // :[^{}]+
                     .app_data(fcgi_client.clone())
-                    .app_data(web::Data::new(suffix.clone()))
+                    .app_data(web::Data::new(suffix))
                     .route(
                         web::route()
                             .guard(guard::Any(guard::Get()).or(guard::Post()))
