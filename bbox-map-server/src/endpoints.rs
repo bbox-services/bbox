@@ -27,13 +27,7 @@ async fn wms_fcgi(
     // ---
 
     let mut response = HttpResponse::Ok();
-    let fcgi_query = format!(
-        "map={}.{}&{}{}",
-        project,
-        suffix.as_str(),
-        req.query_string(),
-        &body
-    );
+    let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
 
     let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
     let available_clients = pool.status().available;
@@ -99,11 +93,13 @@ async fn wms_fcgi(
         "Forwarding query to FCGI process {}: {}",
         fcgino, &fcgi_query
     );
+    let len = format!("{}", body.len());
     let mut params = fastcgi_client::Params::new()
         .set_request_method(req.method().as_str())
         .set_request_uri(req.path())
         .set_server_name(host_port.get(0).unwrap_or(&""))
-        .set_query_string(&fcgi_query);
+        .set_query_string(&fcgi_query)
+        .set_content_length(&len);
     if let Some(port) = host_port.get(1) {
         params = params.set_server_port(port);
     }
@@ -113,7 +109,8 @@ async fn wms_fcgi(
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):
     // http://$(SERVER_NAME):$(SERVER_PORT)$(SCRIPT_NAME)? plus $HTTPS
     let fcgi_start = SystemTime::now();
-    let output = fcgi_client.do_request(&params, &mut std::io::empty());
+    let body = body.as_bytes();
+    let output = fcgi_client.do_request(&params, &mut &body[..]);
     if let Err(ref e) = output {
         warn!("FCGI error: {}", e);
         // Remove probably broken FCGI client from pool

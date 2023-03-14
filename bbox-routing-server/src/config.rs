@@ -27,7 +27,7 @@ impl RoutingServerCfg {
 pub fn setup() -> Option<Router> {
     let Some(config) = RoutingServerCfg::from_config() else {
             warn!("No routing config available");
-            return None        
+            return None;
     };
     match config.service.len() {
         1 => {
