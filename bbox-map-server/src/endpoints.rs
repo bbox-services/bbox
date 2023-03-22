@@ -129,6 +129,7 @@ async fn wms_fcgi(
             break;
         }
         let parts: Vec<&str> = line.splitn(2, ": ").collect();
+        //for [key, val] in line.splitn(2, ":").array_chunks() {}
         if parts.len() != 2 {
             error!("Invalid FCGI-Header received: {}", line);
             break;
@@ -194,9 +195,9 @@ pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &WmsBackend) {
 
     for fcgi_client in &wms_backend.fcgi_clients {
         for suffix_info in &fcgi_client.suffixes {
-            let route = suffix_info.url_base.clone();
+            let route = suffix_info.url_base.trim_end_matches('/').to_string();
             let suffix = suffix_info.suffix.clone();
-            info!("Registering WMS endpoint {route} (suffix: {suffix})");
+            info!("Registering WMS endpoint {route}/ (suffix: {suffix})");
             cfg.service(
                 web::resource(route + "/{project:.+}") // :[^{}]+
                     .app_data(fcgi_client.clone())
