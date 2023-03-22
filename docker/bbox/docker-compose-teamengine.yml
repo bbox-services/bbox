@@ -1,0 +1,14 @@
+services:
+  teamengine:
+    image: ogccite/teamengine-production:latest
+    ports:
+      - 127.0.0.1:8081:8080
+    volumes:
+      - teamengine-data:/usr/local/tomcat/te_base/users
+
+networks:
+  default:
+    name: bbox
+
+volumes:
+  teamengine-data:
