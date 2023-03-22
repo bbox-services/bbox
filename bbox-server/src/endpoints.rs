@@ -105,6 +105,8 @@ async fn redoc() -> Result<HttpResponse, Error> {
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/ogcapi/").route(web::get().to(index)))
+        .service(web::resource("/ogcapi/conformance").route(web::get().to(conformance)))
+        .service(web::resource("/ogcapi/collections").route(web::get().to(collections)))
         .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
         .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
         .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))

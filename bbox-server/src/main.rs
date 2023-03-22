@@ -65,7 +65,8 @@ async fn webserver() -> std::io::Result<()> {
 
     let landing_page_links = vec![
         ApiLink {
-            href: "/".to_string(),
+            // href: "/".to_string(),
+            href: "/ogcapi/".to_string(),
             rel: Some("self".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("this document".to_string()),
@@ -73,7 +74,8 @@ async fn webserver() -> std::io::Result<()> {
             length: None,
         },
         ApiLink {
-            href: "/api".to_string(),
+            // href: "/api".to_string(),
+            href: "/openapi.json".to_string(),
             rel: Some("service-desc".to_string()),
             type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
             title: Some("the API definition".to_string()),
