@@ -3,9 +3,12 @@ version: "3"
 services:
   bbox:
     image: sourcepole/bbox-server-qgis:latest
+    # environment:
+    #   - PGPASSWORD=$PG_PASS
     volumes:
       - ./bbox-full.toml:/var/www/bbox.toml:ro
       - ../../data:/data
+      - ../../plugins:/var/www/plugins:ro
 
 networks:
   default:
