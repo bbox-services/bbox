@@ -11,10 +11,8 @@ info:
     name: CC-BY 4.0 license
     url: 'https://creativecommons.org/licenses/by/4.0/'
 servers:
-  # - url: 'http://bbox:8080/ogcapi'
-  #   description: Production server
-  - url: 'http://host.docker.internal:8080/ogcapi'
-    description: Development server
+  - url: 'http://localhost:8080/ogcapi'
+    description: BBOX server
 tags:
   - name: Capabilities
     description: essential characteristics of this API

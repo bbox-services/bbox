@@ -45,11 +45,25 @@ impl OpenApiDoc {
             }
         }
     }
-    pub fn as_yaml(&self) -> String {
-        serde_yaml::to_string(&self.0).unwrap()
+    /// Set url of first server entry
+    pub fn set_server_url(&mut self, url: &str) {
+        if let Some(servers) = self.0.get_mut("servers") {
+            if let Some(server) = servers.get_mut(0) {
+                if let Some(server) = server.as_mapping_mut() {
+                    server[&"url".to_string().into()] = url.to_string().into();
+                }
+            }
+        }
     }
-    pub fn as_json(&self) -> serde_json::Value {
-        serde_yaml::from_value::<serde_json::Value>(self.0.clone()).unwrap()
+    pub fn as_yaml(&self, public_base_url: &str) -> String {
+        let mut doc = self.clone();
+        doc.set_server_url(public_base_url);
+        serde_yaml::to_string(&doc.0).unwrap()
+    }
+    pub fn as_json(&self, public_base_url: &str) -> serde_json::Value {
+        let mut doc = self.clone();
+        doc.set_server_url(public_base_url);
+        serde_yaml::from_value::<serde_json::Value>(doc.0).unwrap()
     }
     pub fn nop(&self) {}
 }

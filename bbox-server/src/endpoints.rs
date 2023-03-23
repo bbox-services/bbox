@@ -1,3 +1,4 @@
+use crate::WebserverCfg;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use bbox_common::ogcapi::*;
@@ -78,15 +79,25 @@ async fn collections(
 }
 
 /// Serve openapi.yaml
-async fn openapi_yaml(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
+async fn openapi_yaml(
+    openapi: web::Data<OpenApiDoc>,
+    cfg: web::Data<WebserverCfg>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let yaml = openapi.as_yaml(&cfg.public_base_url(req));
     HttpResponse::Ok()
         .content_type("application/x-yaml")
-        .body(openapi.as_yaml())
+        .body(yaml)
 }
 
 /// Serve openapi.json
-async fn openapi_json(openapi: web::Data<OpenApiDoc>) -> HttpResponse {
-    HttpResponse::Ok().json(openapi.as_json())
+async fn openapi_json(
+    openapi: web::Data<OpenApiDoc>,
+    cfg: web::Data<WebserverCfg>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let json = openapi.as_json(&cfg.public_base_url(req));
+    HttpResponse::Ok().json(json)
 }
 
 #[derive(RustEmbed)]
@@ -103,10 +114,11 @@ async fn redoc() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
 }
 
-pub fn register(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/ogcapi/").route(web::get().to(index)))
-        .service(web::resource("/ogcapi/conformance").route(web::get().to(conformance)))
-        .service(web::resource("/ogcapi/collections").route(web::get().to(collections)))
+pub fn register(cfg: &mut web::ServiceConfig, web_cfg: &WebserverCfg) {
+    let api_base = web_cfg.base_path();
+    cfg.service(web::resource(format!("{api_base}/")).route(web::get().to(index)))
+        .service(web::resource(format!("{api_base}/conformance")).route(web::get().to(conformance)))
+        .service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
         .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
         .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
         .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))

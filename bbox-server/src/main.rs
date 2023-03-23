@@ -2,11 +2,9 @@ mod config;
 mod endpoints;
 
 use crate::config::*;
-use actix_web::web;
-use actix_web::{middleware, App, HttpResponse, HttpServer};
+use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
-use bbox_common::api::OgcApiInventory;
-use bbox_common::api::OpenApiDoc;
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use bbox_common::ogcapi::ApiLink;
 use clap::Parser;
 use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
@@ -142,6 +140,7 @@ async fn webserver() -> std::io::Result<()> {
     );
 
     let workers = web_config.worker_threads();
+    let server_addr = web_config.server_addr.clone();
 
     HttpServer::new(move || {
         let mut app = App::new()
@@ -150,10 +149,11 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(web::resource("/health").to(health))
+            .app_data(web::Data::new(web_config.clone()))
             .app_data(web::Data::new(ogcapi.clone()))
             .app_data(web::Data::new(openapi.clone()))
             .configure(bbox_common::static_assets::register_endpoints)
-            .configure(endpoints::register);
+            .configure(|mut cfg| endpoints::register(&mut cfg, &web_config));
 
         #[cfg(feature = "map-server")]
         {
@@ -193,7 +193,7 @@ async fn webserver() -> std::io::Result<()> {
 
         app
     })
-    .bind(web_config.server_addr.clone())?
+    .bind(server_addr)?
     .workers(workers)
     .run()
     .await
