@@ -68,7 +68,8 @@ impl FcgiBackendType for QgisFcgiBackend {
         vec![
             ("QGIS_PLUGINPATH", &self.plugindir),
             ("QGIS_SERVER_LOG_STDERR", "1"),
-            ("QGIS_SERVER_LOG_LEVEL", "0"),
+            ("QGIS_SERVER_LOG_LEVEL", "0"), // TODO: control with bbox log level
+            ("QGIS_SERVER_LOG_PROFILE", "1"),
         ]
     }
     fn cap_type(&self) -> CapType {
@@ -104,6 +105,8 @@ impl FcgiBackendType for UmnFcgiBackend {
     }
     fn env_defaults(&self) -> Vec<(&str, &str)> {
         vec![("MS_ERRORFILE", "stderr")]
+        // MS_DEBUGLEVEL: The debug level 0=off 5=verbose
+        // See also https://github.com/camptocamp/docker-mapserver
     }
 }
 
