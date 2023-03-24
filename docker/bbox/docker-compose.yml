@@ -10,6 +10,220 @@ services:
       - ../../data:/data
       - ../../plugins:/var/www/plugins:ro
 
+  postgresql:
+    image: postgis/postgis:15-3.3
+    profiles: [default,all,auth,processes]
+    # restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/20_create_dbs.sh:ro
+      - ./init-windmill-as-superuser.sql:/docker-entrypoint-initdb.d/init-windmill-as-superuser.sql:ro
+    # ports:
+      # - 5432:5432
+    environment:
+      - POSTGRES_DB=$POSTGIS_DB
+      - POSTGRES_USER=$POSTGIS_DB
+      - POSTGRES_PASSWORD=$PG_PASS
+      - POSTGRES_MULTIPLE_DATABASES
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:1.23
+    profiles: [all,auth,processes]
+    ports:
+      - "8080:8080"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:8000:8000"
+       #- "443:443"
+    volumes:
+      - ./nginx:/etc/nginx/templates:ro
+
+  # --- metrics ---
+
+  prometheus:
+    image: prom/prometheus:v2.42.0
+    profiles: [default,all,metrics]
+    volumes:
+      - "./instrumentation/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "prom-data:/prometheus"
+
+  grafana:
+    image: grafana/grafana
+    profiles: [default,all,metrics]
+    environment:
+      - GF_SERVER_ROOT_URL=/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - "./instrumentation/grafana:/etc/grafana:ro"
+
+  jaeger: 
+    image: jaegertracing/all-in-one:latest
+    profiles: [default,all,metrics]
+    # ports:
+      #- "127.0.0.1:5775:5775/udp"
+      #- "127.0.0.1:6831:6831/udp"
+      #- "127.0.0.1:6832:6832/udp"
+      #- "127.0.0.1:5778:5778"
+      #- "127.0.0.1:16686:16686"
+      #- "127.0.0.1:14268:14268"
+      #- "127.0.0.1:9411:9411"
+
+  # --- auth ----
+
+  redis:
+    image: docker.io/library/redis:alpine
+    profiles: [all,auth]
+    command: --save 60 1 --loglevel warning
+    #restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+
+  authentik_server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2023.2.2}
+    profiles: [all,auth]
+    #restart: unless-stopped
+    command: server
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=${PG_HOST:-postgresql}
+      - AUTHENTIK_POSTGRESQL__USER=${PG_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__NAME=${PG_DB:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${PG_PASS}
+      - AUTHENTIK_DISABLE_UPDATE_CHECK="true"
+      - AUTHENTIK_ERROR_REPORTING__ENABLED="false"
+      - AUTHENTIK_DISABLE_STARTUP_ANALYTICS="true"
+      - AUTHENTIK_AVATARS=none
+      - AUTHENTIK_SECRET_KEY
+      - AUTHENTIK_BOOTSTRAP_PASSWORD=akadmin
+    # volumes:
+    #   - ./media:/media
+    #   - ./custom-templates:/templates
+    #   - geoip:/geoip
+    # env_file:
+    #   - .env
+
+  authentik_worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2023.2.2}
+    profiles: [all,auth]
+    #restart: unless-stopped
+    command: worker
+    environment:
+      - AUTHENTIK_REDIS__HOST=redis
+      - AUTHENTIK_POSTGRESQL__HOST=${PG_HOST:-postgresql}
+      - AUTHENTIK_POSTGRESQL__USER=${PG_USER:-authentik}
+      - AUTHENTIK_POSTGRESQL__NAME=${PG_DB:-authentik}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${PG_PASS}
+      - AUTHENTIK_SECRET_KEY
+    # This is optional, and can be removed. If you remove this, the following will happen
+    # - The permissions for the /media folders aren't fixed, so make sure they are 1000:1000
+    # - The docker socket can't be accessed anymore
+    # user: root
+    volumes:
+      # - ./media:/media
+      - ./certs:/certs
+    #   - /var/run/docker.sock:/var/run/docker.sock
+    #   - ./custom-templates:/templates
+    #   - geoip:/geoip
+    # env_file:
+    #   - .env
+
+  # --- processes ----
+
+  windmill:
+    image: ghcr.io/windmill-labs/windmill:1.66.1
+    profiles: [all,processes]
+    # restart: unless-stopped
+    # ports:
+    #   - 8000:8000
+    environment:
+      - DATABASE_URL=postgres://windmill:${PG_PASS}@postgresql/windmill?sslmode=disable
+      - BASE_URL=http://${WM_BASE_URL}
+      - BASE_INTERNAL_URL=http://localhost:8000
+      - RUST_LOG=info
+      - NUM_WORKERS=0
+      - METRICS_ADDR=true
+      - TZ      
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    # volumes:
+      # - ./oauth.json/:/usr/src/app/oauth.json
+  
+  windmill_worker:
+    image: sourcepole/windmill-gdal:bullseye
+    profiles: [all,processes]
+    # Set privileged to true if enabling nsjail
+    privileged: false
+    # restart: unless-stopped
+    environment:
+      - TZ=Europe/Zurich
+      - DATABASE_URL=postgres://windmill:${PG_PASS}@postgresql/windmill?sslmode=disable
+      - BASE_URL=http://${WM_BASE_URL}
+      - BASE_INTERNAL_URL=http://windmill:8000
+      - RUST_LOG=info
+      - DISABLE_SERVER=true
+      - NUM_WORKERS=2
+      - KEEP_JOB_DIR=false
+      - DENO_PATH=/usr/bin/deno
+      - PYTHON_PATH=/usr/local/bin/python3
+      - METRICS_ADDR=true
+      - TZ
+      - PG_PASS
+      # required for make loaddb
+      - PGPASSWORD=$PG_PASS
+      # for ease of use, nsjail which provide isolation in untrusted environment is disabled by default. 
+      # To enable it, uncomment the following line, set the container as privileged and
+      # rebuild the image with nsjail=true or use the enterprise edition
+      # - DISABLE_NSJAIL=false
+      # - DISABLE_NUSER=false
+      # - NSJAIL_PATH=nsjail
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    # to mount the worker folder to debug,, KEEP_JOB_DIR=true and mount /tmp/windmill
+    volumes:
+      - windmill_dependency_cache:/tmp/windmill/cache
+      - ../../data:/data
+
+  windmill_lsp:
+    image: ghcr.io/windmill-labs/windmill-lsp:latest
+    profiles: [all,processes]
+    # restart: unless-stopped
+
+  # --- teamengine ----
+
+  teamengine:
+    profiles: [all,teamengine]
+    image: ogccite/teamengine-production:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - 127.0.0.1:8081:8080
+#     volumes:
+#       - teamengine-data:/usr/local/tomcat/te_base/users
+
+volumes:
+  postgres-data:
+    driver: local
+  prom-data:
+    driver: local
+  redis:
+    driver: local
+  geoip:
+    driver: local
+  windmill_dependency_cache:
+    driver: local
+
 networks:
   default:
     name: bbox

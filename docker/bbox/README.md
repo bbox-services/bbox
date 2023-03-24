@@ -11,11 +11,7 @@ Setup
 Usage
 -----
 
-    docker-compose -f docker-compose-bbox.yml -f docker-compose-postgresql.yml -f docker-compose-nginx.yml -f docker-compose-auth.yml -f docker-compose-windmill.yml -f docker-compose-metrics.yml up -d
-
-Or with Make installed:
-
-    make up
+    docker-compose --profile default up -d
 
 ### BBOX
 
@@ -23,12 +19,16 @@ Or with Make installed:
 
 ### Authentik
 
+    docker-compose --profile auth up -d
+
     x-www-browser http://127.0.0.1:9000/
 
 Login: akadmin
 Password: akadmin
 
 ### Windmill
+
+    docker-compose --profile processes up -d
 
     x-www-browser http://127.0.0.1:8000/
 
