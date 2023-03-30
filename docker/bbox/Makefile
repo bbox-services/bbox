@@ -28,4 +28,4 @@ teamengine:
 	docker-compose up -d teamengine
 	# open http://localhost:8081/teamengine/
 	# Login with ogctest / ogctest
-	# Landing page location: http://bbox:8080/ogcapi/
+	# Landing page location: http://bbox:8080/

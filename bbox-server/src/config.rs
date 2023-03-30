@@ -15,7 +15,7 @@ fn default_server_addr() -> String {
     "127.0.0.1:8080".to_string()
 }
 
-const DEFAULT_BASE_PATH: &str = "/ogcapi";
+const DEFAULT_BASE_PATH: &str = "";
 
 impl Default for WebserverCfg {
     fn default() -> Self {

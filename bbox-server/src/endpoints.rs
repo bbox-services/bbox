@@ -1,5 +1,5 @@
 use crate::WebserverCfg;
-use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use bbox_common::ogcapi::*;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
@@ -116,16 +116,25 @@ async fn redoc() -> Result<HttpResponse, Error> {
 
 pub fn register(cfg: &mut web::ServiceConfig, web_cfg: &WebserverCfg) {
     let api_base = web_cfg.base_path();
-    cfg.service(web::resource(format!("{api_base}/")).route(web::get().to(index)))
-        .service(web::resource(format!("{api_base}/conformance")).route(web::get().to(conformance)))
-        .service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
-        .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
-        .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
-        .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
-        .service(web::resource("/redoc.html").route(web::get().to(redoc)))
-        .service(web::resource("/conformance").route(web::get().to(conformance)))
-        .service(web::resource("/collections").route(web::get().to(collections)))
-        .service(web::resource("/collections.json").route(web::get().to(collections)));
+    cfg.service(
+        web::resource(format!("{api_base}/"))
+            .guard(guard::Header("content-type", "application/json"))
+            .route(web::get().to(index)),
+    )
+    .service(
+        web::resource(format!("{api_base}/conformance"))
+            // TODO: HTML implementation missing
+            // .guard(guard::Header("content-type", "application/json"))
+            .route(web::get().to(conformance)),
+    )
+    .service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
+    .service(
+        web::resource(format!("{api_base}/collections.json")).route(web::get().to(collections)),
+    )
+    .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
+    .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
+    .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
+    .service(web::resource("/redoc.html").route(web::get().to(redoc)));
 }
 
 // #[cfg(test)]
