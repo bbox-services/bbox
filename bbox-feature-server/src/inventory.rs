@@ -175,10 +175,7 @@ impl Inventory {
         };
         if items.number_matched > items.number_returned {
             let mut add_link = |link: FilterParams, rel: &str| {
-                let mut params = link.as_args();
-                if params.len() > 0 {
-                    params.insert(0, '?');
-                }
+                let params = link.as_args();
                 features.links.push(ApiLink {
                     href: format!("/collections/{collection_id}/items{params}"),
                     rel: Some(rel.to_string()),

@@ -39,7 +39,8 @@ impl FilterParams {
         }
     }
     pub fn as_args(&self) -> String {
-        vec![
+        let mut args = vec![
+            Some("".to_string()),
             self.limit.map(|v| format!("limit={v}")),
             self.offset.map(|v| format!("offset={v}")),
             self.bbox.as_ref().map(|v| format!("bbox={v}")),
@@ -47,7 +48,12 @@ impl FilterParams {
         .into_iter()
         .filter_map(|v| v)
         .collect::<Vec<String>>()
-        .join("&")
+        .join("&");
+        if args.len() > 0 {
+            // replace & with ?
+            args.replace_range(0..1, "?");
+        }
+        args
     }
     pub fn bbox(&self) -> Result<Option<Vec<f64>>, std::num::ParseFloatError> {
         if let Some(bboxstr) = &self.bbox {
@@ -77,14 +83,22 @@ mod tests {
         };
         assert_eq!(
             filter.as_args(),
-            "limit=10&offset=20&bbox=1.0,2.2,3.33,4.444"
+            "?limit=10&offset=20&bbox=1.0,2.2,3.33,4.444"
         );
+
         let filter = FilterParams {
             limit: None,
             offset: Some(20),
             bbox: None,
         };
-        assert_eq!(filter.as_args(), "offset=20");
+        assert_eq!(filter.as_args(), "?offset=20");
+
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+        };
+        assert_eq!(filter.as_args(), "");
     }
 
     #[test]
