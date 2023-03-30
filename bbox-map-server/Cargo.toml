@@ -27,6 +27,7 @@ serde_json = { workspace = true }
 serde-xml-rs = "0.4.0"
 awc = "3.0.0-beta.20"
 once_cell = { workspace = true }
+async-stream = "0.3.4"
 
 [dev-dependencies]
 

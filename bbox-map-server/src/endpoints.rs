@@ -3,13 +3,16 @@ use crate::fcgi_process::*;
 use crate::metrics::{wms_metrics, WmsMetrics};
 use crate::wms_fcgi_backend::WmsBackend;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
+use async_stream::stream;
 use log::{debug, error, info, warn};
 use opentelemetry::{
     global,
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Context, KeyValue,
 };
+use std::convert::Infallible;
 use std::io::{BufRead, Cursor, Read};
+use std::iter::FromIterator;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
@@ -180,9 +183,12 @@ async fn wms_fcgi(
     drop(ctx);
     // --- <
 
-    let mut body = Vec::new(); // TODO: return body without copy
-    let _bytes = cursor.read_to_end(&mut body);
-    Ok(response.body(body))
+    let body = cursor
+        .bytes()
+        .map_while(|val| if let Ok(b) = val { Some(b) } else { None });
+    Ok(response.streaming(stream! {
+            yield Ok::<_, Infallible>(web::Bytes::from_iter(body));
+    }))
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &WmsBackend) {
