@@ -20,6 +20,7 @@ geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 sqlx = { workspace = true }
 futures = { workspace = true }
 async-trait = "0.1.65"
+thiserror = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }

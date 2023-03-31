@@ -1,4 +1,5 @@
 use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
+use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
@@ -8,7 +9,7 @@ use geozero::{geojson, wkb};
 use log::warn;
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
-use sqlx::{Column, Result, Row, TypeInfo};
+use sqlx::{Column, Row, TypeInfo};
 
 #[derive(Clone)]
 pub struct GpkgDatasource {
@@ -237,12 +238,12 @@ fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionInfo) -> Result<Co
     }
     let wkb: wkb::Decode<geojson::GeoJsonString> =
         row.try_get(table_info.geometry_column.as_str())?;
-    let geom = wkb.geometry.unwrap();
+    let geom = wkb.geometry.ok_or(error::Error::GeometryFormatError)?;
 
     let item = CoreFeature {
         type_: "Feature".to_string(),
         id,
-        geometry: serde_json::from_str(&geom.0).unwrap(),
+        geometry: serde_json::from_str(&geom.0).map_err(|_| error::Error::GeometryFormatError)?,
         properties: Some(properties),
         links: vec![],
     };

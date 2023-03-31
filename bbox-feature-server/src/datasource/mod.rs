@@ -1,10 +1,10 @@
 use crate::datasource::gpkg::{GpkgCollectionInfo, GpkgDatasource};
 use crate::datasource::postgis::{PgCollectionInfo, PgDatasource};
+use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_common::ogcapi::*;
-use sqlx::Result;
 
 pub mod gpkg;
 pub mod postgis;

@@ -1,4 +1,5 @@
 use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
+use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
@@ -6,7 +7,7 @@ use bbox_common::ogcapi::*;
 use futures::TryStreamExt;
 use log::warn;
 use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
-use sqlx::{Result, Row};
+use sqlx::Row;
 
 #[derive(Clone)]
 pub struct PgDatasource {

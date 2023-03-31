@@ -2,11 +2,11 @@ use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
 use crate::datasource::postgis::PgDatasource;
 use crate::datasource::{CollectionDatasource, CollectionInfo, Datasource};
+use crate::error::Result;
 use crate::filter_params::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
-use sqlx::Result;
 use std::collections::HashMap;
 
 #[derive(Clone)]

@@ -25,6 +25,7 @@ tokio = { version = "1.19.2" }
 futures = "0.3.21"
 sqlx = { version = "0.6.2", default-features = false, features = [ "runtime-tokio-native-tls", "sqlite", "postgres" ] }
 geozero = { version = "0.9.2" }
+thiserror = "1.0.31"
 
 #[patch.crates-io]
 #fast_paths = { path = "../fast_paths" }
