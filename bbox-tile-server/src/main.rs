@@ -1,4 +1,5 @@
 mod config;
+mod error;
 mod files;
 mod s3;
 mod s3putfiles;

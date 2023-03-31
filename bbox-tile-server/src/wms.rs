@@ -1,4 +1,5 @@
 use crate::config::BackendWmsCfg;
+use crate::error::Result;
 use bytes::Bytes;
 use log::debug;
 use tile_grid::{Extent, Grid};
@@ -31,12 +32,12 @@ impl WmsRequest {
         )
     }
 
-    pub async fn get_map(&self, extent: &Extent) -> reqwest::Result<Bytes> {
+    pub async fn get_map(&self, extent: &Extent) -> Result<Bytes> {
         let req = self.get_map_request(extent);
         debug!("Request {req}");
-        let response = self.client.get(req).send().await.unwrap();
+        let response = self.client.get(req).send().await?;
         // if !response.status().is_success() {
         //     return Err();
-        response.bytes().await
+        response.bytes().await.map_err(|e| e.into())
     }
 }

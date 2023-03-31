@@ -743,6 +743,7 @@ dependencies = [
  "rusoto_s3",
  "serde",
  "tempfile",
+ "thiserror",
  "tile-grid",
  "tokio",
 ]
