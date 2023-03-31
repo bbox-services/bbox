@@ -77,6 +77,6 @@ path = "/wms/map"            # WMS URL base path
 predefined = "web_mercator"
 
 [tile.wms]
-baseurl = "http://localhost:8080/qgis/ne?version=1.3.0"
-layers = "country"
+baseurl = "http://localhost:8080/qgz/ne_extracts?version=1.3.0"
+layers = "ne_extracts"
 format = "image/png; mode=8bit"

@@ -15,8 +15,8 @@ Tile seeder
 
 Features:
 - [ ] Parellelized seeding of raster and vector tiles
-- [ ] Storage Backend: S3 - optimized for tile transfer
-- [ ] Storage Backend: Local files
+- [x] Storage Backend: S3 - optimized for tile transfer
+- [x] Storage Backend: Local files
 
 
 ### Usage
@@ -24,6 +24,10 @@ Features:
 Build:
 
     cargo build --release
+
+Local file test:
+
+    ../target/release/bbox-tile-seeder --base-dir=/tmp/tiles --maxzoom=3
 
 Set S3 env vars:
 
@@ -33,7 +37,7 @@ Set S3 env vars:
 
 Run:
 
-    ../target/release/bbox-tile-seeder --maxzoom=5 s3://tiles    
+    ../target/release/bbox-tile-seeder --s3-path=s3://tiles --maxzoom=5
 
 
 ### Local S3 tests

@@ -12,7 +12,7 @@ use crate::tile_writer::TileWriter;
 use crate::wms::WmsRequest;
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use log::debug;
+use log::{debug, info};
 use std::io::Cursor;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -25,12 +25,12 @@ use tokio::task;
 ## Raster tiles
 
 Data sources:
-- [ ] OGC WMS (http)
+- [x] OGC WMS (http)
 - [ ] FCGI WMS
 - [ ] GDAL Raster data
 
 Output format:
-- [ ] Raster tiles
+- [x] Raster tiles
 
 ## Vector tiles
 
@@ -43,8 +43,8 @@ Output format:
 - [ ] Mapbox Vector Tiles (MVT)
 
 ## Storage
-- [ ] Files
-- [ ] S3
+- [x] Files
+- [x] S3
 
 ## Workflows
 
@@ -184,6 +184,7 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     } else {
         anyhow::bail!("[tile.wms] config missing")
     };
+    info!("Tile source {}", wms.req_url);
 
     let file_dir = args
         .base_dir
@@ -195,6 +196,10 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
     let (tx, rx) = async_channel::bounded(task_queue_size);
 
     if let Some(s3_writer) = s3_writer {
+        info!(
+            "Writing tiles to {s3_writer:?} (temporary dir: {})",
+            file_dir.to_string_lossy()
+        );
         for _ in 0..writer_task_count {
             let s3_writer = s3_writer.clone();
             let base_dir = file_dir.clone();
@@ -205,13 +210,16 @@ async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
                 }
             }));
         }
+        debug!("{} S3 writer tasks spawned", tasks.len());
+    } else {
+        info!("Writing tiles to {}", file_dir.to_string_lossy());
     }
-    debug!("{} S3 writer tasks spawned", tasks.len());
 
     let tile_limits = grid.tile_limits(bbox, 0);
     let minzoom = args.minzoom.unwrap_or(0);
     let maxzoom = args.maxzoom.unwrap_or(grid.maxzoom());
     let griditer = GridIterator::new(minzoom, maxzoom, tile_limits);
+    info!("Seeding tiles from level {minzoom} to {maxzoom}");
     for (z, x, y) in griditer {
         let extent = grid.tile_extent(x, y, z);
         let path = format!("{z}/{x}/{y}.png");
