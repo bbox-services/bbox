@@ -11,7 +11,8 @@ use crate::files::FileWriter;
 use crate::s3::S3Writer;
 use crate::tile_writer::TileWriter;
 use crate::wms::WmsRequest;
-use clap::Parser;
+use actix_web::{middleware, App, HttpServer};
+use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
 use std::io::Cursor;
@@ -76,34 +77,51 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 */
 
-#[derive(Parser, Debug)]
-pub struct Cli {
+#[derive(Debug, Parser)]
+#[command(name = "bbox-tile-seeder")]
+#[command(about = "BBOX tile server", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    /// Seed tiles
+    #[command(arg_required_else_help = true)]
+    Seed(SeedArgs),
+    /// Run tile server
+    Serve {},
+}
+
+#[derive(Debug, Args)]
+pub struct SeedArgs {
     /// Minimum zoom level
-    #[clap(long, value_parser)]
+    #[arg(long, value_parser)]
     minzoom: Option<u8>,
     /// Maximum zoom level
-    #[clap(long, value_parser)]
+    #[arg(long, value_parser)]
     maxzoom: Option<u8>,
     /// Extent minx,miny,maxx,maxy (in grid reference system)
-    #[clap(long, value_parser)]
+    #[arg(long, value_parser)]
     extent: Option<String>,
     /// S3 path to upload to (e.g. s3://tiles)
-    #[clap(long, group = "output_s3", conflicts_with = "output_files")]
+    #[arg(long, group = "output_s3", conflicts_with = "output_files")]
     s3_path: Option<String>,
     /// Base directory for file output
-    #[clap(long, group = "output_files", conflicts_with = "output_s3")]
+    #[arg(long, group = "output_files", conflicts_with = "output_s3")]
     base_dir: Option<String>,
     /// Base directory of input files
-    #[clap(short, long, value_parser)]
+    #[arg(short, long, value_parser)]
     srcdir: Option<std::path::PathBuf>,
     /// Parallelzation mode
-    #[clap(short, long, value_enum, default_value("tasks"))]
+    #[arg(short, long, value_enum, default_value("tasks"))]
     mode: Mode,
     /// Number of threads to use, defaults to number of logical cores
-    #[clap(short, long, value_parser)]
+    #[arg(short, long, value_parser)]
     threads: Option<usize>,
     /// Size of tasks queue for parallel processing
-    #[clap(long, value_parser)]
+    #[arg(long, value_parser)]
     tasks: Option<usize>,
 }
 
@@ -136,7 +154,7 @@ fn progress_bar() -> ProgressBar {
     progress
 }
 
-async fn seed_by_grid(args: &Cli) -> anyhow::Result<()> {
+async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let progress = progress_bar();
 
     let s3_writer = args
@@ -272,10 +290,7 @@ async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHan
     }
 }
 
-fn main() {
-    let args = Cli::parse();
-    bbox_common::logger::init();
-
+fn seed(args: &SeedArgs) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     // let threads = args.threads.unwrap_or(num_cpus::get());
     // let rt = tokio::runtime::Builder::new_multi_thread()
@@ -298,5 +313,32 @@ fn main() {
     }) {
         eprintln!("Error: {}", e);
         std::process::exit(1);
+    }
+}
+
+#[actix_web::main]
+pub async fn webserver() -> std::io::Result<()> {
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
+        // .configure(endpoints::register)
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
+}
+
+fn main() {
+    let args = Cli::parse();
+    bbox_common::logger::init();
+
+    match args.command {
+        Commands::Serve {} => {
+            webserver().unwrap();
+        }
+        Commands::Seed(seedargs) => {
+            seed(&seedargs);
+        }
     }
 }

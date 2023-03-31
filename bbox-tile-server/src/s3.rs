@@ -1,5 +1,5 @@
 use crate::tile_writer::TileWriter;
-use crate::Cli;
+use crate::SeedArgs;
 use async_trait::async_trait;
 use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
@@ -16,7 +16,7 @@ pub struct S3Writer {
 
 #[async_trait]
 impl TileWriter for S3Writer {
-    fn from_args(args: &Cli) -> anyhow::Result<Self> {
+    fn from_args(args: &SeedArgs) -> anyhow::Result<Self> {
         let bucket = match args.s3_path.as_ref().unwrap().strip_prefix("s3://") {
             None => anyhow::bail!("S3 path has to start with 's3://'"),
             Some(bucket) => {

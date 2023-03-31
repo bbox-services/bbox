@@ -1,10 +1,10 @@
-use crate::Cli;
+use crate::SeedArgs;
 use async_trait::async_trait;
 use dyn_clone::{clone_trait_object, DynClone};
 
 #[async_trait]
 pub trait TileWriter: DynClone {
-    fn from_args(args: &Cli) -> anyhow::Result<Self>
+    fn from_args(args: &SeedArgs) -> anyhow::Result<Self>
     where
         Self: Clone + Sized;
     async fn put_tile(

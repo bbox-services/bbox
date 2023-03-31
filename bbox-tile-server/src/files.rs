@@ -1,5 +1,5 @@
 use crate::tile_writer::TileWriter;
-use crate::Cli;
+use crate::SeedArgs;
 use async_trait::async_trait;
 use log::debug;
 use std::fs::{self, File};
@@ -22,7 +22,7 @@ impl FileWriter {
 
 #[async_trait]
 impl TileWriter for FileWriter {
-    fn from_args(args: &Cli) -> anyhow::Result<Self> {
+    fn from_args(args: &SeedArgs) -> anyhow::Result<Self> {
         let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
 
         Ok(FileWriter { base_dir })

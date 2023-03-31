@@ -27,7 +27,7 @@ Build:
 
 Local file test:
 
-    ../target/release/bbox-tile-seeder --base-dir=/tmp/tiles --maxzoom=3
+    ../target/release/bbox-tile-seeder seed --base-dir=/tmp/tiles --maxzoom=3
 
 Set S3 env vars:
 
@@ -37,7 +37,7 @@ Set S3 env vars:
 
 Run:
 
-    ../target/release/bbox-tile-seeder --s3-path=s3://tiles --maxzoom=5
+    ../target/release/bbox-tile-seeder seed --s3-path=s3://tiles --maxzoom=5
 
 
 ### Local S3 tests
@@ -102,7 +102,7 @@ Initial sequential implementation:
     export S3_ENDPOINT_URL="http://localhost:9000"
 
     cargo build --release
-    time ../target/release/bbox-tile-seeder --srcdir=/home/pi/code/gis/vogeldatenbank/tiles/ --s3-path=s3://tiles
+    time ../target/release/bbox-tile-seeder seed --srcdir=/home/pi/code/gis/vogeldatenbank/tiles/ --s3-path=s3://tiles
 
     -> real    0m53.257s
 
@@ -116,12 +116,12 @@ Parallel tasks:
 
 Local QGIS NaturalEarth WMS
 
-    ../target/release/bbox-tile-seeder --maxzoom=18 --s3-path=s3://tiles
+    ../target/release/bbox-tile-seeder seed --maxzoom=18 --s3-path=s3://tiles
 
     -> 14s
 
 Local QGIS NaturalEarth WMS to local directory
 
-    ../target/release/bbox-tile-seeder --maxzoom=18 --base-dir=/tmp/tiles
+    ../target/release/bbox-tile-seeder seed --maxzoom=18 --base-dir=/tmp/tiles
 
     -> 13s

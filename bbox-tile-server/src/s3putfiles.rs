@@ -1,6 +1,6 @@
 use crate::tile_writer::TileWriter;
-use crate::Cli;
 use crate::S3Writer;
+use crate::SeedArgs;
 use bbox_common::file_search;
 use crossbeam::channel;
 use indicatif::ProgressIterator;
@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use tokio::task;
 
-fn s3cfg(args: &Cli) -> anyhow::Result<(String, rusoto_core::Region)> {
+fn s3cfg(args: &SeedArgs) -> anyhow::Result<(String, rusoto_core::Region)> {
     let bucket = match args.s3_path.as_ref().unwrap().strip_prefix("s3://") {
         None => anyhow::bail!("S3 path has to start with 's3://'"),
         Some(bucket) => {
@@ -34,7 +34,7 @@ fn s3cfg(args: &Cli) -> anyhow::Result<(String, rusoto_core::Region)> {
     Ok((bucket, region))
 }
 
-pub async fn put_files_seq(args: &Cli) -> anyhow::Result<()> {
+pub async fn put_files_seq(args: &SeedArgs) -> anyhow::Result<()> {
     let (bucket, region) = s3cfg(args)?;
     let client = S3Client::new(region);
 
@@ -71,7 +71,7 @@ pub async fn put_files_seq(args: &Cli) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
+pub async fn put_files_tasks(args: &SeedArgs) -> anyhow::Result<()> {
     let (bucket, region) = s3cfg(args)?;
 
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
@@ -130,7 +130,7 @@ pub async fn put_files_tasks(args: &Cli) -> anyhow::Result<()> {
 }
 
 #[allow(dead_code)]
-pub async fn put_files(args: &Cli) -> anyhow::Result<()> {
+pub async fn put_files(args: &SeedArgs) -> anyhow::Result<()> {
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
     let task_queue_size = args.tasks.unwrap_or(256);
     let mut tasks = Vec::with_capacity(task_queue_size);
@@ -168,7 +168,7 @@ async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHan
     }
 }
 
-pub async fn put_files_channels(args: &Cli) -> anyhow::Result<()> {
+pub async fn put_files_channels(args: &SeedArgs) -> anyhow::Result<()> {
     let (bucket, region) = s3cfg(args)?;
 
     let num_tokens = args.tasks.unwrap_or(256);
