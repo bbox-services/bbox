@@ -23,6 +23,9 @@ pub enum Commands {
     /// Seed tiles
     #[command(arg_required_else_help = true)]
     Seed(SeedArgs),
+    /// Upload tiles
+    #[command(arg_required_else_help = true)]
+    Upload(UploadArgs),
     /// Run tile server
     Serve {},
 }
@@ -44,9 +47,22 @@ pub struct SeedArgs {
     /// Base directory for file output
     #[arg(long, group = "output_files", conflicts_with = "output_s3")]
     pub base_dir: Option<String>,
+    /// Number of threads to use, defaults to number of logical cores
+    #[arg(short, long, value_parser)]
+    pub threads: Option<usize>,
+    /// Size of tasks queue for parallel processing
+    #[arg(long, value_parser)]
+    pub tasks: Option<usize>,
+}
+
+#[derive(Debug, Args)]
+pub struct UploadArgs {
     /// Base directory of input files
     #[arg(short, long, value_parser)]
-    pub srcdir: Option<std::path::PathBuf>,
+    pub srcdir: std::path::PathBuf,
+    /// S3 path to upload to (e.g. s3://tiles)
+    #[arg(long, group = "output_s3")]
+    pub s3_path: String,
     /// Parallelzation mode
     #[arg(short, long, value_enum, default_value("tasks"))]
     pub mode: Mode,
@@ -233,15 +249,20 @@ pub fn seed(args: &SeedArgs) {
     //     .build()
     //     .unwrap();
 
+    if let Err(e) = rt.block_on(async move { seed_by_grid(&args).await }) {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+pub fn upload(args: &UploadArgs) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+
     if let Err(e) = rt.block_on(async move {
-        if args.srcdir.is_some() {
-            match args.mode {
-                Mode::Sequential => s3putfiles::put_files_seq(&args).await,
-                Mode::Tasks => s3putfiles::put_files_tasks(&args).await,
-                Mode::Channels => s3putfiles::put_files_channels(&args).await,
-            }
-        } else {
-            seed_by_grid(&args).await
+        match args.mode {
+            Mode::Sequential => s3putfiles::put_files_seq(&args).await,
+            Mode::Tasks => s3putfiles::put_files_tasks(&args).await,
+            Mode::Channels => s3putfiles::put_files_channels(&args).await,
         }
     }) {
         eprintln!("Error: {}", e);

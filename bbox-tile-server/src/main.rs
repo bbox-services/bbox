@@ -93,5 +93,8 @@ fn main() {
         Commands::Seed(seedargs) => {
             cli::seed(&seedargs);
         }
+        Commands::Upload(uploadargs) => {
+            cli::upload(&uploadargs);
+        }
     }
 }

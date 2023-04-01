@@ -14,10 +14,9 @@ pub struct S3Writer {
     region: rusoto_core::Region,
 }
 
-#[async_trait]
-impl TileWriter for S3Writer {
-    fn from_args(args: &SeedArgs) -> anyhow::Result<Self> {
-        let bucket = match args.s3_path.as_ref().unwrap().strip_prefix("s3://") {
+impl S3Writer {
+    pub fn from_s3_path(s3_path: &str) -> anyhow::Result<Self> {
+        let bucket = match s3_path.strip_prefix("s3://") {
             None => anyhow::bail!("S3 path has to start with 's3://'"),
             Some(bucket) => {
                 if bucket.contains('/') {
@@ -27,7 +26,6 @@ impl TileWriter for S3Writer {
                 }
             }
         };
-
         let region = match env::var("S3_ENDPOINT_URL") {
             Ok(endpoint) => rusoto_core::Region::Custom {
                 name: "region".to_string(),
@@ -37,6 +35,13 @@ impl TileWriter for S3Writer {
         };
 
         Ok(S3Writer { bucket, region })
+    }
+}
+
+#[async_trait]
+impl TileWriter for S3Writer {
+    fn from_args(args: &SeedArgs) -> anyhow::Result<Self> {
+        Self::from_s3_path(args.s3_path.as_ref().unwrap())
     }
 
     async fn put_tile(
