@@ -1,17 +1,12 @@
 mod config;
 mod endpoints;
 mod error;
-mod files;
-mod s3;
-mod s3putfiles;
-mod tile_writer;
-mod wms;
+mod rastersource;
+mod writer;
 
 use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
-use crate::files::FileWriter;
-use crate::s3::S3Writer;
-use crate::tile_writer::TileWriter;
-use crate::wms::WmsRequest;
+use crate::rastersource::wms::WmsRequest;
+use crate::writer::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
 use actix_web::{middleware, App, HttpServer};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use clap::{Args, Parser, Subcommand};
