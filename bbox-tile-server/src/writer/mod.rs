@@ -2,7 +2,7 @@ pub mod files;
 pub mod s3;
 pub mod s3putfiles;
 
-use crate::SeedArgs;
+use crate::cli::SeedArgs;
 use async_trait::async_trait;
 use dyn_clone::{clone_trait_object, DynClone};
 

@@ -1,5 +1,5 @@
+use crate::cli::SeedArgs;
 use crate::writer::TileWriter;
-use crate::SeedArgs;
 use async_trait::async_trait;
 use log::debug;
 use std::fs::{self, File};

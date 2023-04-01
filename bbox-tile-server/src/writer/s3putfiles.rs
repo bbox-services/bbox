@@ -1,6 +1,6 @@
+use crate::cli::SeedArgs;
 use crate::writer::TileWriter;
 use crate::S3Writer;
-use crate::SeedArgs;
 use bbox_common::file_search;
 use crossbeam::channel;
 use indicatif::ProgressIterator;
