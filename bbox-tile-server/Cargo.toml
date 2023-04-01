@@ -3,6 +3,9 @@ name = "bbox-tile-server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+openapi = []
+
 [dependencies]
 bbox-common = { path = "../bbox-common" }
 clap = { version = "4.2.1", features = ["derive"] }
@@ -28,5 +31,5 @@ thiserror = { workspace = true }
 anyhow = "1.0.52"
 
 [[bin]]
-name = "bbox-tile-seeder"
+name = "bbox-tile-server"
 path = "src/main.rs"

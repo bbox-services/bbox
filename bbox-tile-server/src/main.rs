@@ -1,4 +1,5 @@
 mod config;
+mod endpoints;
 mod error;
 mod files;
 mod s3;
@@ -12,6 +13,7 @@ use crate::s3::S3Writer;
 use crate::tile_writer::TileWriter;
 use crate::wms::WmsRequest;
 use actix_web::{middleware, App, HttpServer};
+use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
@@ -78,7 +80,7 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 */
 
 #[derive(Debug, Parser)]
-#[command(name = "bbox-tile-seeder")]
+#[command(name = "bbox-tile-server")]
 #[command(about = "BBOX tile server", long_about = None)]
 struct Cli {
     #[command(subcommand)]
@@ -318,11 +320,13 @@ fn seed(args: &SeedArgs) {
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
+    endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
+
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-        // .configure(endpoints::register)
+            .configure(endpoints::register)
     })
     .bind("127.0.0.1:8080")?
     .run()
