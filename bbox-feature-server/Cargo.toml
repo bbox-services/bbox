@@ -8,18 +8,18 @@ edition = "2018"
 openapi = []
 
 [dependencies]
-bbox-common = { path = "../bbox-common" }
 actix-web = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
+async-trait = "0.1.65"
+bbox-common = { path = "../bbox-common" }
+futures = { workspace = true }
+geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 log = { workspace = true }
-rust-embed = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
-geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
+rust-embed = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 sqlx = { workspace = true }
-futures = { workspace = true }
-async-trait = "0.1.65"
 thiserror = { workspace = true }
 
 [dev-dependencies]

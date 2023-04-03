@@ -5,17 +5,17 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [dependencies]
-bbox-common = { path = "../bbox-common" }
-bbox-map-server = { path = "../bbox-map-server" }
-bbox-feature-server = { path = "../bbox-feature-server" }
 actix-web = { workspace = true }
+bbox-common = { path = "../bbox-common" }
+bbox-feature-server = { path = "../bbox-feature-server" }
+bbox-map-server = { path = "../bbox-map-server" }
 log = { workspace = true }
 minijinja = { workspace = true }
-rand = "0.7.3"
 once_cell = { workspace = true }
+rand = "0.7.3"
+rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-rust-embed = { workspace = true }
 
 [dev-dependencies]
 

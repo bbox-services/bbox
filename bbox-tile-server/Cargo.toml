@@ -7,28 +7,28 @@ edition = "2021"
 openapi = []
 
 [dependencies]
-bbox-common = { path = "../bbox-common" }
-clap = { workspace = true }
 actix-web = { workspace = true }
+anyhow = "1.0.52"
+async-channel = "1.6.1"
+async-trait = "0.1.56"
+bbox-common = { path = "../bbox-common" }
+bytes = "1.1.0"
+clap = { workspace = true }
+crossbeam = "0.8.1"
+dyn-clone = "1.0.6"
+futures = "0.3"
+futures-util = "0.3.21"
+indicatif = "0.16.2"
+log = { workspace = true }
+num_cpus = "1.13.1"
+reqwest = "0.11.11"
 rusoto_core = "0.47.0"
 rusoto_s3 = "0.47.0"
-futures = "0.3"
-num_cpus = "1.13.1"
-tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
-futures-util = "0.3.21"
-crossbeam = "0.8.1"
-reqwest = "0.11.11"
-bytes = "1.1.0"
-tile-grid = "0.3.0"
-log = { workspace = true }
-indicatif = "0.16.2"
 serde = { workspace = true }
-async-trait = "0.1.56"
-dyn-clone = "1.0.6"
-async-channel = "1.6.1"
 tempfile = "3.3.0"
 thiserror = { workspace = true }
-anyhow = "1.0.52"
+tile-grid = "0.3.0"
+tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 
 [[bin]]
 name = "bbox-tile-server"
