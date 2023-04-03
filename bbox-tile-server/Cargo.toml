@@ -8,7 +8,7 @@ openapi = []
 
 [dependencies]
 bbox-common = { path = "../bbox-common" }
-clap = { version = "4.2.1", features = ["derive"] }
+clap = { workspace = true }
 actix-web = { workspace = true }
 rusoto_core = "0.47.0"
 rusoto_s3 = "0.47.0"
