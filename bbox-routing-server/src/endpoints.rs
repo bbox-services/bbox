@@ -243,6 +243,10 @@ async fn valhalla_route(
 }
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    init_api(api, openapi);
+}
+
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     api.landing_page_links.push(ApiLink {
         href: "/routes".to_string(),
         rel: Some("routes".to_string()),

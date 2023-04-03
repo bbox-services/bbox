@@ -211,6 +211,10 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
 }
 
 pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    init_api(api, openapi);
+}
+
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     api.landing_page_links.push(ApiLink {
         href: "/processes".to_string(),
         rel: Some("processes".to_string()),

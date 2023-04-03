@@ -3,6 +3,7 @@ use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::ogcapi::CoreCollection;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
@@ -93,6 +94,13 @@ struct Templates;
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -> Inventory {
+    let config = DatasourceCfg::from_config();
+    let inventory = Inventory::scan(&config).await;
+    init_api(api, openapi, inventory.collections());
+    inventory
+}
+
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc, collections: Vec<CoreCollection>) {
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections".to_string(),
@@ -101,9 +109,7 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
     ]);
-    let config = DatasourceCfg::from_config();
-    let inventory = Inventory::scan(&config).await;
-    api.collections.extend(inventory.collections());
+    api.collections.extend(collections);
     #[cfg(feature = "openapi")]
     {
         api.conformance_classes.extend(vec![
@@ -112,7 +118,6 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
     openapi.nop();
-    inventory
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, inventory: &Inventory) {

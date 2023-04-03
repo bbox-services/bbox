@@ -16,7 +16,7 @@ pub async fn init_service(
     wms_backend
 }
 
-pub fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     // api.landing_page_links.push(ApiLink {
     //     href: "/maps".to_string(),
     //     rel: Some("maps".to_string()),

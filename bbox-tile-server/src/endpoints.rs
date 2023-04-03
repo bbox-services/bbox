@@ -6,6 +6,10 @@ async fn xyz(_params: web::Path<(String, u8, u32, u32, String)>) -> Result<HttpR
 }
 
 pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    init_api(api, openapi);
+}
+
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json".to_string(),
