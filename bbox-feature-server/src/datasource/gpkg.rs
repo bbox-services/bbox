@@ -1,4 +1,4 @@
-use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionInfo, CollectionInfoDs, ItemsResult};
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -11,14 +11,14 @@ use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Row, TypeInfo};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GpkgDatasource {
-    id: String,
     pool: SqlitePool,
 }
 
 #[derive(Clone, Debug)]
 pub struct GpkgCollectionInfo {
+    ds: GpkgDatasource,
     table: String,
     geometry_column: String,
     // geometry_type_name: String,
@@ -34,10 +34,7 @@ impl GpkgDatasource {
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(GpkgDatasource {
-            id: gpkg.to_string(),
-            pool,
-        })
+        Ok(GpkgDatasource { pool })
     }
 }
 
@@ -85,24 +82,23 @@ impl CollectionDatasource for GpkgDatasource {
                     length: None,
                 }],
             };
-            let info = table_info(&self.pool, table_name).await?;
+            let info = table_info(&self, table_name).await?;
             let fc = FeatureCollection {
                 collection,
                 info: CollectionInfo::GpkgCollectionInfo(info),
-                ds_id: self.id.clone(),
             };
             collections.push(fc);
         }
         Ok(collections)
     }
+}
 
-    async fn items(&self, info: &CollectionInfo, filter: &FilterParams) -> Result<ItemsResult> {
-        let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
-            panic!("Wrong CollectionInfo type");
-        };
+#[async_trait]
+impl CollectionInfoDs for GpkgCollectionInfo {
+    async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let mut sql = format!(
             "SELECT *, count(*) OVER() AS __total_cnt FROM {table}",
-            table = &table_info.table
+            table = &self.table
         );
         if let Some(_bboxstr) = &filter.bbox {
             warn!("Ignoring bbox filter (not supported for this datasource)");
@@ -114,7 +110,7 @@ impl CollectionDatasource for GpkgDatasource {
         if let Some(offset) = filter.offset {
             sql.push_str(&format!(" OFFSET {offset}"));
         }
-        let rows = sqlx::query(&sql).fetch_all(&self.pool).await?;
+        let rows = sqlx::query(&sql).fetch_all(&self.ds.pool).await?;
         let number_matched = if let Some(row) = rows.first() {
             row.try_get::<u32, _>("__total_cnt")? as u64
         } else {
@@ -123,7 +119,7 @@ impl CollectionDatasource for GpkgDatasource {
         let number_returned = rows.len() as u64;
         let items = rows
             .iter()
-            .map(|row| row_to_feature(&row, &table_info))
+            .map(|row| row_to_feature(&row, &self))
             .collect::<Result<Vec<_>>>()?;
         let result = ItemsResult {
             features: items,
@@ -133,29 +129,18 @@ impl CollectionDatasource for GpkgDatasource {
         Ok(result)
     }
 
-    async fn item(
-        &self,
-        info: &CollectionInfo,
-        collection_id: &str,
-        feature_id: &str,
-    ) -> Result<Option<CoreFeature>> {
-        let CollectionInfo::GpkgCollectionInfo(table_info) = info else {
-            panic!("Wrong CollectionInfo type");
-        };
-        let Some(pk) = &table_info.pk_column else {
+    async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
+        let Some(pk) = &self.pk_column else {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
             return Ok(None)
         };
-        let sql = format!(
-            "SELECT * FROM {table} WHERE {pk} = ?",
-            table = &table_info.table,
-        );
+        let sql = format!("SELECT * FROM {table} WHERE {pk} = ?", table = &self.table,);
         if let Some(row) = sqlx::query(&sql)
             .bind(feature_id)
-            .fetch_optional(&self.pool)
+            .fetch_optional(&self.ds.pool)
             .await?
         {
-            let mut item = row_to_feature(&row, &table_info)?;
+            let mut item = row_to_feature(&row, &self)?;
             item.links = vec![
                 ApiLink {
                     href: format!("/collections/{collection_id}/items/{feature_id}"),
@@ -181,7 +166,7 @@ impl CollectionDatasource for GpkgDatasource {
     }
 }
 
-async fn table_info(pool: &SqlitePool, table: &str) -> Result<GpkgCollectionInfo> {
+async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionInfo> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -194,7 +179,7 @@ async fn table_info(pool: &SqlitePool, table: &str) -> Result<GpkgCollectionInfo
         .bind(table)
         .bind(table)
         .bind(table)
-        .fetch_one(pool)
+        .fetch_one(&ds.pool)
         .await?;
     let geometry_column: String = row.try_get("column_name")?;
     let _geometry_type_name: String = row.try_get("geometry_type_name")?;
@@ -205,6 +190,7 @@ async fn table_info(pool: &SqlitePool, table: &str) -> Result<GpkgCollectionInfo
         None
     };
     Ok(GpkgCollectionInfo {
+        ds: ds.clone(),
         table: table.to_string(),
         geometry_column,
         pk_column,
@@ -278,18 +264,16 @@ mod tests {
     #[tokio::test]
     async fn gpkg_features() {
         let filter = FilterParams::default();
-        let pool = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
+        let ds = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
             .await
             .unwrap();
         let info = GpkgCollectionInfo {
+            ds,
             table: "ne_10m_lakes".to_string(),
             geometry_column: "geom".to_string(),
             pk_column: Some("fid".to_string()),
         };
-        let items = pool
-            .items(&CollectionInfo::GpkgCollectionInfo(info), &filter)
-            .await
-            .unwrap();
+        let items = info.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 }

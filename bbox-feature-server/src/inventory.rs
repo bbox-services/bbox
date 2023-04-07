@@ -1,20 +1,31 @@
 use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
 use crate::datasource::postgis::PgDatasource;
-use crate::datasource::{CollectionDatasource, CollectionInfo, Datasource};
-use crate::error::Result;
+use crate::datasource::{CollectionDatasource, CollectionInfo};
 use crate::filter_params::FilterParams;
 use bbox_common::file_search;
 use bbox_common::ogcapi::*;
 use log::{info, warn};
 use std::collections::HashMap;
 
+// ┌──────────────┐      ┌─────────────┐
+// │              │1    n│             │
+// │  Inventory   ├──────┤ Collection  │
+// │              │      │             │
+// └──────────────┘      └──────┬──────┘
+//                              │n
+//                              │
+//                              │1
+//                      ┌───────┴──────┐
+//                      │  Datasource  │
+//                      │              │
+//                      │  (Pg, Gpkg)  │
+//                      └──────────────┘
+
 #[derive(Clone)]
 pub struct Inventory {
     // Key: collection_id
     feat_collections: HashMap<String, FeatureCollection>,
-    // Key: File path or URL
-    datasources: HashMap<String, Datasource>,
 }
 
 #[derive(Clone)]
@@ -22,41 +33,13 @@ pub struct Inventory {
 pub struct FeatureCollection {
     pub collection: CoreCollection,
     pub info: CollectionInfo,
-    pub ds_id: String,
 }
 
 impl Inventory {
     pub fn new() -> Self {
         Inventory {
             feat_collections: HashMap::new(),
-            datasources: HashMap::new(),
         }
-    }
-
-    async fn add_gpkg_ds(&mut self, gpkg: &str) -> Result<&dyn CollectionDatasource> {
-        let ds = Datasource::GpkgDatasource(GpkgDatasource::new_pool(gpkg).await?);
-        self.datasources.insert(gpkg.to_string(), ds);
-        let dsref = self.collections_ds(gpkg).expect("datasources HashMap");
-        Ok(dsref)
-    }
-
-    async fn add_pg_ds(&mut self, url: &str) -> Result<&dyn CollectionDatasource> {
-        let ds = Datasource::PgDatasource(PgDatasource::new_pool(url).await?);
-        self.datasources.insert(url.to_string(), ds);
-        let dsref = self.collections_ds(url).expect("datasources HashMap");
-        Ok(dsref)
-    }
-
-    fn collections_ds(&self, ds_id: &str) -> Option<&dyn CollectionDatasource> {
-        self.datasources.get(ds_id).map(|ds| ds.collection_ds())
-    }
-
-    /// Get datasource of collection
-    fn datasource(&self, collection_id: &str) -> Option<&dyn CollectionDatasource> {
-        let Some(ds_id) = self.collection(collection_id).map(|fc| &fc.ds_id) else {
-                return None
-            };
-        self.collections_ds(ds_id)
     }
 
     pub async fn scan(config: &DatasourceCfg) -> Inventory {
@@ -68,7 +51,7 @@ impl Inventory {
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                match inventory.add_gpkg_ds(&pathstr).await {
+                match GpkgDatasource::new_pool(&pathstr).await {
                     Ok(ds) => {
                         if let Ok(collections) = ds.collections().await {
                             inventory.add_collections(collections);
@@ -82,7 +65,7 @@ impl Inventory {
             }
         }
         for postgis_ds in &config.postgis {
-            match inventory.add_pg_ds(&postgis_ds.url).await {
+            match PgDatasource::new_pool(&postgis_ds.url).await {
                 Ok(ds) => {
                     if let Ok(collections) = ds.collections().await {
                         inventory.add_collections(collections);
@@ -106,7 +89,7 @@ impl Inventory {
         for fc in feat_collections {
             let id = fc.collection.id.clone();
             // TODO: Handle name collisions
-            self.feat_collections.insert(id.clone(), fc);
+            self.feat_collections.insert(id, fc);
         }
     }
 
@@ -137,11 +120,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let Some(ds) = self.datasource(collection_id) else {
-                warn!("Ignoring error getting datasource items for {collection_id}");
-                return None
-            };
-        let items = match ds.items(&fc.info, filter).await {
+        let items = match fc.info.collection_ds().items(filter).await {
             Ok(items) => items,
             Err(e) => {
                 warn!("Ignoring error getting collection items for {collection_id}: {e}");
@@ -205,11 +184,12 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let Some(ds) = self.datasource(collection_id) else {
-                warn!("Ignoring error getting datasource for {collection_id}");
-                return None
-            };
-        let feature = match ds.item(&fc.info, collection_id, feature_id).await {
+        let feature = match fc
+            .info
+            .collection_ds()
+            .item(collection_id, feature_id)
+            .await
+        {
             Ok(item) => item,
             Err(e) => {
                 warn!("Ignoring error getting collection item for {collection_id}: {e}");
