@@ -1,12 +1,56 @@
+use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
+use crate::rastersource::wms::WmsRequest;
 use actix_web::{guard, web, Error, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::config::config_error_exit;
+use std::process;
+use tile_grid::Grid;
 
-async fn xyz(_params: web::Path<(String, u8, u32, u32, String)>) -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().body("TODO"))
+#[derive(Clone, Debug)]
+pub struct TileService {
+    grid: Grid,
+    wms: WmsRequest,
 }
 
-pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+async fn xyz(
+    service: web::Data<TileService>,
+    params: web::Path<(String, u8, u32, u32, String)>,
+) -> Result<HttpResponse, Error> {
+    let (_tileset, z, x, y, _format) = params.into_inner();
+    let extent = service.grid.tile_extent(x, y, z);
+    // TODO: Handle x,y,z out of grid or service limits
+    //       -> HttpResponse::NoContent().finish(),
+    let resp = if let Ok(wms_resp) = service.wms.get_map_response(&extent).await {
+        let mut r = HttpResponse::Ok();
+        if let Some(content_type) = wms_resp.headers().get("content-type") {
+            r.content_type(content_type);
+        }
+        // TODO: Handle pre-compressed respone
+        // TODO: Set Cache headers
+        let data = wms_resp.bytes().await.unwrap();
+        r.body(data) // TODO: chunked response
+    } else {
+        HttpResponse::InternalServerError().finish()
+    };
+    Ok(resp)
+}
+
+pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -> TileService {
+    let grid = if let Some(cfg) = GridCfg::from_config() {
+        Grid::from_config(&cfg).unwrap()
+    } else {
+        Grid::web_mercator()
+    };
+    let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
+        WmsRequest::from_config(&cfg, &grid)
+    } else {
+        config_error_exit("[tile.wms] config missing");
+        process::exit(1);
+    };
+
     init_api(api, openapi);
+
+    TileService { grid, wms }
 }
 
 fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
@@ -41,7 +85,8 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
     openapi.nop();
 }
 
-pub fn register(cfg: &mut web::ServiceConfig) {
+pub fn register(cfg: &mut web::ServiceConfig, tile_service: &TileService) {
+    cfg.app_data(web::Data::new(tile_service.clone()));
     cfg.service(
         web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(
             web::route()

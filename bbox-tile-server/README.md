@@ -21,11 +21,19 @@ Features:
 
 ### Usage
 
-Build:
+Run tile server:
+
+    cargo run serve
+
+Tile request:
+
+    curl -o tile.png http://localhost:8081/xyz/ne_extracts/2/2/2.png
+
+Relase Build:
 
     cargo build --release
 
-Local file test:
+Local file seeding test:
 
     ../target/release/bbox-tile-server seed --base-dir=/tmp/tiles --maxzoom=3
 

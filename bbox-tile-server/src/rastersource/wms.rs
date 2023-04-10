@@ -32,10 +32,14 @@ impl WmsRequest {
         )
     }
 
-    pub async fn get_map(&self, extent: &Extent) -> Result<Bytes> {
+    pub async fn get_map_response(&self, extent: &Extent) -> Result<reqwest::Response> {
         let req = self.get_map_request(extent);
         debug!("Request {req}");
-        let response = self.client.get(req).send().await?;
+        self.client.get(req).send().await.map_err(|e| e.into())
+    }
+
+    pub async fn get_map(&self, extent: &Extent) -> Result<Bytes> {
+        let response = self.get_map_response(extent).await?;
         // if !response.status().is_success() {
         //     return Err();
         response.bytes().await.map_err(|e| e.into())

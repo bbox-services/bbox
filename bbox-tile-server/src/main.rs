@@ -69,15 +69,16 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
+    let tile_service =
+        endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
 
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(endpoints::register)
+            .configure(|mut cfg| endpoints::register(&mut cfg, &tile_service))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:8081")?
     .run()
     .await
 }
