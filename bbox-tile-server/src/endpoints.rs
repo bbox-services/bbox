@@ -1,16 +1,6 @@
-use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
-use crate::rastersource::wms::WmsRequest;
+use crate::tile_service::{RasterSource, TileService, TileSource};
 use actix_web::{guard, web, Error, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
-use bbox_common::config::config_error_exit;
-use std::process;
-use tile_grid::Grid;
-
-#[derive(Clone, Debug)]
-pub struct TileService {
-    grid: Grid,
-    wms: WmsRequest,
-}
 
 async fn xyz(
     service: web::Data<TileService>,
@@ -20,7 +10,8 @@ async fn xyz(
     let extent = service.grid.tile_extent(x, y, z);
     // TODO: Handle x,y,z out of grid or service limits
     //       -> HttpResponse::NoContent().finish(),
-    let resp = if let Ok(wms_resp) = service.wms.get_map_response(&extent).await {
+    let TileSource::Raster(RasterSource::Wms(wms)) = &service.source;
+    let resp = if let Ok(wms_resp) = wms.get_map_response(&extent).await {
         let mut r = HttpResponse::Ok();
         if let Some(content_type) = wms_resp.headers().get("content-type") {
             r.content_type(content_type);
@@ -36,21 +27,11 @@ async fn xyz(
 }
 
 pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -> TileService {
-    let grid = if let Some(cfg) = GridCfg::from_config() {
-        Grid::from_config(&cfg).unwrap()
-    } else {
-        Grid::web_mercator()
-    };
-    let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
-        WmsRequest::from_config(&cfg, &grid)
-    } else {
-        config_error_exit("[tile.wms] config missing");
-        process::exit(1);
-    };
+    let tile_service = TileService::from_config();
 
     init_api(api, openapi);
 
-    TileService { grid, wms }
+    tile_service
 }
 
 fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {

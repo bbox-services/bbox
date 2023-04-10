@@ -3,6 +3,7 @@ mod config;
 mod endpoints;
 mod error;
 mod rastersource;
+mod tile_service;
 mod writer;
 
 use crate::cli::{Cli, Commands};
