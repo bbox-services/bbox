@@ -25,27 +25,27 @@ impl LoadFromEmbedded for Source {
 }
 
 pub fn create_env(path: &str, extensions: &[&str]) -> Environment<'static> {
-    let mut env = Environment::new();
-    env.add_filter("truncate", truncate);
-    let mut source = Source::new();
-    for f in BaseTemplates::iter() {
-        source.add_embedded_template(&BaseTemplates, &f);
-    }
-    source.load_from_path(path, extensions).unwrap();
-    env.set_source(source);
-    env
+    create_env_ext(|source| {
+        source.load_from_path(path, extensions).unwrap();
+    })
 }
 
 pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
+    create_env_ext(|source| {
+        for f in E::iter() {
+            source.add_embedded_template(e, &f);
+        }
+    })
+}
+
+fn create_env_ext(ext: impl Fn(&mut Source)) -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
     let mut source = Source::new();
     for f in BaseTemplates::iter() {
         source.add_embedded_template(&BaseTemplates, &f);
     }
-    for f in E::iter() {
-        source.add_embedded_template(e, &f);
-    }
+    ext(&mut source);
     env.set_source(source);
     env
 }
