@@ -2,6 +2,8 @@ use crate::tile_service::{RasterSource, TileService, TileSource};
 use actix_web::{guard, web, Error, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 
+/// XYZ endpoint
+// xyz/{tileset}/{z}/{x}/{y}.{format}
 async fn xyz(
     service: web::Data<TileService>,
     params: web::Path<(String, u8, u32, u32, String)>,

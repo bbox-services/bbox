@@ -27,7 +27,7 @@ rusoto_s3 = "0.47.0"
 serde = { workspace = true }
 tempfile = "3.3.0"
 thiserror = { workspace = true }
-tile-grid = "0.3.0"
+tile-grid = { git = "https://github.com/pka/tile-grid.git" }
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 
 [[bin]]
