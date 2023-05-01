@@ -42,26 +42,44 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json".to_string(),
         // "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html".to_string(),
         // "http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections".to_string(),
+        // NOTE  The geospatial data resources (e.g., collections) replace the concept of layer in the OGC Web Map Service (WMS) and WMTS Standards.
     ]);
     api.conformance_classes.extend(vec![
+        // Core
         "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core".to_string(),
+        // TileSet
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tileset".to_string(),
+        // Tilesets list
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tilesets-list".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-tilesets".to_string(),
+        // Dataset tilesets
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/dataset-tilesets".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-selection".to_string(),
-        "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/jpeg".to_string(),
+        // Geodata tilesets
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-tilesets".to_string(),
+        // Collections selection
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/collections-selection".to_string(),
+        // DateTime
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/datetime".to_string(),
+        // XML
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/xml".to_string(),
+        // PNG
         "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/png".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geojson".to_string(),
+        // JPEG
+        "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/jpeg".to_string(),
+        // TIFF
         "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tiff".to_string(),
+        // NetCDF
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/netcdf".to_string(),
+        // GeoJSON
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geojson".to_string(),
+        // Mapbox Vector Tiles
+        // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
     ]);
     #[cfg(feature = "openapi")]
     {
         api.conformance_classes.extend(vec![
             "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
+            // OpenAPI Specification 3.0
+            "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/oas30".to_string(),
         ]);
         openapi.extend(include_str!("openapi.yaml"), "/");
     }
