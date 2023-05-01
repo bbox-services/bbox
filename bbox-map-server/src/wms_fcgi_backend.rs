@@ -200,7 +200,7 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
                             .expect("route entry missing")
                             .iter()
                             .map(|p| {
-                                // /basedir/data/project.qgs -> /qgis/data/project
+                                // /basedir/subdir/project.qgs -> /qgis/subdir/project
                                 let project = p
                                     .file_stem()
                                     .expect("no file name")

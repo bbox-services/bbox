@@ -25,9 +25,17 @@ Run tile server:
 
     cargo run serve
 
-Tile request:
+Tile requests:
 
     curl -o tile.png http://localhost:8081/xyz/ne_extracts/2/2/2.png
+
+    curl -o tile.png -H 'Accept: image/png' http://localhost:8081/map/tiles/ne_extracts/2/2/2
+
+OGC API entry points:
+
+    curl http://localhost:8081/
+
+    curl http://localhost:8081/conformance
 
 Relase Build:
 
