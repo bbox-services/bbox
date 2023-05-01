@@ -62,13 +62,7 @@ pub async fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) -
 }
 
 fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    api.conformance_classes.extend(vec![
-        "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html".to_string(),
-        // "http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections".to_string(),
-        // NOTE  The geospatial data resources (e.g., collections) replace the concept of layer in the OGC Web Map Service (WMS) and WMTS Standards.
-    ]);
+    // https://docs.ogc.org/is/20-057/20-057.html#toc12
     api.conformance_classes.extend(vec![
         // Core
         "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core".to_string(),
@@ -84,6 +78,8 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/collections-selection".to_string(),
         // DateTime
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/datetime".to_string(),
+        // OpenAPI Specification 3.0
+        "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/oas30".to_string(),
         // XML
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/xml".to_string(),
         // PNG
@@ -99,16 +95,7 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // Mapbox Vector Tiles
         // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
     ]);
-    #[cfg(feature = "openapi")]
-    {
-        api.conformance_classes.extend(vec![
-            "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
-            // OpenAPI Specification 3.0
-            "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/oas30".to_string(),
-        ]);
-        openapi.extend(include_str!("openapi.yaml"), "/");
-    }
-    openapi.nop();
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, tile_service: &TileService) {

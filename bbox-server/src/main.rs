@@ -4,8 +4,7 @@ mod endpoints;
 use crate::config::*;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
-use bbox_common::ogcapi::ApiLink;
+use bbox_common::config::WebserverCfg;
 use clap::Parser;
 use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
 use std::env;
@@ -61,52 +60,9 @@ async fn webserver() -> std::io::Result<()> {
     #[allow(unused_variables)]
     let prometheus = metrics_cfg.prometheus.as_ref().map(|_| exporter.registry());
 
-    let landing_page_links = vec![
-        ApiLink {
-            // href: "/".to_string(),
-            href: "/ogcapi/".to_string(),
-            rel: Some("self".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("this document".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            // href: "/api".to_string(),
-            href: "/openapi.json".to_string(),
-            rel: Some("service-desc".to_string()),
-            type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
-            title: Some("the API definition".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            href: "/conformance".to_string(),
-            rel: Some("conformance".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("OGC API conformance classes implemented by this server".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            href: "/collections".to_string(),
-            rel: Some("data".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("Information about the feature collections".to_string()),
-            hreflang: None,
-            length: None,
-        },
-    ];
+    let (mut ogcapi, mut openapi) = bbox_common::endpoints::init_api();
 
-    #[allow(unused_mut)]
-    let mut ogcapi = OgcApiInventory {
-        landing_page_links,
-        conformance_classes: Vec::new(),
-        collections: Vec::new(),
-    };
-
-    #[allow(unused_mut)]
-    let mut openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), "/");
+    endpoints::init_service(&mut ogcapi, &mut openapi);
 
     #[cfg(feature = "map-server")]
     let wms_backend = bbox_map_server::init_service(&mut ogcapi, &mut openapi, prometheus).await;
@@ -152,6 +108,7 @@ async fn webserver() -> std::io::Result<()> {
             .app_data(web::Data::new(web_config.clone()))
             .app_data(web::Data::new(ogcapi.clone()))
             .app_data(web::Data::new(openapi.clone()))
+            .configure(bbox_common::endpoints::register)
             .configure(bbox_common::static_assets::register_endpoints)
             .configure(|mut cfg| endpoints::register(&mut cfg, &web_config));
 

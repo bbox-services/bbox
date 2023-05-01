@@ -1,0 +1,262 @@
+openapi: 3.0.2
+info:
+  title: 'BBOX OGC API'
+  description: |-
+    OpenAPI definition that conforms to the conformance
+    classes "Core", "GeoJSON" and "OpenAPI 3.0" of the
+    standard "OGC API - Features - Part 1: Core".
+  version: 1.0.0
+  contact:
+    name: Acme Corporation
+    email: info@example.org
+    url: 'http://example.org/'
+  # x-logo:
+  #   url: 'https://www.ogc.org/pub/www/files/OGC_Logo_2D_Blue_x_0_0.png'
+  license:
+    name: CC-BY 4.0 license
+    url: 'https://creativecommons.org/licenses/by/4.0/'
+servers:
+  - url: 'http://bbox:8080/'
+    description: Production server
+  - url: 'http://host.docker.internal:8080/'
+    description: Development server
+# tags:
+#   - name: Features
+#     description: OGC API Features
+paths:
+  "/":
+    get:
+      tags:
+      - Landing Page
+      operationId: getLandingPage
+      summary: Retrieve the OGC API landing page for this service.
+      # parameters:
+      # - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          description: |-
+            The landing page provides links to the API definition (link relation `service-desc`, in this case path `/api`),
+            to the Conformance declaration (path `/conformance`, link relation `conformance`), and to the Collections of geospatial data (path `/collections`, link relation `data`).
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/landingPage"
+              example:
+                title: Buildings in Bonn
+                description: Access to data about buildings in the city of Bonn via a
+                  Web API that conforms to the OGC API Tiles specification.
+                links:
+                - href: http://data.example.org/
+                  rel: self
+                  type: application/json
+                  title: this document
+                - href: http://data.example.org/api
+                  rel: service-desc
+                  type: application/vnd.oai.openapi+json;version=3.0
+                  title: the API definition
+                - href: http://data.example.org/api.html
+                  rel: service-doc
+                  type: text/html
+                  title: the API documentation
+                - href: http://data.example.org/conformance
+                  rel: conformance
+                  type: application/json
+                  title: OGC API conformance classes implemented by this service
+                - href: http://data.example.org/collections
+                  rel: data
+                  type: application/json
+                  title: Information about the collections
+            text/html:
+              schema:
+                type: string
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
+  "/conformance":
+    get:
+      tags:
+      - Conformance
+      operationId: getConformance
+      summary: Retrieve the set of OGC API conformance classes that are supported
+        by this service.
+      # parameters:
+      # - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          description: The URIs of all conformance classes supported by the server
+          content:
+            application/json:
+              schema:
+                allOf:
+                - "$ref": "#/components/schemas/confClasses"
+                example:
+                  conformsTo:
+                  - http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core
+                  - http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json
+                  - http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html
+                  - http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30
+                  - http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
+  "/api":
+    get:
+      tags:
+      - API
+      operationId: getAPI
+      summary: Retrieve this API definition.
+      # parameters:
+      # - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          description: The OpenAPI definition of the API.
+          content:
+            application/vnd.oai.openapi+json;version=3.0:
+              schema:
+                type: object
+            text/html:
+              schema:
+                type: string
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
+components:
+  schemas:
+    confClasses:
+      type: object
+      required:
+      - conformsTo
+      properties:
+        conformsTo:
+          type: array
+          items:
+            type: string
+    link:
+      type: object
+      required:
+      - href
+      - rel
+      properties:
+        href:
+          type: string
+          description: Supplies the URI to a remote resource (or resource fragment).
+          example: http://data.example.com/buildings/123
+        rel:
+          type: string
+          description: The type or semantics of the relation.
+          example: alternate
+        type:
+          type: string
+          description: A hint indicating what the media type of the result of dereferencing
+            the link should be.
+          example: application/geo+json
+        templated:
+          type: boolean
+          description: This flag set to true if the link is a URL template.
+        hreflang:
+          type: string
+          description: A hint indicating what the language of the result of dereferencing
+            the link should be.
+          example: en
+        title:
+          type: string
+          description: Used to label the destination of a link such that it can be
+            used as a human-readable identifier.
+          example: Trierer Strasse 70, 53115 Bonn
+        length:
+          type: integer
+    landingPage:
+      type: object
+      required:
+      - links
+      properties:
+        title:
+          type: string
+          title: The title of the API.
+          description: While a title is not required, implementors are strongly advised
+            to include one.
+          example: Buildings in Bonn
+        description:
+          type: string
+          example: Access to data about buildings in the city of Bonn via a Web API
+            that conforms to the OGC API Common specification.
+        attribution:
+          type: string
+          title: attribution for the API
+          description: The `attribution` should be short and intended for presentation
+            to a user, for example, in a corner of a map. Parts of the text can be
+            links to other resources if additional information is needed. The string
+            can include HTML markup.
+        links:
+          type: array
+          items:
+            "$ref": "#/components/schemas/link"
+    exception:
+      title: Exception Schema
+      description: JSON schema for exceptions based on RFC 7807
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+  responses:
+    NotFound:
+      description: The requested resource does not exist on the server. For example,
+        a path parameter had an incorrect value.
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string
+    NotAcceptable:
+      description: Content negotiation failed. For example, the `Accept` header submitted
+        in the request did not support any of the media types supported by the server
+        for the requested resource.
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string
+    ServerError:
+      description: A server error occurred.
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string
+    InvalidParameter:
+      description: A query parameter has an invalid value.
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string
+    Exception:
+      description: An error occured.
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/exception"
+        text/html:
+          schema:
+            type: string

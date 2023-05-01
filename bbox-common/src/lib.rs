@@ -1,5 +1,6 @@
 pub mod api;
 pub mod config;
+pub mod endpoints;
 pub mod file_search;
 pub mod logger;
 pub mod ogcapi;

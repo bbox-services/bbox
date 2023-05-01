@@ -1,54 +1,12 @@
-use crate::WebserverCfg;
-use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
+use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::config::WebserverCfg;
+use bbox_common::endpoints::relurl;
 use bbox_common::ogcapi::*;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
-
-fn relurl(req: &HttpRequest, path: &str) -> String {
-    let conninfo = req.connection_info();
-    let pathbase = path.split('/').nth(1).unwrap_or("");
-    let reqbase = req
-        .path()
-        .split('/')
-        .nth(1)
-        .map(|p| {
-            if p == "" || p == pathbase {
-                "".to_string()
-            } else {
-                format!("/{}", p)
-            }
-        })
-        .unwrap_or("".to_string());
-    format!(
-        "{}://{}{}{}",
-        conninfo.scheme(),
-        conninfo.host(),
-        reqbase,
-        path
-    )
-}
-
-/// landing page
-async fn index(ogcapi: web::Data<OgcApiInventory>, _req: HttpRequest) -> HttpResponse {
-    let links = ogcapi.landing_page_links.to_vec(); //TODO: convert urls with relurl (?)
-    let landing_page = CoreLandingPage {
-        title: Some("BBOX OGC API".to_string()),
-        description: Some("BBOX OGC API landing page".to_string()),
-        links,
-    };
-    HttpResponse::Ok().json(landing_page)
-}
-
-/// information about specifications that this API conforms to
-async fn conformance(ogcapi: web::Data<OgcApiInventory>) -> HttpResponse {
-    let conforms_to = CoreConformsTo {
-        conforms_to: ogcapi.conformance_classes.to_vec(),
-    };
-    HttpResponse::Ok().json(conforms_to)
-}
 
 /// the feature collections in the dataset
 async fn collections(
@@ -78,28 +36,6 @@ async fn collections(
     }
 }
 
-/// Serve openapi.yaml
-async fn openapi_yaml(
-    openapi: web::Data<OpenApiDoc>,
-    cfg: web::Data<WebserverCfg>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let yaml = openapi.as_yaml(&cfg.public_base_url(req));
-    HttpResponse::Ok()
-        .content_type("application/x-yaml")
-        .body(yaml)
-}
-
-/// Serve openapi.json
-async fn openapi_json(
-    openapi: web::Data<OpenApiDoc>,
-    cfg: web::Data<WebserverCfg>,
-    req: HttpRequest,
-) -> HttpResponse {
-    let json = openapi.as_json(&cfg.public_base_url(req));
-    HttpResponse::Ok().json(json)
-}
-
 #[derive(RustEmbed)]
 #[folder = "templates/"]
 struct Templates;
@@ -114,27 +50,30 @@ async fn redoc() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
 }
 
+pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    init_api(api, openapi);
+}
+
+fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
+    api.landing_page_links.push(ApiLink {
+        href: "/collections".to_string(),
+        rel: Some("data".to_string()),
+        type_: Some("application/json".to_string()),
+        title: Some("Information about the feature collections".to_string()),
+        hreflang: None,
+        length: None,
+    });
+    openapi.extend(include_str!("openapi.yaml"), "/");
+}
+
 pub fn register(cfg: &mut web::ServiceConfig, web_cfg: &WebserverCfg) {
     let api_base = web_cfg.base_path();
-    cfg.service(
-        web::resource(format!("{api_base}/"))
-            .guard(guard::Header("content-type", "application/json"))
-            .route(web::get().to(index)),
-    )
-    .service(
-        web::resource(format!("{api_base}/conformance"))
-            // TODO: HTML implementation missing
-            // .guard(guard::Header("content-type", "application/json"))
-            .route(web::get().to(conformance)),
-    )
-    .service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
-    .service(
-        web::resource(format!("{api_base}/collections.json")).route(web::get().to(collections)),
-    )
-    .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
-    .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
-    .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
-    .service(web::resource("/redoc.html").route(web::get().to(redoc)));
+    cfg.service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
+        .service(
+            web::resource(format!("{api_base}/collections.json")).route(web::get().to(collections)),
+        )
+        .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
+        .service(web::resource("/redoc.html").route(web::get().to(redoc)));
 }
 
 // #[cfg(test)]

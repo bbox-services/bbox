@@ -16,624 +16,624 @@ servers:
 - description: Example OGC API - Tiles server
   url: https://maps.ecere.com/ogcapi
 paths:
-  "/":
-    get:
-      tags:
-      - Landing Page
-      operationId: getLandingPage
-      summary: Retrieve the OGC API landing page for this service.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/LandingPage"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/conformance":
-    get:
-      tags:
-      - Conformance
-      operationId: getConformance
-      summary: Retrieve the set of OGC API conformance classes that are supported
-        by this service.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Conformance"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api":
-    get:
-      tags:
-      - API
-      operationId: getAPI
-      summary: Retrieve this API definition.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/API"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api/all-collections":
-    get:
-      tags:
-      - API
-      operationId: getAPICollections
-      summary: Retrieve the list of collections available from this API implementation
-        & deployment.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Enumeration"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api/coverage-collections":
-    get:
-      tags:
-      - API
-      operationId: getAPICoverageCollections
-      summary: Retrieve the list of coverages collections available from this API
-        implementation & deployment.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Enumeration"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api/vectorTiles-collections":
-    get:
-      tags:
-      - API
-      operationId: getAPIVectorTileCollections
-      summary: Retrieve the list of collections supporting vector tiles available
-        from this API implementation & deployment.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Enumeration"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api/tileMatrixSets":
-    get:
-      tags:
-      - API
-      operationId: getAPITileMatrixSets
-      summary: Retrieve the list of shared TileMatrixSets available from this API
-        implementation & deployment.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Enumeration"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/api/styles":
-    get:
-      tags:
-      - API
-      operationId: getAPIStyles
-      summary: Retrieve the list of dataset styles available from this API implementation
-        & deployment.
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Enumeration"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections":
-    get:
-      tags:
-      - Data Collections
-      operationId: getCollectionsList
-      summary: Retrieve the list of geospatial data collections available from this
-        service.
-      parameters:
-      - "$ref": "#/components/parameters/datetime"
-      - name: bbox
-        in: query
-        description: |-
-          Only features that have a geometry that intersects the bounding box are selected. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (height or depth):
-          * Lower left corner, coordinate axis 1 * Lower left corner, coordinate axis 2 * Minimum value, coordinate axis 3 (optional) * Upper right corner, coordinate axis 1 * Upper right corner, coordinate axis 2 * Maximum value, coordinate axis 3 (optional)
-          The coordinate reference system of the values is WGS 84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter `bbox-crs`.
-          For WGS 84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge).
-          If the vertical axis is included, the third and the sixth number are the bottom and the top of the 3-dimensional bounding box.
-          If a feature has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries.
-        required: false
-        schema:
-          type: array
-          oneOf:
-          - minItems: 4
-            maxItems: 4
-          - minItems: 6
-            maxItems: 6
-          items:
-            type: number
-            format: double
-        style: form
-        explode: false
-      - name: limit
-        in: query
-        description: |-
-          The optional limit parameter limits the number of collections that are presented in the response document.
-          Only items are counted that are on the first level of the collection in the response document. Nested objects contained within the explicitly requested items shall not be counted.
-          * Minimum = 1 * Maximum = 10000 * Default = 10
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 10000
-          default: 10
-        style: form
-        explode: false
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/CollectionsList"
-  "/collections/{collectionId}":
-    get:
-      tags:
-      - Data Collections
-      operationId: getCollection
-      summary: Retrieve the description of a collection available from this service.
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/Collection"
-  "/tileMatrixSets":
-    get:
-      tags:
-      - Tiling Schemes
-      summary: Retrieve the list of available tiling schemes (tile matrix sets)
-      operationId: getTileMatrixSetsList
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileMatrixSetsList"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/tileMatrixSets/{tileMatrixSetId}":
-    get:
-      tags:
-      - Tiling Schemes
-      summary: Retrieve the definition of the specified tiling scheme (tile matrix
-        set)
-      operationId: getTileMatrixSet
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileMatrixSet"
-        '404':
-          description: The requested tile matrix set id was not found
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/exception"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/tiles":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a list of available vector tilesets for the dataset
-      operationId: ".dataset.vector.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve the vector tileset metadata for the whole dataset and the
-        specified tiling scheme (tile matrix set)
-      operationId: ".dataset.vector.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a vector tile including one or more collections from the dataset.
-      operationId: ".dataset.vector.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-vectorTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/VectorTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/tiles":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve the list of vector tilesets intended for use with a specified
-        style for the whole dataset
-      operationId: ".dataset.style.vector.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a vector tileset intended for use with a specified style of
-        the whole dataset for the specified tiling scheme (tile matrix set)
-      operationId: ".dataset.style.vector.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve vector tiles intended for use with a specified style
-      operationId: ".dataset.style.vector.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-vectorTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/VectorTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/tiles":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a list of available vector tilesets for the specified collection.
-      operationId: ".collection.vector.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve the vector tileset metadata for the specified collection and
-        tiling scheme (tile matrix set)
-      operationId: ".collection.vector.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a vector tile from a collection.
-      operationId: ".collection.vector.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-vectorTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/VectorTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/tiles":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve a list of vector tilesets for the specified collection intended
-        for use with a specified style
-      operationId: ".collection.style.vector.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/f-metadata"
-      - "$ref": "#/components/parameters/styleId-collection"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve the vector tileset metadata for the specified collection,
-        style and tiling scheme (tile matrix set).
-      operationId: ".collection.style.vector.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/styleId-collection"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Vector Tiles
-      summary: Retrieve vector tiles for a specified collection, intended for use
-        with a specified style
-      operationId: ".collection.style.vector.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collectionId-vectorTiles"
-      - "$ref": "#/components/parameters/collections-vectorTiles"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/bgcolor"
-      - "$ref": "#/components/parameters/transparent"
-      - "$ref": "#/components/parameters/styleId-collection"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-vectorTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/VectorTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/coverage/tiles":
-    get:
-      tags:
-      - Coverage Tiles
-      summary: Retrieve the list of available coverage tilesets for the specified
-        collection.
-      operationId: ".collection.coverage.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-coverage"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/coverage/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Coverage Tiles
-      summary: Retrieve the coverage tileset metadata for the specified collection
-        and tiling scheme (tile matrix set)
-      operationId: ".collection.coverage.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-coverage"
-      - "$ref": "#/components/parameters/collections-coverage"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/coverage/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Coverage Tiles
-      summary: Retrieve coverage tiles
-      operationId: ".collection.coverage.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collectionId-coverage"
-      - "$ref": "#/components/parameters/collections-coverage"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-coverageTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/CoverageTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/map/tiles":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve the list of all default map tilesets for the whole dataset
-      operationId: ".dataset.map.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/map/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a default map tileset of the whole dataset for the specified
-        tiling scheme (tile matrix set)
-      operationId: ".dataset.map.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
+  # "/":
+  #   get:
+  #     tags:
+  #     - Landing Page
+  #     operationId: getLandingPage
+  #     summary: Retrieve the OGC API landing page for this service.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/LandingPage"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/conformance":
+  #   get:
+  #     tags:
+  #     - Conformance
+  #     operationId: getConformance
+  #     summary: Retrieve the set of OGC API conformance classes that are supported
+  #       by this service.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Conformance"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPI
+  #     summary: Retrieve this API definition.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/API"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api/all-collections":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPICollections
+  #     summary: Retrieve the list of collections available from this API implementation
+  #       & deployment.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Enumeration"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api/coverage-collections":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPICoverageCollections
+  #     summary: Retrieve the list of coverages collections available from this API
+  #       implementation & deployment.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Enumeration"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api/vectorTiles-collections":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPIVectorTileCollections
+  #     summary: Retrieve the list of collections supporting vector tiles available
+  #       from this API implementation & deployment.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Enumeration"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api/tileMatrixSets":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPITileMatrixSets
+  #     summary: Retrieve the list of shared TileMatrixSets available from this API
+  #       implementation & deployment.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Enumeration"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/api/styles":
+  #   get:
+  #     tags:
+  #     - API
+  #     operationId: getAPIStyles
+  #     summary: Retrieve the list of dataset styles available from this API implementation
+  #       & deployment.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Enumeration"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections":
+  #   get:
+  #     tags:
+  #     - Data Collections
+  #     operationId: getCollectionsList
+  #     summary: Retrieve the list of geospatial data collections available from this
+  #       service.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - name: bbox
+  #       in: query
+  #       description: |-
+  #         Only features that have a geometry that intersects the bounding box are selected. The bounding box is provided as four or six numbers, depending on whether the coordinate reference system includes a vertical axis (height or depth):
+  #         * Lower left corner, coordinate axis 1 * Lower left corner, coordinate axis 2 * Minimum value, coordinate axis 3 (optional) * Upper right corner, coordinate axis 1 * Upper right corner, coordinate axis 2 * Maximum value, coordinate axis 3 (optional)
+  #         The coordinate reference system of the values is WGS 84 longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate reference system is specified in the parameter `bbox-crs`.
+  #         For WGS 84 longitude/latitude the values are in most cases the sequence of minimum longitude, minimum latitude, maximum longitude and maximum latitude. However, in cases where the box spans the antimeridian the first value (west-most box edge) is larger than the third value (east-most box edge).
+  #         If the vertical axis is included, the third and the sixth number are the bottom and the top of the 3-dimensional bounding box.
+  #         If a feature has multiple spatial geometry properties, it is the decision of the server whether only a single spatial geometry property is used to determine the extent or all relevant geometries.
+  #       required: false
+  #       schema:
+  #         type: array
+  #         oneOf:
+  #         - minItems: 4
+  #           maxItems: 4
+  #         - minItems: 6
+  #           maxItems: 6
+  #         items:
+  #           type: number
+  #           format: double
+  #       style: form
+  #       explode: false
+  #     - name: limit
+  #       in: query
+  #       description: |-
+  #         The optional limit parameter limits the number of collections that are presented in the response document.
+  #         Only items are counted that are on the first level of the collection in the response document. Nested objects contained within the explicitly requested items shall not be counted.
+  #         * Minimum = 1 * Maximum = 10000 * Default = 10
+  #       required: false
+  #       schema:
+  #         type: integer
+  #         minimum: 1
+  #         maximum: 10000
+  #         default: 10
+  #       style: form
+  #       explode: false
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/CollectionsList"
+  # "/collections/{collectionId}":
+  #   get:
+  #     tags:
+  #     - Data Collections
+  #     operationId: getCollection
+  #     summary: Retrieve the description of a collection available from this service.
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/Collection"
+  # "/tileMatrixSets":
+  #   get:
+  #     tags:
+  #     - Tiling Schemes
+  #     summary: Retrieve the list of available tiling schemes (tile matrix sets)
+  #     operationId: getTileMatrixSetsList
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileMatrixSetsList"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/tileMatrixSets/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Tiling Schemes
+  #     summary: Retrieve the definition of the specified tiling scheme (tile matrix
+  #       set)
+  #     operationId: getTileMatrixSet
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileMatrixSet"
+  #       '404':
+  #         description: The requested tile matrix set id was not found
+  #         content:
+  #           application/json:
+  #             schema:
+  #               "$ref": "#/components/schemas/exception"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/tiles":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a list of available vector tilesets for the dataset
+  #     operationId: ".dataset.vector.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve the vector tileset metadata for the whole dataset and the
+  #       specified tiling scheme (tile matrix set)
+  #     operationId: ".dataset.vector.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a vector tile including one or more collections from the dataset.
+  #     operationId: ".dataset.vector.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-vectorTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/VectorTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/tiles":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve the list of vector tilesets intended for use with a specified
+  #       style for the whole dataset
+  #     operationId: ".dataset.style.vector.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a vector tileset intended for use with a specified style of
+  #       the whole dataset for the specified tiling scheme (tile matrix set)
+  #     operationId: ".dataset.style.vector.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve vector tiles intended for use with a specified style
+  #     operationId: ".dataset.style.vector.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-vectorTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/VectorTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/tiles":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a list of available vector tilesets for the specified collection.
+  #     operationId: ".collection.vector.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve the vector tileset metadata for the specified collection and
+  #       tiling scheme (tile matrix set)
+  #     operationId: ".collection.vector.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a vector tile from a collection.
+  #     operationId: ".collection.vector.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-vectorTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/VectorTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/tiles":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve a list of vector tilesets for the specified collection intended
+  #       for use with a specified style
+  #     operationId: ".collection.style.vector.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve the vector tileset metadata for the specified collection,
+  #       style and tiling scheme (tile matrix set).
+  #     operationId: ".collection.style.vector.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Vector Tiles
+  #     summary: Retrieve vector tiles for a specified collection, intended for use
+  #       with a specified style
+  #     operationId: ".collection.style.vector.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collectionId-vectorTiles"
+  #     - "$ref": "#/components/parameters/collections-vectorTiles"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/bgcolor"
+  #     - "$ref": "#/components/parameters/transparent"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-vectorTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/VectorTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/coverage/tiles":
+  #   get:
+  #     tags:
+  #     - Coverage Tiles
+  #     summary: Retrieve the list of available coverage tilesets for the specified
+  #       collection.
+  #     operationId: ".collection.coverage.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-coverage"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/coverage/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Coverage Tiles
+  #     summary: Retrieve the coverage tileset metadata for the specified collection
+  #       and tiling scheme (tile matrix set)
+  #     operationId: ".collection.coverage.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-coverage"
+  #     - "$ref": "#/components/parameters/collections-coverage"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/coverage/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Coverage Tiles
+  #     summary: Retrieve coverage tiles
+  #     operationId: ".collection.coverage.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collectionId-coverage"
+  #     - "$ref": "#/components/parameters/collections-coverage"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-coverageTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/CoverageTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/map/tiles":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve the list of all default map tilesets for the whole dataset
+  #     operationId: ".dataset.map.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/map/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a default map tileset of the whole dataset for the specified
+  #       tiling scheme (tile matrix set)
+  #     operationId: ".dataset.map.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
   "/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
     get:
       tags:
@@ -664,219 +664,219 @@ paths:
           "$ref": "#/components/responses/NotAcceptable"
         '500':
           "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/map/tiles":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve the list of styled map tilesets for the whole dataset
-      operationId: ".dataset.style.map.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/map/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a styled map tileset of the whole dataset for the specified
-        tiling scheme (tile matrix set)
-      operationId: ".dataset.style.map.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a styled map tiles
-      operationId: ".dataset.style.map.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/bgcolor"
-      - "$ref": "#/components/parameters/transparent"
-      - "$ref": "#/components/parameters/styleId"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-mapTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/MapTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/map/tiles":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a list of all map tilesets for specified collection.
-      operationId: ".collection.map.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/map/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a map tile set metadata for the specified collection and tiling
-        scheme (tile matrix set)
-      operationId: ".collection.map.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a map tile from the specified collection
-      operationId: ".collection.map.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/bgcolor"
-      - "$ref": "#/components/parameters/transparent"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-mapTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/MapTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/map/tiles":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a list of styled map tilesets for the specified collection
-      operationId: ".collection.style.map.getTileSetsList"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/f-metadata"
-      - "$ref": "#/components/parameters/styleId-collection"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSetsList"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve the map tileset metadata for the specified collection, style
-        and tiling scheme (tile matrix set).
-      operationId: ".collection.style.map.getTileSet"
-      parameters:
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/styleId-collection"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-metadata"
-      responses:
-        '200':
-          "$ref": "#/components/responses/TileSet"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
-  "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
-    get:
-      tags:
-      - Map Tiles
-      summary: Retrieve a map tile for a specified collection and style
-      operationId: ".collection.style.map.getTile"
-      parameters:
-      - "$ref": "#/components/parameters/tileMatrix"
-      - "$ref": "#/components/parameters/tileRow"
-      - "$ref": "#/components/parameters/tileCol"
-      - "$ref": "#/components/parameters/datetime"
-      - "$ref": "#/components/parameters/collectionId-all"
-      - "$ref": "#/components/parameters/collections"
-      - "$ref": "#/components/parameters/subset"
-      - "$ref": "#/components/parameters/crs"
-      - "$ref": "#/components/parameters/subset-crs"
-      - "$ref": "#/components/parameters/bgcolor"
-      - "$ref": "#/components/parameters/transparent"
-      - "$ref": "#/components/parameters/styleId-collection"
-      - "$ref": "#/components/parameters/tileMatrixSetId"
-      - "$ref": "#/components/parameters/f-mapTile"
-      responses:
-        '200':
-          "$ref": "#/components/responses/MapTile"
-        '204':
-          "$ref": "#/components/responses/EmptyTile"
-        '404':
-          "$ref": "#/components/responses/NotFound"
-        '406':
-          "$ref": "#/components/responses/NotAcceptable"
-        '500':
-          "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/map/tiles":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve the list of styled map tilesets for the whole dataset
+  #     operationId: ".dataset.style.map.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/map/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a styled map tileset of the whole dataset for the specified
+  #       tiling scheme (tile matrix set)
+  #     operationId: ".dataset.style.map.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a styled map tiles
+  #     operationId: ".dataset.style.map.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/bgcolor"
+  #     - "$ref": "#/components/parameters/transparent"
+  #     - "$ref": "#/components/parameters/styleId"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-mapTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/MapTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/map/tiles":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a list of all map tilesets for specified collection.
+  #     operationId: ".collection.map.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/map/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a map tile set metadata for the specified collection and tiling
+  #       scheme (tile matrix set)
+  #     operationId: ".collection.map.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a map tile from the specified collection
+  #     operationId: ".collection.map.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/bgcolor"
+  #     - "$ref": "#/components/parameters/transparent"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-mapTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/MapTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/map/tiles":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a list of styled map tilesets for the specified collection
+  #     operationId: ".collection.style.map.getTileSetsList"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSetsList"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve the map tileset metadata for the specified collection, style
+  #       and tiling scheme (tile matrix set).
+  #     operationId: ".collection.style.map.getTileSet"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-metadata"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/TileSet"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
+  # "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
+  #   get:
+  #     tags:
+  #     - Map Tiles
+  #     summary: Retrieve a map tile for a specified collection and style
+  #     operationId: ".collection.style.map.getTile"
+  #     parameters:
+  #     - "$ref": "#/components/parameters/tileMatrix"
+  #     - "$ref": "#/components/parameters/tileRow"
+  #     - "$ref": "#/components/parameters/tileCol"
+  #     - "$ref": "#/components/parameters/datetime"
+  #     - "$ref": "#/components/parameters/collectionId-all"
+  #     - "$ref": "#/components/parameters/collections"
+  #     - "$ref": "#/components/parameters/subset"
+  #     - "$ref": "#/components/parameters/crs"
+  #     - "$ref": "#/components/parameters/subset-crs"
+  #     - "$ref": "#/components/parameters/bgcolor"
+  #     - "$ref": "#/components/parameters/transparent"
+  #     - "$ref": "#/components/parameters/styleId-collection"
+  #     - "$ref": "#/components/parameters/tileMatrixSetId"
+  #     - "$ref": "#/components/parameters/f-mapTile"
+  #     responses:
+  #       '200':
+  #         "$ref": "#/components/responses/MapTile"
+  #       '204':
+  #         "$ref": "#/components/responses/EmptyTile"
+  #       '404':
+  #         "$ref": "#/components/responses/NotFound"
+  #       '406':
+  #         "$ref": "#/components/responses/NotAcceptable"
+  #       '500':
+  #         "$ref": "#/components/responses/ServerError"
 components:
   schemas:
     confClasses:

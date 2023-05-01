@@ -8,8 +8,8 @@ mod writer;
 
 use crate::cli::{Cli, Commands};
 use crate::writer::s3::S3Writer;
-use actix_web::{middleware, App, HttpServer};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use actix_web::{middleware, web, App, HttpServer};
+use bbox_common::config::WebserverCfg;
 use clap::Parser;
 
 /*
@@ -70,16 +70,25 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let tile_service =
-        endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
+    let web_config = WebserverCfg::from_config();
+    let (mut ogcapi, mut openapi) = bbox_common::endpoints::init_api();
+    let tile_service = endpoints::init_service(&mut ogcapi, &mut openapi).await;
+
+    let workers = web_config.worker_threads();
+    let server_addr = "127.0.0.1:8081"; // web_config.server_addr.clone();
 
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .app_data(web::Data::new(web_config.clone()))
+            .app_data(web::Data::new(ogcapi.clone()))
+            .app_data(web::Data::new(openapi.clone()))
+            .configure(bbox_common::endpoints::register)
             .configure(|mut cfg| endpoints::register(&mut cfg, &tile_service))
     })
-    .bind("127.0.0.1:8081")?
+    .bind(server_addr)?
+    .workers(workers)
     .run()
     .await
 }

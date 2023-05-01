@@ -25,7 +25,6 @@ bbox-processes-server = { path = "../bbox-processes-server", features=["openapi"
 bbox-routing-server = { path = "../bbox-routing-server", features=["openapi"], optional = true }
 clap = { workspace = true }
 minijinja = { workspace = true }
-num_cpus = "1.0"
 once_cell = { workspace = true }
 opentelemetry = { version = "0.17", default-features = false, features = ["trace", "metrics", "rt-tokio"] }
 opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }

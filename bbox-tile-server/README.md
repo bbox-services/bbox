@@ -8,6 +8,7 @@ Features:
 - [ ] Vector tile server (GeoZero backend: PostGIS, GeoPackage, ...)
 - [ ] OGC API - Tiles
 - [ ] OGC WMTS, XYZ
+- [ ] Tile proxy server (Backends: WMS)
 
 
 Tile seeder
@@ -27,15 +28,15 @@ Run tile server:
 
 Tile requests:
 
-    curl -o tile.png http://localhost:8081/xyz/ne_extracts/2/2/2.png
+    curl -o /tmp/tile.png http://localhost:8081/xyz/ne_extracts/2/2/2.png
 
-    curl -o tile.png -H 'Accept: image/png' http://localhost:8081/map/tiles/ne_extracts/2/2/2
+    curl -o /tmp/tile.png -H 'Accept: image/png' http://localhost:8081/map/tiles/ne_extracts/2/2/2
 
 OGC API entry points:
 
-    curl http://localhost:8081/
+    curl -H 'Content-Type: application/json' http://localhost:8081/ | jq .
 
-    curl http://localhost:8081/conformance
+    curl http://localhost:8081/openapi.json
 
 Relase Build:
 

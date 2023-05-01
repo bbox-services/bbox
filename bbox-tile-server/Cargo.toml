@@ -3,9 +3,6 @@ name = "bbox-tile-server"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-openapi = []
-
 [dependencies]
 actix-web = { workspace = true }
 anyhow = "1.0.52"
@@ -20,7 +17,7 @@ futures = "0.3"
 futures-util = "0.3.21"
 indicatif = "0.16.2"
 log = { workspace = true }
-num_cpus = "1.13.1"
+num_cpus = { workspace = true }
 reqwest = "0.11.11"
 rusoto_core = "0.47.0"
 rusoto_s3 = "0.47.0"
