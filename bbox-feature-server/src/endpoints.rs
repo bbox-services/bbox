@@ -87,8 +87,14 @@ async fn feature(
     }
 }
 
+#[cfg(feature = "html")]
 #[derive(RustEmbed)]
 #[folder = "templates/"]
+struct Templates;
+
+#[cfg(not(feature = "html"))]
+#[derive(RustEmbed)]
+#[folder = "src/empty/"]
 struct Templates;
 
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
@@ -107,16 +113,10 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc, collections: Ve
     api.conformance_classes.extend(vec![
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
         "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
+        "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
     ]);
     api.collections.extend(collections);
-    #[cfg(feature = "openapi")]
-    {
-        api.conformance_classes.extend(vec![
-            "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
-        ]);
-        openapi.extend(include_str!("openapi.yaml"), "/");
-    }
-    openapi.nop();
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, inventory: &Inventory) {

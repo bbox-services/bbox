@@ -5,7 +5,7 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [features]
-openapi = []
+html = ["bbox-common/html"]
 
 [dependencies]
 actix-web = { workspace = true }

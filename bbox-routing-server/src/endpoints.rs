@@ -274,16 +274,10 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // Temporal constraints
         "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/time".to_string(),
          */
+        // OpenAPI Specification
+        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/oas30".to_string(),
     ]);
-    #[cfg(feature = "openapi")]
-    {
-        api.conformance_classes.extend(vec![
-            // OpenAPI Specification
-            "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/oas30".to_string(),
-        ]);
-        openapi.extend(include_str!("openapi.yaml"), "/");
-    }
-    openapi.nop();
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, router: &Option<Router>) {

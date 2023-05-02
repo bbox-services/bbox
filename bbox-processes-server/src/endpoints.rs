@@ -234,15 +234,9 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // |Job list|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list|
         // |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
         // |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
+        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
     ]);
-    #[cfg(feature = "openapi")]
-    {
-        api.conformance_classes.extend(vec![
-            "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
-        ]);
-        openapi.extend(include_str!("openapi.yaml"), "/");
-    }
-    openapi.nop();
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {

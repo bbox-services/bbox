@@ -3,8 +3,14 @@ use actix_web::{web, Error, HttpRequest};
 use rust_embed::RustEmbed;
 use std::path::PathBuf;
 
+#[cfg(feature = "html")]
 #[derive(RustEmbed)]
 #[folder = "static/"]
+struct Statics;
+
+#[cfg(not(feature = "html"))]
+#[derive(RustEmbed)]
+#[folder = "src/empty/"]
 struct Statics;
 
 async fn static_asset(req: HttpRequest) -> Result<EmbedFile, Error> {

@@ -68,14 +68,8 @@ fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
         // HTML
         "http://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/html".to_string(),
         */
+        // OpenAPI Specification
+        "http://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/oas30".to_string(),
     ]);
-    #[cfg(feature = "openapi")]
-    {
-        api.conformance_classes.extend(vec![
-            // OpenAPI Specification
-            "http://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/oas30".to_string(),
-        ]);
-        openapi.extend(include_str!("openapi.yaml"), "/");
-    }
-    openapi.nop();
+    openapi.extend(include_str!("openapi.yaml"), "/");
 }

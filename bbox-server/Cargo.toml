@@ -17,12 +17,12 @@ actix-service = "2.0.2"
 actix-web = { workspace = true }
 actix-web-opentelemetry = { version = "0.12", features = ["metrics"] }
 bbox-common = { path = "../bbox-common" }
-bbox-feature-server = { path = "../bbox-feature-server", features=["openapi"], optional = true }
+bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
-bbox-map-server = { path = "../bbox-map-server", features=["openapi"], optional = true }
+bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
-bbox-processes-server = { path = "../bbox-processes-server", features=["openapi"], optional = true }
-bbox-routing-server = { path = "../bbox-routing-server", features=["openapi"], optional = true }
+bbox-processes-server = { path = "../bbox-processes-server", optional = true }
+bbox-routing-server = { path = "../bbox-routing-server", optional = true }
 clap = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }

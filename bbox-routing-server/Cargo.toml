@@ -3,9 +3,6 @@ name = "bbox-routing-server"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-openapi = []
-
 [dependencies]
 actix-web = { workspace = true }
 bbox-common = { path = "../bbox-common" }

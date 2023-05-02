@@ -69,7 +69,11 @@ impl FcgiBackendType for QgisFcgiBackend {
             ("QGIS_PLUGINPATH", &self.plugindir),
             ("QGIS_SERVER_LOG_STDERR", "1"),
             ("QGIS_SERVER_LOG_LEVEL", "0"), // TODO: control with bbox log level
-            ("QGIS_SERVER_LOG_PROFILE", "1"),
+            ("QGIS_SERVER_LOG_PROFILE", "0"), // Only initialialization times are profiled
+            //("QGIS_SERVER_SERVICE_URL", "")
+            ("QGIS_SERVER_IGNORE_BAD_LAYERS", "1"),
+            ("QGIS_SERVER_TRUST_LAYER_METADATA", "1"),
+            ("QGIS_SERVER_FORCE_READONLY_LAYERS", "1"), // TODO: Disable for WFS-T
         ]
     }
     fn cap_type(&self) -> CapType {

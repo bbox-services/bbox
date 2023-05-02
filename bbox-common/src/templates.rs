@@ -3,8 +3,14 @@ use minijinja::{Environment, Error, Source, State};
 use rust_embed::RustEmbed;
 use serde::Serialize;
 
+#[cfg(feature = "html")]
 #[derive(RustEmbed)]
 #[folder = "templates/"]
+struct BaseTemplates;
+
+#[cfg(not(feature = "html"))]
+#[derive(RustEmbed)]
+#[folder = "src/empty/"]
 struct BaseTemplates;
 
 fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, Error> {
@@ -62,6 +68,10 @@ pub async fn render_endpoint<S: Serialize>(
 }
 
 pub async fn html_accepted(req: &HttpRequest) -> bool {
+    if cfg!(not(feature = "html")) {
+        return false;        
+    }
+
     if req.path().ends_with(".json") {
         return false;
     }

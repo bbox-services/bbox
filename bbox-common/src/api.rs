@@ -65,7 +65,6 @@ impl OpenApiDoc {
         doc.set_server_url(public_base_url);
         serde_yaml::from_value::<serde_json::Value>(doc.0).unwrap()
     }
-    pub fn nop(&self) {}
 }
 
 fn merge_level(yaml: &mut serde_yaml::Value, rhs_yaml: &serde_yaml::Value, key: &str) {
