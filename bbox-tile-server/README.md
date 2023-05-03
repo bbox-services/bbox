@@ -24,7 +24,7 @@ Features:
 
 Run tile server:
 
-    cargo run serve
+    BBOX_WEBSERVER__SERVER_ADDR="127.0.0.1:8081" cargo run serve
 
 Tile requests:
 

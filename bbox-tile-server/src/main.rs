@@ -8,7 +8,6 @@ mod writer;
 
 use crate::cli::{Cli, Commands};
 use crate::service::TileService;
-use crate::writer::s3::S3Writer;
 use actix_web::{middleware, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
 use clap::Parser;
@@ -77,7 +76,7 @@ pub async fn webserver() -> std::io::Result<()> {
     core.add_service(&tile_service);
 
     let workers = core.workers();
-    let server_addr = "127.0.0.1:8081"; // core.server_addr();
+    let server_addr = core.server_addr();
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
