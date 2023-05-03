@@ -4,22 +4,30 @@ mod endpoints;
 mod error;
 mod filter_params;
 mod inventory;
+mod service;
 
+use crate::service::FeatureService;
 use actix_web::{middleware, App, HttpServer};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::service::{CoreService, OgcApiService};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let inventory =
-        endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new()).await;
+    let mut core = CoreService::from_config().await;
 
+    let feature_service = FeatureService::from_config().await;
+    core.add_service(&feature_service);
+
+    let workers = core.workers();
+    let server_addr = core.server_addr();
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|mut cfg| endpoints::register(&mut cfg, &inventory))
+            .configure(|mut cfg| bbox_common::endpoints::register(&mut cfg, &core))
+            .configure(|mut cfg| endpoints::register(&mut cfg, &feature_service))
     })
-    .bind("127.0.0.1:8080")?
+    .bind(server_addr)?
+    .workers(workers)
     .run()
     .await
 }

@@ -50,8 +50,9 @@ async fn webserver() -> std::io::Result<()> {
     core.add_service(&file_service);
 
     #[cfg(feature = "feature-server")]
-    let feature_inventory =
-        bbox_feature_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi).await;
+    let feature_service = bbox_feature_server::FeatureService::from_config().await;
+    #[cfg(feature = "feature-server")]
+    core.add_service(&feature_service);
 
     #[cfg(feature = "processes-server")]
     bbox_processes_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
@@ -82,7 +83,7 @@ async fn webserver() -> std::io::Result<()> {
         #[cfg(feature = "feature-server")]
         {
             app = app.configure(|mut cfg| {
-                bbox_feature_server::endpoints::register(&mut cfg, &feature_inventory)
+                bbox_feature_server::endpoints::register(&mut cfg, &feature_service)
             });
         }
 
