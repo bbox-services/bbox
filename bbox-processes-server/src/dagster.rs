@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct DagsterBackend {
     config: DagsterBackendCfg,
 }

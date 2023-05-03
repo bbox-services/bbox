@@ -3,21 +3,30 @@ mod dagster;
 mod endpoints;
 mod error;
 mod models;
+mod service;
 
+use crate::service::ProcessesService;
 use actix_web::{middleware, App, HttpServer};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::service::{CoreService, OgcApiService};
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    endpoints::init_service(&mut OgcApiInventory::new(), &mut OpenApiDoc::new());
+    let mut core = CoreService::from_config().await;
 
+    let processes_service = ProcessesService::from_config().await;
+    core.add_service(&processes_service);
+
+    let workers = core.workers();
+    let server_addr = core.server_addr();
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(endpoints::register)
+            .configure(|mut cfg| bbox_common::endpoints::register(&mut cfg, &core))
+            .configure(|mut cfg| endpoints::register(&mut cfg, &processes_service))
     })
-    .bind("127.0.0.1:8080")?
+    .bind(server_addr)?
+    .workers(workers)
     .run()
     .await
 }

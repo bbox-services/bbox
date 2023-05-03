@@ -7,7 +7,7 @@ pub struct ProcessesServerCfg {
 }
 
 /// Dagster backend configuration
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct DagsterBackendCfg {
     /// GraphQL URL (e.g. `http://localhost:3000/graphql`)
     pub graphql_url: String,

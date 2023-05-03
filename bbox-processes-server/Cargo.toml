@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 actix-files = "0.6.0"
 actix-web = { workspace = true }
+async-trait = { workspace = true }
 awc = "3.0.0"
 bbox-common = { path = "../bbox-common" }
 chrono = { version = "0.4", features = ["serde"] }

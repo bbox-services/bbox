@@ -1,15 +1,13 @@
 //! Endpoints according to <https://ogcapi.ogc.org/processes/> API
 
-use crate::config::ProcessesServerCfg;
 use crate::dagster::{self, DagsterBackend};
 use crate::error;
 use crate::models::*;
+use crate::service::ProcessesService;
 use actix_files::NamedFile;
 use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
-use bbox_common::ogcapi::ApiLink;
 use log::{info, warn};
 use serde_json::json;
 
@@ -210,38 +208,8 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
     }
 }
 
-pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    init_api(api, openapi);
-}
-
-fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    api.landing_page_links.push(ApiLink {
-        href: "/processes".to_string(),
-        rel: Some("processes".to_string()),
-        type_: Some("application/json".to_string()),
-        title: Some("OGC API processes list".to_string()),
-        hreflang: None,
-        length: None,
-    });
-    api.conformance_classes.extend(vec![
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json".to_string(),
-        // |Core|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core|
-        // |OGC Process Description|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/ogc-process-description|
-        // |JSON|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/json|
-        // |HTML|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/html|
-        // |OpenAPI Specification 3.0|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30|
-        // |Job list|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/job-list|
-        // |Callback|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/callback|
-        // |Dismiss|http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/dismiss|
-        "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
-    ]);
-    openapi.extend(include_str!("openapi.yaml"), "/");
-}
-
-pub fn register(cfg: &mut web::ServiceConfig) {
-    let config = ProcessesServerCfg::from_config();
-    if !config.has_backend() {
+pub fn register(cfg: &mut web::ServiceConfig, processes_service: &ProcessesService) {
+    if processes_service.backend.is_none() {
         info!("Missing processing backend configuration - skipping endpoints");
         return;
     }

@@ -55,7 +55,9 @@ async fn webserver() -> std::io::Result<()> {
     core.add_service(&feature_service);
 
     #[cfg(feature = "processes-server")]
-    bbox_processes_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
+    let processes_service = bbox_processes_server::ProcessesService::from_config().await;
+    #[cfg(feature = "processes-server")]
+    core.add_service(&processes_service);
 
     #[cfg(feature = "routing-server")]
     bbox_routing_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
@@ -101,7 +103,9 @@ async fn webserver() -> std::io::Result<()> {
 
         #[cfg(feature = "processes-server")]
         {
-            app = app.configure(bbox_processes_server::endpoints::register);
+            app = app.configure(|mut cfg| {
+                bbox_processes_server::endpoints::register(&mut cfg, &processes_service)
+            });
         }
 
         #[cfg(feature = "routing-server")]
