@@ -1,8 +1,10 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
+use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
+use actix_web_opentelemetry::{RequestMetrics, RequestTracing};
 use async_trait::async_trait;
-// use prometheus::Registry;
+use prometheus::Registry;
 
 #[async_trait]
 pub trait OgcApiService {
@@ -17,6 +19,7 @@ pub trait OgcApiService {
         Vec::new()
     }
     fn openapi_yaml(&self) -> &str;
+    fn add_metrics(&self, _prometheus: &Registry) {}
 }
 
 #[derive(Clone)]
@@ -24,19 +27,35 @@ pub struct CoreService {
     pub web_config: WebserverCfg,
     pub ogcapi: OgcApiInventory,
     pub openapi: OpenApiDoc,
-    // prometheus: Option<&Registry>,
+    pub metrics: Option<Metrics>,
 }
 
 impl CoreService {
     pub fn add_service(&mut self, svc: &impl OgcApiService) {
         let api_base = self.web_config.base_path();
+
         self.ogcapi
             .landing_page_links
             .extend(svc.landing_page_links(&api_base));
         self.ogcapi
             .conformance_classes
             .extend(svc.conformance_classes());
+
         self.openapi.extend(svc.openapi_yaml(), &api_base);
+
+        if let Some(metrics) = &self.metrics {
+            svc.add_metrics(metrics.exporter.registry())
+        }
+    }
+    pub fn has_metrics(&self) -> bool {
+        self.metrics.is_some()
+    }
+    /// Request tracing middleware
+    pub fn middleware(&self) -> RequestTracing {
+        RequestTracing::new()
+    }
+    pub fn req_metrics(&self) -> RequestMetrics {
+        self.metrics.as_ref().unwrap().request_metrics.clone()
     }
     pub fn workers(&self) -> usize {
         self.web_config.worker_threads()
@@ -50,10 +69,12 @@ impl CoreService {
 impl OgcApiService for CoreService {
     async fn from_config() -> Self {
         let web_config = WebserverCfg::from_config();
+        let metrics = init_metrics();
         let common = CoreService {
             web_config,
             ogcapi: OgcApiInventory::new(),
             openapi: OpenApiDoc::new(),
+            metrics,
         };
         let mut service = common.clone();
         service.add_service(&common);

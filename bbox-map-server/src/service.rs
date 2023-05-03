@@ -5,21 +5,8 @@ use crate::metrics::init_metrics;
 use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
 use bbox_common::service::OgcApiService;
 use prometheus::Registry;
-
-pub async fn init_service(
-    _api: &mut OgcApiInventory,
-    _openapi: &mut OpenApiDoc,
-    prometheus: Option<&Registry>,
-) -> MapService {
-    let config = WmsServerCfg::from_config();
-    init_metrics(&config, prometheus);
-    let wms_backend = init_wms_backend(&config).await;
-    // init_api(api, openapi);
-    wms_backend
-}
 
 #[derive(Clone)]
 pub struct MapService {
@@ -53,7 +40,6 @@ async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
 impl OgcApiService for MapService {
     async fn from_config() -> Self {
         let config = WmsServerCfg::from_config();
-        // init_metrics(&config, prometheus);
         let wms_backend = init_wms_backend(&config).await;
         wms_backend
     }
@@ -107,5 +93,9 @@ impl OgcApiService for MapService {
     }
     fn openapi_yaml(&self) -> &str {
         include_str!("openapi.yaml")
+    }
+    fn add_metrics(&self, prometheus: &Registry) {
+        let config = WmsServerCfg::from_config();
+        init_metrics(&config, prometheus);
     }
 }

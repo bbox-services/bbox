@@ -8,4 +8,4 @@ mod service;
 pub mod wms_capabilities;
 mod wms_fcgi_backend;
 
-pub use service::init_service;
+pub use service::*;

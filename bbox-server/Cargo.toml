@@ -15,7 +15,6 @@ routing-server = ["bbox-routing-server"]
 [dependencies]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
-actix-web-opentelemetry = { version = "0.12", features = ["metrics"] }
 bbox-common = { path = "../bbox-common" }
 bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
@@ -26,9 +25,6 @@ bbox-routing-server = { path = "../bbox-routing-server", optional = true }
 clap = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
-opentelemetry = { version = "0.17", default-features = false, features = ["trace", "metrics", "rt-tokio"] }
-opentelemetry-jaeger = { version = "0.16", features = ["rt-tokio"] }
-opentelemetry-prometheus = { version = "0.10" }
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

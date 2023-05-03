@@ -20,8 +20,8 @@ fastcgi-client = { version = "0.5.0", default-features = false }
 log = { workspace = true }
 num_cpus = { workspace = true }
 once_cell = { workspace = true }
-opentelemetry = { version = "0.17", default-features = false, features = ["trace", "metrics"] }
-prometheus = { version = "0.13", default-features = false }
+opentelemetry = { workspace = true }
+prometheus = { workspace = true }
 rand = "0.7.3"
 serde = { workspace = true }
 serde-xml-rs = "0.4.0"

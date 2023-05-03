@@ -3,6 +3,7 @@ pub mod config;
 pub mod endpoints;
 pub mod file_search;
 pub mod logger;
+pub mod metrics;
 pub mod ogcapi;
 pub mod service;
 pub mod static_assets;

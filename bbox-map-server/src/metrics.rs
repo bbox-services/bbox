@@ -68,28 +68,26 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
     })
 }
 
-pub fn init_metrics(config: &WmsServerCfg, prometheus: Option<&Registry>) {
-    if let Some(prometheus) = prometheus {
-        let metrics = wms_metrics(config.num_fcgi_processes());
-        // We use the Prometheus API, using
-        // https://docs.rs/opentelemetry-prometheus/
-        // would be more portable
+pub fn init_metrics(config: &WmsServerCfg, prometheus: &Registry) {
+    let metrics = wms_metrics(config.num_fcgi_processes());
+    // We use the Prometheus API, using
+    // https://docs.rs/opentelemetry-prometheus/
+    // would be more portable
+    prometheus
+        .register(Box::new(metrics.wms_requests_counter.clone()))
+        .unwrap();
+    for no in 0..metrics.fcgi_cache_count.len() {
         prometheus
-            .register(Box::new(metrics.wms_requests_counter.clone()))
+            .register(Box::new(metrics.fcgi_client_pool_available[no].clone()))
             .unwrap();
-        for no in 0..metrics.fcgi_cache_count.len() {
-            prometheus
-                .register(Box::new(metrics.fcgi_client_pool_available[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_client_wait_seconds[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_cache_count[no].clone()))
-                .unwrap();
-            prometheus
-                .register(Box::new(metrics.fcgi_cache_hit[no].clone()))
-                .unwrap();
-        }
+        prometheus
+            .register(Box::new(metrics.fcgi_client_wait_seconds[no].clone()))
+            .unwrap();
+        prometheus
+            .register(Box::new(metrics.fcgi_cache_count[no].clone()))
+            .unwrap();
+        prometheus
+            .register(Box::new(metrics.fcgi_cache_hit[no].clone()))
+            .unwrap();
     }
 }

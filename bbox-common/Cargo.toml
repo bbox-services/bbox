@@ -8,6 +8,7 @@ html = []
 
 [dependencies]
 actix-web = { workspace = true }
+actix-web-opentelemetry = { version = "0.13", features = ["metrics-prometheus"] }
 async-trait = { workspace = true }
 env_logger = "0.9.0"
 figment = { version = "0.10.6", features = ["env", "toml"] }
@@ -18,6 +19,10 @@ mime_guess = "2.0.3"
 minijinja = { workspace = true }
 num_cpus = { workspace = true }
 once_cell = "1.8.0"
+opentelemetry = { workspace = true }
+opentelemetry-jaeger = { version = "0.17", features = ["rt-tokio"] }
+opentelemetry-prometheus = { version = "0.11" }
+prometheus = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

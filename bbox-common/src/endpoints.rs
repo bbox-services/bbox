@@ -3,6 +3,7 @@ use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::CoreService;
 use actix_web::{guard, web, HttpRequest, HttpResponse};
+use actix_web_opentelemetry::PrometheusMetricsHandler;
 
 pub fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -97,4 +98,10 @@ pub fn register(cfg: &mut web::ServiceConfig, service: &CoreService) {
     .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
     .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
     .service(web::resource("/health").to(health));
+
+    if let Some(metrics) = &service.metrics {
+        let metrics_handler = PrometheusMetricsHandler::new(metrics.exporter.clone());
+        //TODO: path from MetricsCfg
+        cfg.route("/metrics", web::get().to(metrics_handler));
+    }
 }
