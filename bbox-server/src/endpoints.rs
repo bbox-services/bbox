@@ -1,5 +1,5 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
+use bbox_common::api::OgcApiInventory;
 use bbox_common::config::WebserverCfg;
 use bbox_common::endpoints::relurl;
 use bbox_common::ogcapi::*;
@@ -48,22 +48,6 @@ async fn swaggerui() -> Result<HttpResponse, Error> {
 
 async fn redoc() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
-}
-
-pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    init_api(api, openapi);
-}
-
-fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    api.landing_page_links.push(ApiLink {
-        href: "/collections".to_string(),
-        rel: Some("data".to_string()),
-        type_: Some("application/json".to_string()),
-        title: Some("Information about the feature collections".to_string()),
-        hreflang: None,
-        length: None,
-    });
-    openapi.extend(include_str!("openapi.yaml"), "/");
 }
 
 pub fn register(cfg: &mut web::ServiceConfig, web_cfg: &WebserverCfg) {

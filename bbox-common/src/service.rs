@@ -18,7 +18,9 @@ pub trait OgcApiService {
     fn collections(&self) -> Vec<CoreCollection> {
         Vec::new()
     }
-    fn openapi_yaml(&self) -> &str;
+    fn openapi_yaml(&self) -> Option<&str> {
+        None
+    }
     fn add_metrics(&self, _prometheus: &Registry) {}
 }
 
@@ -41,7 +43,9 @@ impl CoreService {
             .conformance_classes
             .extend(svc.conformance_classes());
 
-        self.openapi.extend(svc.openapi_yaml(), &api_base);
+        if let Some(yaml) = svc.openapi_yaml() {
+            self.openapi.extend(yaml, &api_base);
+        }
 
         if let Some(metrics) = &self.metrics {
             svc.add_metrics(metrics.exporter.registry())
@@ -123,7 +127,7 @@ impl OgcApiService for CoreService {
             "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
         ]
     }
-    fn openapi_yaml(&self) -> &str {
-        include_str!("openapi.yaml")
+    fn openapi_yaml(&self) -> Option<&str> {
+        Some(include_str!("openapi.yaml"))
     }
 }

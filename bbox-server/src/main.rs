@@ -1,5 +1,7 @@
 mod endpoints;
+mod service;
 
+use crate::service::BboxService;
 use actix_web::middleware::Condition;
 use actix_web::{middleware, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
@@ -34,7 +36,8 @@ OPTIONS:
 async fn webserver() -> std::io::Result<()> {
     let mut core = CoreService::from_config().await;
 
-    endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
+    let bbox_service = BboxService::from_config().await;
+    core.add_service(&bbox_service);
 
     #[cfg(feature = "map-server")]
     let map_service = bbox_map_server::MapService::from_config().await;

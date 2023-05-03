@@ -9,7 +9,7 @@ html = ["bbox-common/html"]
 
 [dependencies]
 actix-web = { workspace = true }
-async-trait = "0.1.65"
+async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
 futures = { workspace = true }
 geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }

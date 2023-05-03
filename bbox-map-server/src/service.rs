@@ -91,8 +91,8 @@ impl OgcApiService for MapService {
             "http://www.opengis.net/spec/ogcapi-maps-1/1.0/conf/oas30".to_string(),
         ]
     }
-    fn openapi_yaml(&self) -> &str {
-        include_str!("openapi.yaml")
+    fn openapi_yaml(&self) -> Option<&str> {
+        Some(include_str!("openapi.yaml"))
     }
     fn add_metrics(&self, prometheus: &Registry) {
         let config = WmsServerCfg::from_config();

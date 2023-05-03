@@ -788,6 +788,7 @@ version = "0.1.0"
 dependencies = [
  "actix-service",
  "actix-web",
+ "async-trait",
  "bbox-common",
  "bbox-feature-server",
  "bbox-file-server",

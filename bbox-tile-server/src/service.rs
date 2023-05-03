@@ -113,7 +113,7 @@ impl OgcApiService for TileService {
             // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
         ]
     }
-    fn openapi_yaml(&self) -> &str {
-        include_str!("openapi.yaml")
+    fn openapi_yaml(&self) -> Option<&str> {
+        Some(include_str!("openapi.yaml"))
     }
 }

@@ -15,6 +15,7 @@ routing-server = ["bbox-routing-server"]
 [dependencies]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
+async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
 bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
