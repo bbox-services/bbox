@@ -46,7 +46,7 @@ fn init_tracer(config: &MetricsCfg) {
 
 #[actix_web::main]
 async fn webserver() -> std::io::Result<()> {
-    let mut core = CoreService::from_config();
+    let mut core = CoreService::from_config().await;
 
     let metrics_cfg = MetricsCfg::from_config();
 
@@ -62,6 +62,8 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "map-server")]
     let wms_backend =
         bbox_map_server::init_service(&mut core.ogcapi, &mut core.openapi, prometheus).await;
+    #[cfg(feature = "map-server")]
+    core.add_service(&wms_backend);
 
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();

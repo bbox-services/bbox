@@ -1,7 +1,7 @@
 use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
 use crate::metrics::{wms_metrics, WmsMetrics};
-use crate::wms_fcgi_backend::WmsBackend;
+use crate::service::MapService;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use async_stream::stream;
 use log::{debug, error, info, warn};
@@ -191,7 +191,7 @@ async fn wms_fcgi(
     }))
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &WmsBackend) {
+pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &MapService) {
     let config = WmsServerCfg::from_config();
     let metrics = wms_metrics(config.num_fcgi_processes());
 

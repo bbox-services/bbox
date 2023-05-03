@@ -71,9 +71,9 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 #[actix_web::main]
 pub async fn webserver() -> std::io::Result<()> {
-    let mut core = CoreService::from_config();
+    let mut core = CoreService::from_config().await;
 
-    let tile_service = TileService::from_config();
+    let tile_service = TileService::from_config().await;
     core.add_service(&tile_service);
 
     let workers = core.workers();

@@ -7,7 +7,7 @@ edition = "2021"
 actix-web = { workspace = true }
 anyhow = "1.0.52"
 async-channel = "1.6.1"
-async-trait = "0.1.56"
+async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
 bytes = "1.1.0"
 clap = { workspace = true }

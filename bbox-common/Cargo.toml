@@ -8,6 +8,7 @@ html = []
 
 [dependencies]
 actix-web = { workspace = true }
+async-trait = { workspace = true }
 env_logger = "0.9.0"
 figment = { version = "0.10.6", features = ["env", "toml"] }
 fxhash = "0.2.1"

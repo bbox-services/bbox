@@ -11,7 +11,7 @@ inventory = []
 actix-web = { workspace = true }
 async-process = "1.0.0"
 async-stream = "0.3.4"
-async-trait = "0.1.40"
+async-trait = { workspace = true }
 awc = "3.0.0-beta.20"
 bbox-common = { path = "../bbox-common" }
 bufstream = "0.1.4"

@@ -1,5 +1,6 @@
 use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
 use crate::rastersource::wms::WmsRequest;
+use async_trait::async_trait;
 use bbox_common::config::config_error_exit;
 use bbox_common::service::OgcApiService;
 use std::process;
@@ -56,8 +57,9 @@ pub enum TileCache {
     // MbTiles(MbTilesCache),
 }
 
+#[async_trait]
 impl OgcApiService for TileService {
-    fn from_config() -> Self {
+    async fn from_config() -> Self {
         let grid = if let Some(cfg) = GridCfg::from_config() {
             Grid::from_config(&cfg).unwrap()
         } else {

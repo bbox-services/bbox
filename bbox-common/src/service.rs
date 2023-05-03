@@ -1,10 +1,12 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
 use crate::ogcapi::{ApiLink, CoreCollection};
+use async_trait::async_trait;
 // use prometheus::Registry;
 
+#[async_trait]
 pub trait OgcApiService {
-    fn from_config() -> Self;
+    async fn from_config() -> Self;
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         Vec::new()
     }
@@ -44,8 +46,9 @@ impl CoreService {
     }
 }
 
+#[async_trait]
 impl OgcApiService for CoreService {
-    fn from_config() -> Self {
+    async fn from_config() -> Self {
         let web_config = WebserverCfg::from_config();
         let common = CoreService {
             web_config,

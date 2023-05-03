@@ -1,7 +1,6 @@
 use crate::config::*;
-use crate::fcgi_process::{FcgiDispatcher, FcgiProcessPool};
+use crate::fcgi_process::FcgiProcessPool;
 use crate::inventory::*;
-use actix_web::web;
 use bbox_common::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
@@ -248,32 +247,4 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
         wms_services: wms_inventory,
     };
     Ok((pools, inventory))
-}
-
-#[derive(Clone)]
-pub struct WmsBackend {
-    // FcgiClientData is not Clone, so we have to wrap in web::Data already here
-    pub fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
-    pub inventory: Inventory,
-}
-
-pub async fn init_wms_backend(config: &WmsServerCfg) -> WmsBackend {
-    let (process_pools, inventory) = detect_backends().unwrap();
-    let fcgi_clients = process_pools
-        .iter()
-        .map(|process_pool| web::Data::new(process_pool.client_dispatcher(&config)))
-        .collect::<Vec<_>>();
-
-    for mut process_pool in process_pools {
-        if process_pool.spawn_processes().await.is_ok() {
-            actix_web::rt::spawn(async move {
-                process_pool.watchdog_loop().await;
-            });
-        }
-    }
-
-    WmsBackend {
-        fcgi_clients,
-        inventory,
-    }
 }
