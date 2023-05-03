@@ -1,7 +1,4 @@
-use crate::engine::Router;
-use bbox_common::config::{config_error_exit, from_config_opt_or_exit};
-use futures::executor;
-use log::warn;
+use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -21,30 +18,5 @@ pub struct RoutingServiceCfg {
 impl RoutingServerCfg {
     pub fn from_config() -> Option<Self> {
         from_config_opt_or_exit("routing")
-    }
-}
-
-pub fn setup() -> Option<Router> {
-    let Some(config) = RoutingServerCfg::from_config() else {
-            warn!("No routing config available");
-            return None;
-    };
-    match config.service.len() {
-        1 => {
-            let service = &config.service[0];
-            Some(executor::block_on(async {
-                Router::from_config(&service).await.unwrap()
-            }))
-        }
-        0 => {
-            warn!("No routing config available");
-            None
-        }
-        _ => {
-            config_error_exit(figment::Error::from(
-                "Currently only one routing service supported".to_string(),
-            ));
-            None
-        }
     }
 }

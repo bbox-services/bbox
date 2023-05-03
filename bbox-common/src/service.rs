@@ -27,9 +27,9 @@ pub trait OgcApiService {
 #[derive(Clone)]
 pub struct CoreService {
     pub web_config: WebserverCfg,
-    pub ogcapi: OgcApiInventory,
-    pub openapi: OpenApiDoc,
-    pub metrics: Option<Metrics>,
+    pub(crate) ogcapi: OgcApiInventory,
+    pub(crate) openapi: OpenApiDoc,
+    pub(crate) metrics: Option<Metrics>,
 }
 
 impl CoreService {

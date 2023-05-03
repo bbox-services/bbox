@@ -765,6 +765,7 @@ name = "bbox-routing-server"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "async-trait",
  "bbox-common",
  "bincode",
  "fast_paths",

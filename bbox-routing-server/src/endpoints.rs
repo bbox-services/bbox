@@ -1,8 +1,7 @@
 use crate::engine::Router;
 use crate::error;
+use crate::service::RoutingService;
 use actix_web::{web, HttpResponse};
-use bbox_common::api::{OgcApiInventory, OpenApiDoc};
-use bbox_common::ogcapi::ApiLink;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -242,46 +241,8 @@ async fn valhalla_route(
     HttpResponse::Ok().json(route)
 }
 
-pub fn init_service(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    init_api(api, openapi);
-}
-
-fn init_api(api: &mut OgcApiInventory, openapi: &mut OpenApiDoc) {
-    api.landing_page_links.push(ApiLink {
-        href: "/routes".to_string(),
-        rel: Some("routes".to_string()),
-        type_: Some("application/json".to_string()),
-        title: Some("OGC API routes".to_string()),
-        hreflang: None,
-        length: None,
-    });
-    api.conformance_classes.extend(vec![
-        // Core
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/core".to_string(),
-        /*
-        // Manage routes
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/manage-routes".to_string(),
-        // Modes
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/mode".to_string(),
-        // Intermediate waypoints
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/intermediate-waypoints".to_string(),
-        // Height restrictions
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/height".to_string(),
-        // Weight restrictions
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/weight".to_string(),
-        // Obstacles
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/obstacles".to_string(),
-        // Temporal constraints
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/time".to_string(),
-         */
-        // OpenAPI Specification
-        "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/oas30".to_string(),
-    ]);
-    openapi.extend(include_str!("openapi.yaml"), "/");
-}
-
-pub fn register(cfg: &mut web::ServiceConfig, router: &Option<Router>) {
-    if let Some(router) = router {
+pub fn register(cfg: &mut web::ServiceConfig, routing_service: &RoutingService) {
+    if let Some(router) = &routing_service.router {
         cfg.app_data(web::Data::new(router.clone()));
     }
     cfg.service(web::resource("/routes").route(web::post().to(compute_route)));

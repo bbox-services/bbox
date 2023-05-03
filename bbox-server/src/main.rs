@@ -60,9 +60,9 @@ async fn webserver() -> std::io::Result<()> {
     core.add_service(&processes_service);
 
     #[cfg(feature = "routing-server")]
-    bbox_routing_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
+    let routing_service = bbox_routing_server::RoutingService::from_config().await;
     #[cfg(feature = "routing-server")]
-    let router = bbox_routing_server::config::setup();
+    core.add_service(&routing_service);
 
     let workers = core.workers();
     let server_addr = core.server_addr();
@@ -110,8 +110,9 @@ async fn webserver() -> std::io::Result<()> {
 
         #[cfg(feature = "routing-server")]
         {
-            app = app
-                .configure(|mut cfg| bbox_routing_server::endpoints::register(&mut cfg, &router));
+            app = app.configure(|mut cfg| {
+                bbox_routing_server::endpoints::register(&mut cfg, &routing_service)
+            });
         }
 
         app
