@@ -36,7 +36,8 @@ RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 
 FROM debian:bullseye-slim
 
-ARG BUILDAPP=bbox-server
+ARG BUILD_DIR=bbox-server
+ARG BUILDAPP=$BUILD_DIR
 
 COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$BUILDAPP
 RUN ln -s $BUILDAPP /usr/local/bin/bbox-app

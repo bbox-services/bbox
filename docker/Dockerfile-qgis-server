@@ -27,7 +27,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y binutils
 # Workaround for broken Proj data (last tested with proj-data 6.3.1-1)
 RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
 
-ARG BUILDAPP=bbox-server
+ARG BUILD_DIR=bbox-server
+ARG BUILDAPP=$BUILD_DIR
 
 COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$BUILDAPP
 RUN ln -s $BUILDAPP /usr/local/bin/bbox-app

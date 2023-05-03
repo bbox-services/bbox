@@ -35,12 +35,11 @@ jobs:
         uses: elgohr/Publish-Docker-Github-Action@v5
         env:
           BUILD_DIR: bbox-processes-server
-          BUILDAPP: bbox-processes-server
         with:
           name: sourcepole/bbox-processes-server
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          buildargs: BUILD_DIR,BUILDAPP
+          buildargs: BUILD_DIR
           tags: "${{ steps.get_tag.outputs.tag }}"
           dockerfile: docker/Dockerfile
 
@@ -48,11 +47,10 @@ jobs:
         uses: elgohr/Publish-Docker-Github-Action@v5
         env:
           BUILD_DIR: bbox-map-server
-          BUILDAPP: bbox-map-server
         with:
           name: sourcepole/bbox-qgis-server
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          buildargs: BUILD_DIR,BUILDAPP
+          buildargs: BUILD_DIR
           tags: "${{ steps.get_tag.outputs.tag }}"
           dockerfile: docker/Dockerfile-qgis-server
