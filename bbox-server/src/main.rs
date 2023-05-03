@@ -45,7 +45,9 @@ async fn webserver() -> std::io::Result<()> {
     core.add_service(&map_service);
 
     #[cfg(feature = "file-server")]
-    let plugins_index = bbox_file_server::endpoints::init_service();
+    let file_service = bbox_file_server::FileService::from_config().await;
+    #[cfg(feature = "file-server")]
+    core.add_service(&file_service);
 
     #[cfg(feature = "feature-server")]
     let feature_inventory =
@@ -92,7 +94,7 @@ async fn webserver() -> std::io::Result<()> {
         #[cfg(feature = "file-server")]
         {
             app = app.configure(|mut cfg| {
-                bbox_file_server::endpoints::register(&mut cfg, &plugins_index)
+                bbox_file_server::endpoints::register(&mut cfg, &file_service)
             });
         }
 

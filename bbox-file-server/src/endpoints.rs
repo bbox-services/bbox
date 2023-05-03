@@ -1,15 +1,13 @@
 use crate::config::FileserverCfg;
 use crate::qgis_plugins::*;
+use crate::service::{FileService, PluginIndex};
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, Result};
 use bbox_common::app_dir;
 use log::{info, warn};
-use std::collections::HashMap;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tempfile::tempfile;
-
-type PluginIndex = HashMap<String, Vec<PathBuf>>;
 
 fn req_baseurl(req: &HttpRequest) -> String {
     let conninfo = req.connection_info();
@@ -37,24 +35,7 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
     Ok(NamedFile::from_file(file, "plugin.xml")?)
 }
 
-pub fn init_service() -> PluginIndex {
-    let static_cfg = FileserverCfg::from_config();
-
-    let mut plugins_index = PluginIndex::new();
-    for repo in &static_cfg.repo {
-        let dir = app_dir(&repo.dir);
-        if Path::new(&dir).is_dir() {
-            info!("Serving QGIS plugin repository from directory '{dir}'");
-            let plugins = plugin_files(&dir);
-            plugins_index.insert(format!("/{}/plugins.xml", repo.path), plugins);
-        } else {
-            warn!("QGIS plugin repository file directory '{dir}' not found");
-        }
-    }
-    plugins_index
-}
-
-pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
+pub fn register(cfg: &mut web::ServiceConfig, file_service: &FileService) {
     let static_cfg = FileserverCfg::from_config();
 
     for static_dir in &static_cfg.static_ {
@@ -67,7 +48,7 @@ pub fn register(cfg: &mut web::ServiceConfig, plugins_index: &PluginIndex) {
         }
     }
 
-    cfg.app_data(web::Data::new(plugins_index.clone()));
+    cfg.app_data(web::Data::new(file_service.plugins_index.clone()));
 
     for repo in &static_cfg.repo {
         let dir = app_dir(&repo.dir);
