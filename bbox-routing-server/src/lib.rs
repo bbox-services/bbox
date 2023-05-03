@@ -1,7 +1,7 @@
-pub mod config;
-pub mod endpoints;
-pub mod engine;
-pub mod error;
+mod config;
+mod endpoints;
+mod engine;
+mod error;
 mod service;
 
 pub use service::*;

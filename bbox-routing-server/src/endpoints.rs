@@ -2,6 +2,7 @@ use crate::engine::Router;
 use crate::error;
 use crate::service::RoutingService;
 use actix_web::{web, HttpResponse};
+use bbox_common::service::CoreService;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -241,13 +242,15 @@ async fn valhalla_route(
     HttpResponse::Ok().json(route)
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, routing_service: &RoutingService) {
-    if let Some(router) = &routing_service.router {
-        cfg.app_data(web::Data::new(router.clone()));
+impl RoutingService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+        if let Some(router) = &self.router {
+            cfg.app_data(web::Data::new(router.clone()));
+        }
+        cfg.service(web::resource("/routes").route(web::post().to(compute_route)));
+        cfg.service(web::resource("/routes/basic").route(web::get().to(basic_route)));
+        cfg.service(web::resource("/routes/valhalla/route").route(web::post().to(valhalla_route)));
     }
-    cfg.service(web::resource("/routes").route(web::post().to(compute_route)));
-    cfg.service(web::resource("/routes/basic").route(web::get().to(basic_route)));
-    cfg.service(web::resource("/routes/valhalla/route").route(web::post().to(valhalla_route)));
 }
 
 #[cfg(test)]

@@ -1,9 +1,10 @@
 use crate::config::RoutingServerCfg;
 use crate::engine::Router;
+use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::config::config_error_exit;
 use bbox_common::ogcapi::ApiLink;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 use futures::executor;
 use log::warn;
 
@@ -75,5 +76,8 @@ impl OgcApiService for RoutingService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

@@ -1,8 +1,9 @@
 use crate::config::FileserverCfg;
 use crate::qgis_plugins::plugin_files;
+use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::app_dir;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 use log::{info, warn};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -31,5 +32,8 @@ impl OgcApiService for FileService {
             }
         }
         FileService { plugins_index }
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

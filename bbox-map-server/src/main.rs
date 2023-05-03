@@ -25,8 +25,8 @@ pub async fn webserver() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|mut cfg| bbox_common::endpoints::register(&mut cfg, &core))
-            .configure(|mut cfg| endpoints::register(&mut cfg, &map_service))
+            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
     })
     .bind(server_addr)?
     .workers(workers)

@@ -5,7 +5,7 @@ use crate::metrics::init_metrics;
 use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 use prometheus::Registry;
 
 #[derive(Clone)]
@@ -97,5 +97,8 @@ impl OgcApiService for MapService {
     fn add_metrics(&self, prometheus: &Registry) {
         let config = WmsServerCfg::from_config();
         init_metrics(&config, prometheus);
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

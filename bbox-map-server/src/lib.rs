@@ -1,6 +1,6 @@
 mod config;
 mod dispatcher;
-pub mod endpoints;
+mod endpoints;
 mod fcgi_process;
 pub mod inventory;
 mod metrics;

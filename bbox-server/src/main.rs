@@ -72,21 +72,18 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|mut cfg| bbox_common::endpoints::register(&mut cfg, &core))
+            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
             .configure(bbox_common::static_assets::register_endpoints)
-            .configure(|mut cfg| endpoints::register(&mut cfg, &core.web_config));
+            .configure(|mut cfg| bbox_service.register_endpoints(&mut cfg, &core));
 
         #[cfg(feature = "map-server")]
         {
-            app = app
-                .configure(|mut cfg| bbox_map_server::endpoints::register(&mut cfg, &map_service));
+            app = app.configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core));
         }
 
         #[cfg(feature = "feature-server")]
         {
-            app = app.configure(|mut cfg| {
-                bbox_feature_server::endpoints::register(&mut cfg, &feature_service)
-            });
+            app = app.configure(|mut cfg| feature_service.register_endpoints(&mut cfg, &core));
         }
 
         #[cfg(feature = "map-viewer")]
@@ -96,23 +93,17 @@ async fn webserver() -> std::io::Result<()> {
 
         #[cfg(feature = "file-server")]
         {
-            app = app.configure(|mut cfg| {
-                bbox_file_server::endpoints::register(&mut cfg, &file_service)
-            });
+            app = app.configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core));
         }
 
         #[cfg(feature = "processes-server")]
         {
-            app = app.configure(|mut cfg| {
-                bbox_processes_server::endpoints::register(&mut cfg, &processes_service)
-            });
+            app = app.configure(|mut cfg| processes_service.register_endpoints(&mut cfg, &core));
         }
 
         #[cfg(feature = "routing-server")]
         {
-            app = app.configure(|mut cfg| {
-                bbox_routing_server::endpoints::register(&mut cfg, &routing_service)
-            });
+            app = app.configure(|mut cfg| routing_service.register_endpoints(&mut cfg, &core));
         }
 
         app

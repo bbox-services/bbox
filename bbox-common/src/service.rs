@@ -2,6 +2,7 @@ use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
 use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
+use actix_web::web;
 use actix_web_opentelemetry::{RequestMetrics, RequestTracing};
 use async_trait::async_trait;
 use prometheus::Registry;
@@ -22,6 +23,7 @@ pub trait OgcApiService {
         None
     }
     fn add_metrics(&self, _prometheus: &Registry) {}
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService);
 }
 
 #[derive(Clone)]
@@ -129,5 +131,8 @@ impl OgcApiService for CoreService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

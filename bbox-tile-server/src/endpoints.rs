@@ -1,5 +1,6 @@
 use crate::service::{RasterSource, TileService, TileSource};
 use actix_web::{guard, web, Error, HttpResponse};
+use bbox_common::service::CoreService;
 
 /// XYZ endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
@@ -52,17 +53,19 @@ async fn map_tile(
     Ok(resp)
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, tile_service: &TileService) {
-    cfg.app_data(web::Data::new(tile_service.clone()));
-    cfg.service(
-        web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(
-            web::route()
-                .guard(guard::Any(guard::Get()).or(guard::Head()))
-                .to(xyz),
-        ),
-    )
-    .service(
-        web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
-            .route(web::get().to(map_tile)),
-    );
+impl TileService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+        cfg.app_data(web::Data::new(self.clone()));
+        cfg.service(
+            web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(
+                web::route()
+                    .guard(guard::Any(guard::Get()).or(guard::Head()))
+                    .to(xyz),
+            ),
+        )
+        .service(
+            web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
+                .route(web::get().to(map_tile)),
+        );
+    }
 }

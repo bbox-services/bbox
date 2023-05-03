@@ -1,8 +1,9 @@
 use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
 use crate::rastersource::wms::WmsRequest;
+use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::config::config_error_exit;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 use std::process;
 use tile_grid::Grid;
 
@@ -115,5 +116,8 @@ impl OgcApiService for TileService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

@@ -1,6 +1,7 @@
+use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::ogcapi::ApiLink;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 
 #[derive(Clone)]
 pub struct BboxService;
@@ -19,5 +20,8 @@ impl OgcApiService for BboxService {
             hreflang: None,
             length: None,
         }]
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

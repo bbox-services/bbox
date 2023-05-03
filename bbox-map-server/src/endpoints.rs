@@ -4,6 +4,7 @@ use crate::metrics::{wms_metrics, WmsMetrics};
 use crate::service::MapService;
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use async_stream::stream;
+use bbox_common::service::CoreService;
 use log::{debug, error, info, warn};
 use opentelemetry::{
     global,
@@ -191,29 +192,31 @@ async fn wms_fcgi(
     }))
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, wms_backend: &MapService) {
-    let config = WmsServerCfg::from_config();
-    let metrics = wms_metrics(config.num_fcgi_processes());
+impl MapService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+        let config = WmsServerCfg::from_config();
+        let metrics = wms_metrics(config.num_fcgi_processes());
 
-    cfg.app_data(web::Data::new((*metrics).clone()));
+        cfg.app_data(web::Data::new((*metrics).clone()));
 
-    cfg.app_data(web::Data::new(wms_backend.inventory.clone()));
+        cfg.app_data(web::Data::new(self.inventory.clone()));
 
-    for fcgi_client in &wms_backend.fcgi_clients {
-        for suffix_info in &fcgi_client.suffixes {
-            let route = suffix_info.url_base.trim_end_matches('/').to_string();
-            let suffix = suffix_info.suffix.clone();
-            info!("Registering WMS endpoint {route}/ (suffix: {suffix})");
-            cfg.service(
-                web::resource(route + "/{project:.+}") // :[^{}]+
-                    .app_data(fcgi_client.clone())
-                    .app_data(web::Data::new(suffix))
-                    .route(
-                        web::route()
-                            .guard(guard::Any(guard::Get()).or(guard::Post()))
-                            .to(wms_fcgi),
-                    ),
-            );
+        for fcgi_client in &self.fcgi_clients {
+            for suffix_info in &fcgi_client.suffixes {
+                let route = suffix_info.url_base.trim_end_matches('/').to_string();
+                let suffix = suffix_info.suffix.clone();
+                info!("Registering WMS endpoint {route}/ (suffix: {suffix})");
+                cfg.service(
+                    web::resource(route + "/{project:.+}") // :[^{}]+
+                        .app_data(fcgi_client.clone())
+                        .app_data(web::Data::new(suffix))
+                        .route(
+                            web::route()
+                                .guard(guard::Any(guard::Get()).or(guard::Post()))
+                                .to(wms_fcgi),
+                        ),
+                );
+            }
         }
     }
 }

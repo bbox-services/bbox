@@ -1,6 +1,6 @@
 mod config;
 mod dagster;
-pub mod endpoints;
+mod endpoints;
 mod error;
 mod models;
 mod service;

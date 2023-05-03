@@ -1,6 +1,6 @@
 mod config;
 mod datasource;
-pub mod endpoints;
+mod endpoints;
 mod error;
 mod filter_params;
 mod inventory;

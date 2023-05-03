@@ -2,6 +2,7 @@ use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use crate::service::FeatureService;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
+use bbox_common::service::CoreService;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
@@ -97,9 +98,12 @@ struct Templates;
 
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
-pub fn register(cfg: &mut web::ServiceConfig, feature_service: &FeatureService) {
-    cfg.app_data(web::Data::new(feature_service.inventory.clone()));
-    cfg.service(web::resource("/collections/{collectionId}.json").route(web::get().to(collection)))
+impl FeatureService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+        cfg.app_data(web::Data::new(self.inventory.clone()));
+        cfg.service(
+            web::resource("/collections/{collectionId}.json").route(web::get().to(collection)),
+        )
         .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
         .service(web::resource("/collections/{collectionId}/items").route(web::get().to(features)))
         .service(
@@ -113,5 +117,6 @@ pub fn register(cfg: &mut web::ServiceConfig, feature_service: &FeatureService) 
             web::resource("/collections/{collectionId}/items/{featureId}")
                 .route(web::get().to(feature)),
         );
-    // endpoint /collections is in bbox-server
+        // endpoint /collections is in bbox-server
+    }
 }

@@ -1,8 +1,9 @@
 use crate::config::ProcessesServerCfg;
 use crate::dagster::DagsterBackend;
+use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::ogcapi::ApiLink;
-use bbox_common::service::OgcApiService;
+use bbox_common::service::{CoreService, OgcApiService};
 
 #[derive(Clone)]
 pub struct ProcessesService {
@@ -47,5 +48,8 @@ impl OgcApiService for ProcessesService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
+    }
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        self.register(cfg, core)
     }
 }

@@ -1,5 +1,5 @@
 mod config;
-pub mod endpoints;
+mod endpoints;
 mod qgis_plugins;
 mod service;
 

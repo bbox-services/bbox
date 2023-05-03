@@ -1,8 +1,9 @@
+use crate::service::BboxService;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::OgcApiInventory;
-use bbox_common::config::WebserverCfg;
 use bbox_common::endpoints::relurl;
 use bbox_common::ogcapi::*;
+use bbox_common::service::CoreService;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
@@ -50,14 +51,18 @@ async fn redoc() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, web_cfg: &WebserverCfg) {
-    let api_base = web_cfg.base_path();
-    cfg.service(web::resource(format!("{api_base}/collections")).route(web::get().to(collections)))
+impl BboxService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        let api_base = core.web_config.base_path();
+        cfg.service(
+            web::resource(format!("{api_base}/collections")).route(web::get().to(collections)),
+        )
         .service(
             web::resource(format!("{api_base}/collections.json")).route(web::get().to(collections)),
         )
         .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui)))
         .service(web::resource("/redoc.html").route(web::get().to(redoc)));
+    }
 }
 
 // #[cfg(test)]

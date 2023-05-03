@@ -8,6 +8,7 @@ use actix_files::NamedFile;
 use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
+use bbox_common::service::CoreService;
 use log::{info, warn};
 use serde_json::json;
 
@@ -208,20 +209,25 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
     }
 }
 
-pub fn register(cfg: &mut web::ServiceConfig, processes_service: &ProcessesService) {
-    if processes_service.backend.is_none() {
-        info!("Missing processing backend configuration - skipping endpoints");
-        return;
+impl ProcessesService {
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+        if self.backend.is_none() {
+            info!("Missing processing backend configuration - skipping endpoints");
+            return;
+        }
+        cfg.service(web::resource("/processes").route(web::get().to(process_list)))
+            .service(
+                web::resource("/processes/{processID}")
+                    .route(web::get().to(get_process_description)),
+            )
+            .service(
+                web::resource("/processes/{processID}/execution").route(web::post().to(execute)),
+            )
+            .service(web::resource("/jobs").route(web::get().to(get_jobs)))
+            .service(web::resource("/jobs/{jobId}").route(web::get().to(get_status)))
+            .service(web::resource("/jobs/{jobId}").route(web::delete().to(dismiss)))
+            .service(web::resource("/jobs/{jobId}/results").route(web::get().to(get_result)));
     }
-    cfg.service(web::resource("/processes").route(web::get().to(process_list)))
-        .service(
-            web::resource("/processes/{processID}").route(web::get().to(get_process_description)),
-        )
-        .service(web::resource("/processes/{processID}/execution").route(web::post().to(execute)))
-        .service(web::resource("/jobs").route(web::get().to(get_jobs)))
-        .service(web::resource("/jobs/{jobId}").route(web::get().to(get_status)))
-        .service(web::resource("/jobs/{jobId}").route(web::delete().to(dismiss)))
-        .service(web::resource("/jobs/{jobId}/results").route(web::get().to(get_result)));
 }
 
 #[cfg(test)]
