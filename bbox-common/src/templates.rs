@@ -69,7 +69,7 @@ pub async fn render_endpoint<S: Serialize>(
 
 pub async fn html_accepted(req: &HttpRequest) -> bool {
     if cfg!(not(feature = "html")) {
-        return false;        
+        return false;
     }
 
     if req.path().ends_with(".json") {

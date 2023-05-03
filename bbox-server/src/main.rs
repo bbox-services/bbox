@@ -2,9 +2,9 @@ mod config;
 mod endpoints;
 
 use crate::config::*;
-use actix_web::{middleware, web, App, HttpResponse, HttpServer};
+use actix_web::{middleware, App, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
-use bbox_common::config::WebserverCfg;
+use bbox_common::service::{CoreService, OgcApiService};
 use clap::Parser;
 use opentelemetry::{global, sdk::propagation::TraceContextPropagator};
 use std::env;
@@ -44,13 +44,10 @@ fn init_tracer(config: &MetricsCfg) {
     }
 }
 
-async fn health() -> HttpResponse {
-    HttpResponse::Ok().body("OK")
-}
-
 #[actix_web::main]
 async fn webserver() -> std::io::Result<()> {
-    let web_config = WebserverCfg::from_config();
+    let mut core = CoreService::from_config();
+
     let metrics_cfg = MetricsCfg::from_config();
 
     init_tracer(&metrics_cfg);
@@ -60,25 +57,24 @@ async fn webserver() -> std::io::Result<()> {
     #[allow(unused_variables)]
     let prometheus = metrics_cfg.prometheus.as_ref().map(|_| exporter.registry());
 
-    let (mut ogcapi, mut openapi) = bbox_common::endpoints::init_api();
-
-    endpoints::init_service(&mut ogcapi, &mut openapi);
+    endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
 
     #[cfg(feature = "map-server")]
-    let wms_backend = bbox_map_server::init_service(&mut ogcapi, &mut openapi, prometheus).await;
+    let wms_backend =
+        bbox_map_server::init_service(&mut core.ogcapi, &mut core.openapi, prometheus).await;
 
     #[cfg(feature = "file-server")]
     let plugins_index = bbox_file_server::endpoints::init_service();
 
     #[cfg(feature = "feature-server")]
     let feature_inventory =
-        bbox_feature_server::endpoints::init_service(&mut ogcapi, &mut openapi).await;
+        bbox_feature_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi).await;
 
     #[cfg(feature = "processes-server")]
-    bbox_processes_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+    bbox_processes_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
 
     #[cfg(feature = "routing-server")]
-    bbox_routing_server::endpoints::init_service(&mut ogcapi, &mut openapi);
+    bbox_routing_server::endpoints::init_service(&mut core.ogcapi, &mut core.openapi);
     #[cfg(feature = "routing-server")]
     let router = bbox_routing_server::config::setup();
 
@@ -95,22 +91,17 @@ async fn webserver() -> std::io::Result<()> {
         Some(exporter),
     );
 
-    let workers = web_config.worker_threads();
-    let server_addr = web_config.server_addr.clone();
-
+    let workers = core.workers();
+    let server_addr = core.server_addr();
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(RequestTracing::new())
             .wrap(request_metrics.clone())
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .service(web::resource("/health").to(health))
-            .app_data(web::Data::new(web_config.clone()))
-            .app_data(web::Data::new(ogcapi.clone()))
-            .app_data(web::Data::new(openapi.clone()))
-            .configure(bbox_common::endpoints::register)
+            .configure(|mut cfg| bbox_common::endpoints::register(&mut cfg, &core))
             .configure(bbox_common::static_assets::register_endpoints)
-            .configure(|mut cfg| endpoints::register(&mut cfg, &web_config));
+            .configure(|mut cfg| endpoints::register(&mut cfg, &core.web_config));
 
         #[cfg(feature = "map-server")]
         {

@@ -1,6 +1,7 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
+use crate::service::CoreService;
 use actix_web::{guard, web, HttpRequest, HttpResponse};
 
 pub fn relurl(req: &HttpRequest, path: &str) -> String {
@@ -72,69 +73,22 @@ async fn health() -> HttpResponse {
     HttpResponse::Ok().body("OK")
 }
 
-pub fn init_api() -> (OgcApiInventory, OpenApiDoc) {
-    let api_base = ""; //web_cfg.base_path();
-    let landing_page_links = vec![
-        ApiLink {
-            href: format!("{api_base}/"),
-            rel: Some("self".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("this document".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            // href: "/api".to_string(),
-            href: "/openapi.json".to_string(),
-            rel: Some("service-desc".to_string()),
-            type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
-            title: Some("the API definition".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            href: "/openapi.yaml".to_string(),
-            rel: Some("service-desc".to_string()),
-            type_: Some("application/x-yaml".to_string()),
-            title: Some("the API definition".to_string()),
-            hreflang: None,
-            length: None,
-        },
-        ApiLink {
-            href: format!("{api_base}/conformance"),
-            rel: Some("conformance".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("OGC API conformance classes implemented by this server".to_string()),
-            hreflang: None,
-            length: None,
-        },
-    ];
-
-    let conformance_classes = vec![
-        "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core".to_string(),
-        "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
-    ];
-
-    let ogcapi = OgcApiInventory {
-        landing_page_links,
-        conformance_classes,
-        collections: Vec::new(),
-    };
-
-    let openapi = OpenApiDoc::from_yaml(include_str!("openapi.yaml"), &format!("{api_base}/"));
-
-    (ogcapi, openapi)
-}
-
-pub fn register(cfg: &mut web::ServiceConfig) {
-    let api_base = ""; //web_cfg.base_path();
+pub fn register(cfg: &mut web::ServiceConfig, service: &CoreService) {
+    let api_base = service.web_config.base_path();
+    cfg.app_data(web::Data::new(service.web_config.clone()))
+        .app_data(web::Data::new(service.ogcapi.clone()))
+        .app_data(web::Data::new(service.openapi.clone()));
+    if cfg!(feature = "html") {
+        cfg.service(
+            web::resource(format!("{api_base}/"))
+                .guard(guard::Header("content-type", "application/json"))
+                .route(web::get().to(index)),
+        );
+    } else {
+        // No guard - respond also to HTML requests
+        cfg.service(web::resource(format!("{api_base}/")).route(web::get().to(index)));
+    }
     cfg.service(
-        web::resource(format!("{api_base}/"))
-            // TODO: Add content-type guard only when HTML response is available
-            .guard(guard::Header("content-type", "application/json"))
-            .route(web::get().to(index)),
-    )
-    .service(
         web::resource(format!("{api_base}/conformance"))
             // TODO: HTML implementation missing
             // .guard(guard::Header("content-type", "application/json"))

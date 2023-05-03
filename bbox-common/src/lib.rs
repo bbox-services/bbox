@@ -4,6 +4,7 @@ pub mod endpoints;
 pub mod file_search;
 pub mod logger;
 pub mod ogcapi;
+pub mod service;
 pub mod static_assets;
 pub mod static_files;
 pub mod templates;
