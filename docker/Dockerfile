@@ -17,13 +17,15 @@ COPY bbox-routing-server/Cargo.toml ./bbox-routing-server/Cargo.toml
 COPY bbox-server/Cargo.toml ./bbox-server/Cargo.toml
 COPY bbox-tile-server/Cargo.toml ./bbox-tile-server/Cargo.toml
 
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+
 RUN mkdir .cargo
 RUN cargo vendor > .cargo/config
 
 COPY . .
 
 ARG BUILD_DIR=bbox-server
-ARG BUILD_FEATURES=--all-features
+ARG BUILD_FEATURES=""
 
 RUN cd $BUILD_DIR && cargo build --release $BUILD_FEATURES
 RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
@@ -35,10 +37,9 @@ RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 FROM debian:bullseye-slim
 
 ARG BUILDAPP=bbox-server
-ARG APP=bbox-server
 
-COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$APP
-RUN ln -s $APP /usr/local/bin/bbox-app
+COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$BUILDAPP
+RUN ln -s $BUILDAPP /usr/local/bin/bbox-app
 
 WORKDIR /var/www
 USER www-data

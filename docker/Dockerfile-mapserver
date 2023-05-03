@@ -1,16 +1,16 @@
 FROM rust:bullseye as builder
 WORKDIR /usr/src/bbox
 COPY . .
-RUN cd bbox-server && cargo install --no-default-features --features=map-server --path .
+RUN cd bbox-map-server && CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo install --path .
 
 FROM debian:bullseye-slim
 # procps provides `ps` which is useful to have for debugging
 RUN apt-get update && apt-get install -y libcurl4 cgi-mapserver procps && \
     rm -rf /var/lib/apt/lists/*
-COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
+COPY --from=builder /usr/local/cargo/bin/bbox-map-server /usr/local/bin/bbox-map-server
 
 WORKDIR /var/www
 USER www-data
 ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
 EXPOSE 8080
-CMD ["bbox-server"]
+CMD ["bbox-map-server"]

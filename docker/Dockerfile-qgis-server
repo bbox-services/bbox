@@ -1,8 +1,10 @@
 FROM rust:bullseye as builder
 WORKDIR /usr/src/bbox
 COPY . .
-ARG BUILD_FEATURES="--no-default-features --features=map-server"
-RUN cd bbox-server && cargo install $BUILD_FEATURES --path .
+ARG BUILD_DIR=bbox-server
+ARG BUILD_FEATURES=""
+
+RUN cd $BUILD_DIR && CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo install $BUILD_FEATURES --path .
 
 # ------
 FROM debian:bullseye-slim as qgis-server
@@ -25,7 +27,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y binutils
 # Workaround for broken Proj data (last tested with proj-data 6.3.1-1)
 RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
 
-COPY --from=builder /usr/local/cargo/bin/bbox-server /usr/local/bin/bbox-server
+ARG BUILDAPP=bbox-server
+
+COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$BUILDAPP
+RUN ln -s $BUILDAPP /usr/local/bin/bbox-app
 
 COPY bbox-map-server/qgis/plugins /var/www/bbox-map-server/qgis/plugins
 
@@ -34,7 +39,7 @@ WORKDIR /var/www
 USER www-data
 ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
 EXPOSE 8080
-CMD ["bbox-server"]
+CMD ["bbox-app"]
 
 # ------
 # Additional optional packages
