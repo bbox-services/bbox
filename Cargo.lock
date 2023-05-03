@@ -799,6 +799,7 @@ dependencies = [
  "bbox-map-viewer",
  "bbox-processes-server",
  "bbox-routing-server",
+ "bbox-tile-server",
  "clap",
  "minijinja",
  "once_cell",

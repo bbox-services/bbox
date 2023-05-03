@@ -64,6 +64,11 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "routing-server")]
     core.add_service(&routing_service);
 
+    #[cfg(feature = "tile-server")]
+    let tile_service = bbox_tile_server::TileService::from_config().await;
+    #[cfg(feature = "tile-server")]
+    core.add_service(&tile_service);
+
     let workers = core.workers();
     let server_addr = core.server_addr();
     HttpServer::new(move || {
