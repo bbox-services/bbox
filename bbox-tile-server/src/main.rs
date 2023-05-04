@@ -69,16 +69,17 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 fn main() {
     let args = Cli::parse();
-    bbox_common::logger::init();
 
     match args.command {
         Commands::Serve {} => {
             webserver::<TileService>().unwrap();
         }
         Commands::Seed(seedargs) => {
+            bbox_common::logger::init();
             cli::seed(&seedargs);
         }
         Commands::Upload(uploadargs) => {
+            bbox_common::logger::init();
             cli::upload(&uploadargs);
         }
     }

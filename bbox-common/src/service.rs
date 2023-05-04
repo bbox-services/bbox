@@ -47,7 +47,11 @@ impl CoreService {
             .extend(svc.conformance_classes());
 
         if let Some(yaml) = svc.openapi_yaml() {
-            self.openapi.extend(yaml, &api_base);
+            if self.openapi.is_empty() {
+                self.openapi = OpenApiDoc::from_yaml(yaml, &api_base);
+            } else {
+                self.openapi.extend(yaml, &api_base);
+            }
         }
 
         if let Some(metrics) = &self.metrics {
