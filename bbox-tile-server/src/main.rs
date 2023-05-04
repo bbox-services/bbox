@@ -8,8 +8,7 @@ mod writer;
 
 use crate::cli::{Cli, Commands};
 use crate::service::TileService;
-use actix_web::{middleware, App, HttpServer};
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_common::service::webserver;
 use clap::Parser;
 
 /*
@@ -68,35 +67,13 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 */
 
-#[actix_web::main]
-pub async fn webserver() -> std::io::Result<()> {
-    let mut core = CoreService::from_config().await;
-
-    let tile_service = TileService::from_config().await;
-    core.add_service(&tile_service);
-
-    let workers = core.workers();
-    let server_addr = core.server_addr();
-    HttpServer::new(move || {
-        App::new()
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
-            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
-    })
-    .bind(server_addr)?
-    .workers(workers)
-    .run()
-    .await
-}
-
 fn main() {
     let args = Cli::parse();
     bbox_common::logger::init();
 
     match args.command {
         Commands::Serve {} => {
-            webserver().unwrap();
+            webserver::<TileService>().unwrap();
         }
         Commands::Seed(seedargs) => {
             cli::seed(&seedargs);

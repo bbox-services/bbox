@@ -1,8 +1,9 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
+use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
-use actix_web::web;
+use actix_web::{middleware, web, App, HttpServer};
 use actix_web_opentelemetry::{RequestMetrics, RequestTracing};
 use async_trait::async_trait;
 use prometheus::Registry;
@@ -135,4 +136,28 @@ impl OgcApiService for CoreService {
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
     }
+}
+
+#[actix_web::main]
+pub async fn webserver<T: OgcApiService + Send + Clone + 'static>() -> std::io::Result<()> {
+    logger::init();
+
+    let mut core = CoreService::from_config().await;
+
+    let service = T::from_config().await;
+    core.add_service(&service);
+
+    let workers = core.workers();
+    let server_addr = core.server_addr();
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
+            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| service.register_endpoints(&mut cfg, &core))
+    })
+    .bind(server_addr)?
+    .workers(workers)
+    .run()
+    .await
 }
