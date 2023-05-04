@@ -56,17 +56,17 @@ paths:
   #         $ref: '#/components/responses/ConformanceDeclaration'
   #       '500':
   #         $ref: '#/components/responses/ServerError'
-  # /collections:
-  #   get:
-  #     tags:
-  #       - Features
-  #     summary: the feature collections in the dataset
-  #     operationId: getCollections
-  #     responses:
-  #       '200':
-  #         $ref: '#/components/responses/Collections'
-  #       '500':
-  #         $ref: '#/components/responses/ServerError'
+  /collections:
+    get:
+      tags:
+        - Features
+      summary: the feature collections in the dataset
+      operationId: getCollections
+      responses:
+        '200':
+          $ref: '#/components/responses/Collections'
+        '500':
+          $ref: '#/components/responses/ServerError'
   '/collections/{collectionId}':
     get:
       tags:

@@ -2,11 +2,42 @@ use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use crate::service::FeatureService;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
+use bbox_common::api::OgcApiInventory;
+use bbox_common::endpoints::relurl;
+use bbox_common::ogcapi::{ApiLink, CoreCollections};
 use bbox_common::service::CoreService;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
+
+/// the feature collections in the dataset
+async fn collections(
+    ogcapi: web::Data<OgcApiInventory>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+    let collections = CoreCollections {
+        links: vec![ApiLink {
+            href: relurl(&req, "/collections.json"),
+            rel: Some("self".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("this document".to_string()),
+            hreflang: None,
+            length: None,
+        }],
+        collections: ogcapi.collections.to_vec(), //TODO: convert urls with relurl (?)
+    };
+    if html_accepted(&req).await {
+        render_endpoint(
+            &TEMPLATES,
+            "collections.html",
+            context!(cur_menu=>"Collections", collections => &collections),
+        )
+        .await
+    } else {
+        Ok(HttpResponse::Ok().json(collections))
+    }
+}
 
 /// describe the feature collection with id `collectionId`
 async fn collection(
@@ -99,24 +130,33 @@ struct Templates;
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 impl FeatureService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        cfg.app_data(web::Data::new(self.inventory.clone()));
-        cfg.service(
-            web::resource("/collections/{collectionId}.json").route(web::get().to(collection)),
-        )
-        .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
-        .service(web::resource("/collections/{collectionId}/items").route(web::get().to(features)))
-        .service(
-            web::resource("/collections/{collectionId}/items.json").route(web::get().to(features)),
-        )
-        .service(
-            web::resource("/collections/{collectionId}/items/{featureId}.json")
-                .route(web::get().to(feature)),
-        )
-        .service(
-            web::resource("/collections/{collectionId}/items/{featureId}")
-                .route(web::get().to(feature)),
-        );
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
+        let api_base = core.web_config.ogcapi_base_path();
+        cfg.app_data(web::Data::new(self.inventory.clone()))
+            .service(web::resource("/collections").route(web::get().to(collections)))
+            .service(web::resource("/collections.json").route(web::get().to(collections)))
+            .service(
+                web::resource(format!("{api_base}/collections")).route(web::get().to(collections)),
+            )
+            .service(
+                web::resource("/collections/{collectionId}.json").route(web::get().to(collection)),
+            )
+            .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
+            .service(
+                web::resource("/collections/{collectionId}/items").route(web::get().to(features)),
+            )
+            .service(
+                web::resource("/collections/{collectionId}/items.json")
+                    .route(web::get().to(features)),
+            )
+            .service(
+                web::resource("/collections/{collectionId}/items/{featureId}.json")
+                    .route(web::get().to(feature)),
+            )
+            .service(
+                web::resource("/collections/{collectionId}/items/{featureId}")
+                    .route(web::get().to(feature)),
+            );
         // endpoint /collections is in bbox-server
     }
 }

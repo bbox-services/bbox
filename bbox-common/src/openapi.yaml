@@ -18,8 +18,8 @@ info:
 servers:
   - url: 'http://bbox:8080/'
     description: Production server
-  - url: 'http://host.docker.internal:8080/'
-    description: Development server
+  # - url: 'http://host.docker.internal:8080/'
+  #   description: Development server
 # tags:
 #   - name: Features
 #     description: OGC API Features
@@ -77,7 +77,7 @@ paths:
     get:
       tags:
       - Conformance
-      operationId: getConformance
+      operationId: getConformanceDeclaration
       summary: Retrieve the set of OGC API conformance classes that are supported
         by this service.
       # parameters:
@@ -101,11 +101,11 @@ paths:
           "$ref": "#/components/responses/NotAcceptable"
         '500':
           "$ref": "#/components/responses/ServerError"
-  "/api":
+  "/openapi":
     get:
       tags:
       - API
-      operationId: getAPI
+      operationId: getOpenapi
       summary: Retrieve this API definition.
       # parameters:
       # - "$ref": "#/components/parameters/f-metadata"

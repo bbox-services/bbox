@@ -37,7 +37,7 @@ pub struct CoreService {
 
 impl CoreService {
     pub fn add_service(&mut self, svc: &impl OgcApiService) {
-        let api_base = self.web_config.base_path();
+        let api_base = "";
 
         self.ogcapi
             .landing_page_links
@@ -45,6 +45,7 @@ impl CoreService {
         self.ogcapi
             .conformance_classes
             .extend(svc.conformance_classes());
+        self.ogcapi.collections.extend(svc.collections());
 
         if let Some(yaml) = svc.openapi_yaml() {
             if self.openapi.is_empty() {
@@ -91,10 +92,10 @@ impl OgcApiService for CoreService {
         service.add_service(&common);
         service
     }
-    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
+    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         vec![
             ApiLink {
-                href: format!("{api_base}/"),
+                href: "/".to_string(),
                 rel: Some("self".to_string()),
                 type_: Some("application/json".to_string()),
                 title: Some("this document".to_string()),
@@ -102,7 +103,6 @@ impl OgcApiService for CoreService {
                 length: None,
             },
             ApiLink {
-                // href: "/api".to_string(),
                 href: "/openapi.json".to_string(),
                 rel: Some("service-desc".to_string()),
                 type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
@@ -119,7 +119,7 @@ impl OgcApiService for CoreService {
                 length: None,
             },
             ApiLink {
-                href: format!("{api_base}/conformance"),
+                href: "/conformance".to_string(),
                 rel: Some("conformance".to_string()),
                 type_: Some("application/json".to_string()),
                 title: Some("OGC API conformance classes implemented by this server".to_string()),
@@ -131,7 +131,7 @@ impl OgcApiService for CoreService {
     fn conformance_classes(&self) -> Vec<String> {
         vec![
             "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core".to_string(),
-            "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
+            // "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30".to_string(),
         ]
     }
     fn openapi_yaml(&self) -> Option<&str> {

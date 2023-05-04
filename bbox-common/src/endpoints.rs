@@ -76,28 +76,35 @@ async fn health() -> HttpResponse {
 
 impl CoreService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let api_base = self.web_config.base_path();
         cfg.app_data(web::Data::new(self.web_config.clone()))
             .app_data(web::Data::new(self.ogcapi.clone()))
             .app_data(web::Data::new(self.openapi.clone()));
         if cfg!(feature = "html") {
             cfg.service(
-                web::resource(format!("{api_base}/"))
+                web::resource("/")
                     .guard(guard::Header("content-type", "application/json"))
                     .route(web::get().to(index)),
             );
         } else {
             // No guard - respond also to HTML requests
-            cfg.service(web::resource(format!("{api_base}/")).route(web::get().to(index)));
+            cfg.service(web::resource("/").route(web::get().to(index)));
         }
+        // JSON-only base path for OGC validation test
+        // Validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
+        let base = self.web_config.ogcapi_base_path();
+        cfg.service(web::resource(format!("{base}/")).route(web::get().to(index)))
+            .service(
+                web::resource(format!("{base}/conformance")).route(web::get().to(conformance)),
+            );
         cfg.service(
-            web::resource(format!("{api_base}/conformance"))
+            web::resource("/conformance")
                 // TODO: HTML implementation missing
                 // .guard(guard::Header("content-type", "application/json"))
                 .route(web::get().to(conformance)),
         )
         .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
         .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
+        .service(web::resource("/openapi").route(web::get().to(openapi_json)))
         .service(web::resource("/health").to(health));
 
         if let Some(metrics) = &self.metrics {
