@@ -3,6 +3,8 @@ version: "3"
 services:
   bbox:
     image: sourcepole/bbox-server-qgis:latest
+    ports:
+      - "8080:8080"
     # environment:
     #   - PGPASSWORD=$PG_PASS
     volumes:
@@ -26,7 +28,7 @@ services:
       - POSTGRES_PASSWORD=$PG_PASS
       - POSTGRES_MULTIPLE_DATABASES
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432" ]
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGIS_DB -p 5432" ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -36,8 +36,8 @@ Email: admin@windmill.dev
 Password: changeme
 
 
-Instrumenation
--------------
+Instrumentation
+---------------
 
 ### Grafana
 
