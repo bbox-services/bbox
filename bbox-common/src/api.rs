@@ -59,14 +59,14 @@ impl OpenApiDoc {
             }
         }
     }
-    pub fn as_yaml(&self, public_base_url: &str) -> String {
+    pub fn as_yaml(&self, public_server_url: &str) -> String {
         let mut doc = self.clone();
-        doc.set_server_url(public_base_url);
+        doc.set_server_url(public_server_url);
         serde_yaml::to_string(&doc.0).unwrap()
     }
-    pub fn as_json(&self, public_base_url: &str) -> serde_json::Value {
+    pub fn as_json(&self, public_server_url: &str) -> serde_json::Value {
         let mut doc = self.clone();
-        doc.set_server_url(public_base_url);
+        doc.set_server_url(public_server_url);
         serde_yaml::from_value::<serde_json::Value>(doc.0).unwrap()
     }
 }

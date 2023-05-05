@@ -130,14 +130,10 @@ struct Templates;
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 impl FeatureService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        let api_base = core.web_config.ogcapi_base_path();
+    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
         cfg.app_data(web::Data::new(self.inventory.clone()))
             .service(web::resource("/collections").route(web::get().to(collections)))
             .service(web::resource("/collections.json").route(web::get().to(collections)))
-            .service(
-                web::resource(format!("{api_base}/collections")).route(web::get().to(collections)),
-            )
             .service(
                 web::resource("/collections/{collectionId}.json").route(web::get().to(collection)),
             )
@@ -157,6 +153,5 @@ impl FeatureService {
                 web::resource("/collections/{collectionId}/items/{featureId}")
                     .route(web::get().to(feature)),
             );
-        // endpoint /collections is in bbox-server
     }
 }

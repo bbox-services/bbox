@@ -34,9 +34,9 @@ Tile requests:
 
 OGC API entry points:
 
-    curl -H 'Content-Type: application/json' http://localhost:8081/ | jq .
+    curl -H 'Accept: application/json' http://localhost:8081/ | jq .
 
-    curl http://localhost:8081/openapi.json
+    curl http://localhost:8081/openapi.json | jq .
 
 Relase Build:
 

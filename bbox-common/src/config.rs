@@ -54,21 +54,19 @@ pub struct WebserverCfg {
     #[serde(default = "default_server_addr")]
     pub server_addr: String,
     worker_threads: Option<usize>,
-    public_base_url: Option<String>,
+    public_server_url: Option<String>,
 }
 
 fn default_server_addr() -> String {
     "127.0.0.1:8080".to_string()
 }
 
-const DEFAULT_OGCAPI_BASE_PATH: &str = "/ogcapi";
-
 impl Default for WebserverCfg {
     fn default() -> Self {
         WebserverCfg {
             server_addr: default_server_addr(),
             worker_threads: None,
-            public_base_url: None,
+            public_server_url: None,
         }
     }
 }
@@ -80,21 +78,13 @@ impl WebserverCfg {
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())
     }
-    pub fn public_base_url(&self, req: HttpRequest) -> String {
-        if let Some(url) = &self.public_base_url {
+    pub fn public_server_url(&self, req: HttpRequest) -> String {
+        if let Some(url) = &self.public_server_url {
             url.clone()
         } else {
             let conninfo = req.connection_info();
-            format!(
-                "{}://{}{}",
-                conninfo.scheme(),
-                conninfo.host(),
-                DEFAULT_OGCAPI_BASE_PATH
-            )
+            format!("{}://{}", conninfo.scheme(), conninfo.host(),)
         }
-    }
-    pub fn ogcapi_base_path(&self) -> String {
-        DEFAULT_OGCAPI_BASE_PATH.to_string() // TODO: path of public_base_url
     }
 }
 

@@ -2,8 +2,33 @@ use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::CoreService;
-use actix_web::{guard, web, HttpRequest, HttpResponse};
+use actix_web::{
+    guard, guard::Guard, guard::GuardContext, http::header, web, HttpRequest, HttpResponse,
+};
 use actix_web_opentelemetry::PrometheusMetricsHandler;
+
+/// Middleware for content negotiation
+pub struct JsonContentGuard;
+
+impl JsonContentGuard {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Guard for JsonContentGuard {
+    fn check(&self, ctx: &GuardContext<'_>) -> bool {
+        if cfg!(feature = "html") {
+            match ctx.header::<header::Accept>() {
+                Some(hdr) => hdr.preference() == "application/json",
+                None => false,
+            }
+        } else {
+            // Return JSON response to all requests
+            true
+        }
+    }
+}
 
 pub fn relurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
@@ -54,7 +79,7 @@ async fn openapi_yaml(
     cfg: web::Data<WebserverCfg>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let yaml = openapi.as_yaml(&cfg.public_base_url(req));
+    let yaml = openapi.as_yaml(&cfg.public_server_url(req));
     HttpResponse::Ok()
         .content_type("application/x-yaml")
         .body(yaml)
@@ -66,7 +91,7 @@ async fn openapi_json(
     cfg: web::Data<WebserverCfg>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let json = openapi.as_json(&cfg.public_base_url(req));
+    let json = openapi.as_json(&cfg.public_server_url(req));
     HttpResponse::Ok().json(json)
 }
 
@@ -78,34 +103,33 @@ impl CoreService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
         cfg.app_data(web::Data::new(self.web_config.clone()))
             .app_data(web::Data::new(self.ogcapi.clone()))
-            .app_data(web::Data::new(self.openapi.clone()));
-        if cfg!(feature = "html") {
-            cfg.service(
-                web::resource("/")
-                    .guard(guard::Header("content-type", "application/json"))
-                    .route(web::get().to(index)),
-            );
-        } else {
-            // No guard - respond also to HTML requests
-            cfg.service(web::resource("/").route(web::get().to(index)));
-        }
-        // JSON-only base path for OGC validation test
-        // Validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
-        let base = self.web_config.ogcapi_base_path();
-        cfg.service(web::resource(format!("{base}/")).route(web::get().to(index)))
+            .app_data(web::Data::new(self.openapi.clone()))
+            // OGC validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
             .service(
-                web::resource(format!("{base}/conformance")).route(web::get().to(conformance)),
-            );
-        cfg.service(
-            web::resource("/conformance")
-                // TODO: HTML implementation missing
-                // .guard(guard::Header("content-type", "application/json"))
-                .route(web::get().to(conformance)),
-        )
-        .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
-        .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
-        .service(web::resource("/openapi").route(web::get().to(openapi_json)))
-        .service(web::resource("/health").to(health));
+                web::resource("/")
+                    .guard(JsonContentGuard::new())
+                    .route(web::get().to(index)),
+            )
+            .service(
+                web::resource("/conformance")
+                    .guard(JsonContentGuard::new())
+                    .route(web::get().to(conformance)),
+            )
+            .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
+            .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
+            .service(
+                web::resource("/openapi")
+                    .guard(guard::Acceptable::new(
+                        "application/x-yaml".parse().unwrap(),
+                    ))
+                    .route(web::get().to(openapi_yaml)),
+            )
+            .service(
+                web::resource("/openapi")
+                    .guard(JsonContentGuard::new())
+                    .route(web::get().to(openapi_json)),
+            )
+            .service(web::resource("/health").to(health));
 
         if let Some(metrics) = &self.metrics {
             let metrics_handler = PrometheusMetricsHandler::new(metrics.exporter.clone());
