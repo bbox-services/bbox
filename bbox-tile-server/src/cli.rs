@@ -1,4 +1,4 @@
-use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
+use crate::config::{BackendWmsCfg, GridCfg};
 use crate::rastersource::wms::WmsRequest;
 use crate::writer::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
 use clap::{Args, Parser, Subcommand};
@@ -7,7 +7,7 @@ use log::{debug, info};
 use std::io::Cursor;
 use std::path::PathBuf;
 use tempfile::TempDir;
-use tile_grid::{Extent, Grid, GridIterator};
+use tile_grid::{BoundingBox, Tms};
 use tokio::task;
 
 #[derive(Debug, Parser)]
@@ -122,10 +122,12 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let mut tasks = Vec::with_capacity(task_queue_size);
 
     let grid = if let Some(cfg) = GridCfg::from_config() {
-        Grid::from_config(&cfg).unwrap()
+        cfg
     } else {
-        Grid::web_mercator()
-    };
+        GridCfg::TmsId("WebMercatorQuad".to_string())
+    }
+    .get();
+    let tms: Tms = grid.clone().into();
     let bbox = if let Some(numlist) = &args.extent {
         let arr: Vec<f64> = numlist
             .split(",")
@@ -137,14 +139,9 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         if arr.len() != 4 {
             anyhow::bail!("Invalid extent (minx,miny,maxx,maxy)");
         }
-        Extent {
-            minx: arr[0],
-            miny: arr[1],
-            maxx: arr[2],
-            maxy: arr[3],
-        }
+        BoundingBox::new(arr[0], arr[1], arr[2], arr[3])
     } else {
-        grid.extent.clone()
+        tms.xy_bbox()
     };
 
     let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
@@ -183,13 +180,13 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         info!("Writing tiles to {}", file_dir.to_string_lossy());
     }
 
-    let tile_limits = grid.tile_limits(bbox, 0);
     let minzoom = args.minzoom.unwrap_or(0);
-    let maxzoom = args.maxzoom.unwrap_or(grid.maxzoom());
-    let griditer = GridIterator::new(minzoom, maxzoom, tile_limits);
+    let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
+    let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
     info!("Seeding tiles from level {minzoom} to {maxzoom}");
-    for (z, x, y) in griditer {
-        let extent = grid.tile_extent(x, y, z);
+    for tile in griditer {
+        let extent = tms.xy_bounds(&tile);
+        let (z, x, y) = (tile.z, tile.x, tile.y);
         let path = format!("{z}/{x}/{y}.png");
         progress.set_message(path.clone());
         progress.inc(1);

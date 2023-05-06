@@ -1,16 +1,16 @@
-use crate::config::{BackendWmsCfg, FromGridCfg, GridCfg};
+use crate::config::{BackendWmsCfg, GridCfg};
 use crate::rastersource::wms::WmsRequest;
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::config::config_error_exit;
 use bbox_common::service::{CoreService, OgcApiService};
 use std::process;
-use tile_grid::Grid;
+use tile_grid::TileMatrixSet;
 
 #[derive(Clone, Debug)]
 pub struct TileService {
     pub format: TileFormat,
-    pub grid: Grid,
+    pub grid: TileMatrixSet,
     pub source: TileSource,
     pub cache: TileCache,
 }
@@ -62,10 +62,11 @@ pub enum TileCache {
 impl OgcApiService for TileService {
     async fn from_config() -> Self {
         let grid = if let Some(cfg) = GridCfg::from_config() {
-            Grid::from_config(&cfg).unwrap()
+            cfg
         } else {
-            Grid::web_mercator()
-        };
+            GridCfg::TmsId("WebMercatorQuad".to_string())
+        }
+        .get();
         let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
             WmsRequest::from_config(&cfg, &grid)
         } else {

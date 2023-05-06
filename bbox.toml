@@ -74,7 +74,7 @@ path = "/wms/map"            # WMS URL base path
 #geom = "geom"
 
 [grid]
-predefined = "web_mercator"
+identifier = "WebMercatorQuad"
 
 [tile.wms]
 baseurl = "http://localhost:8080/qgz/ne_extracts?version=1.3.0"
