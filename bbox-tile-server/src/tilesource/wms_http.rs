@@ -1,32 +1,33 @@
-use crate::config::BackendWmsCfg;
+use crate::config::*;
 use crate::error::Result;
-use bbox_common::config::error_exit;
 use bytes::Bytes;
 use log::debug;
-use tile_grid::{BoundingBox, TileMatrixSet};
+use tile_grid::BoundingBox;
 
 #[derive(Clone, Debug)]
-pub struct WmsRequest {
+pub struct WmsHttpSource {
     client: reqwest::Client,
     pub req_url: String,
 }
 
-impl WmsRequest {
-    pub fn from_config(cfg: &BackendWmsCfg, grid: &TileMatrixSet) -> Self {
+impl WmsHttpSource {
+    pub fn from_config(
+        provider: &WmsHttpSourceProviderCfg,
+        params: &WmsHttpSourceParamsCfg,
+        srid: i32,
+    ) -> Self {
         let client = reqwest::Client::new();
-        let tms = grid.into_tms().unwrap_or_else(error_exit);
         let req_url = format!(
             "{}&SERVICE=WMS&REQUEST=GetMap&CRS=EPSG:{}&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&FORMAT={}",
-            cfg.baseurl,
-            tms.crs().as_srid(),
+            provider.baseurl,
+            srid,
             256, //grid.width,
             256, //grid.height,
-            cfg.layers,
-            cfg.format,
+            params.layers,
+            provider.format,
         );
-        WmsRequest { client, req_url }
+        WmsHttpSource { client, req_url }
     }
-
     fn get_map_request(&self, extent: &BoundingBox) -> String {
         format!(
             "{}&BBOX={},{},{},{}",

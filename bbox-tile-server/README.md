@@ -24,19 +24,27 @@ Features:
 
 Run tile server:
 
-    BBOX_WEBSERVER__SERVER_ADDR="127.0.0.1:8081" cargo run serve
+    # Reduce log output for testing
+    export BBOX_WMSSERVER__NUM_FCGI_PROCESSES=1
+    cargo run serve
 
 Tile requests:
 
-    curl -o /tmp/tile.png http://localhost:8081/xyz/ne_extracts/2/2/2.png
+    curl -o /tmp/tile.png http://localhost:8080/xyz/ne_extracts/2/2/2.png
 
-    curl -o /tmp/tile.png -H 'Accept: image/png' http://localhost:8081/map/tiles/ne_extracts/2/2/2
+    curl -o /tmp/tile.jpg http://localhost:8080/xyz/gebco/0/0/0.jpeg
+
+    curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/ne_extracts/2/2/2
 
 OGC API entry points:
 
-    curl -H 'Accept: application/json' http://localhost:8081/ | jq .
+    curl -H 'Accept: application/json' http://localhost:8080/ | jq .
 
-    curl http://localhost:8081/openapi.json | jq .
+    curl http://localhost:8080/openapi.json | jq .
+
+XYZ URL (Leaflet, QGIS, etc.):
+
+    http://localhost:8080/xyz/ne_extracts/{z}/{x}/{y}.png
 
 Relase Build:
 
@@ -44,7 +52,7 @@ Relase Build:
 
 Local file seeding test:
 
-    ../target/release/bbox-tile-server seed --base-dir=/tmp/tiles --maxzoom=3
+    ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles --maxzoom=2
 
 Set S3 env vars:
 
@@ -54,7 +62,7 @@ Set S3 env vars:
 
 Run:
 
-    ../target/release/bbox-tile-server seed --s3-path=s3://tiles --maxzoom=5
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --s3-path=s3://tiles --maxzoom=5
 
 
 ### Local S3 tests
@@ -119,7 +127,7 @@ Initial sequential implementation:
     export S3_ENDPOINT_URL="http://localhost:9000"
 
     cargo build --release
-    time ../target/release/bbox-tile-server seed --srcdir=/home/pi/code/gis/vogeldatenbank/tiles/ --s3-path=s3://tiles
+    time ../target/release/bbox-tile-server upload --srcdir=/home/pi/code/gis/vogeldatenbank/tiles/ --s3-path=s3://tiles
 
     -> real    0m53.257s
 
@@ -133,12 +141,12 @@ Parallel tasks:
 
 Local QGIS NaturalEarth WMS
 
-    ../target/release/bbox-tile-server seed --maxzoom=18 --s3-path=s3://tiles
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --maxzoom=18 --s3-path=s3://tiles
 
     -> 14s
 
 Local QGIS NaturalEarth WMS to local directory
 
-    ../target/release/bbox-tile-server seed --maxzoom=18 --base-dir=/tmp/tiles
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --maxzoom=18 --base-dir=/tmp/tiles
 
     -> 13s

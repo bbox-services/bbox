@@ -3,12 +3,19 @@ name = "bbox-tile-server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["map-server"]
+map-server = ["bbox-map-server"]
+# wms-proxy = ["reqwest"]
+# s3 = ["rusoto_core", "rusoto_s3"]
+
 [dependencies]
 actix-web = { workspace = true }
 anyhow = "1.0.52"
 async-channel = "1.6.1"
 async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
+bbox-map-server = { path = "../bbox-map-server", optional = true }
 bytes = "1.1.0"
 clap = { workspace = true }
 crossbeam = "0.8.1"

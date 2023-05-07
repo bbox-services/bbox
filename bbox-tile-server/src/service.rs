@@ -1,85 +1,82 @@
-use crate::config::{BackendWmsCfg, GridCfg};
-use crate::rastersource::wms::WmsRequest;
+use crate::config::*;
+use crate::tilesource::{MapService, TileSource};
+use crate::writer::{files::FileWriter, s3::S3Writer};
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::config::config_error_exit;
 use bbox_common::service::{CoreService, OgcApiService};
-use std::process;
-use tile_grid::TileMatrixSet;
+use std::collections::HashMap;
+use tile_grid::{tms, Error, Tms};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default)]
 pub struct TileService {
-    pub format: TileFormat,
-    pub grid: TileMatrixSet,
+    pub tilesets: Tilesets,
+    // Map service backend
+    pub map_service: Option<MapService>,
+}
+
+pub type Tilesets = HashMap<String, TileSet>;
+
+#[derive(Clone, Debug)]
+pub struct TileSet {
+    /// Tile matrix set identifier
+    pub tms: String,
     pub source: TileSource,
-    pub cache: TileCache,
-}
-
-#[derive(Clone, Debug)]
-pub enum TileFormat {
-    RasterTile,
-    // Mvt(MvtFormat),
-}
-
-#[derive(Clone, Debug)]
-pub enum TileSource {
-    Raster(RasterSource),
-    // Vector(VectorSource),
-    // Tile(DirectTileSource),
-}
-
-#[derive(Clone, Debug)]
-pub enum RasterSource {
-    Wms(WmsRequest),
-    // WmsFcgi(WmsRequest),
-    // GdalData(GdalSource),
-    // RasterData(GeorasterSource),
-}
-
-#[derive(Clone, Debug)]
-pub enum VectorSource {
-    // PgData(PgQueries),
-    // OgrData(OgrQueries),
-    // VectorData(GeozeroSource),
-    // OsmData(OsmSource),
-}
-
-#[derive(Clone, Debug)]
-pub enum DirectTileSource {
-    // PgTile(PgTileQueries),
-    // MbTiles(MbTilesCache),
+    /// Tile cache name (Default: no cache)
+    pub cache: TileCacheCfg,
 }
 
 #[derive(Clone, Debug)]
 pub enum TileCache {
     NoCache,
-    // FileCache(FileCache),
-    // S3Cache(S3Cache),
+    FileCache(FileWriter),
+    S3Cache(S3Writer),
     // MbTiles(MbTilesCache),
 }
+
+pub trait SourceLookup {
+    fn source(&self, tileset: &str) -> Option<&TileSource>;
+}
+
+impl SourceLookup for Tilesets {
+    fn source(&self, tileset: &str) -> Option<&TileSource> {
+        self.get(tileset).map(|ts| &ts.source)
+    }
+}
+
+impl TileSet {
+    pub fn grid(&self) -> Result<Tms, Error> {
+        tms().lookup(&self.tms)
+    }
+}
+
+pub type SourcesLookup = HashMap<String, TileSourceProviderCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {
     async fn from_config() -> Self {
-        let grid = if let Some(cfg) = GridCfg::from_config() {
-            cfg
-        } else {
-            GridCfg::TmsId("WebMercatorQuad".to_string())
-        }
-        .get();
-        let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
-            WmsRequest::from_config(&cfg, &grid)
-        } else {
-            config_error_exit("[tile.wms] config missing");
-            process::exit(1);
-        };
+        let config = TileserverCfg::from_config();
+        let mut service = Self::default();
 
-        TileService {
-            format: TileFormat::RasterTile,
-            grid,
-            source: TileSource::Raster(RasterSource::Wms(wms)),
-            cache: TileCache::NoCache,
+        // Register custom grids
+        for grid in config.grid {
+            dbg!(&grid); // TODO
         }
+
+        let sources: SourcesLookup = config
+            .source
+            .into_iter()
+            .map(|src| (src.name.clone(), src.config))
+            .collect();
+
+        for ts in config.tileset {
+            let tms = ts.tms.unwrap_or("WebMercatorQuad".to_string());
+            let source = TileSource::from_config(&sources, &ts.params, &tms);
+            let cache = TileCacheCfg::NoCache;
+            let tileset = TileSet { tms, source, cache };
+            //dbg!((&ts.name, &tileset));
+            service.tilesets.insert(ts.name, tileset);
+        }
+        service
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -120,5 +117,17 @@ impl OgcApiService for TileService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+}
+
+impl TileService {
+    pub fn set_map_service(&mut self, service: &MapService) {
+        self.map_service = Some(service.clone());
+    }
+    pub fn tileset(&self, tileset: &str) -> Option<&TileSet> {
+        self.tilesets.get(tileset)
+    }
+    pub fn source(&self, tileset: &str) -> Option<&TileSource> {
+        self.tilesets.source(tileset)
     }
 }

@@ -17,6 +17,10 @@ use std::iter::FromIterator;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
 
+/// WMS/WFS endpoint
+// /qgis/{project}?REQUEST=WMS&..
+// /qgz/{project}?REQUEST=WMS&..
+// /map/{project}?REQUEST=WMS&..
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,
@@ -25,22 +29,46 @@ async fn wms_fcgi(
     body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
+    wms_fcgi_request(
+        &fcgi_dispatcher,
+        req.connection_info().scheme(),
+        req.connection_info().host(),
+        req.path(),
+        &fcgi_query,
+        req.method().as_str(),
+        body,
+        &project,
+        &metrics,
+    )
+    .await
+}
+
+pub async fn wms_fcgi_request(
+    fcgi_dispatcher: &FcgiDispatcher,
+    scheme: &str,
+    host: &str,
+    req_path: &str,
+    fcgi_query: &str,
+    req_method: &str,
+    body: String,
+    project: &str,
+    metrics: &WmsMetrics,
+) -> Result<HttpResponse, Error> {
     // --- > tracing/metrics
     let tracer = global::tracer("request");
     let ctx = Context::current();
     // ---
 
     let mut response = HttpResponse::Ok();
-    let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
-
-    let (fcgino, pool) = fcgi_dispatcher.select(&fcgi_query);
+    let (fcgino, pool) = fcgi_dispatcher.select(fcgi_query);
     let available_clients = pool.status().available;
 
     // ---
     metrics
         .wms_requests_counter
         .with_label_values(&[
-            req.path(),
+            req_path,
             fcgi_dispatcher.backend_name(),
             &fcgino.to_string(),
         ])
@@ -91,23 +119,22 @@ async fn wms_fcgi(
     let ctx = Context::current_with_span(span);
     // ---
 
-    let conninfo = req.connection_info();
-    let host_port: Vec<&str> = conninfo.host().split(':').collect();
+    let host_port: Vec<&str> = host.split(':').collect();
     debug!(
         "Forwarding query to FCGI process {}: {}",
-        fcgino, &fcgi_query
+        fcgino, fcgi_query
     );
     let len = format!("{}", body.len());
     let mut params = fastcgi_client::Params::new()
-        .set_request_method(req.method().as_str())
-        .set_request_uri(req.path())
+        .set_request_method(req_method)
+        .set_request_uri(req_path)
         .set_server_name(host_port.get(0).unwrap_or(&""))
-        .set_query_string(&fcgi_query)
+        .set_query_string(fcgi_query)
         .set_content_length(&len);
     if let Some(port) = host_port.get(1) {
         params = params.set_server_port(port);
     }
-    if conninfo.scheme() == "https" {
+    if scheme == "https" {
         params.insert("HTTPS", "ON");
     }
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):

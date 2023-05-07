@@ -1,41 +1,99 @@
-use bbox_common::config::{error_exit, from_config_opt_or_exit};
+use bbox_common::config::from_config_or_exit;
 use serde::Deserialize;
-use tile_grid::{tms, TileMatrixSet};
+
+#[derive(Deserialize, Default, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct TileserverCfg {
+    #[serde(default)]
+    pub tileset: Vec<TileSetCfg>,
+    #[serde(default)]
+    pub grid: Vec<GridCfg>,
+    #[serde(default)]
+    pub source: Vec<TileSourceCfg>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct TileSourceCfg {
+    pub name: String,
+    #[serde(flatten)]
+    pub config: TileSourceProviderCfg,
+}
 
 #[derive(Deserialize, Clone, Debug)]
-pub enum GridCfg {
-    #[serde(rename = "identifier")]
-    TmsId(String),
-    #[serde(rename = "json")]
-    TmsJson(String),
+pub enum TileSourceProviderCfg {
+    WmsFcgi,
+    #[serde(rename = "wms_proxy")]
+    WmsHttp(WmsHttpSourceProviderCfg),
+    // GdalData(GdalSource),
+    // RasterData(GeorasterSource),
 }
 
-impl GridCfg {
-    pub fn from_config() -> Option<Self> {
-        from_config_opt_or_exit("grid")
-    }
-    pub fn get(&self) -> TileMatrixSet {
-        match self {
-            GridCfg::TmsId(id) => tms().get(id).unwrap_or_else(error_exit).clone(),
-            GridCfg::TmsJson(fname) => {
-                TileMatrixSet::from_json_file(&fname).unwrap_or_else(error_exit)
-            }
-        }
-    }
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct TileSetCfg {
+    pub name: String,
+    /// Tile format (Default: Raster)
+    // pub format: Option<TileFormatCfg>,
+    /// List of available tile matrix set identifiers (Default: WebMercatorQuad)
+    pub tms: Option<String>,
+    /// Source parameters
+    #[serde(flatten)]
+    pub params: SourceParamCfg,
+    /// Tile cache name (Default: no cache)
+    pub cache: Option<String>,
 }
 
-// WMS backend
+/// Custom grid definition
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct GridCfg {
+    /// Tile matrix set identifier
+    pub tms_id: String,
+    /// JSON file path
+    pub json: String,
+}
 
-#[derive(Deserialize)]
-pub struct BackendWmsCfg {
+#[derive(Deserialize, Clone, Debug)]
+pub struct WmsHttpSourceProviderCfg {
+    // pub name: String,
     pub baseurl: String,
-    pub layers: String,
     pub format: String,
 }
 
-impl BackendWmsCfg {
-    pub fn from_config() -> Option<Self> {
-        from_config_opt_or_exit("tile.wms")
+#[derive(Deserialize, Clone, Debug)]
+pub enum SourceParamCfg {
+    #[serde(rename = "wms_proxy")]
+    WmsHttp(WmsHttpSourceParamsCfg),
+    #[serde(rename = "wms_project")]
+    WmsFcgi(WmsFcgiSourceParamsCfg),
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct WmsHttpSourceParamsCfg {
+    /// name of WmsHttpSourceProviderCfg
+    pub source: String,
+    pub layers: String,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct WmsFcgiSourceParamsCfg {
+    pub project: String,
+    pub suffix: String,
+    pub layers: String,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub enum TileCacheCfg {
+    NoCache,
+    // FileCache(FileCache),
+    // S3Cache(S3Cache),
+    // MbTiles(MbTilesCache),
+}
+
+impl TileserverCfg {
+    pub fn from_config() -> Self {
+        from_config_or_exit("tileserver")
     }
 }
 

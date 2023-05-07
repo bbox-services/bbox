@@ -1,7 +1,8 @@
-use crate::config::{BackendWmsCfg, GridCfg};
-use crate::rastersource::wms::WmsRequest;
+use crate::service::TileService;
+use crate::tilesource::TileSource;
 use crate::writer::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
 use bbox_common::config::error_exit;
+use bbox_common::service::OgcApiService;
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
@@ -33,6 +34,9 @@ pub enum Commands {
 
 #[derive(Debug, Args)]
 pub struct SeedArgs {
+    /// tile set name
+    #[arg(long, value_parser)]
+    pub tileset: String,
     /// Minimum zoom level
     #[arg(long, value_parser)]
     pub minzoom: Option<u8>,
@@ -104,6 +108,63 @@ fn progress_bar() -> ProgressBar {
     progress
 }
 
+/*
+
+# Tile seeder
+
+## Raster tiles
+
+Data sources:
+- [x] OGC WMS (http)
+- [ ] FCGI WMS
+- [ ] GDAL Raster data
+
+Output format:
+- [x] Raster tiles
+
+## Vector tiles
+
+Data sources:
+- [ ] PostGIS MVT
+- [ ] Vector data (geozero)
+- [ ] OSM Planet files
+
+Output format:
+- [ ] Mapbox Vector Tiles (MVT)
+
+## Storage
+- [x] Files
+- [x] S3
+
+## Workflows
+
+By-Grid (Raster):
+* Iterate over grid with filters
+* Request tile data
+* Store tile
+File upload:
+* Iterate over files in directory
+* Read file
+* Put file
+
+By-Grid (Vector):
+* Iterate over grid with filters
+* Request tile data
+* Clip data
+* Generalize data
+* Generate tile
+* Store tile
+
+By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
+* Iterate over features with filters
+* Slice data into grid tiles
+* Generalize for zoom levels
+* Collect data into grid tiles
+* Generate tile
+* Store tile
+
+*/
+
 async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let progress = progress_bar();
 
@@ -122,13 +183,10 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let task_queue_size = writer_task_count + threads * 2;
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let grid = if let Some(cfg) = GridCfg::from_config() {
-        cfg
-    } else {
-        GridCfg::TmsId("WebMercatorQuad".to_string())
-    }
-    .get();
-    let tms = grid.into_tms().unwrap_or_else(error_exit);
+    let service = TileService::from_config().await;
+    let tileset = service.tileset(&args.tileset).unwrap();
+    let source = service.source(&args.tileset).unwrap();
+    let tms = tileset.grid().unwrap_or_else(error_exit);
     let bbox = if let Some(numlist) = &args.extent {
         let arr: Vec<f64> = numlist
             .split(",")
@@ -145,13 +203,11 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         tms.xy_bbox()
     };
 
-    let wms = if let Some(cfg) = BackendWmsCfg::from_config() {
-        WmsRequest::from_config(&cfg, &grid)
-    } else {
-        anyhow::bail!("[tile.wms] config missing")
+    let TileSource::WmsHttp(wms) = source
+    else {
+        anyhow::bail!("WMS proxy source expected")
     };
     info!("Tile source {}", wms.req_url);
-
     let file_dir = args
         .base_dir
         .as_ref()

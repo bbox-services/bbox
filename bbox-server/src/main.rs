@@ -44,6 +44,13 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "map-server")]
     core.add_service(&map_service);
 
+    #[cfg(feature = "tile-server")]
+    let mut tile_service = bbox_tile_server::TileService::from_config().await;
+    #[cfg(all(feature = "tile-server", feature = "map-server"))]
+    tile_service.set_map_service(&map_service);
+    #[cfg(feature = "tile-server")]
+    core.add_service(&tile_service);
+
     #[cfg(feature = "file-server")]
     let file_service = bbox_file_server::FileService::from_config().await;
     #[cfg(feature = "file-server")]
@@ -64,11 +71,6 @@ async fn webserver() -> std::io::Result<()> {
     #[cfg(feature = "routing-server")]
     core.add_service(&routing_service);
 
-    #[cfg(feature = "tile-server")]
-    let tile_service = bbox_tile_server::TileService::from_config().await;
-    #[cfg(feature = "tile-server")]
-    core.add_service(&tile_service);
-
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     HttpServer::new(move || {
@@ -84,6 +86,11 @@ async fn webserver() -> std::io::Result<()> {
         #[cfg(feature = "map-server")]
         {
             app = app.configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core));
+        }
+
+        #[cfg(feature = "tile-server")]
+        {
+            app = app.configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core));
         }
 
         #[cfg(feature = "feature-server")]
