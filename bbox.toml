@@ -75,6 +75,7 @@ path = "/wms/map"            # WMS URL base path
 
 [grid]
 identifier = "WebMercatorQuad"
+#json = "custom-tms.json"
 
 [tile.wms]
 baseurl = "http://localhost:8080/qgz/ne_extracts?version=1.3.0"

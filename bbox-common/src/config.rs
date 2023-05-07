@@ -4,7 +4,7 @@ use figment::providers::{Env, Format, Toml};
 use figment::Figment;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
-use std::{env, process};
+use std::env;
 
 /// Application configuration singleton
 pub fn app_config() -> &'static Figment {
@@ -33,18 +33,18 @@ pub fn from_config_opt_or_exit<'a, T: Deserialize<'a>>(tag: &str) -> Option<T> {
     let config = app_config();
     config
         .find_value(tag)
-        .map(|_| {
-            config
-                .extract_inner(tag)
-                .map_err(|err| config_error_exit(err))
-                .unwrap()
-        })
+        .map(|_| config.extract_inner(tag).unwrap_or_else(error_exit))
         .ok()
 }
 
 pub fn config_error_exit<T: Display>(err: T) {
-    println!("Error reading configuration - {err}");
-    process::exit(1)
+    eprintln!("Error during initialization: {err}");
+    std::process::exit(1);
+}
+
+pub fn error_exit<T: Display, R>(err: T) -> R {
+    eprintln!("Error during initialization: {err}");
+    std::process::exit(1);
 }
 
 // -- Common configuration --

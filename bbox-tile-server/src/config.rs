@@ -1,4 +1,4 @@
-use bbox_common::config::from_config_opt_or_exit;
+use bbox_common::config::{error_exit, from_config_opt_or_exit};
 use serde::Deserialize;
 use tile_grid::{tms, TileMatrixSet};
 
@@ -16,8 +16,10 @@ impl GridCfg {
     }
     pub fn get(&self) -> TileMatrixSet {
         match self {
-            GridCfg::TmsId(id) => tms().get(id).unwrap().clone(),
-            GridCfg::TmsJson(fname) => TileMatrixSet::from_json_file(&fname).unwrap(),
+            GridCfg::TmsId(id) => tms().get(id).unwrap_or_else(error_exit).clone(),
+            GridCfg::TmsJson(fname) => {
+                TileMatrixSet::from_json_file(&fname).unwrap_or_else(error_exit)
+            }
         }
     }
 }

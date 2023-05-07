@@ -1,8 +1,9 @@
 use crate::config::BackendWmsCfg;
 use crate::error::Result;
+use bbox_common::config::error_exit;
 use bytes::Bytes;
 use log::debug;
-use tile_grid::{BoundingBox, TileMatrixSet, Tms};
+use tile_grid::{BoundingBox, TileMatrixSet};
 
 #[derive(Clone, Debug)]
 pub struct WmsRequest {
@@ -13,7 +14,7 @@ pub struct WmsRequest {
 impl WmsRequest {
     pub fn from_config(cfg: &BackendWmsCfg, grid: &TileMatrixSet) -> Self {
         let client = reqwest::Client::new();
-        let tms: Tms = grid.into();
+        let tms = grid.into_tms().unwrap_or_else(error_exit);
         let req_url = format!(
             "{}&SERVICE=WMS&REQUEST=GetMap&CRS=EPSG:{}&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&FORMAT={}",
             cfg.baseurl,

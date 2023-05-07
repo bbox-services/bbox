@@ -1,13 +1,14 @@
 use crate::config::{BackendWmsCfg, GridCfg};
 use crate::rastersource::wms::WmsRequest;
 use crate::writer::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
+use bbox_common::config::error_exit;
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
 use std::io::Cursor;
 use std::path::PathBuf;
 use tempfile::TempDir;
-use tile_grid::{BoundingBox, Tms};
+use tile_grid::BoundingBox;
 use tokio::task;
 
 #[derive(Debug, Parser)]
@@ -109,7 +110,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let s3_writer = args
         .s3_path
         .as_ref()
-        .map(|_| S3Writer::from_args(args).unwrap());
+        .map(|_| S3Writer::from_args(args).unwrap_or_else(error_exit));
 
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
     let threads = args.threads.unwrap_or(num_cpus::get());
@@ -127,7 +128,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         GridCfg::TmsId("WebMercatorQuad".to_string())
     }
     .get();
-    let tms: Tms = grid.clone().into();
+    let tms = grid.into_tms().unwrap_or_else(error_exit);
     let bbox = if let Some(numlist) = &args.extent {
         let arr: Vec<f64> = numlist
             .split(",")
@@ -237,7 +238,7 @@ async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHan
 }
 
 pub fn seed(args: &SeedArgs) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap_or_else(error_exit);
     // let threads = args.threads.unwrap_or(num_cpus::get());
     // let rt = tokio::runtime::Builder::new_multi_thread()
     //     .worker_threads(threads + 2) // 2 extra threads for blocking I/O
@@ -246,23 +247,19 @@ pub fn seed(args: &SeedArgs) {
     //     .build()
     //     .unwrap();
 
-    if let Err(e) = rt.block_on(async move { seed_by_grid(&args).await }) {
-        eprintln!("Error: {}", e);
-        std::process::exit(1);
-    }
+    rt.block_on(async move { seed_by_grid(&args).await })
+        .unwrap_or_else(error_exit);
 }
 
 pub fn upload(args: &UploadArgs) {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap_or_else(error_exit);
 
-    if let Err(e) = rt.block_on(async move {
+    rt.block_on(async move {
         match args.mode {
             Mode::Sequential => s3putfiles::put_files_seq(&args).await,
             Mode::Tasks => s3putfiles::put_files_tasks(&args).await,
             Mode::Channels => s3putfiles::put_files_channels(&args).await,
         }
-    }) {
-        eprintln!("Error: {}", e);
-        std::process::exit(1);
-    }
+    })
+    .unwrap_or_else(error_exit);
 }

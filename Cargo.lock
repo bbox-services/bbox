@@ -3969,7 +3969,7 @@ dependencies = [
 [[package]]
 name = "tile-grid"
 version = "0.3.0"
-source = "git+https://github.com/pka/tile-grid.git#316695032cf1fedf123a7e0a573fcf5480a5d2de"
+source = "git+https://github.com/pka/tile-grid.git#f51c8bd0987cfef23bd1e7d8dab81e3d22c0b336"
 dependencies = [
  "chrono",
  "once_cell",
@@ -4582,9 +4582,9 @@ dependencies = [
 
 [[package]]
 name = "xml-rs"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40e1a60e6e271dfb0db2db95987551348db75ebd6a78be07b9039b036f7dae2a"
+checksum = "699d0104bcdd7e7af6d093d6c6e2d0c479b8a129ee0d1023b31d2e0c71bfdda2"
 
 [[package]]
 name = "yaml-rust"

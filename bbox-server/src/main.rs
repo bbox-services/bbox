@@ -70,7 +70,7 @@ async fn webserver() -> std::io::Result<()> {
     core.add_service(&tile_service);
 
     let workers = core.workers();
-    let server_addr = core.server_addr();
+    let server_addr = core.server_addr().to_string();
     HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Condition::new(core.has_metrics(), core.middleware()))

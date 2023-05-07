@@ -1,5 +1,6 @@
 use crate::service::{RasterSource, TileService, TileSource};
 use actix_web::{guard, web, Error, HttpResponse};
+use bbox_common::config::error_exit;
 use bbox_common::service::CoreService;
 use tile_grid::{Tile, Tms};
 
@@ -58,7 +59,7 @@ async fn map_tile(
 
 impl TileService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let tms: Tms = self.grid.clone().into();
+        let tms = self.grid.into_tms().unwrap_or_else(error_exit);
         cfg.app_data(web::Data::new(tms))
             .app_data(web::Data::new(self.source.clone()))
             .service(

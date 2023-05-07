@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use prometheus::Registry;
 
 #[async_trait]
-pub trait OgcApiService {
+pub trait OgcApiService: Clone + Send {
     async fn from_config() -> Self;
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         Vec::new()
@@ -72,8 +72,8 @@ impl CoreService {
     pub fn workers(&self) -> usize {
         self.web_config.worker_threads()
     }
-    pub fn server_addr(&self) -> String {
-        self.web_config.server_addr.clone()
+    pub fn server_addr(&self) -> &str {
+        &self.web_config.server_addr
     }
 }
 
@@ -143,7 +143,7 @@ impl OgcApiService for CoreService {
 }
 
 #[actix_web::main]
-pub async fn webserver<T: OgcApiService + Send + Clone + 'static>() -> std::io::Result<()> {
+pub async fn webserver<T: OgcApiService + 'static>() -> std::io::Result<()> {
     logger::init();
 
     let mut core = CoreService::from_config().await;
@@ -152,7 +152,7 @@ pub async fn webserver<T: OgcApiService + Send + Clone + 'static>() -> std::io::
     core.add_service(&service);
 
     let workers = core.workers();
-    let server_addr = core.server_addr();
+    let server_addr = core.server_addr().to_string();
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
