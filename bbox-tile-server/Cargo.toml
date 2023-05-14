@@ -8,6 +8,7 @@ default = ["map-server"]
 map-server = ["bbox-map-server"]
 # wms-proxy = ["reqwest"]
 # s3 = ["rusoto_core", "rusoto_s3"]
+projtransform = ["tile-grid/projtransform"]
 
 [dependencies]
 actix-web = { workspace = true }
@@ -31,7 +32,7 @@ rusoto_s3 = "0.47.0"
 serde = { workspace = true }
 tempfile = "3.3.0"
 thiserror = { workspace = true }
-tile-grid = { git = "https://github.com/pka/tile-grid.git" }
+tile-grid = { version = "0.4.0" }
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 
 [[bin]]
