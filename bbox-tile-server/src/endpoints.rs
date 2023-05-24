@@ -71,8 +71,10 @@ async fn tile_request(
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    let Some(source) = tilesets.source(&tileset) else {
+        return Ok(HttpResponse::NotFound().finish());
+    };
     let extent = tms.xy_bounds(&Tile::new(x, y, z));
-    let source = tilesets.source(&tileset).unwrap();
     // TODO: Handle x,y,z out of grid or service limits
     //       -> HttpResponse::NoContent().finish()
     let resp = match source {
