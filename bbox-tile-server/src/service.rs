@@ -1,6 +1,6 @@
+use crate::cache::{files::FileWriter, s3::S3Writer};
 use crate::config::*;
 use crate::tilesource::{MapService, TileSource};
-use crate::writer::{files::FileWriter, s3::S3Writer};
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::service::{CoreService, OgcApiService};

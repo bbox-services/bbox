@@ -1,10 +1,9 @@
+mod cache;
 mod cli;
 mod config;
 mod endpoints;
-mod error;
 mod service;
 mod tilesource;
-mod writer;
 
 use crate::cli::{Cli, Commands};
 use crate::service::TileService;

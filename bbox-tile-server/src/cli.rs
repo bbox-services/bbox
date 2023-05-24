@@ -1,12 +1,11 @@
+use crate::cache::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
 use crate::service::TileService;
-use crate::tilesource::TileSource;
-use crate::writer::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
+use crate::tilesource::{TileRead, TileSource};
 use bbox_common::config::error_exit;
 use bbox_common::service::OgcApiService;
 use clap::{Args, Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
-use std::io::Cursor;
 use std::path::PathBuf;
 use tempfile::TempDir;
 use tile_grid::BoundingBox;
@@ -251,8 +250,8 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         let file_writer = file_writer.clone();
         let tx = tx.clone();
         tasks.push(task::spawn(async move {
-            let bytes = wms.get_map(&extent).await.unwrap();
-            let input: Box<dyn std::io::Read + Send + Sync> = Box::new(Cursor::new(bytes));
+            let tile = wms.read_tile(&tile, Some(&extent), None).await.unwrap();
+            let input: Box<dyn std::io::Read + Send + Sync> = Box::new(tile.body);
 
             file_writer.put_tile(path.clone(), input).await.unwrap();
             if writer_task_count > 0 {

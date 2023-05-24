@@ -1,5 +1,8 @@
 use crate::config::WmsFcgiSourceParamsCfg;
-use tile_grid::BoundingBox;
+use crate::tilesource::{MapService, TileRead, TileResponse, TileSourceError, WmsMetrics};
+use async_trait::async_trait;
+use std::io::Cursor;
+use tile_grid::{BoundingBox, Tile};
 
 #[derive(Clone, Debug)]
 pub struct WmsFcgiSource {
@@ -26,5 +29,49 @@ impl WmsFcgiSource {
             "{}&CRS=EPSG:{}&BBOX={},{},{},{}&FORMAT={}",
             self.query, crs, extent.left, extent.bottom, extent.right, extent.top, format
         )
+    }
+}
+
+#[async_trait]
+impl TileRead<Cursor<Vec<u8>>> for WmsFcgiSource {
+    async fn read_tile(
+        &self,
+        _tile: &Tile,
+        extent: Option<&BoundingBox>,
+        map_service: Option<&MapService>,
+    ) -> Result<TileResponse<Cursor<Vec<u8>>>, TileSourceError> {
+        let extent = extent.ok_or(TileSourceError::MissingReadArg)?;
+        let map_service = map_service.ok_or(TileSourceError::MissingReadArg)?;
+        let fcgi_dispatcher = &map_service.fcgi_clients[0];
+        let crs = 3857; //FIXME: tms.crs().as_srid();
+        let format = "png"; //FIXME
+        let fcgi_query = self.get_map_request(crs, &extent, format);
+        let req_path = "/";
+        let project = &self.project;
+        let body = "".to_string();
+        let metrics = WmsMetrics {
+            wms_requests_counter: prometheus::IntCounterVec::new(
+                prometheus::core::Opts::new("dummy", "dummy"),
+                &[],
+            )
+            .unwrap(),
+            fcgi_client_pool_available: Vec::new(),
+            fcgi_client_wait_seconds: Vec::new(),
+            fcgi_cache_count: Vec::new(),
+            fcgi_cache_hit: Vec::new(),
+        };
+        bbox_map_server::endpoints::wms_fcgi_req(
+            fcgi_dispatcher,
+            "http",
+            "localhost",
+            req_path,
+            &fcgi_query,
+            "GET",
+            body,
+            project,
+            &metrics,
+        )
+        .await
+        .map_err(Into::into)
     }
 }

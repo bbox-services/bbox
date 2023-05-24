@@ -651,9 +651,11 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "actix-web-opentelemetry",
+ "async-stream",
  "async-trait",
  "env_logger",
  "figment",
+ "futures-core",
  "fxhash",
  "ignore",
  "mime",
@@ -715,7 +717,6 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "async-process",
- "async-stream",
  "async-trait",
  "awc",
  "bbox-common",
@@ -731,6 +732,7 @@ dependencies = [
  "serde",
  "serde-xml-rs",
  "serde_json",
+ "thiserror",
  "tokio",
 ]
 
@@ -836,6 +838,7 @@ dependencies = [
  "indicatif",
  "log",
  "num_cpus",
+ "prometheus",
  "reqwest",
  "rusoto_core",
  "rusoto_s3",

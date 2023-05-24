@@ -1,8 +1,11 @@
 use crate::config::*;
-use crate::error::Result;
+use crate::tilesource::{MapService, TileRead, TileResponse, TileSourceError};
+use async_trait::async_trait;
 use bytes::Bytes;
 use log::debug;
-use tile_grid::BoundingBox;
+use std::collections::HashMap;
+use std::io::Cursor;
+use tile_grid::{BoundingBox, Tile};
 
 #[derive(Clone, Debug)]
 pub struct WmsHttpSource {
@@ -35,16 +38,34 @@ impl WmsHttpSource {
         )
     }
 
-    pub async fn get_map_response(&self, extent: &BoundingBox) -> Result<reqwest::Response> {
+    pub async fn get_map_response(
+        &self,
+        extent: &BoundingBox,
+    ) -> Result<reqwest::Response, TileSourceError> {
         let req = self.get_map_request(extent);
         debug!("Request {req}");
-        self.client.get(req).send().await.map_err(|e| e.into())
+        self.client.get(req).send().await.map_err(Into::into)
     }
+}
 
-    pub async fn get_map(&self, extent: &BoundingBox) -> Result<Bytes> {
-        let response = self.get_map_response(extent).await?;
-        // if !response.status().is_success() {
-        //     return Err();
-        response.bytes().await.map_err(|e| e.into())
+#[async_trait]
+impl TileRead<Cursor<Bytes>> for WmsHttpSource {
+    async fn read_tile(
+        &self,
+        _tile: &Tile,
+        extent: Option<&BoundingBox>,
+        _map_service: Option<&MapService>,
+    ) -> Result<TileResponse<Cursor<Bytes>>, TileSourceError> {
+        let extent = extent.ok_or(TileSourceError::MissingReadArg)?;
+        let mut headers = HashMap::new();
+        let wms_resp = self.get_map_response(&extent).await?;
+        if let Some(content_type) = wms_resp.headers().get("content-type") {
+            headers.insert(
+                "content-type".to_string(),
+                content_type.to_str().unwrap().to_string(),
+            );
+        }
+        let body = Cursor::new(wms_resp.bytes().await?);
+        Ok(TileResponse { headers, body })
     }
 }

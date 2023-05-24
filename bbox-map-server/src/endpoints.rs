@@ -2,20 +2,35 @@ use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
 use crate::metrics::{wms_metrics, WmsMetrics};
 use crate::service::MapService;
-use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
-use async_stream::stream;
+use actix_web::{guard, web, HttpRequest, HttpResponse};
+use bbox_common::endpoints::TileResponse;
 use bbox_common::service::CoreService;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use opentelemetry::{
     global,
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Context, KeyValue,
 };
-use std::convert::Infallible;
-use std::io::{BufRead, Cursor, Read};
-use std::iter::FromIterator;
+use std::collections::HashMap;
+use std::io::{BufRead, Cursor};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
+
+#[derive(thiserror::Error, Debug)]
+pub enum FcgiError {
+    #[error("FCGI timeout")]
+    FcgiTimeout,
+    #[error("FCGI request error")]
+    FcgiRequestError,
+    #[error("I/O error")]
+    IoError(#[from] std::io::Error),
+}
+
+impl From<FcgiError> for actix_web::Error {
+    fn from(err: FcgiError) -> Self {
+        actix_web::error::ErrorInternalServerError(err)
+    }
+}
 
 /// WMS/WFS endpoint
 // /qgis/{project}?REQUEST=WMS&..
@@ -28,7 +43,7 @@ async fn wms_fcgi(
     metrics: web::Data<WmsMetrics>,
     body: String,
     req: HttpRequest,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, actix_web::Error> {
     let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
     wms_fcgi_request(
         &fcgi_dispatcher,
@@ -54,13 +69,43 @@ pub async fn wms_fcgi_request(
     body: String,
     project: &str,
     metrics: &WmsMetrics,
-) -> Result<HttpResponse, Error> {
+) -> Result<HttpResponse, actix_web::Error> {
+    let wms_resp = wms_fcgi_req(
+        fcgi_dispatcher,
+        scheme,
+        host,
+        req_path,
+        fcgi_query,
+        req_method,
+        body,
+        project,
+        metrics,
+    )
+    .await?;
+    let mut response = HttpResponse::Ok();
+    for (key, value) in &wms_resp.headers {
+        response.insert_header((key.as_str(), value.as_str()));
+        // TODO: use append_header for "Server-Timing" and others?
+    }
+    Ok(response.streaming(wms_resp.into_stream()))
+}
+
+pub async fn wms_fcgi_req(
+    fcgi_dispatcher: &FcgiDispatcher,
+    scheme: &str,
+    host: &str,
+    req_path: &str,
+    fcgi_query: &str,
+    req_method: &str,
+    body: String,
+    project: &str,
+    metrics: &WmsMetrics,
+) -> Result<TileResponse<Cursor<Vec<u8>>>, FcgiError> {
     // --- > tracing/metrics
     let tracer = global::tracer("request");
     let ctx = Context::current();
     // ---
 
-    let mut response = HttpResponse::Ok();
     let (fcgino, pool) = fcgi_dispatcher.select(fcgi_query);
     let available_clients = pool.status().available;
 
@@ -110,7 +155,7 @@ pub async fn wms_fcgi_request(
         Ok(fcgi) => fcgi,
         Err(_) => {
             warn!("FCGI client timeout");
-            return Ok(HttpResponse::InternalServerError().finish());
+            return Err(FcgiError::FcgiTimeout);
         }
     };
 
@@ -143,14 +188,16 @@ pub async fn wms_fcgi_request(
     let body = body.as_bytes();
     let output = fcgi_client.do_request(&params, &mut &body[..]);
     if let Err(ref e) = output {
-        warn!("FCGI error: {}", e);
+        warn!("FCGI error: {e}");
         // Remove probably broken FCGI client from pool
         fcgi_dispatcher.remove(fcgi_client);
-        return Ok(HttpResponse::InternalServerError().finish());
+        return Err(FcgiError::FcgiRequestError);
     }
     let fcgiout = output.unwrap().get_stdout().unwrap();
 
     let mut cursor = Cursor::new(fcgiout);
+    // Read headers
+    let mut headers = HashMap::new();
     let mut line = String::new();
     while let Ok(_bytes) = cursor.read_line(&mut line) {
         // Truncate newline
@@ -162,13 +209,13 @@ pub async fn wms_fcgi_request(
         let parts: Vec<&str> = line.splitn(2, ": ").collect();
         //for [key, val] in line.splitn(2, ":").array_chunks() {}
         if parts.len() != 2 {
-            error!("Invalid FCGI-Header received: {}", line);
+            warn!("Invalid FCGI-Header received: {line}");
             break;
         }
         let (key, value) = (parts[0], parts[1]);
         match key {
             "Content-Type" => {
-                response.insert_header((key, value));
+                headers.insert(key.to_string(), value.to_string());
             }
             "Content-Length" | "Server" => {} // ignore
             "X-us" => {
@@ -183,7 +230,10 @@ pub async fn wms_fcgi_request(
                 // Return server timing to browser
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
                 // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
-                response.append_header(("Server-Timing", format!("wms-backend;dur={}", us / 1000)));
+                headers.insert(
+                    "Server-Timing".to_string(),
+                    format!("wms-backend;dur={}", us / 1000),
+                );
             }
             // "X-trace" => {
             "X-metrics" => {
@@ -198,11 +248,11 @@ pub async fn wms_fcgi_request(
                             .with_label_values(&[fcgi_dispatcher.backend_name()])
                             .set(i64::from_str(keyval[1]).expect("i64 value")),
                         "cache_miss" => { /* ignore */ }
-                        _ => debug!("Ignoring metric entry {}", entry),
+                        _ => debug!("Ignoring metric entry {entry}"),
                     }
                 }
             }
-            _ => debug!("Ignoring FCGI-Header: {}", &line),
+            _ => debug!("Ignoring FCGI-Header: {line}"),
         }
         line.truncate(0);
     }
@@ -211,12 +261,10 @@ pub async fn wms_fcgi_request(
     drop(ctx);
     // --- <
 
-    let body = cursor
-        .bytes()
-        .map_while(|val| if let Ok(b) = val { Some(b) } else { None });
-    Ok(response.streaming(stream! {
-            yield Ok::<_, Infallible>(web::Bytes::from_iter(body));
-    }))
+    Ok(TileResponse {
+        headers,
+        body: cursor,
+    })
 }
 
 impl MapService {

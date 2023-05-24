@@ -9,9 +9,11 @@ html = []
 [dependencies]
 actix-web = { workspace = true }
 actix-web-opentelemetry = { version = "0.13", features = ["metrics-prometheus"] }
+async-stream = { workspace = true }
 async-trait = { workspace = true }
 env_logger = "0.9.0"
 figment = { version = "0.10.6", features = ["env", "toml"] }
+futures-core = "0.3.28"
 fxhash = "0.2.1"
 ignore = "0.4"
 mime = "0.3.16"

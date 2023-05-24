@@ -10,7 +10,6 @@ inventory = []
 [dependencies]
 actix-web = { workspace = true }
 async-process = "1.0.0"
-async-stream = "0.3.4"
 async-trait = { workspace = true }
 awc = "3.0.0-beta.20"
 bbox-common = { path = "../bbox-common" }
@@ -26,6 +25,7 @@ rand = "0.7.3"
 serde = { workspace = true }
 serde-xml-rs = "0.4.0"
 serde_json = { workspace = true }
+thiserror = { workspace = true }
 tokio = { version = "1", features = ["time"] }
 
 [dev-dependencies]

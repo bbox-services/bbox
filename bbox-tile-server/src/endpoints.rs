@@ -1,5 +1,5 @@
 use crate::service::{SourceLookup, TileService, Tilesets};
-use crate::tilesource::{MapService, TileSource, WmsMetrics};
+use crate::tilesource::{MapService, TileRead, TileSource, WmsMetrics};
 use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
 use bbox_common::config::error_exit;
 use bbox_common::service::CoreService;
@@ -74,7 +74,8 @@ async fn tile_request(
     let Some(source) = tilesets.source(&tileset) else {
         return Ok(HttpResponse::NotFound().finish());
     };
-    let extent = tms.xy_bounds(&Tile::new(x, y, z));
+    let tile = Tile::new(x, y, z);
+    let extent = tms.xy_bounds(&tile);
     // TODO: Handle x,y,z out of grid or service limits
     //       -> HttpResponse::NoContent().finish()
     let resp = match source {
@@ -100,15 +101,14 @@ async fn tile_request(
             .await?
         }
         TileSource::WmsHttp(wms) => {
-            if let Ok(wms_resp) = wms.get_map_response(&extent).await {
+            if let Ok(wms_resp) = wms.read_tile(&tile, Some(&extent), None).await {
                 let mut r = HttpResponse::Ok();
-                if let Some(content_type) = wms_resp.headers().get("content-type") {
-                    r.content_type(content_type);
+                if let Some(content_type) = wms_resp.headers.get("content-type") {
+                    r.content_type(content_type.as_str());
                 }
                 // TODO: Handle pre-compressed respone
                 // TODO: Set Cache headers
-                let data = wms_resp.bytes().await.unwrap();
-                r.body(data) // TODO: chunked response
+                r.streaming(wms_resp.into_stream())
             } else {
                 HttpResponse::InternalServerError().finish()
             }

@@ -2,10 +2,35 @@ use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::CoreService;
+use actix_web::web::Bytes;
 use actix_web::{
     guard, guard::Guard, guard::GuardContext, http::header, web, HttpRequest, HttpResponse,
 };
 use actix_web_opentelemetry::PrometheusMetricsHandler;
+use async_stream::stream;
+use futures_core::stream::Stream;
+use std::collections::HashMap;
+use std::convert::Infallible;
+use std::io::Read;
+use std::iter::FromIterator;
+
+/// Tile reader response
+pub struct TileResponse<T: Read> {
+    pub headers: HashMap<String, String>, //TODO: optimize
+    pub body: T,
+}
+
+impl<T: Read> TileResponse<T> {
+    pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
+        let bytes = self
+            .body
+            .bytes()
+            .map_while(|val| if let Ok(b) = val { Some(b) } else { None });
+        stream! {
+            yield Ok::<_, Infallible>(web::Bytes::from_iter(bytes));
+        }
+    }
+}
 
 /// Middleware for content negotiation
 pub struct JsonContentGuard;
