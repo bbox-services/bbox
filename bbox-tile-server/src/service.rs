@@ -1,11 +1,14 @@
-use crate::cache::{files::FileCache, s3::S3Cache};
+use crate::cache::{CacheLayout, TileCache, TileCacheError};
 use crate::config::*;
-use crate::tilesource::{MapService, TileSource};
+use crate::tilesource::{MapService, TileSource, TileSourceError};
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::endpoints::TileResponse;
 use bbox_common::service::{CoreService, OgcApiService};
 use std::collections::HashMap;
-use tile_grid::{tms, Error, Tms};
+use std::io::{Cursor, Read};
+use std::path::PathBuf;
+use tile_grid::{tms, RegistryError, Tile, Tms};
 
 #[derive(Clone, Default)]
 pub struct TileService {
@@ -21,16 +24,19 @@ pub struct TileSet {
     /// Tile matrix set identifier
     pub tms: String,
     pub source: TileSource,
-    /// Tile cache name (Default: no cache)
-    pub cache: TileCacheCfg,
+    pub cache: TileCache,
 }
 
-#[derive(Clone, Debug)]
-pub enum TileCache {
-    NoCache,
-    FileCache(FileCache),
-    S3Cache(S3Cache),
-    // MbTiles(MbTilesCache),
+#[derive(thiserror::Error, Debug)]
+pub enum ServiceError {
+    #[error(transparent)]
+    TileRegistryError(#[from] RegistryError),
+    #[error(transparent)]
+    TileSourceError(#[from] TileSourceError),
+    #[error(transparent)]
+    TileCacheError(#[from] TileCacheError),
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
 }
 
 pub trait SourceLookup {
@@ -44,7 +50,7 @@ impl SourceLookup for Tilesets {
 }
 
 impl TileSet {
-    pub fn grid(&self) -> Result<Tms, Error> {
+    pub fn grid(&self) -> Result<Tms, tile_grid::Error> {
         tms().lookup(&self.tms)
     }
 }
@@ -71,7 +77,7 @@ impl OgcApiService for TileService {
         for ts in config.tileset {
             let tms = ts.tms.unwrap_or("WebMercatorQuad".to_string());
             let source = TileSource::from_config(&sources, &ts.params, &tms);
-            let cache = TileCacheCfg::NoCache;
+            let cache = TileCache::NoCache;
             let tileset = TileSet { tms, source, cache };
             //dbg!((&ts.name, &tileset));
             service.tilesets.insert(ts.name, tileset);
@@ -129,5 +135,48 @@ impl TileService {
     }
     pub fn source(&self, tileset: &str) -> Option<&TileSource> {
         self.tilesets.source(tileset)
+    }
+    /// Get tile with cache lookup
+    pub async fn tile_cached(
+        &self,
+        tileset: &TileSet,
+        tile: &Tile,
+        format: &str,
+    ) -> Result<Option<TileResponse>, ServiceError> {
+        // TODO: if tileset.is_cachable_at(tile.z) {
+        if let Some(tiledata) = tileset.cache.read().get_tile(tile, format) {
+            //TODO: handle compression
+            return Ok(Some(TileResponse {
+                headers: HashMap::new(),
+                body: tiledata,
+            }));
+        }
+        // Request tile and write into cache
+        let tms = tileset.grid()?;
+        let extent = tms.xy_bounds(&tile);
+        let path = CacheLayout::ZXY.path_string(&PathBuf::new(), tile, format);
+        let mut tiledata = tileset
+            .source
+            .read()
+            .read_tile(tile, Some(&extent), self.map_service.as_ref())
+            .await?;
+        // TODO: if tiledata.empty() { return Ok(None) }
+        // TODO: if tileset.is_cachable_at(tile.z) {
+        if true {
+            // Read tile into memory
+            let mut body = Vec::new();
+            tiledata.body.read_to_end(&mut body)?;
+            tileset
+                .cache
+                .write()
+                .put_tile(path, Box::new(Cursor::new(body.clone())))
+                .await?;
+            Ok(Some(TileResponse {
+                headers: tiledata.headers,
+                body: Box::new(Cursor::new(body)),
+            }))
+        } else {
+            Ok(Some(tiledata))
+        }
     }
 }

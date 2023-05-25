@@ -100,7 +100,7 @@ pub async fn wms_fcgi_req(
     body: String,
     project: &str,
     metrics: &WmsMetrics,
-) -> Result<TileResponse<Cursor<Vec<u8>>>, FcgiError> {
+) -> Result<TileResponse, FcgiError> {
     // --- > tracing/metrics
     let tracer = global::tracer("request");
     let ctx = Context::current();
@@ -263,7 +263,7 @@ pub async fn wms_fcgi_req(
 
     Ok(TileResponse {
         headers,
-        body: cursor,
+        body: Box::new(cursor),
     })
 }
 

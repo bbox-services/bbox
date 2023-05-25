@@ -1,7 +1,6 @@
 use crate::config::WmsFcgiSourceParamsCfg;
 use crate::tilesource::{MapService, TileRead, TileResponse, TileSourceError, WmsMetrics};
 use async_trait::async_trait;
-use std::io::Cursor;
 use tile_grid::{BoundingBox, Tile};
 
 #[derive(Clone, Debug)]
@@ -33,13 +32,13 @@ impl WmsFcgiSource {
 }
 
 #[async_trait]
-impl TileRead<Cursor<Vec<u8>>> for WmsFcgiSource {
+impl TileRead for WmsFcgiSource {
     async fn read_tile(
         &self,
         _tile: &Tile,
         extent: Option<&BoundingBox>,
         map_service: Option<&MapService>,
-    ) -> Result<TileResponse<Cursor<Vec<u8>>>, TileSourceError> {
+    ) -> Result<TileResponse, TileSourceError> {
         let extent = extent.ok_or(TileSourceError::MissingReadArg)?;
         let map_service = map_service.ok_or(TileSourceError::MissingReadArg)?;
         let fcgi_dispatcher = &map_service.fcgi_clients[0];

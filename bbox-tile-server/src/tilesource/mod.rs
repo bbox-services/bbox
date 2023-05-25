@@ -6,7 +6,6 @@ use crate::service::SourcesLookup;
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use std::io::Read;
 use tile_grid::{tms, BoundingBox, Tile};
 
 #[cfg(feature = "map-server")]
@@ -54,13 +53,13 @@ pub enum TileSourceError {
 }
 
 #[async_trait]
-pub trait TileRead<T: Read> {
+pub trait TileRead {
     async fn read_tile(
         &self,
         tile: &Tile,
         extent: Option<&BoundingBox>,
         map_service: Option<&MapService>,
-    ) -> Result<TileResponse<T>, TileSourceError>;
+    ) -> Result<TileResponse, TileSourceError>;
 }
 
 impl TileSource {
@@ -79,6 +78,12 @@ impl TileSource {
             SourceParamCfg::WmsFcgi(cfg) => {
                 TileSource::WmsFcgi(wms_fcgi::WmsFcgiSource::from_config(cfg))
             }
+        }
+    }
+    pub fn read(&self) -> &dyn TileRead {
+        match self {
+            TileSource::WmsFcgi(source) => source,
+            TileSource::WmsHttp(source) => source,
         }
     }
 }

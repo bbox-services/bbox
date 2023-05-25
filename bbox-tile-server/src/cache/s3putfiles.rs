@@ -1,5 +1,4 @@
-use crate::cache::s3::S3Cache;
-use crate::cache::TileWriter;
+use crate::cache::{s3::S3Cache, BoxRead, TileWriter};
 use crate::cli::UploadArgs;
 use bbox_common::file_search;
 use crossbeam::channel;
@@ -43,11 +42,10 @@ pub async fn put_files_seq(args: &UploadArgs) -> anyhow::Result<()> {
     let files = file_search::search(&srcdir, "*").into_iter();
     for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let mut input: Box<dyn std::io::Read + Send + Sync> =
-            Box::new(match std::fs::File::open(&path) {
-                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
-                Ok(x) => x,
-            });
+        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+            Ok(x) => x,
+        });
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {
             Ok(len) => len as i64,
@@ -93,11 +91,10 @@ pub async fn put_files_tasks(args: &UploadArgs) -> anyhow::Result<()> {
         let prefix = prefix.clone();
         let client = S3Client::new(region.clone());
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let mut input: Box<dyn std::io::Read + Send + Sync> =
-            Box::new(match std::fs::File::open(&path) {
-                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
-                Ok(x) => x,
-            });
+        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+            Ok(x) => x,
+        });
         tasks.push(task::spawn(async move {
             let mut data = Vec::with_capacity(4096);
             let content_length = match input.read_to_end(&mut data) {
@@ -143,11 +140,10 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     for path in files.progress() {
         let prefix = prefix.clone();
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let input: Box<dyn std::io::Read + Send + Sync> =
-            Box::new(match std::fs::File::open(&path) {
-                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
-                Ok(x) => x,
-            });
+        let input: BoxRead = Box::new(match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+            Ok(x) => x,
+        });
         let s3 = s3.clone();
         tasks.push(task::spawn(async move { s3.put_tile(key, input).await }));
         if tasks.len() >= task_queue_size {
@@ -198,11 +194,10 @@ pub async fn put_files_channels(args: &UploadArgs) -> anyhow::Result<()> {
 
         wait_for_tile()?;
 
-        let mut input: Box<dyn std::io::Read + Send + Sync> =
-            Box::new(match std::fs::File::open(&path) {
-                Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
-                Ok(x) => x,
-            });
+        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+            Ok(x) => x,
+        });
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {
             Ok(len) => len as i64,

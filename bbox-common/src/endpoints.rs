@@ -15,12 +15,12 @@ use std::io::Read;
 use std::iter::FromIterator;
 
 /// Tile reader response
-pub struct TileResponse<T: Read> {
+pub struct TileResponse {
     pub headers: HashMap<String, String>, //TODO: optimize
-    pub body: T,
+    pub body: Box<dyn Read + Send + Sync>,
 }
 
-impl<T: Read> TileResponse<T> {
+impl TileResponse {
     pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
         let bytes = self
             .body

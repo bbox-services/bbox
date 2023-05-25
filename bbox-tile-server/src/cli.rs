@@ -1,4 +1,6 @@
-use crate::cache::{files::FileCache, s3::S3Cache, s3putfiles, TileWriter};
+use crate::cache::{
+    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileWriter,
+};
 use crate::service::TileService;
 use crate::tilesource::{TileRead, TileSource};
 use bbox_common::config::error_exit;
@@ -242,11 +244,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     info!("Seeding tiles from level {minzoom} to {maxzoom}");
     for tile in griditer {
         let extent = tms.xy_bounds(&tile);
-        let path = file_writer
-            .path(&tile, "png")
-            .into_os_string()
-            .to_string_lossy()
-            .to_string();
+        let path = CacheLayout::ZXY.path_string(&PathBuf::new(), &tile, "png");
         progress.set_message(path.clone());
         progress.inc(1);
         let wms = wms.clone();
@@ -254,7 +252,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         let tx = tx.clone();
         tasks.push(task::spawn(async move {
             let tile = wms.read_tile(&tile, Some(&extent), None).await.unwrap();
-            let input: Box<dyn std::io::Read + Send + Sync> = Box::new(tile.body);
+            let input: BoxRead = Box::new(tile.body);
 
             file_writer.put_tile(path.clone(), input).await.unwrap();
             if writer_task_count > 0 {
