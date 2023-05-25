@@ -1,20 +1,21 @@
-use crate::cache::TileWriter;
+use crate::cache::{TileReader, TileWriter};
 use crate::cli::SeedArgs;
 use async_trait::async_trait;
 use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use std::env;
 use std::fs::{self, File};
-use std::io::BufReader;
+use std::io::{BufReader, Empty};
 use std::path::PathBuf;
+use tile_grid::Tile;
 
 #[derive(Clone, Debug)]
-pub struct S3Writer {
+pub struct S3Cache {
     bucket: String,
     region: rusoto_core::Region,
 }
 
-impl S3Writer {
+impl S3Cache {
     pub fn from_s3_path(s3_path: &str) -> anyhow::Result<Self> {
         let bucket = match s3_path.strip_prefix("s3://") {
             None => anyhow::bail!("S3 path has to start with 's3://'"),
@@ -34,12 +35,12 @@ impl S3Writer {
             Err(_) => rusoto_core::Region::default(),
         };
 
-        Ok(S3Writer { bucket, region })
+        Ok(S3Cache { bucket, region })
     }
 }
 
 #[async_trait]
-impl TileWriter for S3Writer {
+impl TileWriter for S3Cache {
     fn from_args(args: &SeedArgs) -> anyhow::Result<Self> {
         Self::from_s3_path(args.s3_path.as_ref().unwrap())
     }
@@ -75,7 +76,7 @@ impl TileWriter for S3Writer {
     }
 }
 
-impl S3Writer {
+impl S3Cache {
     /// Put tile from temporary file
     pub async fn put_file(&self, base_dir: &PathBuf, path: String) -> anyhow::Result<()> {
         let mut fullpath = base_dir.clone();
@@ -86,5 +87,12 @@ impl S3Writer {
         fs::remove_file(p)?;
 
         Ok(())
+    }
+}
+
+impl TileReader<Empty> for S3Cache {
+    /// 2nd level cache lookup is not supported
+    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<Empty> {
+        None
     }
 }

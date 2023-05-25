@@ -1,4 +1,4 @@
-use crate::cache::{files::FileWriter, s3::S3Writer};
+use crate::cache::{files::FileCache, s3::S3Cache};
 use crate::config::*;
 use crate::tilesource::{MapService, TileSource};
 use actix_web::web;
@@ -28,8 +28,8 @@ pub struct TileSet {
 #[derive(Clone, Debug)]
 pub enum TileCache {
     NoCache,
-    FileCache(FileWriter),
-    S3Cache(S3Writer),
+    FileCache(FileCache),
+    S3Cache(S3Cache),
     // MbTiles(MbTilesCache),
 }
 

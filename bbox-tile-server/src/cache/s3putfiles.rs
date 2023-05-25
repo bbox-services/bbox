@@ -1,4 +1,4 @@
-use crate::cache::s3::S3Writer;
+use crate::cache::s3::S3Cache;
 use crate::cache::TileWriter;
 use crate::cli::UploadArgs;
 use bbox_common::file_search;
@@ -135,7 +135,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     let task_queue_size = args.tasks.unwrap_or(256);
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let s3 = S3Writer::from_s3_path(&args.s3_path)?;
+    let s3 = S3Cache::from_s3_path(&args.s3_path)?;
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));

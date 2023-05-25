@@ -5,6 +5,8 @@ pub mod s3putfiles;
 use crate::cli::SeedArgs;
 use async_trait::async_trait;
 use dyn_clone::{clone_trait_object, DynClone};
+use std::io::Read;
+use tile_grid::Tile;
 
 #[async_trait]
 pub trait TileWriter: DynClone {
@@ -19,3 +21,8 @@ pub trait TileWriter: DynClone {
 }
 
 clone_trait_object!(TileWriter);
+
+pub trait TileReader<T: Read> {
+    /// Lookup tile in cache and return Read stream, if found
+    fn get_tile(&self, tile: &Tile, format: &str) -> Option<T>;
+}

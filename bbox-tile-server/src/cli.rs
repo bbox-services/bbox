@@ -1,4 +1,4 @@
-use crate::cache::{files::FileWriter, s3::S3Writer, s3putfiles, TileWriter};
+use crate::cache::{files::FileCache, s3::S3Cache, s3putfiles, TileWriter};
 use crate::service::TileService;
 use crate::tilesource::{TileRead, TileSource};
 use bbox_common::config::error_exit;
@@ -170,7 +170,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let s3_writer = args
         .s3_path
         .as_ref()
-        .map(|_| S3Writer::from_args(args).unwrap_or_else(error_exit));
+        .map(|_| S3Cache::from_args(args).unwrap_or_else(error_exit));
 
     // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
     let threads = args.threads.unwrap_or(num_cpus::get());
@@ -212,7 +212,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         .as_ref()
         .map(|d| PathBuf::from(&d))
         .unwrap_or_else(|| TempDir::new().unwrap().into_path());
-    let file_writer = FileWriter::new(file_dir.clone());
+    let file_writer = FileCache::new(file_dir.clone());
 
     let (tx, rx) = async_channel::bounded(task_queue_size);
 
@@ -242,8 +242,11 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     info!("Seeding tiles from level {minzoom} to {maxzoom}");
     for tile in griditer {
         let extent = tms.xy_bounds(&tile);
-        let (z, x, y) = (tile.z, tile.x, tile.y);
-        let path = format!("{z}/{x}/{y}.png");
+        let path = file_writer
+            .path(&tile, "png")
+            .into_os_string()
+            .to_string_lossy()
+            .to_string();
         progress.set_message(path.clone());
         progress.inc(1);
         let wms = wms.clone();
