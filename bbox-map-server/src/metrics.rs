@@ -11,6 +11,22 @@ pub struct WmsMetrics {
     pub fcgi_cache_hit: Vec<IntGaugeVec>,
 }
 
+impl WmsMetrics {
+    pub fn new() -> Self {
+        WmsMetrics {
+            wms_requests_counter: IntCounterVec::new(
+                prometheus::core::Opts::new("dummy", "dummy"),
+                &[],
+            )
+            .unwrap(),
+            fcgi_client_pool_available: Vec::new(),
+            fcgi_client_wait_seconds: Vec::new(),
+            fcgi_cache_count: Vec::new(),
+            fcgi_cache_hit: Vec::new(),
+        }
+    }
+}
+
 pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
     static METRICS: OnceCell<WmsMetrics> = OnceCell::new();
     &METRICS.get_or_init(|| {

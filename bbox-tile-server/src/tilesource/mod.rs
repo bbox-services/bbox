@@ -2,11 +2,11 @@ pub mod wms_fcgi;
 pub mod wms_http;
 
 use crate::config::{SourceParamCfg, TileSourceProviderCfg};
-use crate::service::SourcesLookup;
+use crate::service::{SourcesLookup, TileService};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use tile_grid::{tms, BoundingBox, Tile};
+use tile_grid::{tms, BoundingBox};
 
 #[cfg(feature = "map-server")]
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
@@ -48,17 +48,25 @@ pub enum TileSourceError {
     FcgiError(#[from] FcgiError),
     #[error(transparent)]
     BackendResponseError(#[from] reqwest::Error),
-    #[error("Tile reading parameter missing")]
-    MissingReadArg,
 }
 
 #[async_trait]
 pub trait TileRead {
     async fn read_tile(
         &self,
-        tile: &Tile,
-        extent: Option<&BoundingBox>,
-        map_service: Option<&MapService>,
+        service: &TileService,
+        extent: &BoundingBox,
+    ) -> Result<TileResponse, TileSourceError>;
+    async fn tile_request(
+        &self,
+        service: &TileService,
+        extent: &BoundingBox,
+        crs: i32,
+        format: &str,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
 }
 

@@ -1,6 +1,6 @@
 use crate::cache::{CacheLayout, TileCache, TileCacheError};
 use crate::config::*;
-use crate::tilesource::{MapService, TileSource, TileSourceError};
+use crate::tilesource::{MapService, TileSource, TileSourceError, WmsMetrics};
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::endpoints::TileResponse;
@@ -29,6 +29,8 @@ pub struct TileSet {
 
 #[derive(thiserror::Error, Debug)]
 pub enum ServiceError {
+    #[error("Tileset `{0}` not found")]
+    TilesetNotFound(String),
     #[error(transparent)]
     TileRegistryError(#[from] RegistryError),
     #[error(transparent)]
@@ -139,10 +141,18 @@ impl TileService {
     /// Get tile with cache lookup
     pub async fn tile_cached(
         &self,
-        tileset: &TileSet,
+        tileset: &str,
         tile: &Tile,
         format: &str,
+        _gzip: bool,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &WmsMetrics,
     ) -> Result<Option<TileResponse>, ServiceError> {
+        let tileset = self
+            .tileset(tileset)
+            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         // TODO: if tileset.is_cachable_at(tile.z) {
         if let Some(tiledata) = tileset.cache.read().get_tile(tile, format) {
             //TODO: handle compression
@@ -154,11 +164,12 @@ impl TileService {
         // Request tile and write into cache
         let tms = tileset.grid()?;
         let extent = tms.xy_bounds(&tile);
-        let path = CacheLayout::ZXY.path_string(&PathBuf::new(), tile, format);
+        // TODO: Handle x,y,z out of grid or service limits (return None)
+        let crs = tms.crs().as_srid();
         let mut tiledata = tileset
             .source
             .read()
-            .read_tile(tile, Some(&extent), self.map_service.as_ref())
+            .tile_request(self, &extent, crs, format, scheme, host, req_path, metrics)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         // TODO: if tileset.is_cachable_at(tile.z) {
@@ -166,6 +177,7 @@ impl TileService {
             // Read tile into memory
             let mut body = Vec::new();
             tiledata.body.read_to_end(&mut body)?;
+            let path = CacheLayout::ZXY.path_string(&PathBuf::new(), tile, format);
             tileset
                 .cache
                 .write()

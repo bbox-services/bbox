@@ -1,43 +1,25 @@
-use crate::service::{SourceLookup, TileService, Tilesets};
-use crate::tilesource::{MapService, TileRead, TileSource, WmsMetrics};
-use actix_web::{guard, web, Error, HttpRequest, HttpResponse};
-use bbox_common::config::error_exit;
+use crate::service::TileService;
+use crate::tilesource::WmsMetrics;
+use actix_web::{guard, http::header, web, Error, HttpRequest, HttpResponse};
 use bbox_common::service::CoreService;
-use tile_grid::tms;
-use tile_grid::{Tile, Tms};
+use tile_grid::Tile;
 
 /// XYZ endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
 async fn xyz(
-    tms: web::Data<Tms>,
-    tilesets: web::Data<Tilesets>,
-    map_service: web::Data<MapService>,
+    service: web::Data<TileService>,
     params: web::Path<(String, u8, u64, u64, String)>,
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y, format) = params.into_inner();
-    tile_request(
-        tms,
-        tilesets,
-        map_service,
-        &tileset,
-        x,
-        y,
-        z,
-        &format,
-        metrics,
-        req,
-    )
-    .await
+    tile_request(service, &tileset, x, y, z, &format, metrics, req).await
 }
 
 /// Map tile endpoint
 // map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}
 async fn map_tile(
-    tms: web::Data<Tms>,
-    tilesets: web::Data<Tilesets>,
-    map_service: web::Data<MapService>,
+    service: web::Data<TileService>,
     params: web::Path<(String, u8, u64, u64)>,
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
@@ -45,9 +27,7 @@ async fn map_tile(
     let (tileset, z, x, y) = params.into_inner();
     // TODO: Get requested format from accept header
     tile_request(
-        tms,
-        tilesets,
-        map_service,
+        service,
         &tileset,
         x,
         y,
@@ -60,9 +40,7 @@ async fn map_tile(
 }
 
 async fn tile_request(
-    tms: web::Data<Tms>,
-    tilesets: web::Data<Tilesets>,
-    map_service: web::Data<MapService>,
+    service: web::Data<TileService>,
     tileset: &str,
     x: u64,
     y: u64,
@@ -71,74 +49,67 @@ async fn tile_request(
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let Some(source) = tilesets.source(&tileset) else {
-        return Ok(HttpResponse::NotFound().finish());
-    };
     let tile = Tile::new(x, y, z);
-    let extent = tms.xy_bounds(&tile);
-    // TODO: Handle x,y,z out of grid or service limits
-    //       -> HttpResponse::NoContent().finish()
-    let resp = match source {
-        #[cfg(feature = "map-server")]
-        TileSource::WmsFcgi(wms) => {
-            let fcgi_dispatcher = &map_service.fcgi_clients[0];
-            let crs = tms.crs().as_srid();
-            let fcgi_query = wms.get_map_request(crs, &extent, format);
-            let req_path = req.path();
-            let project = &wms.project;
-            let body = "".to_string();
-            bbox_map_server::endpoints::wms_fcgi_request(
-                fcgi_dispatcher,
-                req.connection_info().scheme(),
-                req.connection_info().host(),
-                req_path,
-                &fcgi_query,
-                "GET",
-                body,
-                project,
-                &metrics,
-            )
-            .await?
-        }
-        TileSource::WmsHttp(wms) => {
-            if let Ok(wms_resp) = wms.read_tile(&tile, Some(&extent), None).await {
-                let mut r = HttpResponse::Ok();
-                if let Some(content_type) = wms_resp.headers.get("content-type") {
-                    r.content_type(content_type.as_str());
+    let gzip = req
+        .headers()
+        .get(header::ACCEPT_ENCODING)
+        .and_then(|headerval| {
+            headerval
+                .to_str()
+                .ok()
+                .and_then(|headerstr| Some(headerstr.contains("gzip")))
+        })
+        .unwrap_or(false);
+    match service
+        .tile_cached(
+            &tileset,
+            &tile,
+            format,
+            gzip,
+            req.connection_info().scheme(),
+            req.connection_info().host(),
+            req.path(),
+            &metrics,
+        )
+        .await
+    {
+        Ok(Some(tile_resp)) => {
+            let mut r = HttpResponse::Ok();
+            // r.content_type("application/x-protobuf");
+            for (key, value) in &tile_resp.headers {
+                if key == "content-type" {
+                    r.content_type(value.as_str());
+                } else {
+                    r.insert_header((key.as_str(), value.as_str()));
+                    // TODO: use append_header for "Server-Timing" and others?
                 }
-                // TODO: Handle pre-compressed respone
-                // TODO: Set Cache headers
-                r.streaming(wms_resp.into_stream())
-            } else {
-                HttpResponse::InternalServerError().finish()
             }
+            // if gzip {
+            //     // data is already gzip compressed
+            //     r.insert_header(header::ContentEncoding::Gzip);
+            // }
+            // let cache_max_age = service.webserver.cache_control_max_age.unwrap_or(300);
+            // r.insert_header((header::CACHE_CONTROL, format!("max-age={}", cache_max_age)));
+            Ok(r.streaming(tile_resp.into_stream()))
         }
-        #[cfg(not(feature = "map-server"))]
-        _ => HttpResponse::InternalServerError().finish(),
-    };
-    Ok(resp)
+        Ok(None) => Ok(HttpResponse::NoContent().finish()),
+        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+    }
 }
 
 impl TileService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let tms = tms().lookup("WebMercatorQuad").unwrap_or_else(error_exit); // TODO: pass all Tms from Service
-        cfg.app_data(web::Data::new(tms))
-            .app_data(web::Data::new(self.tilesets.clone()));
-        if cfg!(feature = "map-server") {
-            cfg.app_data(web::Data::new(self.map_service.as_ref().unwrap().clone()));
-        } else {
-            cfg.app_data(web::Data::new(()));
-        }
-        cfg.service(
-            web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(
-                web::route()
-                    .guard(guard::Any(guard::Get()).or(guard::Head()))
-                    .to(xyz),
-            ),
-        )
-        .service(
-            web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
-                .route(web::get().to(map_tile)),
-        );
+        cfg.app_data(web::Data::new(self.clone()))
+            .service(
+                web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(
+                    web::route()
+                        .guard(guard::Any(guard::Get()).or(guard::Head()))
+                        .to(xyz),
+                ),
+            )
+            .service(
+                web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
+                    .route(web::get().to(map_tile)),
+            );
     }
 }

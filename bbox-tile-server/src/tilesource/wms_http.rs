@@ -1,10 +1,11 @@
 use crate::config::*;
-use crate::tilesource::{MapService, TileRead, TileResponse, TileSourceError};
+use crate::service::TileService;
+use crate::tilesource::{TileRead, TileResponse, TileSourceError, WmsMetrics};
 use async_trait::async_trait;
 use log::debug;
 use std::collections::HashMap;
 use std::io::Cursor;
-use tile_grid::{BoundingBox, Tile};
+use tile_grid::BoundingBox;
 
 #[derive(Clone, Debug)]
 pub struct WmsHttpSource {
@@ -51,11 +52,9 @@ impl WmsHttpSource {
 impl TileRead for WmsHttpSource {
     async fn read_tile(
         &self,
-        _tile: &Tile,
-        extent: Option<&BoundingBox>,
-        _map_service: Option<&MapService>,
+        _service: &TileService,
+        extent: &BoundingBox,
     ) -> Result<TileResponse, TileSourceError> {
-        let extent = extent.ok_or(TileSourceError::MissingReadArg)?;
         let mut headers = HashMap::new();
         let wms_resp = self.get_map_response(&extent).await?;
         if let Some(content_type) = wms_resp.headers().get("content-type") {
@@ -66,5 +65,19 @@ impl TileRead for WmsHttpSource {
         }
         let body = Box::new(Cursor::new(wms_resp.bytes().await?));
         Ok(TileResponse { headers, body })
+    }
+
+    async fn tile_request(
+        &self,
+        service: &TileService,
+        extent: &BoundingBox,
+        _crs: i32,
+        _format: &str,
+        _scheme: &str,
+        _host: &str,
+        _req_path: &str,
+        _metrics: &WmsMetrics,
+    ) -> Result<TileResponse, TileSourceError> {
+        self.read_tile(service, extent).await
     }
 }

@@ -1,7 +1,10 @@
 use crate::config::WmsFcgiSourceParamsCfg;
-use crate::tilesource::{MapService, TileRead, TileResponse, TileSourceError, WmsMetrics};
+use crate::service::TileService;
+use crate::tilesource::{TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
-use tile_grid::{BoundingBox, Tile};
+use bbox_map_server::endpoints::wms_fcgi_req;
+use bbox_map_server::metrics::WmsMetrics;
+use tile_grid::BoundingBox;
 
 #[derive(Clone, Debug)]
 pub struct WmsFcgiSource {
@@ -35,34 +38,44 @@ impl WmsFcgiSource {
 impl TileRead for WmsFcgiSource {
     async fn read_tile(
         &self,
-        _tile: &Tile,
-        extent: Option<&BoundingBox>,
-        map_service: Option<&MapService>,
+        service: &TileService,
+        extent: &BoundingBox,
     ) -> Result<TileResponse, TileSourceError> {
-        let extent = extent.ok_or(TileSourceError::MissingReadArg)?;
-        let map_service = map_service.ok_or(TileSourceError::MissingReadArg)?;
-        let fcgi_dispatcher = &map_service.fcgi_clients[0];
         let crs = 3857; //FIXME: tms.crs().as_srid();
         let format = "png"; //FIXME
-        let fcgi_query = self.get_map_request(crs, &extent, format);
-        let req_path = "/";
-        let project = &self.project;
-        let body = "".to_string();
-        let metrics = WmsMetrics {
-            wms_requests_counter: prometheus::IntCounterVec::new(
-                prometheus::core::Opts::new("dummy", "dummy"),
-                &[],
-            )
-            .unwrap(),
-            fcgi_client_pool_available: Vec::new(),
-            fcgi_client_wait_seconds: Vec::new(),
-            fcgi_cache_count: Vec::new(),
-            fcgi_cache_hit: Vec::new(),
-        };
-        bbox_map_server::endpoints::wms_fcgi_req(
-            fcgi_dispatcher,
+        let metrics = WmsMetrics::new();
+        self.tile_request(
+            service,
+            extent,
+            crs,
+            format,
             "http",
             "localhost",
+            "/",
+            &metrics,
+        )
+        .await
+    }
+
+    async fn tile_request(
+        &self,
+        service: &TileService,
+        extent: &BoundingBox,
+        crs: i32,
+        format: &str,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &WmsMetrics,
+    ) -> Result<TileResponse, TileSourceError> {
+        let fcgi_dispatcher = &service.map_service.as_ref().unwrap().fcgi_clients[0];
+        let fcgi_query = self.get_map_request(crs, &extent, format);
+        let project = &self.project;
+        let body = "".to_string();
+        wms_fcgi_req(
+            fcgi_dispatcher,
+            scheme,
+            host,
             req_path,
             &fcgi_query,
             "GET",
