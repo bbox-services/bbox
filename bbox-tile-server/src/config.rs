@@ -12,7 +12,7 @@ pub struct TileserverCfg {
     #[serde(default)]
     pub source: Vec<TileSourceCfg>,
     #[serde(default)]
-    pub cache: Vec<TileCacheDefCfg>,
+    pub cache: Vec<TileCacheProviderCfg>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -59,7 +59,6 @@ pub struct GridCfg {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct WmsHttpSourceProviderCfg {
-    // pub name: String,
     pub baseurl: String,
     pub format: String,
 }
@@ -87,8 +86,9 @@ pub struct WmsFcgiSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct TileCacheDefCfg {
+pub struct TileCacheProviderCfg {
     pub name: String,
+    // pub layout: CacheLayout,
     #[serde(flatten)]
     pub cache: TileCacheCfg,
 }
@@ -96,7 +96,7 @@ pub struct TileCacheDefCfg {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum TileCacheCfg {
-    File(FileCacheCfg),
+    Files(FileCacheCfg),
     S3(S3CacheCfg),
     // MbTiles(MbTilesCache),
 }

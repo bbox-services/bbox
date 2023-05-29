@@ -95,7 +95,9 @@ impl TileReader for NoCache {
 impl TileCache {
     pub fn from_config(config: &TileCacheCfg, tileset_name: &str) -> Self {
         match &config {
-            TileCacheCfg::File(cfg) => TileCache::Files(FileCache::from_config(&cfg, tileset_name)),
+            TileCacheCfg::Files(cfg) => {
+                TileCache::Files(FileCache::from_config(&cfg, tileset_name))
+            }
             TileCacheCfg::S3(cfg) => {
                 TileCache::S3(S3Cache::from_config(&cfg).unwrap_or_else(error_exit))
             }

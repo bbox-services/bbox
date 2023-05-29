@@ -85,7 +85,7 @@ format = "image/jpeg"
 
 [[tileserver.cache]]
 name = "tilecache"
-[tileserver.cache.file]
+[tileserver.cache.files]
 base_dir = "/tmp/tilecache"
 
 #[[tileserver.cache]]
