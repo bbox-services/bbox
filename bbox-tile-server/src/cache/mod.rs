@@ -5,7 +5,9 @@ pub mod s3putfiles;
 use crate::cache::files::FileCache;
 use crate::cache::s3::{S3Cache, S3CacheError};
 use crate::cli::SeedArgs;
+use crate::config::TileCacheCfg;
 use async_trait::async_trait;
+use bbox_common::config::error_exit;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::io::Read;
 use std::path::PathBuf;
@@ -91,6 +93,14 @@ impl TileReader for NoCache {
 }
 
 impl TileCache {
+    pub fn from_config(config: &TileCacheCfg, tileset_name: &str) -> Self {
+        match &config {
+            TileCacheCfg::File(cfg) => TileCache::Files(FileCache::from_config(&cfg, tileset_name)),
+            TileCacheCfg::S3(cfg) => {
+                TileCache::S3(S3Cache::from_config(&cfg).unwrap_or_else(error_exit))
+            }
+        }
+    }
     pub fn write(&self) -> &dyn TileWriter {
         match self {
             TileCache::NoCache => &NoCache,

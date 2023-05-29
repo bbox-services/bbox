@@ -1,5 +1,6 @@
 use crate::cache::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileReader, TileWriter};
 use crate::cli::SeedArgs;
+use crate::config::FileCacheCfg;
 use async_trait::async_trait;
 use log::debug;
 use std::fs::{self, File};
@@ -15,6 +16,11 @@ pub struct FileCache {
 impl FileCache {
     pub fn new(base_dir: PathBuf) -> Self {
         FileCache { base_dir }
+    }
+    pub fn from_config(cfg: &FileCacheCfg, tileset_name: &str) -> Self {
+        Self::new(PathBuf::from_iter(
+            [cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter(),
+        ))
     }
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())

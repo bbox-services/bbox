@@ -1,5 +1,6 @@
 use crate::cache::{BoxRead, TileCacheError, TileCacheType, TileReader, TileWriter};
 use crate::cli::SeedArgs;
+use crate::config::S3CacheCfg;
 use async_trait::async_trait;
 use log::debug;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
@@ -46,6 +47,9 @@ impl S3Cache {
         };
 
         Ok(S3Cache { bucket, region })
+    }
+    pub fn from_config(cfg: &S3CacheCfg) -> Result<Self, TileCacheError> {
+        Self::from_s3_path(&cfg.path).map_err(Into::into)
     }
 }
 

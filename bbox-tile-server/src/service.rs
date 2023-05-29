@@ -3,6 +3,7 @@ use crate::config::*;
 use crate::tilesource::{MapService, TileSource, TileSourceError, WmsMetrics};
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
 use bbox_common::service::{CoreService, OgcApiService};
 use std::collections::HashMap;
@@ -31,6 +32,8 @@ pub struct TileSet {
 pub enum ServiceError {
     #[error("Tileset `{0}` not found")]
     TilesetNotFound(String),
+    #[error("Cache `{0}` not found")]
+    CacheNotFound(String),
     #[error(transparent)]
     TileRegistryError(#[from] RegistryError),
     #[error(transparent)]
@@ -58,6 +61,7 @@ impl TileSet {
 }
 
 pub type SourcesLookup = HashMap<String, TileSourceProviderCfg>;
+type CachesLookup = HashMap<String, TileCacheCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {
@@ -76,10 +80,23 @@ impl OgcApiService for TileService {
             .map(|src| (src.name.clone(), src.config))
             .collect();
 
+        let caches: CachesLookup = config
+            .cache
+            .into_iter()
+            .map(|cfg| (cfg.name.clone(), cfg.cache))
+            .collect();
+
         for ts in config.tileset {
             let tms = ts.tms.unwrap_or("WebMercatorQuad".to_string());
             let source = TileSource::from_config(&sources, &ts.params, &tms);
-            let cache = TileCache::NoCache;
+            let cache = if let Some(name) = ts.cache {
+                let config = caches
+                    .get(&name)
+                    .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)));
+                TileCache::from_config(config, &ts.name)
+            } else {
+                TileCache::NoCache
+            };
             let tileset = TileSet { tms, source, cache };
             //dbg!((&ts.name, &tileset));
             service.tilesets.insert(ts.name, tileset);

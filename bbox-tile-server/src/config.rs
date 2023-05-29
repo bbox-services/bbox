@@ -1,5 +1,6 @@
 use bbox_common::config::from_config_or_exit;
 use serde::Deserialize;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
@@ -10,6 +11,8 @@ pub struct TileserverCfg {
     pub grid: Vec<GridCfg>,
     #[serde(default)]
     pub source: Vec<TileSourceCfg>,
+    #[serde(default)]
+    pub cache: Vec<TileCacheDefCfg>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -84,11 +87,31 @@ pub struct WmsFcgiSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+pub struct TileCacheDefCfg {
+    pub name: String,
+    #[serde(flatten)]
+    pub cache: TileCacheCfg,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "lowercase")]
 pub enum TileCacheCfg {
-    NoCache,
-    // FileCache(FileCache),
-    // S3Cache(S3Cache),
+    File(FileCacheCfg),
+    S3(S3CacheCfg),
     // MbTiles(MbTilesCache),
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct FileCacheCfg {
+    pub base_dir: PathBuf,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct S3CacheCfg {
+    pub path: String,
+    // pub s3_endpoint_url: Option<String>,
+    // pub aws_access_key_id: Option<String>,
+    // pub aws_secret_access_key: Option<String>,
 }
 
 impl TileserverCfg {
