@@ -2,7 +2,7 @@ pub mod wms_fcgi;
 pub mod wms_http;
 
 use crate::config::{SourceParamCfg, TileSourceProviderCfg};
-use crate::service::{SourcesLookup, TileService};
+use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
@@ -44,6 +44,10 @@ pub enum TileSource {
 
 #[derive(thiserror::Error, Debug)]
 pub enum TileSourceError {
+    #[error("tileserver.source `{0}` not found")]
+    TileSourceNotFound(String),
+    #[error("tileserver.source of type wms_proxy expected")]
+    TileSourceTypeError,
     #[error(transparent)]
     FcgiError(#[from] FcgiError),
     #[error(transparent)]
@@ -71,12 +75,17 @@ pub trait TileRead {
 }
 
 impl TileSource {
-    pub fn from_config(sources: &SourcesLookup, cfg: &SourceParamCfg, tms_id: &str) -> Self {
+    pub fn from_config(
+        cfg: &SourceParamCfg,
+        sources: &TileSourceProviderConfigs,
+        tms_id: &str,
+    ) -> Self {
         let tms = tms().lookup(tms_id).unwrap_or_else(error_exit);
         match cfg {
             SourceParamCfg::WmsHttp(cfg) => {
-                let TileSourceProviderCfg::WmsHttp(provider) = sources.get(&cfg.source).unwrap() // unwrap_or_else(error_exit)
-                else { todo!(); };
+                let TileSourceProviderCfg::WmsHttp(provider) = sources.get(&cfg.source)
+                    .unwrap_or_else(|| error_exit(TileSourceError::TileSourceNotFound(cfg.source.clone())))
+                else { error_exit(TileSourceError::TileSourceTypeError) };
                 TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
                     provider,
                     cfg,

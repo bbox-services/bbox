@@ -60,8 +60,8 @@ impl TileSet {
     }
 }
 
-pub type SourcesLookup = HashMap<String, TileSourceProviderCfg>;
-type CachesLookup = HashMap<String, TileCacheCfg>;
+pub(crate) type TileSourceProviderConfigs = HashMap<String, TileSourceProviderCfg>;
+type TileCacheConfigs = HashMap<String, TileCacheCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {
@@ -74,13 +74,13 @@ impl OgcApiService for TileService {
             dbg!(&grid); // TODO
         }
 
-        let sources: SourcesLookup = config
+        let sources: TileSourceProviderConfigs = config
             .source
             .into_iter()
             .map(|src| (src.name.clone(), src.config))
             .collect();
 
-        let caches: CachesLookup = config
+        let caches: TileCacheConfigs = config
             .cache
             .into_iter()
             .map(|cfg| (cfg.name.clone(), cfg.cache))
@@ -88,7 +88,7 @@ impl OgcApiService for TileService {
 
         for ts in config.tileset {
             let tms = ts.tms.unwrap_or("WebMercatorQuad".to_string());
-            let source = TileSource::from_config(&sources, &ts.params, &tms);
+            let source = TileSource::from_config(&ts.params, &sources, &tms);
             let cache = if let Some(name) = ts.cache {
                 let config = caches
                     .get(&name)
