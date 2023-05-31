@@ -75,7 +75,7 @@ path = "/wms/map"            # WMS URL base path
 
 #[[tileserver.grid]]
 #tms_id = "custom"
-#json = "custom-tms.json"
+#json = "../data/EuropeanETRS89_LAEAQuad.json"
 
 [[tileserver.source]]
 name = "gebco"

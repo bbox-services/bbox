@@ -187,7 +187,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let service = TileService::from_config().await;
     let tileset = service.tileset(&args.tileset).unwrap();
     let source = service.source(&args.tileset).unwrap();
-    let tms = tileset.grid().unwrap_or_else(error_exit);
+    let tms = service.grid(&tileset.tms)?;
     let bbox = if let Some(numlist) = &args.extent {
         let arr: Vec<f64> = numlist
             .split(",")

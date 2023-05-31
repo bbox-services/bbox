@@ -9,13 +9,14 @@ use bbox_common::service::{CoreService, OgcApiService};
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
-use tile_grid::{tms, RegistryError, Tile, Tms};
+use tile_grid::{tms, RegistryError, Tile, TileMatrixSet, Tms};
 
 #[derive(Clone, Default)]
 pub struct TileService {
-    pub tilesets: Tilesets,
+    tilesets: Tilesets,
+    grids: HashMap<String, Tms>,
     // Map service backend
-    pub map_service: Option<MapService>,
+    pub(crate) map_service: Option<MapService>,
 }
 
 pub type Tilesets = HashMap<String, TileSet>;
@@ -54,12 +55,6 @@ impl SourceLookup for Tilesets {
     }
 }
 
-impl TileSet {
-    pub fn grid(&self) -> Result<Tms, tile_grid::Error> {
-        tms().lookup(&self.tms)
-    }
-}
-
 pub(crate) type TileSourceProviderConfigs = HashMap<String, TileSourceProviderCfg>;
 type TileCacheConfigs = HashMap<String, TileCacheCfg>;
 
@@ -70,8 +65,12 @@ impl OgcApiService for TileService {
         let mut service = Self::default();
 
         // Register custom grids
+        let mut grids = tms().clone();
         for grid in config.grid {
-            dbg!(&grid); // TODO
+            let custom = TileMatrixSet::from_json_file(&grid.json).unwrap_or_else(error_exit);
+            grids
+                .register(vec![custom], true)
+                .unwrap_or_else(error_exit);
         }
 
         let sources: TileSourceProviderConfigs = config
@@ -87,7 +86,8 @@ impl OgcApiService for TileService {
             .collect();
 
         for ts in config.tileset {
-            let tms = ts.tms.unwrap_or("WebMercatorQuad".to_string());
+            let tms_id = ts.tms.unwrap_or("WebMercatorQuad".to_string());
+            let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
             let source = TileSource::from_config(&ts.params, &sources, &tms);
             let cache = if let Some(name) = ts.cache {
                 let config = caches
@@ -97,9 +97,13 @@ impl OgcApiService for TileService {
             } else {
                 TileCache::NoCache
             };
-            let tileset = TileSet { tms, source, cache };
-            //dbg!((&ts.name, &tileset));
+            let tileset = TileSet {
+                tms: tms_id.clone(),
+                source,
+                cache,
+            };
             service.tilesets.insert(ts.name, tileset);
+            service.grids.insert(tms_id, tms);
         }
         service
     }
@@ -155,6 +159,11 @@ impl TileService {
     pub fn source(&self, tileset: &str) -> Option<&TileSource> {
         self.tilesets.source(tileset)
     }
+    pub fn grid(&self, tms: &str) -> Result<&Tms, tile_grid::Error> {
+        self.grids
+            .get(tms)
+            .ok_or(RegistryError::TmsNotFound(tms.to_string()))
+    }
     /// Get tile with cache lookup
     pub async fn tile_cached(
         &self,
@@ -179,7 +188,7 @@ impl TileService {
             }));
         }
         // Request tile and write into cache
-        let tms = tileset.grid()?;
+        let tms = self.grid(&tileset.tms)?;
         let extent = tms.xy_bounds(&tile);
         // TODO: Handle x,y,z out of grid or service limits (return None)
         let crs = tms.crs().as_srid();

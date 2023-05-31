@@ -6,7 +6,7 @@ use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use tile_grid::{tms, BoundingBox};
+use tile_grid::{BoundingBox, Tms};
 
 #[cfg(feature = "map-server")]
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
@@ -78,9 +78,8 @@ impl TileSource {
     pub fn from_config(
         cfg: &SourceParamCfg,
         sources: &TileSourceProviderConfigs,
-        tms_id: &str,
+        tms: &Tms,
     ) -> Self {
-        let tms = tms().lookup(tms_id).unwrap_or_else(error_exit);
         match cfg {
             SourceParamCfg::WmsHttp(cfg) => {
                 let TileSourceProviderCfg::WmsHttp(provider) = sources.get(&cfg.source)
