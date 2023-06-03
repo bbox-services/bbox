@@ -14,7 +14,6 @@ path = "/metrics"
 # Jaeger tracing
 # Environment variable prefix: BBOX_METRICS__JAEGER__
 #agent_endpoint = "localhost:6831"
-
 [[datasource.directory]]
 path = "../data"
 
@@ -73,9 +72,8 @@ path = "/wms/map"            # WMS URL base path
 #table = "flows"
 #geom = "geom"
 
-#[[tileserver.grid]]
-#tms_id = "custom"
-#json = "../data/EuropeanETRS89_LAEAQuad.json"
+[[tileserver.grid]]
+json = "../data/custom-grid-lv95.json"
 
 [[tileserver.source]]
 name = "gebco"
@@ -101,3 +99,12 @@ wms_proxy = { source = "gebco", layers = "gebco_latest" }
 name = "ne_extracts"
 wms_project = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
 cache = "tilecache"
+
+[[tileserver.tileset]]
+name = "rivers_lakes"
+tms = "LV95"
+[tileserver.tileset.wms_project]
+project = "ne_extracts"
+suffix = "qgz"
+layers = "ne_10m_lakes,ne_10m_rivers_lake_centerlines"
+params = "transparent=true"

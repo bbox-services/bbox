@@ -11,6 +11,7 @@ Usage
 
     x-www-browser http://127.0.0.1:8080/
 
+    x-www-browser http://127.0.0.1:8080//data/usergrid.html?debug=1
 
 Configuration
 -------------
@@ -74,8 +75,8 @@ agent_endpoint = "localhost:6831"
 ```
 
 
-Instrumenation
--------------
+Instrumentation
+---------------
 
 ### Prometheus
 

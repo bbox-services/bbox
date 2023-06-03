@@ -51,8 +51,6 @@ pub struct TileSetCfg {
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct GridCfg {
-    /// Tile matrix set identifier
-    pub tms_id: String,
     /// JSON file path
     pub json: String,
 }
@@ -83,6 +81,8 @@ pub struct WmsFcgiSourceParamsCfg {
     pub project: String,
     pub suffix: String,
     pub layers: String,
+    /// Additional WMS params like transparent=true
+    pub params: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]

@@ -16,12 +16,13 @@ impl WmsFcgiSource {
     pub fn from_config(cfg: &WmsFcgiSourceParamsCfg) -> Self {
         let project = cfg.project.clone();
         let query = format!(
-            "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=",
+            "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&{}",
             &cfg.project,
             &cfg.suffix,
             256, //grid.width,
             256, //grid.height,
             cfg.layers,
+            cfg.params.as_ref().unwrap_or(&"".to_string()),
         );
         WmsFcgiSource { project, query }
     }

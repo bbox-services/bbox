@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>LV95 Grid</title>
+  <script src="https://cdn.jsdelivr.net/npm/ol@7.2.2/dist/ol.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/ol@7.2.2/ol.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/proj4@2.8.1/dist/proj4.min.js"></script>
+  <style>
+    body {
+      font-family: sans, "Helvetica";
+    }
+
+    .map {
+      height: 600px;
+      top: 3em;
+      width: 100%;
+      background: #f8f4f0;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Custom User Grid (Swiss LV95)</h2>
+  <div id="map" class="map"></div>
+  <script>
+
+    /* Custom resolutions, from Swiss norm eCH-0056 (https://www.ech.ch/fr/ech/ech-0056/3.0) */
+    const RESOLUTIONS = [
+      4000, 3750, 3500, 3250, 3000, 2750, 2500, 2250, 2000, 1750, 1500, 1250,
+      1000, 750, 650, 500, 250, 100, 50, 20, 10, 5, 2.5, 2, 1.5, 1, 0.5
+    ];
+
+    /* Registering and setting a new custom projection */
+    proj4.defs("EPSG:2056", "+proj=somerc +lat_0=46.95240555555556 +lon_0=7.439583333333333 +k_0=1 +x_0=2600000 +y_0=1200000 +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs");
+    ol.proj.proj4.register(proj4);
+
+    var extent = [2420000, 1030000, 2900000, 1350000];
+    var projection = ol.proj.get("EPSG:2056");
+    projection.setExtent(extent);
+
+
+    /* Convenience methods for trying new layers */
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const layername = urlParams.get('layer') || 'g1k18'
+    const debug = urlParams.get('debug') || false;
+    const servername = urlParams.get('server') || location.origin;
+
+    /* Setting up the custom grid */
+    var matrixIds = [];
+    for (var i = 0; i < RESOLUTIONS.length; i++) {
+      matrixIds.push(i);
+    }
+
+    var tileGrid = new ol.tilegrid.WMTS({
+      origin: [extent[0], extent[3]],
+      resolutions: RESOLUTIONS,
+      matrixIds: matrixIds
+    });
+
+    /* Reference base layer */
+
+    var wmtsLayer = new ol.layer.Tile({
+      source: new ol.source.WMTS(({
+        url: 'https://wmts.geo.admin.ch/1.0.0/{Layer}/default/current/2056/{TileMatrix}/{TileCol}/{TileRow}.jpeg',
+        tileGrid: tileGrid,
+        projection: projection,
+        layer: "ch.swisstopo.swissimage",
+        requestEncoding: 'REST'
+      }))
+    });
+
+    /* Raster tile layer */
+
+    var rasterTileLayer = new ol.layer.Tile({
+      source: new ol.source.XYZ({
+        url: servername + '/map/tiles/rivers_lakes/{z}/{x}/{y}',
+        // url: servername + '/xyz/rivers_lakes/{z}/{x}/{y}.png',
+        tileGrid: tileGrid,
+        projection: projection,
+      }),
+    });
+
+    /* MVT layer */
+
+    var style = new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: '#FFFF33',
+        width: 3
+      })
+    });
+
+    var vtLayer = new ol.layer.VectorTile({
+      source: new ol.source.VectorTile({
+        format: new ol.format.MVT(),
+        tileGrid: tileGrid,
+        tilePixelRatio: 16,
+        url: servername + '/xyz/' + layername + '/{z}/{x}/{y}.pbf',
+        projection: projection
+      }),
+      style: style
+    });
+
+    /* Displaying the tiles names, for debugging */
+    const tileDebug = new ol.layer.Tile({
+      source: new ol.source.TileDebug({
+        projection: vtLayer.getSource().getProjection(),
+        tileGrid: vtLayer.getSource().getTileGrid(),
+      })
+    });
+
+    /* View and vector projection have to match, no reprojection like for raster layers */
+    var map = new ol.Map({
+      layers: [wmtsLayer, rasterTileLayer], // vtLayer
+      target: 'map',
+      view: new ol.View({
+        center: [2660000, 1190000],
+        projection: projection,
+        resolution: 500
+      })
+    });
+
+    if (debug) {
+      map.addLayer(tileDebug);
+    }
+  </script>
+</body>
+
+</html>
