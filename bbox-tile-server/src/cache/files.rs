@@ -2,6 +2,7 @@ use crate::cache::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileRead
 use crate::cli::SeedArgs;
 use crate::config::FileCacheCfg;
 use async_trait::async_trait;
+use bbox_common::endpoints::TileResponse;
 use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
@@ -54,10 +55,14 @@ impl TileWriter for FileCache {
 }
 
 impl TileReader for FileCache {
-    fn get_tile(&self, tile: &Tile, format: &str) -> Option<BoxRead> {
+    fn get_tile(&self, tile: &Tile, format: &str) -> Option<TileResponse> {
         let p = CacheLayout::ZXY.path(&self.base_dir, tile, format);
         if let Ok(f) = File::open(&p) {
-            return Some(Box::new(BufReader::new(f)));
+            return Some(TileResponse {
+                content_type: None, // TODO: from `format`
+                headers: TileResponse::new_headers(),
+                body: Box::new(BufReader::new(f)),
+            });
         } else {
             return None;
         }

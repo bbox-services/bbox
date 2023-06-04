@@ -8,6 +8,7 @@ use crate::cli::SeedArgs;
 use crate::config::TileCacheCfg;
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
+use bbox_common::endpoints::TileResponse;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::io::Read;
 use std::path::PathBuf;
@@ -38,7 +39,7 @@ clone_trait_object!(TileWriter);
 
 pub trait TileReader {
     /// Lookup tile in cache and return Read stream, if found
-    fn get_tile(&self, tile: &Tile, format: &str) -> Option<BoxRead>;
+    fn get_tile(&self, tile: &Tile, format: &str) -> Option<TileResponse>;
 }
 
 #[derive(Clone, Debug)]
@@ -87,7 +88,7 @@ impl TileWriter for NoCache {
 }
 
 impl TileReader for NoCache {
-    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<BoxRead> {
+    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<TileResponse> {
         None
     }
 }

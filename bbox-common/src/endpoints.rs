@@ -16,11 +16,15 @@ use std::iter::FromIterator;
 
 /// Tile reader response
 pub struct TileResponse {
+    pub content_type: Option<String>,
     pub headers: HashMap<String, String>, //TODO: optimize
     pub body: Box<dyn Read + Send + Sync>,
 }
 
 impl TileResponse {
+    pub fn new_headers() -> HashMap<String, String> {
+        HashMap::new()
+    }
     pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
         let bytes = self
             .body

@@ -2,6 +2,7 @@ use crate::cache::{BoxRead, TileCacheError, TileCacheType, TileReader, TileWrite
 use crate::cli::SeedArgs;
 use crate::config::S3CacheCfg;
 use async_trait::async_trait;
+use bbox_common::endpoints::TileResponse;
 use log::debug;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;
@@ -105,7 +106,7 @@ impl S3Cache {
 }
 
 impl TileReader for S3Cache {
-    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<BoxRead> {
+    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<TileResponse> {
         // 2nd level cache lookup is not supported
         None
     }

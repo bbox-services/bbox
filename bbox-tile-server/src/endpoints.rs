@@ -75,14 +75,13 @@ async fn tile_request(
     {
         Ok(Some(tile_resp)) => {
             let mut r = HttpResponse::Ok();
+            if let Some(content_type) = &tile_resp.content_type {
+                r.content_type(content_type.as_str());
+            }
             // r.content_type("application/x-protobuf");
             for (key, value) in &tile_resp.headers {
-                if key == "content-type" {
-                    r.content_type(value.as_str());
-                } else {
-                    r.insert_header((key.as_str(), value.as_str()));
-                    // TODO: use append_header for "Server-Timing" and others?
-                }
+                r.insert_header((key.as_str(), value.as_str()));
+                // TODO: use append_header for "Server-Timing" and others?
             }
             // if gzip {
             //     // data is already gzip compressed

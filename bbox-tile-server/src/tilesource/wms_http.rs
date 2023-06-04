@@ -3,7 +3,6 @@ use crate::service::TileService;
 use crate::tilesource::{TileRead, TileResponse, TileSourceError, WmsMetrics};
 use async_trait::async_trait;
 use log::debug;
-use std::collections::HashMap;
 use std::io::Cursor;
 use tile_grid::BoundingBox;
 
@@ -55,16 +54,17 @@ impl TileRead for WmsHttpSource {
         _service: &TileService,
         extent: &BoundingBox,
     ) -> Result<TileResponse, TileSourceError> {
-        let mut headers = HashMap::new();
         let wms_resp = self.get_map_response(&extent).await?;
-        if let Some(content_type) = wms_resp.headers().get("content-type") {
-            headers.insert(
-                "content-type".to_string(),
-                content_type.to_str().unwrap().to_string(),
-            );
-        }
+        let content_type = wms_resp
+            .headers()
+            .get("content-type")
+            .map(|ct| ct.to_str().unwrap().to_string());
         let body = Box::new(Cursor::new(wms_resp.bytes().await?));
-        Ok(TileResponse { headers, body })
+        Ok(TileResponse {
+            content_type,
+            headers: TileResponse::new_headers(),
+            body,
+        })
     }
 
     async fn tile_request(

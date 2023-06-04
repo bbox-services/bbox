@@ -180,12 +180,9 @@ impl TileService {
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         // TODO: if tileset.is_cachable_at(tile.z) {
-        if let Some(tiledata) = tileset.cache.read().get_tile(tile, format) {
+        if let Some(tile) = tileset.cache.read().get_tile(tile, format) {
             //TODO: handle compression
-            return Ok(Some(TileResponse {
-                headers: HashMap::new(),
-                body: tiledata,
-            }));
+            return Ok(Some(tile));
         }
         // Request tile and write into cache
         let tms = self.grid(&tileset.tms)?;
@@ -210,6 +207,7 @@ impl TileService {
                 .put_tile(path, Box::new(Cursor::new(body.clone())))
                 .await?;
             Ok(Some(TileResponse {
+                content_type: tiledata.content_type,
                 headers: tiledata.headers,
                 body: Box::new(Cursor::new(body)),
             }))

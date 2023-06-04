@@ -11,7 +11,6 @@ use opentelemetry::{
     trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
     Context, KeyValue,
 };
-use std::collections::HashMap;
 use std::io::{BufRead, Cursor};
 use std::str::FromStr;
 use std::time::{Duration, SystemTime};
@@ -197,7 +196,8 @@ pub async fn wms_fcgi_req(
 
     let mut cursor = Cursor::new(fcgiout);
     // Read headers
-    let mut headers = HashMap::new();
+    let mut content_type = None;
+    let mut headers = TileResponse::new_headers();
     let mut line = String::new();
     while let Ok(_bytes) = cursor.read_line(&mut line) {
         // Truncate newline
@@ -215,7 +215,7 @@ pub async fn wms_fcgi_req(
         let (key, value) = (parts[0], parts[1]);
         match key {
             "Content-Type" => {
-                headers.insert(key.to_string(), value.to_string());
+                content_type = Some(value.to_string());
             }
             "Content-Length" | "Server" => {} // ignore
             "X-us" => {
@@ -262,6 +262,7 @@ pub async fn wms_fcgi_req(
     // --- <
 
     Ok(TileResponse {
+        content_type,
         headers,
         body: Box::new(cursor),
     })
