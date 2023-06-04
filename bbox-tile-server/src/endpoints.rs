@@ -1,6 +1,6 @@
 use crate::service::TileService;
 use crate::tilesource::WmsMetrics;
-use actix_web::{guard, http::header, web, Error, HttpRequest, HttpResponse};
+use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_common::service::CoreService;
 use tile_grid::Tile;
 
@@ -25,18 +25,11 @@ async fn map_tile(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y) = params.into_inner();
-    // TODO: Get requested format from accept header
-    tile_request(
-        service,
-        &tileset,
-        x,
-        y,
-        z,
-        "image/png; mode=8bit",
-        metrics,
-        req,
-    )
-    .await
+    let format = &web::Header::<header::Accept>::extract(&req)
+        .await
+        .map(|accept| accept.preference().to_string())
+        .unwrap_or("image/png; mode=8bit".to_string()); //TODO: Default format from service
+    tile_request(service, &tileset, x, y, z, format, metrics, req).await
 }
 
 async fn tile_request(
