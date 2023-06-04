@@ -15,6 +15,11 @@ use clap::Parser;
 async fn webserver() -> std::io::Result<()> {
     let mut core = CoreService::from_config().await;
 
+    #[cfg(feature = "file-server")]
+    let file_service = bbox_file_server::FileService::from_config().await;
+    #[cfg(feature = "file-server")]
+    core.add_service(&file_service);
+
     #[cfg(feature = "map-server")]
     let map_service = bbox_map_server::MapService::from_config().await;
     #[cfg(feature = "map-server")]
@@ -36,6 +41,10 @@ async fn webserver() -> std::io::Result<()> {
             .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
             .configure(bbox_common::static_assets::register_endpoints);
 
+        #[cfg(feature = "file-server")]
+        {
+            app = app.configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core));
+        }
         #[cfg(feature = "map-server")]
         {
             app = app.configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core));

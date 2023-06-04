@@ -46,6 +46,10 @@ XYZ URL (Leaflet, QGIS, etc.):
 
     http://localhost:8080/xyz/ne_extracts/{z}/{x}/{y}.png
 
+Map viewer examples:
+
+    x-www-browser http://127.0.0.1:8080/data/usergrid.html?debug=1
+
 Relase Build:
 
     cargo build --release
