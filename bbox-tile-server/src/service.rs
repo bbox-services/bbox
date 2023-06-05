@@ -1,6 +1,6 @@
 use crate::cache::{CacheLayout, TileCache, TileCacheError};
 use crate::config::*;
-use crate::tilesource::{MapService, TileSource, TileSourceError, WmsMetrics};
+use crate::tilesource::{wms_fcgi::MapService, wms_fcgi::WmsMetrics, TileSource, TileSourceError};
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
@@ -179,6 +179,7 @@ impl TileService {
         let tileset = self
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        // FIXME: format is passed as file ending or mime type!
         // TODO: if tileset.is_cachable_at(tile.z) {
         if let Some(tile) = tileset.cache.read().get_tile(tile, format) {
             //TODO: handle compression

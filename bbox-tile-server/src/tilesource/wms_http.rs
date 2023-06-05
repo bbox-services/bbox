@@ -1,6 +1,6 @@
 use crate::config::*;
 use crate::service::TileService;
-use crate::tilesource::{TileRead, TileResponse, TileSourceError, WmsMetrics};
+use crate::tilesource::{wms_fcgi::WmsMetrics, TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use log::debug;
 use std::io::Cursor;

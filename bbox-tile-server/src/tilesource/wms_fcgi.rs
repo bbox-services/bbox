@@ -3,7 +3,7 @@ use crate::service::TileService;
 use crate::tilesource::{TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
-use bbox_map_server::metrics::WmsMetrics;
+pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
 use tile_grid::BoundingBox;
 
 #[derive(Clone, Debug)]

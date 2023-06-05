@@ -7,7 +7,7 @@ edition = "2018"
 default = ["feature-server", "file-server", "map-server", "map-viewer", "processes-server", "tile-server"]
 feature-server = ["bbox-feature-server"]
 file-server = ["bbox-file-server"]
-map-server = ["bbox-map-server"]
+map-server = ["bbox-map-server", "bbox-tile-server/map-server"]
 map-viewer = ["bbox-map-viewer", "bbox-map-server/inventory"]
 processes-server = ["bbox-processes-server"]
 routing-server = ["bbox-routing-server"]
@@ -24,7 +24,7 @@ bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", optional = true }
-bbox-tile-server = { path = "../bbox-tile-server", optional = true }
+bbox-tile-server = { path = "../bbox-tile-server", default-features = false, optional = true }
 clap = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }

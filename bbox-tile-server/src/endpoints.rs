@@ -1,5 +1,5 @@
 use crate::service::TileService;
-use crate::tilesource::WmsMetrics;
+use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_common::service::CoreService;
 use tile_grid::Tile;

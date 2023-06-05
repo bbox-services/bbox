@@ -1,3 +1,4 @@
+#[cfg(feature = "map-server")]
 pub mod wms_fcgi;
 pub mod wms_http;
 
@@ -8,20 +9,21 @@ use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
 use tile_grid::{BoundingBox, Tms};
 
-#[cfg(feature = "map-server")]
-pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
-
 #[cfg(not(feature = "map-server"))]
-pub type WmsMetrics = ();
-#[cfg(not(feature = "map-server"))]
-pub type MapService = ();
-#[cfg(not(feature = "map-server"))]
-pub type FcgiError = std::io::Error;
+pub mod wms_fcgi {
+    // Replacements for bbox_map_server types
+    pub type WmsMetrics = ();
+    pub type MapService = ();
+    pub type FcgiError = std::io::Error;
+}
 
 #[derive(Clone, Debug)]
 pub enum TileSource {
+    #[cfg(feature = "map-server")]
     WmsFcgi(wms_fcgi::WmsFcgiSource),
     WmsHttp(wms_http::WmsHttpSource),
+    #[allow(dead_code)]
+    Empty,
     // GdalData(GdalSource),
     // RasterData(GeorasterSource),
     // VectorSource,
@@ -49,7 +51,7 @@ pub enum TileSourceError {
     #[error("tileserver.source of type wms_proxy expected")]
     TileSourceTypeError,
     #[error(transparent)]
-    FcgiError(#[from] FcgiError),
+    FcgiError(#[from] wms_fcgi::FcgiError),
     #[error(transparent)]
     BackendResponseError(#[from] reqwest::Error),
 }
@@ -70,7 +72,7 @@ pub trait TileRead {
         scheme: &str,
         host: &str,
         req_path: &str,
-        metrics: &WmsMetrics,
+        metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
 }
 
@@ -91,15 +93,23 @@ impl TileSource {
                     tms.crs().as_srid(),
                 ))
             }
+            #[cfg(feature = "map-server")]
             SourceParamCfg::WmsFcgi(cfg) => {
                 TileSource::WmsFcgi(wms_fcgi::WmsFcgiSource::from_config(cfg))
+            }
+            #[cfg(not(feature = "map-server"))]
+            SourceParamCfg::WmsFcgi(_cfg) => {
+                // TODO: Emit warning
+                TileSource::Empty
             }
         }
     }
     pub fn read(&self) -> &dyn TileRead {
         match self {
+            #[cfg(feature = "map-server")]
             TileSource::WmsFcgi(source) => source,
             TileSource::WmsHttp(source) => source,
+            TileSource::Empty => unimplemented!(),
         }
     }
 }
