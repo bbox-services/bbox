@@ -6,7 +6,7 @@ use bbox_common::config::error_exit;
 use log::info;
 use martin_mbtiles::MbtilesPool;
 use std::io::Cursor;
-use tile_grid::{BoundingBox, Tile};
+use tile_grid::Tile;
 
 #[derive(Clone, Debug)]
 pub struct MbtilesSource {
@@ -29,28 +29,6 @@ impl MbtilesSource {
 
 #[async_trait]
 impl TileRead for MbtilesSource {
-    async fn read_tile(
-        &self,
-        _service: &TileService,
-        _extent: &BoundingBox,
-    ) -> Result<TileResponse, TileSourceError> {
-        unimplemented!()
-    }
-
-    async fn tile_request(
-        &self,
-        service: &TileService,
-        extent: &BoundingBox,
-        _crs: i32,
-        _format: &str,
-        _scheme: &str,
-        _host: &str,
-        _req_path: &str,
-        _metrics: &WmsMetrics,
-    ) -> Result<TileResponse, TileSourceError> {
-        self.read_tile(service, extent).await
-    }
-
     async fn xyz_request(
         &self,
         _service: &TileService,
@@ -75,7 +53,7 @@ impl TileRead for MbtilesSource {
                 body,
             })
         } else {
-            todo!()
+            Err(TileSourceError::TileXyzError) // TODO: check for empty tile?
         }
     }
 }

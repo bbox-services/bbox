@@ -243,7 +243,6 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
     let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
     info!("Seeding tiles from level {minzoom} to {maxzoom}");
     for tile in griditer {
-        let extent = tms.xy_bounds(&tile);
         let path = CacheLayout::ZXY.path_string(&PathBuf::new(), &tile, "png");
         progress.set_message(path.clone());
         progress.inc(1);
@@ -252,9 +251,12 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         let file_writer = file_writer.clone();
         let tx = tx.clone();
         tasks.push(task::spawn(async move {
-            // TODO: let tile = source.read().read_tile(&service, &extent).await.unwrap();
+            // TODO: let tile = source.read().read_tile(&service, ...).await.unwrap();
             // ERROR: source.read() has type `&dyn TileRead` which is not `Send`
-            let tile = wms.read_tile(&service, &extent).await.unwrap();
+            let tile = wms
+                .read_tile(&service, "WebMercatorQuad", &tile, "png")
+                .await
+                .unwrap();
             let input: BoxRead = Box::new(tile.body);
 
             file_writer.put_tile(path.clone(), input).await.unwrap();

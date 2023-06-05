@@ -45,15 +45,8 @@ impl WmsHttpSource {
         debug!("Request {req}");
         self.client.get(req).send().await.map_err(Into::into)
     }
-}
 
-#[async_trait]
-impl TileRead for WmsHttpSource {
-    async fn read_tile(
-        &self,
-        _service: &TileService,
-        extent: &BoundingBox,
-    ) -> Result<TileResponse, TileSourceError> {
+    async fn bbox_request(&self, extent: &BoundingBox) -> Result<TileResponse, TileSourceError> {
         let wms_resp = self.get_map_response(&extent).await?;
         let content_type = wms_resp
             .headers()
@@ -66,36 +59,22 @@ impl TileRead for WmsHttpSource {
             body,
         })
     }
+}
 
-    async fn tile_request(
+#[async_trait]
+impl TileRead for WmsHttpSource {
+    async fn xyz_request(
         &self,
         service: &TileService,
-        extent: &BoundingBox,
-        _crs: i32,
+        tms_id: &str,
+        tile: &Tile,
         _format: &str,
         _scheme: &str,
         _host: &str,
         _req_path: &str,
         _metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
-        self.read_tile(service, extent).await
-    }
-
-    async fn xyz_request(
-        &self,
-        service: &TileService,
-        tms_id: &str,
-        tile: &Tile,
-        format: &str,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &WmsMetrics,
-    ) -> Result<TileResponse, TileSourceError> {
-        let (extent, crs) = service.xyz_extent(tms_id, tile)?;
-        self.tile_request(
-            service, &extent, crs, format, scheme, host, req_path, metrics,
-        )
-        .await
+        let (extent, _crs) = service.xyz_extent(tms_id, tile)?;
+        self.bbox_request(&extent).await
     }
 }

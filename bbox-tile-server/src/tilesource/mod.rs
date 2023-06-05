@@ -8,7 +8,7 @@ use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use tile_grid::{BoundingBox, RegistryError, Tile, Tms};
+use tile_grid::{RegistryError, Tile, Tms};
 
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
@@ -52,6 +52,8 @@ pub enum TileSourceError {
     TileSourceNotFound(String),
     #[error("tileserver.source of type wms_proxy expected")]
     TileSourceTypeError,
+    #[error("tile not found / out of bounds")]
+    TileXyzError,
     #[error(transparent)]
     RegistryError(#[from] RegistryError),
     #[error(transparent)]
@@ -64,25 +66,7 @@ pub enum TileSourceError {
 
 #[async_trait]
 pub trait TileRead {
-    /// Tile request from CLI
-    async fn read_tile(
-        &self,
-        service: &TileService,
-        extent: &BoundingBox,
-    ) -> Result<TileResponse, TileSourceError>;
-    /// Tile request within extent with HTTP infos
-    async fn tile_request(
-        &self,
-        service: &TileService,
-        extent: &BoundingBox,
-        crs: i32,
-        format: &str,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &wms_fcgi::WmsMetrics,
-    ) -> Result<TileResponse, TileSourceError>;
-    /// Tile request with HTTP infos
+    /// Tile request with HTTP request infos
     async fn xyz_request(
         &self,
         service: &TileService,
@@ -94,6 +78,27 @@ pub trait TileRead {
         req_path: &str,
         metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
+    /// Tile request
+    async fn read_tile(
+        &self,
+        service: &TileService,
+        tms_id: &str,
+        tile: &Tile,
+        format: &str,
+    ) -> Result<TileResponse, TileSourceError> {
+        let metrics = wms_fcgi::WmsMetrics::new();
+        self.xyz_request(
+            service,
+            tms_id,
+            tile,
+            format,
+            "http",
+            "localhost",
+            "/",
+            &metrics,
+        )
+        .await
+    }
 }
 
 impl TileSource {

@@ -33,32 +33,8 @@ impl WmsFcgiSource {
             self.query, crs, extent.left, extent.bottom, extent.right, extent.top, format
         )
     }
-}
 
-#[async_trait]
-impl TileRead for WmsFcgiSource {
-    async fn read_tile(
-        &self,
-        service: &TileService,
-        extent: &BoundingBox,
-    ) -> Result<TileResponse, TileSourceError> {
-        let crs = 3857; //FIXME: tms.crs().as_srid();
-        let format = "png"; //FIXME
-        let metrics = WmsMetrics::new();
-        self.tile_request(
-            service,
-            extent,
-            crs,
-            format,
-            "http",
-            "localhost",
-            "/",
-            &metrics,
-        )
-        .await
-    }
-
-    async fn tile_request(
+    async fn bbox_request(
         &self,
         service: &TileService,
         extent: &BoundingBox,
@@ -87,7 +63,10 @@ impl TileRead for WmsFcgiSource {
         .await
         .map_err(Into::into)
     }
+}
 
+#[async_trait]
+impl TileRead for WmsFcgiSource {
     async fn xyz_request(
         &self,
         service: &TileService,
@@ -100,7 +79,7 @@ impl TileRead for WmsFcgiSource {
         metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
         let (extent, crs) = service.xyz_extent(tms_id, tile)?;
-        self.tile_request(
+        self.bbox_request(
             service, &extent, crs, format, scheme, host, req_path, metrics,
         )
         .await
