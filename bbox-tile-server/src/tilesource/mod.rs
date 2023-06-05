@@ -13,9 +13,14 @@ use tile_grid::{RegistryError, Tile, Tms};
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
     // Replacements for bbox_map_server types
-    pub type WmsMetrics = ();
+    pub struct WmsMetrics;
     pub type MapService = ();
     pub type FcgiError = std::io::Error;
+    impl WmsMetrics {
+        pub fn new() -> Self {
+            Self
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
