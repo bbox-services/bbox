@@ -25,10 +25,15 @@ async fn map_tile(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y) = params.into_inner();
-    let format = &web::Header::<header::Accept>::extract(&req)
+    let default_format = "image/png; mode=8bit".to_string(); //TODO: From service
+    let mut format = &web::Header::<header::Accept>::extract(&req)
         .await
         .map(|accept| accept.preference().to_string())
-        .unwrap_or("image/png; mode=8bit".to_string()); //TODO: Default format from service
+        .unwrap_or(default_format.clone());
+    // override invalid request formats (TODO: check against available formats)
+    if format == "image/avif" {
+        format = &default_format;
+    }
     tile_request(service, &tileset, x, y, z, format, metrics, req).await
 }
 
