@@ -4,7 +4,7 @@ use crate::tilesource::{wms_fcgi::WmsMetrics, TileRead, TileResponse, TileSource
 use async_trait::async_trait;
 use log::debug;
 use std::io::Cursor;
-use tile_grid::BoundingBox;
+use tile_grid::{BoundingBox, Tile};
 
 #[derive(Clone, Debug)]
 pub struct WmsHttpSource {
@@ -79,5 +79,23 @@ impl TileRead for WmsHttpSource {
         _metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
         self.read_tile(service, extent).await
+    }
+
+    async fn xyz_request(
+        &self,
+        service: &TileService,
+        tms_id: &str,
+        tile: &Tile,
+        format: &str,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &WmsMetrics,
+    ) -> Result<TileResponse, TileSourceError> {
+        let (extent, crs) = service.xyz_extent(tms_id, tile)?;
+        self.tile_request(
+            service, &extent, crs, format, scheme, host, req_path, metrics,
+        )
+        .await
     }
 }

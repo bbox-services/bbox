@@ -17,8 +17,8 @@ anyhow = "1.0.52"
 async-channel = "1.6.1"
 async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
-bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-file-server = { path = "../bbox-file-server", optional = true }
+bbox-map-server = { path = "../bbox-map-server", optional = true }
 bytes = "1.1.0"
 clap = { workspace = true }
 crossbeam = "0.8.1"
@@ -27,12 +27,14 @@ futures = "0.3"
 futures-util = "0.3.21"
 indicatif = "0.16.2"
 log = { workspace = true }
+martin-mbtiles = { version = "0.2.1", default-features = false }
 num_cpus = { workspace = true }
 prometheus = { workspace = true }
 reqwest = "0.11.11"
 rusoto_core = "0.47.0"
 rusoto_s3 = "0.47.0"
 serde = { workspace = true }
+serde_json = { workspace = true }
 tempfile = "3.3.0"
 thiserror = { workspace = true }
 tile-grid = { git = "https://github.com/pka/tile-grid" }

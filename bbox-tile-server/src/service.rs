@@ -9,7 +9,7 @@ use bbox_common::service::{CoreService, OgcApiService};
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
-use tile_grid::{tms, RegistryError, Tile, TileMatrixSet, Tms};
+use tile_grid::{tms, BoundingBox, RegistryError, Tile, TileMatrixSet, Tms};
 
 #[derive(Clone, Default)]
 pub struct TileService {
@@ -88,7 +88,7 @@ impl OgcApiService for TileService {
         for ts in config.tileset {
             let tms_id = ts.tms.unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
-            let source = TileSource::from_config(&ts.params, &sources, &tms);
+            let source = TileSource::from_config(&ts.params, &sources, &tms).await;
             let cache = if let Some(name) = ts.cache {
                 let config = caches
                     .get(&name)
@@ -164,6 +164,17 @@ impl TileService {
             .get(tms)
             .ok_or(RegistryError::TmsNotFound(tms.to_string()))
     }
+    pub fn xyz_extent(
+        &self,
+        tms_id: &str,
+        tile: &Tile,
+    ) -> Result<(BoundingBox, i32), TileSourceError> {
+        let tms = self.grid(tms_id)?;
+        let extent = tms.xy_bounds(tile);
+        // TODO: Handle x,y,z out of grid or service limits (return None)
+        let crs = tms.crs().as_srid();
+        Ok((extent, crs))
+    }
     /// Get tile with cache lookup
     pub async fn tile_cached(
         &self,
@@ -186,14 +197,19 @@ impl TileService {
             return Ok(Some(tile));
         }
         // Request tile and write into cache
-        let tms = self.grid(&tileset.tms)?;
-        let extent = tms.xy_bounds(&tile);
-        // TODO: Handle x,y,z out of grid or service limits (return None)
-        let crs = tms.crs().as_srid();
         let mut tiledata = tileset
             .source
             .read()
-            .tile_request(self, &extent, crs, format, scheme, host, req_path, metrics)
+            .xyz_request(
+                self,
+                &tileset.tms,
+                tile,
+                format,
+                scheme,
+                host,
+                req_path,
+                metrics,
+            )
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         // TODO: if tileset.is_cachable_at(tile.z) {

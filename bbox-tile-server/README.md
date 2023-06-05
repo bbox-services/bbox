@@ -34,6 +34,10 @@ Tile requests:
 
     curl -o /tmp/tile.jpg http://localhost:8080/xyz/gebco/0/0/0.jpeg
 
+    curl -o /tmp/tile.mvt http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
+
+    curl -o /tmp/tilegz.mvt -H 'Content-Encoding: gzip' http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
+
     curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/ne_extracts/2/2/2
 
 OGC API entry points:
@@ -49,6 +53,8 @@ XYZ URL (Leaflet, QGIS, etc.):
 Map viewer examples:
 
     x-www-browser http://127.0.0.1:8080/data/usergrid.html?debug=1
+
+    x-www-browser http://localhost:8080/data/maplibre.html
 
 Relase Build:
 

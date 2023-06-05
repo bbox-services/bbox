@@ -71,7 +71,6 @@ async fn tile_request(
             if let Some(content_type) = &tile_resp.content_type {
                 r.content_type(content_type.as_str());
             }
-            // r.content_type("application/x-protobuf");
             for (key, value) in &tile_resp.headers {
                 r.insert_header((key.as_str(), value.as_str()));
                 // TODO: use append_header for "Server-Timing" and others?

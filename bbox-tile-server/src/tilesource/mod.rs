@@ -1,3 +1,4 @@
+pub mod mbtiles;
 #[cfg(feature = "map-server")]
 pub mod wms_fcgi;
 pub mod wms_http;
@@ -7,7 +8,7 @@ use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use tile_grid::{BoundingBox, Tms};
+use tile_grid::{BoundingBox, RegistryError, Tile, Tms};
 
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
@@ -22,6 +23,7 @@ pub enum TileSource {
     #[cfg(feature = "map-server")]
     WmsFcgi(wms_fcgi::WmsFcgiSource),
     WmsHttp(wms_http::WmsHttpSource),
+    Mbtiles(mbtiles::MbtilesSource),
     #[allow(dead_code)]
     Empty,
     // GdalData(GdalSource),
@@ -51,18 +53,24 @@ pub enum TileSourceError {
     #[error("tileserver.source of type wms_proxy expected")]
     TileSourceTypeError,
     #[error(transparent)]
+    RegistryError(#[from] RegistryError),
+    #[error(transparent)]
     FcgiError(#[from] wms_fcgi::FcgiError),
     #[error(transparent)]
-    BackendResponseError(#[from] reqwest::Error),
+    WmsHttpError(#[from] reqwest::Error),
+    #[error(transparent)]
+    MbtilesError(#[from] martin_mbtiles::MbtError),
 }
 
 #[async_trait]
 pub trait TileRead {
+    /// Tile request from CLI
     async fn read_tile(
         &self,
         service: &TileService,
         extent: &BoundingBox,
     ) -> Result<TileResponse, TileSourceError>;
+    /// Tile request within extent with HTTP infos
     async fn tile_request(
         &self,
         service: &TileService,
@@ -74,10 +82,22 @@ pub trait TileRead {
         req_path: &str,
         metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
+    /// Tile request with HTTP infos
+    async fn xyz_request(
+        &self,
+        service: &TileService,
+        tms_id: &str,
+        tile: &Tile,
+        format: &str,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &wms_fcgi::WmsMetrics,
+    ) -> Result<TileResponse, TileSourceError>;
 }
 
 impl TileSource {
-    pub fn from_config(
+    pub async fn from_config(
         cfg: &SourceParamCfg,
         sources: &TileSourceProviderConfigs,
         tms: &Tms,
@@ -102,6 +122,9 @@ impl TileSource {
                 // TODO: Emit warning
                 TileSource::Empty
             }
+            SourceParamCfg::Mbtiles(cfg) => {
+                TileSource::Mbtiles(mbtiles::MbtilesSource::from_config(cfg).await)
+            }
         }
     }
     pub fn read(&self) -> &dyn TileRead {
@@ -109,6 +132,7 @@ impl TileSource {
             #[cfg(feature = "map-server")]
             TileSource::WmsFcgi(source) => source,
             TileSource::WmsHttp(source) => source,
+            TileSource::Mbtiles(source) => source,
             TileSource::Empty => unimplemented!(),
         }
     }

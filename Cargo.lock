@@ -841,12 +841,14 @@ dependencies = [
  "futures-util",
  "indicatif",
  "log",
+ "martin-mbtiles",
  "num_cpus",
  "prometheus",
  "reqwest",
  "rusoto_core",
  "rusoto_s3",
  "serde",
+ "serde_json",
  "tempfile",
  "thiserror",
  "tile-grid",
@@ -1191,6 +1193,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "crc"
+version = "3.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86ec7a15cbe22e59248fc7eadb1907dab5ba09372595da4d73dd805ed4417dfe"
+dependencies = [
+ "crc-catalog",
+]
+
+[[package]]
+name = "crc-catalog"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cace84e55f07e7301bae1c519df89cdad8cc3cd868413d3fdbdeca9ff3db484"
+
+[[package]]
 name = "crc32fast"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1453,6 +1470,9 @@ name = "either"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "encode_unicode"
@@ -2498,6 +2518,27 @@ name = "log"
 version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "518ef76f2f87365916b142844c16d8fefd85039bc5699050210a7778ee1cd1de"
+
+[[package]]
+name = "martin-mbtiles"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02f8ee40b9c336cbee906470a4a9e2e766ee439ec4e92d9399aff96dda4e9fd0"
+dependencies = [
+ "futures",
+ "log",
+ "martin-tile-utils",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tilejson",
+]
+
+[[package]]
+name = "martin-tile-utils"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2408d9d6a5360ea66c870f619d4453b61d785879c88e0972f4bb8e6b52bc916e"
 
 [[package]]
 name = "md-5"
@@ -3646,6 +3687,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_tuple"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f025b91216f15a2a32aa39669329a475733590a015835d1783549a56d09427"
+dependencies = [
+ "serde",
+ "serde_tuple_macros",
+]
+
+[[package]]
+name = "serde_tuple_macros"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4076151d1a2b688e25aaf236997933c66e18b870d0369f8b248b8ab2be630d7e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3830,6 +3892,7 @@ dependencies = [
  "bitflags",
  "byteorder",
  "bytes 1.4.0",
+ "crc",
  "crossbeam-queue",
  "dirs",
  "dotenvy",
@@ -3879,9 +3942,13 @@ dependencies = [
  "dotenvy",
  "either",
  "heck",
+ "hex",
  "once_cell",
  "proc-macro2",
  "quote",
+ "serde",
+ "serde_json",
+ "sha2 0.10.6",
  "sqlx-core",
  "sqlx-rt",
  "syn 1.0.109",
@@ -4092,6 +4159,17 @@ dependencies = [
  "serde_repr",
  "serde_with",
  "thiserror",
+]
+
+[[package]]
+name = "tilejson"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "670fbf708942b8f2304a3355935981d04d775a82eea2f99746ce6be30d4c6a7a"
+dependencies = [
+ "serde",
+ "serde_json",
+ "serde_tuple",
 ]
 
 [[package]]

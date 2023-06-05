@@ -28,6 +28,8 @@ pub enum TileSourceProviderCfg {
     WmsFcgi,
     #[serde(rename = "wms_proxy")]
     WmsHttp(WmsHttpSourceProviderCfg),
+    #[serde(rename = "mbtiles")]
+    Mbtiles,
     // GdalData(GdalSource),
     // RasterData(GeorasterSource),
 }
@@ -67,6 +69,8 @@ pub enum SourceParamCfg {
     WmsHttp(WmsHttpSourceParamsCfg),
     #[serde(rename = "wms_project")]
     WmsFcgi(WmsFcgiSourceParamsCfg),
+    #[serde(rename = "mbtiles")]
+    Mbtiles(MbtilesSourceParamsCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -83,6 +87,11 @@ pub struct WmsFcgiSourceParamsCfg {
     pub layers: String,
     /// Additional WMS params like transparent=true
     pub params: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct MbtilesSourceParamsCfg {
+    pub path: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]

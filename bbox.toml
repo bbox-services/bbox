@@ -108,3 +108,7 @@ project = "ne_extracts"
 suffix = "qgz"
 layers = "ne_10m_lakes,ne_10m_rivers_lake_centerlines"
 params = "transparent=true"
+
+[[tileserver.tileset]]
+name = "mbtiles_mvt_fl"
+mbtiles = { path = "../data/liechtenstein.mbtiles" }

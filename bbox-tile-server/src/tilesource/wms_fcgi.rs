@@ -4,7 +4,7 @@ use crate::tilesource::{TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
-use tile_grid::BoundingBox;
+use tile_grid::{BoundingBox, Tile};
 
 #[derive(Clone, Debug)]
 pub struct WmsFcgiSource {
@@ -86,5 +86,23 @@ impl TileRead for WmsFcgiSource {
         )
         .await
         .map_err(Into::into)
+    }
+
+    async fn xyz_request(
+        &self,
+        service: &TileService,
+        tms_id: &str,
+        tile: &Tile,
+        format: &str,
+        scheme: &str,
+        host: &str,
+        req_path: &str,
+        metrics: &WmsMetrics,
+    ) -> Result<TileResponse, TileSourceError> {
+        let (extent, crs) = service.xyz_extent(tms_id, tile)?;
+        self.tile_request(
+            service, &extent, crs, format, scheme, host, req_path, metrics,
+        )
+        .await
     }
 }
