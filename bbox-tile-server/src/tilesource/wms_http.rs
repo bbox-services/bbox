@@ -4,7 +4,7 @@ use crate::tilesource::{wms_fcgi::WmsMetrics, TileRead, TileResponse, TileSource
 use async_trait::async_trait;
 use log::debug;
 use std::io::Cursor;
-use tile_grid::{BoundingBox, Tile};
+use tile_grid::{BoundingBox, Xyz};
 
 #[derive(Clone, Debug)]
 pub struct WmsHttpSource {
@@ -67,7 +67,7 @@ impl TileRead for WmsHttpSource {
         &self,
         service: &TileService,
         tms_id: &str,
-        tile: &Tile,
+        tile: &Xyz,
         _format: &str,
         _scheme: &str,
         _host: &str,

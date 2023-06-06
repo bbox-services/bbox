@@ -8,7 +8,7 @@ use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
-use tile_grid::{RegistryError, Tile, Tms};
+use tile_grid::{RegistryError, Tms, Xyz};
 
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
@@ -70,7 +70,7 @@ pub trait TileRead: Sync {
         &self,
         service: &TileService,
         tms_id: &str,
-        tile: &Tile,
+        tile: &Xyz,
         format: &str,
         scheme: &str,
         host: &str,

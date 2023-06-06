@@ -6,7 +6,7 @@ use bbox_common::config::error_exit;
 use log::info;
 use martin_mbtiles::MbtilesPool;
 use std::io::Cursor;
-use tile_grid::Tile;
+use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
 pub struct MbtilesSource {
@@ -33,7 +33,7 @@ impl TileRead for MbtilesSource {
         &self,
         _service: &TileService,
         _tms_id: &str,
-        tile: &Tile,
+        tile: &Xyz,
         _format: &str,
         _scheme: &str,
         _host: &str,

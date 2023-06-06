@@ -2,7 +2,7 @@ use crate::service::TileService;
 use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_common::service::CoreService;
-use tile_grid::Tile;
+use tile_grid::Xyz;
 
 /// XYZ endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
@@ -47,7 +47,7 @@ async fn tile_request(
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let tile = Tile::new(x, y, z);
+    let tile = Xyz::new(x, y, z);
     let gzip = req
         .headers()
         .get(header::ACCEPT_ENCODING)

@@ -9,7 +9,7 @@ use bbox_common::service::{CoreService, OgcApiService};
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
-use tile_grid::{tms, BoundingBox, RegistryError, Tile, TileMatrixSet, Tms};
+use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
 
 #[derive(Clone, Default)]
 pub struct TileService {
@@ -167,7 +167,7 @@ impl TileService {
     pub fn xyz_extent(
         &self,
         tms_id: &str,
-        tile: &Tile,
+        tile: &Xyz,
     ) -> Result<(BoundingBox, i32), TileSourceError> {
         let tms = self.grid(tms_id)?;
         let extent = tms.xy_bounds(tile);
@@ -180,7 +180,7 @@ impl TileService {
         &self,
         tileset: &str,
         tms_id: &str,
-        tile: &Tile,
+        tile: &Xyz,
         format: &str,
     ) -> Result<TileResponse, TileSourceError> {
         let metrics = WmsMetrics::new(); // TODO: get from self.map_service
@@ -205,7 +205,7 @@ impl TileService {
     pub async fn tile_cached(
         &self,
         tileset: &str,
-        tile: &Tile,
+        tile: &Xyz,
         format: &str,
         _gzip: bool,
         scheme: &str,

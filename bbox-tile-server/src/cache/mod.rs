@@ -12,7 +12,7 @@ use bbox_common::endpoints::TileResponse;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::io::Read;
 use std::path::PathBuf;
-use tile_grid::Tile;
+use tile_grid::Xyz;
 
 pub type BoxRead = Box<dyn Read + Send + Sync>;
 
@@ -39,7 +39,7 @@ clone_trait_object!(TileWriter);
 
 pub trait TileReader {
     /// Lookup tile in cache and return Read stream, if found
-    fn get_tile(&self, tile: &Tile, format: &str) -> Option<TileResponse>;
+    fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse>;
 }
 
 #[derive(Clone, Debug)]
@@ -56,7 +56,7 @@ pub enum CacheLayout {
 }
 
 impl CacheLayout {
-    pub fn path(&self, base_dir: &PathBuf, tile: &Tile, format: &str) -> PathBuf {
+    pub fn path(&self, base_dir: &PathBuf, tile: &Xyz, format: &str) -> PathBuf {
         let mut path = base_dir.clone();
         match self {
             CacheLayout::ZXY => {
@@ -69,7 +69,7 @@ impl CacheLayout {
         }
         path
     }
-    pub fn path_string(&self, base_dir: &PathBuf, tile: &Tile, format: &str) -> String {
+    pub fn path_string(&self, base_dir: &PathBuf, tile: &Xyz, format: &str) -> String {
         self.path(base_dir, tile, format)
             .into_os_string()
             .to_string_lossy()
@@ -88,7 +88,7 @@ impl TileWriter for NoCache {
 }
 
 impl TileReader for NoCache {
-    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<TileResponse> {
+    fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
         None
     }
 }

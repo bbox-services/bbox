@@ -7,7 +7,7 @@ use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
 use std::path::PathBuf;
-use tile_grid::Tile;
+use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
 pub struct FileCache {
@@ -55,7 +55,7 @@ impl TileWriter for FileCache {
 }
 
 impl TileReader for FileCache {
-    fn get_tile(&self, tile: &Tile, format: &str) -> Option<TileResponse> {
+    fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse> {
         let p = CacheLayout::ZXY.path(&self.base_dir, tile, format);
         if let Ok(f) = File::open(&p) {
             return Some(TileResponse {

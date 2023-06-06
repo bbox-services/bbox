@@ -9,7 +9,7 @@ use std::env;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
-use tile_grid::Tile;
+use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
 pub struct S3Cache {
@@ -106,7 +106,7 @@ impl S3Cache {
 }
 
 impl TileReader for S3Cache {
-    fn get_tile(&self, _tile: &Tile, _format: &str) -> Option<TileResponse> {
+    fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
         // 2nd level cache lookup is not supported
         None
     }
