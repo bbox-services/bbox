@@ -25,31 +25,25 @@ pub mod wms_fcgi {
 
 #[derive(Clone, Debug)]
 pub enum TileSource {
+    // -- raster sources --
     #[cfg(feature = "map-server")]
     WmsFcgi(wms_fcgi::WmsFcgiSource),
     WmsHttp(wms_http::WmsHttpSource),
-    Mbtiles(mbtiles::MbtilesSource),
-    #[allow(dead_code)]
-    Empty,
     // GdalData(GdalSource),
     // RasterData(GeorasterSource),
-    // VectorSource,
-    // DirectTileSource,
+    // -- vector sources --
+    // PgData(PgQueries),
+    // OgrData(OgrQueries),
+    // VectorData(GeozeroSource),
+    // OsmData(OsmSource),
+    // -- direct tile sources --
+    Mbtiles(mbtiles::MbtilesSource),
+    // Pmtiles(PmtilesSource),
+    // PgTile(PgTileQueries),
+    /// dummy source for disabled features
+    #[allow(dead_code)]
+    Empty,
 }
-
-// #[derive(Clone, Debug)]
-// pub enum VectorSource {
-//     PgData(PgQueries),
-//     OgrData(OgrQueries),
-//     VectorData(GeozeroSource),
-//     OsmData(OsmSource),
-// }
-
-// #[derive(Clone, Debug)]
-// pub enum DirectTileSource {
-//     PgTile(PgTileQueries),
-//     MbTiles(MbTilesCache),
-// }
 
 #[derive(thiserror::Error, Debug)]
 pub enum TileSourceError {
@@ -70,7 +64,7 @@ pub enum TileSourceError {
 }
 
 #[async_trait]
-pub trait TileRead {
+pub trait TileRead: Sync {
     /// Tile request with HTTP request infos
     async fn xyz_request(
         &self,

@@ -2,7 +2,6 @@ use crate::cache::{
     files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileWriter,
 };
 use crate::service::TileService;
-use crate::tilesource::{TileRead, TileSource};
 use bbox_common::config::error_exit;
 use bbox_common::service::OgcApiService;
 use clap::{Args, Parser, Subcommand};
@@ -204,11 +203,7 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         tms.xy_bbox()
     };
 
-    let TileSource::WmsHttp(wms) = source
-    else {
-        anyhow::bail!("WMS proxy source expected")
-    };
-    info!("Tile source {}", wms.req_url);
+    info!("Tile source {source:?}");
     let file_dir = args
         .base_dir
         .as_ref()
@@ -246,14 +241,15 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         let path = CacheLayout::ZXY.path_string(&PathBuf::new(), &tile, "png");
         progress.set_message(path.clone());
         progress.inc(1);
+        // TODO: we should not clone for each tile, only for a pool of tasks
         let service = service.clone();
-        let wms = wms.clone();
+        let tileset = args.tileset.clone();
         let file_writer = file_writer.clone();
         let tx = tx.clone();
         tasks.push(task::spawn(async move {
-            // TODO: let tile = source.read().read_tile(&service, ...).await.unwrap();
-            // ERROR: source.read() has type `&dyn TileRead` which is not `Send`
-            let tile = wms
+            let source = service.source(&tileset).expect("tileset source lookup");
+            let tile = source
+                .read()
                 .read_tile(&service, "WebMercatorQuad", &tile, "png")
                 .await
                 .unwrap();
