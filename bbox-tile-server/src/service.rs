@@ -175,6 +175,32 @@ impl TileService {
         let crs = tms.crs().as_srid();
         Ok((extent, crs))
     }
+    /// Tile request
+    pub async fn read_tile(
+        &self,
+        tileset: &str,
+        tms_id: &str,
+        tile: &Tile,
+        format: &str,
+    ) -> Result<TileResponse, TileSourceError> {
+        let metrics = WmsMetrics::new(); // TODO: get from self.map_service
+        let source = self
+            .source(tileset)
+            .ok_or(TileSourceError::TileSourceNotFound(tileset.to_string()))?;
+        source
+            .read()
+            .xyz_request(
+                self,
+                tms_id,
+                tile,
+                format,
+                "http",
+                "localhost",
+                "/",
+                &metrics,
+            )
+            .await
+    }
     /// Get tile with cache lookup
     pub async fn tile_cached(
         &self,

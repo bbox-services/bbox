@@ -65,7 +65,7 @@ pub enum TileSourceError {
 
 #[async_trait]
 pub trait TileRead: Sync {
-    /// Tile request with HTTP request infos
+    /// Request tile from source
     async fn xyz_request(
         &self,
         service: &TileService,
@@ -77,27 +77,6 @@ pub trait TileRead: Sync {
         req_path: &str,
         metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
-    /// Tile request
-    async fn read_tile(
-        &self,
-        service: &TileService,
-        tms_id: &str,
-        tile: &Tile,
-        format: &str,
-    ) -> Result<TileResponse, TileSourceError> {
-        let metrics = wms_fcgi::WmsMetrics::new();
-        self.xyz_request(
-            service,
-            tms_id,
-            tile,
-            format,
-            "http",
-            "localhost",
-            "/",
-            &metrics,
-        )
-        .await
-    }
 }
 
 impl TileSource {

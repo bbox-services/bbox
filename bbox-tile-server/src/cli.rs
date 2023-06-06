@@ -247,10 +247,8 @@ async fn seed_by_grid(args: &SeedArgs) -> anyhow::Result<()> {
         let file_writer = file_writer.clone();
         let tx = tx.clone();
         tasks.push(task::spawn(async move {
-            let source = service.source(&tileset).expect("tileset source lookup");
-            let tile = source
-                .read()
-                .read_tile(&service, "WebMercatorQuad", &tile, "png")
+            let tile = service
+                .read_tile(&tileset, "WebMercatorQuad", &tile, "png")
                 .await
                 .unwrap();
             let input: BoxRead = Box::new(tile.body);
