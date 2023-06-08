@@ -1,5 +1,6 @@
 use crate::qwc2_config::*;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
+use bbox_common::endpoints::abs_req_baseurl;
 use bbox_common::static_files::EmbedFile;
 use bbox_common::templates::create_env_embedded;
 use bbox_map_server::inventory::{Inventory, WmsService};
@@ -63,16 +64,11 @@ fn map_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
     )?)
 }
 
-fn req_baseurl(req: &HttpRequest) -> String {
-    let conninfo = req.connection_info();
-    format!("{}://{}", conninfo.scheme(), conninfo.host())
-}
-
 async fn map_themes(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let json = themes_json(&inventory.wms_services, req_baseurl(&req), None).await;
+    let json = themes_json(&inventory.wms_services, abs_req_baseurl(&req), None).await;
     Ok(HttpResponse::Ok().json(json))
 }
 
@@ -82,7 +78,7 @@ async fn map_theme(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     // let wms_service = inventory.wms_services.iter().find(|wms| wms.id == *id).unwrap().clone();
-    let json = themes_json(&inventory.wms_services, req_baseurl(&req), Some(&*id)).await;
+    let json = themes_json(&inventory.wms_services, abs_req_baseurl(&req), Some(&*id)).await;
     Ok(HttpResponse::Ok().json(json))
 }
 

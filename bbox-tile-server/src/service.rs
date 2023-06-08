@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
+use tilejson::TileJSON;
 
 #[derive(Clone, Default)]
 pub struct TileService {
@@ -257,5 +258,21 @@ impl TileService {
         } else {
             Ok(Some(tiledata))
         }
+    }
+    /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
+    pub async fn tilejson(&self, tileset: &str, base_url: &str) -> Result<TileJSON, ServiceError> {
+        let ts = self
+            .tileset(tileset)
+            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        let mut tilejson = ts.source.read().tilejson().await?;
+        let format = tilejson
+            .other
+            .get("format")
+            .map(|v| v.as_str().unwrap_or("pbf"))
+            .unwrap_or("pbf");
+        tilejson
+            .tiles
+            .push(format!("{base_url}/{tileset}/{{z}}/{{x}}/{{y}}.{format}"));
+        Ok(tilejson)
     }
 }

@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
 use tile_grid::{BoundingBox, Xyz};
+use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
 pub struct WmsFcgiSource {
@@ -83,5 +84,10 @@ impl TileRead for WmsFcgiSource {
             service, &extent, crs, format, scheme, host, req_path, metrics,
         )
         .await
+    }
+    async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
+        let mut tj = tilejson! { tiles: vec![] };
+        tj.other.insert("format".to_string(), "png".into());
+        Ok(tj)
     }
 }

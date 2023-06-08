@@ -7,6 +7,7 @@ use log::info;
 use martin_mbtiles::MbtilesPool;
 use std::io::Cursor;
 use tile_grid::Xyz;
+use tilejson::TileJSON;
 
 #[derive(Clone, Debug)]
 pub struct MbtilesSource {
@@ -15,14 +16,11 @@ pub struct MbtilesSource {
 
 impl MbtilesSource {
     pub async fn from_config(cfg: &MbtilesSourceParamsCfg) -> Self {
+        info!("Creating connection pool for {}", &cfg.path.display());
         let mbt = MbtilesPool::new(cfg.path.clone())
             .await
             .unwrap_or_else(error_exit);
         //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
-        if let Ok(meta) = mbt.get_metadata().await {
-            let tilejson = serde_json::to_string_pretty(&meta.tilejson).unwrap();
-            info!("{tilejson}");
-        }
         MbtilesSource { mbt }
     }
 }
@@ -55,5 +53,9 @@ impl TileRead for MbtilesSource {
         } else {
             Err(TileSourceError::TileXyzError) // TODO: check for empty tile?
         }
+    }
+    async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
+        let metadata = self.mbt.get_metadata().await?;
+        Ok(metadata.tilejson)
     }
 }

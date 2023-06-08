@@ -50,11 +50,16 @@ XYZ URL (Leaflet, QGIS, etc.):
 
     http://localhost:8080/xyz/ne_extracts/{z}/{x}/{y}.png
 
+Tilejson requests:
+
+    curl http://localhost:8080/xyz/mbtiles_mvt_fl.json
+
 Map viewer examples:
 
     x-www-browser http://127.0.0.1:8080/data/usergrid.html?debug=1
 
     x-www-browser http://localhost:8080/data/maplibre.html
+
 
 Relase Build:
 
@@ -106,6 +111,17 @@ Access MinIO Console: http://localhost:9001
 Stop MinIO:
 
     docker stop minio
+
+
+### Using Maputnik for MVT styling
+
+* Download latest public.zip from https://github.com/maputnik/editor/releases
+* Unpack into ../data/ and rename public to maputnik
+
+Open example:
+
+    http://localhost:8080/data/maputnik/index.html?style=http://localhost:8080/data/maplibre-style.json
+    http://localhost:8080/data/maputnik/index.html#11.0/47.0944/9.5076
 
 
 ### S3 upload benchmarks

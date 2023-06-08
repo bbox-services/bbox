@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::io::Read;
 use std::iter::FromIterator;
+use std::path::Path;
 
 /// Tile reader response
 pub struct TileResponse {
@@ -57,6 +58,23 @@ impl Guard for JsonContentGuard {
             true
         }
     }
+}
+
+/// Absolute request base URL e.g. `http://localhost:8080`
+pub fn abs_req_baseurl(req: &HttpRequest) -> String {
+    let conninfo = req.connection_info();
+    format!("{}://{}", conninfo.scheme(), conninfo.host())
+}
+
+/// Request parent URL
+/// `/xzy/tileset.json` -> `/xyz`
+pub fn req_parent_url(req: &HttpRequest) -> String {
+    Path::new(req.path())
+        .parent()
+        .expect("invalid req.path")
+        .to_str()
+        .expect("invalid req.path")
+        .to_string()
 }
 
 pub fn relurl(req: &HttpRequest, path: &str) -> String {

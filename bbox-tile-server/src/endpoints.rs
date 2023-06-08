@@ -1,7 +1,9 @@
 use crate::service::TileService;
 use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
+use bbox_common::endpoints::{abs_req_baseurl, req_parent_url};
 use bbox_common::service::CoreService;
+
 use tile_grid::Xyz;
 
 /// XYZ endpoint
@@ -14,6 +16,21 @@ async fn xyz(
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y, format) = params.into_inner();
     tile_request(service, &tileset, x, y, z, &format, metrics, req).await
+}
+
+/// XYZ tilejson endpoint
+// xyz/{tileset}.json
+async fn tilejson(
+    service: web::Data<TileService>,
+    tileset: web::Path<String>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let absurl = format!("{}{}", abs_req_baseurl(&req), req_parent_url(&req));
+    if let Ok(tilejson) = service.tilejson(&tileset, &absurl).await {
+        HttpResponse::Ok().json(tilejson)
+    } else {
+        HttpResponse::InternalServerError().finish()
+    }
 }
 
 /// Map tile endpoint
@@ -103,6 +120,7 @@ impl TileService {
                         .to(xyz),
                 ),
             )
+            .service(web::resource("/xyz/{tileset}.json").route(web::get().to(tilejson)))
             .service(
                 web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
                     .route(web::get().to(map_tile)),

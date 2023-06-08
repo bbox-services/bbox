@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
 use tile_grid::{RegistryError, Tms, Xyz};
+use tilejson::TileJSON;
 
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
@@ -77,6 +78,8 @@ pub trait TileRead: Sync {
         req_path: &str,
         metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
+    /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
+    async fn tilejson(&self) -> Result<TileJSON, TileSourceError>;
 }
 
 impl TileSource {

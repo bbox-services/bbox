@@ -3,10 +3,10 @@
   "name": "OSM OpenMapTiles",
   "id": "openmaptiles",
   "center": [
-    0,
-    0
+    9.5076,
+    47.0944
   ],
-  "zoom": 1,
+  "zoom": 11,
   "bearing": 0,
   "pitch": 0,
   "glyphs": "style/fonts/{fontstack}/{range}.pbf",
@@ -14,7 +14,7 @@
   "sources": {
     "openmaptiles": {
       "type": "vector",
-      "url": "http://localhost:8080/data/maplibre-tiles.json"
+      "url": "http://localhost:8080/xyz/mbtiles_mvt_fl.json"
     },
     "attribution": {
       "attribution": "<a href=\"https://www.openmaptiles.org/\" target=\"_blank\">&copy; OpenMapTiles</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",

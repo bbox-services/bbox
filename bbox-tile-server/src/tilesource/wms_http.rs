@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use log::debug;
 use std::io::Cursor;
 use tile_grid::{BoundingBox, Xyz};
+use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
 pub struct WmsHttpSource {
@@ -76,5 +77,10 @@ impl TileRead for WmsHttpSource {
     ) -> Result<TileResponse, TileSourceError> {
         let (extent, _crs) = service.xyz_extent(tms_id, tile)?;
         self.bbox_request(&extent).await
+    }
+    async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
+        let mut tj = tilejson! { tiles: vec![] };
+        tj.other.insert("format".to_string(), "png".into());
+        Ok(tj)
     }
 }
