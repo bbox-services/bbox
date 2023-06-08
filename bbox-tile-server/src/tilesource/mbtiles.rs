@@ -1,6 +1,8 @@
 use crate::config::*;
 use crate::service::TileService;
-use crate::tilesource::{wms_fcgi::WmsMetrics, TileRead, TileResponse, TileSourceError};
+use crate::tilesource::{
+    wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+};
 use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use log::info;
@@ -54,8 +56,25 @@ impl TileRead for MbtilesSource {
             Err(TileSourceError::TileXyzError) // TODO: check for empty tile?
         }
     }
+    fn source_type(&self) -> SourceType {
+        SourceType::Vector // TODO: Support Mbtiles raster
+    }
     async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
         let metadata = self.mbt.get_metadata().await?;
         Ok(metadata.tilejson)
+    }
+    async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {
+        let metadata = self.mbt.get_metadata().await?;
+        let layers = metadata
+            .tilejson
+            .vector_layers
+            .unwrap_or(Vec::new())
+            .iter()
+            .map(|l| LayerInfo {
+                name: l.id.clone(),
+                geometry_type: None,
+            })
+            .collect();
+        Ok(layers)
     }
 }

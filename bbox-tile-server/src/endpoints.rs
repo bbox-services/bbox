@@ -1,7 +1,7 @@
 use crate::service::TileService;
 use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
-use bbox_common::endpoints::{abs_req_baseurl, req_parent_url};
+use bbox_common::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_common::service::CoreService;
 
 use tile_grid::Xyz;
@@ -25,9 +25,25 @@ async fn tilejson(
     tileset: web::Path<String>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let absurl = format!("{}{}", abs_req_baseurl(&req), req_parent_url(&req));
+    let absurl = format!("{}{}", abs_req_baseurl(&req), req_parent_path(&req));
     if let Ok(tilejson) = service.tilejson(&tileset, &absurl).await {
         HttpResponse::Ok().json(tilejson)
+    } else {
+        HttpResponse::InternalServerError().finish()
+    }
+}
+
+/// XYZ style json endpoint
+// xyz/{tileset}.style.json
+async fn stylejson(
+    service: web::Data<TileService>,
+    tileset: web::Path<String>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let base_url = abs_req_baseurl(&req);
+    let base_path = req_parent_path(&req);
+    if let Ok(stylejson) = service.stylejson(&tileset, &base_url, &base_path).await {
+        HttpResponse::Ok().json(stylejson)
     } else {
         HttpResponse::InternalServerError().finish()
     }
@@ -120,6 +136,7 @@ impl TileService {
                         .to(xyz),
                 ),
             )
+            .service(web::resource("/xyz/{tileset}.style.json").route(web::get().to(stylejson)))
             .service(web::resource("/xyz/{tileset}.json").route(web::get().to(tilejson)))
             .service(
                 web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")

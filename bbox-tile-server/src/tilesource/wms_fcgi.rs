@@ -1,6 +1,6 @@
 use crate::config::WmsFcgiSourceParamsCfg;
 use crate::service::TileService;
-use crate::tilesource::{TileRead, TileResponse, TileSourceError};
+use crate::tilesource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
@@ -85,9 +85,18 @@ impl TileRead for WmsFcgiSource {
         )
         .await
     }
+    fn source_type(&self) -> SourceType {
+        SourceType::Raster
+    }
     async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.other.insert("format".to_string(), "png".into());
         Ok(tj)
+    }
+    async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {
+        Ok(vec![LayerInfo {
+            name: self.project.clone(), // TODO: unique name in tileset
+            geometry_type: None,
+        }])
     }
 }

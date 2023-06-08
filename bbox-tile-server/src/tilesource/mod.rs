@@ -64,6 +64,17 @@ pub enum TileSourceError {
     MbtilesError(#[from] martin_mbtiles::MbtError),
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub enum SourceType {
+    Vector,
+    Raster,
+}
+
+pub struct LayerInfo {
+    pub name: String,
+    pub geometry_type: Option<String>,
+}
+
 #[async_trait]
 pub trait TileRead: Sync {
     /// Request tile from source
@@ -78,8 +89,12 @@ pub trait TileRead: Sync {
         req_path: &str,
         metrics: &wms_fcgi::WmsMetrics,
     ) -> Result<TileResponse, TileSourceError>;
+    /// Type information
+    fn source_type(&self) -> SourceType;
     /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
     async fn tilejson(&self) -> Result<TileJSON, TileSourceError>;
+    /// Layer metadata
+    async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError>;
 }
 
 impl TileSource {

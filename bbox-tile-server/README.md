@@ -44,7 +44,7 @@ OGC API entry points:
 
     curl -H 'Accept: application/json' http://localhost:8080/ | jq .
 
-    curl http://localhost:8080/openapi.json | jq .
+    curl -s http://localhost:8080/openapi.json | jq .
 
 XYZ URL (Leaflet, QGIS, etc.):
 
@@ -52,7 +52,13 @@ XYZ URL (Leaflet, QGIS, etc.):
 
 Tilejson requests:
 
-    curl http://localhost:8080/xyz/mbtiles_mvt_fl.json
+    curl -s http://localhost:8080/xyz/mbtiles_mvt_fl.json | jq .
+
+Style JSON requests:
+
+    curl -s http://localhost:8080/xyz/mbtiles_mvt_fl.style.json | jq .
+
+    curl -s http://localhost:8080/xyz/ne_extracts.style.json | jq .
 
 Map viewer examples:
 
@@ -122,6 +128,8 @@ Open example:
 
     http://localhost:8080/data/maputnik/index.html?style=http://localhost:8080/data/maplibre-style.json
     http://localhost:8080/data/maputnik/index.html#11.0/47.0944/9.5076
+
+    http://localhost:8080/data/maputnik/index.html?style=http://localhost:8080/xyz/mbtiles_mvt_fl.style.json
 
 
 ### S3 upload benchmarks

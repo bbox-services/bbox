@@ -66,9 +66,9 @@ pub fn abs_req_baseurl(req: &HttpRequest) -> String {
     format!("{}://{}", conninfo.scheme(), conninfo.host())
 }
 
-/// Request parent URL
+/// Request parent path
 /// `/xzy/tileset.json` -> `/xyz`
-pub fn req_parent_url(req: &HttpRequest) -> String {
+pub fn req_parent_path(req: &HttpRequest) -> String {
     Path::new(req.path())
         .parent()
         .expect("invalid req.path")

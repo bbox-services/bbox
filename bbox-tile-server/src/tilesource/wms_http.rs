@@ -1,6 +1,8 @@
 use crate::config::*;
 use crate::service::TileService;
-use crate::tilesource::{wms_fcgi::WmsMetrics, TileRead, TileResponse, TileSourceError};
+use crate::tilesource::{
+    wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+};
 use async_trait::async_trait;
 use log::debug;
 use std::io::Cursor;
@@ -78,9 +80,18 @@ impl TileRead for WmsHttpSource {
         let (extent, _crs) = service.xyz_extent(tms_id, tile)?;
         self.bbox_request(&extent).await
     }
+    fn source_type(&self) -> SourceType {
+        SourceType::Raster
+    }
     async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.other.insert("format".to_string(), "png".into());
         Ok(tj)
+    }
+    async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {
+        Ok(vec![LayerInfo {
+            name: "WmsHttpSource".to_string(), // TODO: unique name in tileset
+            geometry_type: None,
+        }])
     }
 }

@@ -4,7 +4,7 @@ use crate::service::{FileService, PluginIndex};
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, Result};
 use bbox_common::app_dir;
-use bbox_common::endpoints::{abs_req_baseurl, req_parent_url};
+use bbox_common::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_common::service::CoreService;
 use log::{info, warn};
 use std::io::Write;
@@ -13,7 +13,7 @@ use tempfile::tempfile;
 
 async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> Result<NamedFile> {
     // http://localhost:8080/qgis/plugins.xml -> http://localhost:8080/plugins/qgis/
-    let url = format!("{}/plugins{}", abs_req_baseurl(&req), req_parent_url(&req));
+    let url = format!("{}/plugins{}", abs_req_baseurl(&req), req_parent_path(&req));
     let zips = plugins_index
         .get(req.path())
         .expect("zip file list missing");
