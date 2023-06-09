@@ -7,12 +7,15 @@ use actix_web::web;
 use async_trait::async_trait;
 use bbox_common::service::{CoreService, OgcApiService};
 use prometheus::Registry;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct MapService {
-    // FcgiClientData is not Clone, so we have to wrap in web::Data already here
-    pub fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
-    pub inventory: Inventory,
+    // Dispatcher is not Clone, so we wrap as web::Data already here
+    pub(crate) fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
+    /// client index for each suffix
+    suffix_fcgi: HashMap<String, usize>,
+    pub(crate) inventory: Inventory,
 }
 
 async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
@@ -21,6 +24,12 @@ async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
         .iter()
         .map(|process_pool| web::Data::new(process_pool.client_dispatcher(&config)))
         .collect::<Vec<_>>();
+    let mut suffix_fcgi = HashMap::new();
+    for (poolno, fcgi_pool) in process_pools.iter().enumerate() {
+        for suffix_url in &fcgi_pool.suffixes {
+            suffix_fcgi.insert(suffix_url.suffix.clone(), poolno);
+        }
+    }
 
     for mut process_pool in process_pools {
         if process_pool.spawn_processes().await.is_ok() {
@@ -32,6 +41,7 @@ async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
 
     MapService {
         fcgi_clients,
+        suffix_fcgi,
         inventory,
     }
 }
@@ -100,5 +110,13 @@ impl OgcApiService for MapService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+}
+
+impl MapService {
+    pub fn fcgi_dispatcher(&self, suffix: &str) -> Option<&FcgiDispatcher> {
+        self.suffix_fcgi
+            .get(suffix)
+            .map(|no| self.fcgi_clients[*no].get_ref())
     }
 }

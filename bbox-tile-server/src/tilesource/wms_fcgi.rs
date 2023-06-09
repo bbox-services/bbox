@@ -10,22 +10,28 @@ use tilejson::{tilejson, TileJSON};
 #[derive(Clone, Debug)]
 pub struct WmsFcgiSource {
     pub project: String,
+    pub suffix: String,
     pub query: String,
 }
 
 impl WmsFcgiSource {
     pub fn from_config(cfg: &WmsFcgiSourceParamsCfg) -> Self {
         let project = cfg.project.clone();
+        let suffix = cfg.suffix.clone();
         let query = format!(
             "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&{}",
-            &cfg.project,
-            &cfg.suffix,
+            &project,
+            &suffix,
             256, //grid.width,
             256, //grid.height,
             cfg.layers,
             cfg.params.as_ref().unwrap_or(&"".to_string()),
         );
-        WmsFcgiSource { project, query }
+        WmsFcgiSource {
+            project,
+            suffix,
+            query,
+        }
     }
 
     pub fn get_map_request(&self, crs: i32, extent: &BoundingBox, format: &str) -> String {
@@ -46,7 +52,12 @@ impl WmsFcgiSource {
         req_path: &str,
         metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
-        let fcgi_dispatcher = &service.map_service.as_ref().unwrap().fcgi_clients[0];
+        let fcgi_dispatcher = service
+            .map_service
+            .as_ref()
+            .expect("map_service")
+            .fcgi_dispatcher(&self.suffix)
+            .ok_or(TileSourceError::SuffixNotFound(self.suffix.clone()))?;
         let fcgi_query = self.get_map_request(crs, &extent, format);
         let project = &self.project;
         let body = "".to_string();

@@ -58,6 +58,8 @@ pub enum TileSourceError {
     RegistryError(#[from] RegistryError),
     #[error(transparent)]
     FcgiError(#[from] wms_fcgi::FcgiError),
+    #[error("FCGI for suffix `{0}` not found")]
+    SuffixNotFound(String),
     #[error(transparent)]
     WmsHttpError(#[from] reqwest::Error),
     #[error(transparent)]

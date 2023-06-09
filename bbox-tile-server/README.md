@@ -32,6 +32,8 @@ Tile requests:
 
     curl -o /tmp/tile.png http://localhost:8080/xyz/ne_extracts/2/2/2.png
 
+    curl -o /tmp/tile.png http://localhost:8080/xyz/ne_umn/2/2/2.png
+
     curl -o /tmp/tile.jpg http://localhost:8080/xyz/gebco/0/0/0.jpeg
 
     curl -o /tmp/tile.mvt http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt

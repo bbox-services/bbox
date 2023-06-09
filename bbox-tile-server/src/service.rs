@@ -142,7 +142,7 @@ impl OgcApiService for TileService {
             // GeoJSON
             // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geojson".to_string(),
             // Mapbox Vector Tiles
-            // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
+            "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt".to_string(),
         ]
     }
     fn openapi_yaml(&self) -> Option<&str> {

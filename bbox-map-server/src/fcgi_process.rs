@@ -109,7 +109,7 @@ pub struct FcgiProcessPool {
     base_dir: Option<PathBuf>,
     envs: Vec<(String, String)>,
     backend_name: String,
-    suffixes: Vec<FcgiSuffixUrl>,
+    pub(crate) suffixes: Vec<FcgiSuffixUrl>,
     num_processes: usize,
     processes: Vec<FcgiProcess>,
 }
