@@ -2,30 +2,33 @@ use crate::config::RoutingServerCfg;
 use crate::engine::Router;
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::cli::{NoArgs, NoCommands};
 use bbox_common::config::config_error_exit;
 use bbox_common::ogcapi::ApiLink;
 use bbox_common::service::{CoreService, OgcApiService};
-use futures::executor;
+use clap::ArgMatches;
 use log::warn;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct RoutingService {
     pub router: Option<Router>,
 }
 
 #[async_trait]
 impl OgcApiService for RoutingService {
-    async fn from_config() -> Self {
+    type CliCommands = NoCommands;
+    type CliArgs = NoArgs;
+
+    async fn read_config(&mut self, _cli: &ArgMatches) {
         let Some(config) = RoutingServerCfg::from_config() else {
             warn!("No routing config available");
-            return RoutingService { router: None };
-    };
-        let router = match config.service.len() {
+            self.router = None;
+            return;
+        };
+        self.router = match config.service.len() {
             1 => {
                 let service = &config.service[0];
-                Some(executor::block_on(async {
-                    Router::from_config(&service).await.unwrap()
-                }))
+                Some(Router::from_config(&service).await.unwrap())
             }
             0 => {
                 warn!("No routing config available");
@@ -38,7 +41,6 @@ impl OgcApiService for RoutingService {
                 None
             }
         };
-        RoutingService { router }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![

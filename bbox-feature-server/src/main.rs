@@ -7,8 +7,8 @@ mod inventory;
 mod service;
 
 use crate::service::FeatureService;
-use bbox_common::service::webserver;
+use bbox_common::service::run_service;
 
 fn main() {
-    webserver::<FeatureService>().unwrap();
+    run_service::<FeatureService>().unwrap();
 }

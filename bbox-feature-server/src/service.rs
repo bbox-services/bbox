@@ -2,20 +2,23 @@ use crate::config::DatasourceCfg;
 use crate::inventory::Inventory;
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::cli::{NoArgs, NoCommands};
 use bbox_common::ogcapi::{ApiLink, CoreCollection};
 use bbox_common::service::{CoreService, OgcApiService};
+use clap::ArgMatches;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct FeatureService {
     pub inventory: Inventory,
 }
-
 #[async_trait]
 impl OgcApiService for FeatureService {
-    async fn from_config() -> Self {
+    type CliCommands = NoCommands;
+    type CliArgs = NoArgs;
+
+    async fn read_config(&mut self, _cli: &ArgMatches) {
         let config = DatasourceCfg::from_config();
-        let inventory = Inventory::scan(&config).await;
-        FeatureService { inventory }
+        self.inventory = Inventory::scan(&config).await;
     }
     fn conformance_classes(&self) -> Vec<String> {
         let mut classes = vec![

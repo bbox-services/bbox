@@ -4,8 +4,8 @@ mod qgis_plugins;
 mod service;
 
 use crate::service::FileService;
-use bbox_common::service::webserver;
+use bbox_common::service::run_service;
 
 fn main() {
-    webserver::<FileService>().unwrap();
+    run_service::<FileService>().unwrap();
 }

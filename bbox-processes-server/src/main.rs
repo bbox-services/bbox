@@ -6,8 +6,8 @@ mod models;
 mod service;
 
 use crate::service::ProcessesService;
-use bbox_common::service::webserver;
+use bbox_common::service::run_service;
 
 fn main() {
-    webserver::<ProcessesService>().unwrap();
+    run_service::<ProcessesService>().unwrap();
 }

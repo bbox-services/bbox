@@ -11,6 +11,7 @@ html = ["bbox-common/html"]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
 bbox-common = { path = "../bbox-common" }
+clap = { workspace = true }
 futures = { workspace = true }
 geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 log = { workspace = true }

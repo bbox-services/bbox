@@ -1,20 +1,10 @@
 use crate::ogcapi::*;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct OgcApiInventory {
     pub landing_page_links: Vec<ApiLink>,
     pub conformance_classes: Vec<String>,
     pub collections: Vec<CoreCollection>,
-}
-
-impl OgcApiInventory {
-    pub fn new() -> Self {
-        OgcApiInventory {
-            landing_page_links: Vec::new(),
-            conformance_classes: Vec::new(),
-            collections: Vec::new(),
-        }
-    }
 }
 
 /// OpenAPi doc collection

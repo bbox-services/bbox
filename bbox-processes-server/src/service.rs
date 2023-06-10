@@ -2,24 +2,28 @@ use crate::config::ProcessesServerCfg;
 use crate::dagster::DagsterBackend;
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::cli::{NoArgs, NoCommands};
 use bbox_common::ogcapi::ApiLink;
 use bbox_common::service::{CoreService, OgcApiService};
+use clap::ArgMatches;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ProcessesService {
     pub backend: Option<DagsterBackend>,
 }
 
 #[async_trait]
 impl OgcApiService for ProcessesService {
-    async fn from_config() -> Self {
+    type CliCommands = NoCommands;
+    type CliArgs = NoArgs;
+
+    async fn read_config(&mut self, _cli: &ArgMatches) {
         let config = ProcessesServerCfg::from_config();
         // if !config.has_backend() {
         //     info!("Missing processing backend configuration - skipping endpoints");
         //     return;
         // }
-        let backend = config.dagster_backend.map(|_cfg| DagsterBackend::new());
-        ProcessesService { backend }
+        self.backend = config.dagster_backend.map(|_cfg| DagsterBackend::new());
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![

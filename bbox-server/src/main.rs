@@ -5,71 +5,90 @@ use crate::service::BboxService;
 use actix_web::middleware::Condition;
 use actix_web::{middleware, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
-use clap::Parser;
-use std::env;
 
-#[derive(Parser, Debug)]
-pub struct Cli {
-    /// Load from custom config file
-    #[clap(short, long, value_parser)]
-    config: Option<String>,
-}
+#[cfg(feature = "feature-server")]
+use bbox_feature_server::FeatureService;
+#[cfg(feature = "file-server")]
+use bbox_file_server::FileService;
+#[cfg(feature = "map-server")]
+use bbox_map_server::MapService;
+#[cfg(feature = "processes-server")]
+use bbox_processes_server::ProcessesService;
+#[cfg(feature = "routing-server")]
+use bbox_routing_server::RoutingService;
+#[cfg(feature = "tile-server")]
+use bbox_tile_server::TileService;
 
-/* t-rex serve:
-OPTIONS:
-    --bind <IPADDRESS>                          Bind web server to this address (0.0.0.0 for all)
-    --cache <DIR>                               Use tile cache in DIR
-    --clip <true|false>                         Clip geometries
--c, --config <FILE>                             Load from custom config file
-    --datasource <FILE_OR_GDAL_DS>              GDAL datasource specification
-    --dbconn <SPEC>                             PostGIS connection postgresql://USER@HOST/DBNAME
-    --detect-geometry-types <true|false>        Detect geometry types when undefined
-    --loglevel <error|warn|info|debug|trace>    Log level (Default: info)
-    --no-transform <true|false>                 Do not transform to grid SRS
-    --openbrowser <true|false>                  Open backend URL in browser
-    --port <PORT>                               Bind web server to this port
-    --qgs <FILE>                                QGIS project file
-    --simplify <true|false>                     Simplify geometries
-*/
+#[cfg(not(feature = "map-server"))]
+use bbox_common::service::DummyService as MapService;
+#[cfg(not(feature = "tile-server"))]
+use bbox_common::service::DummyService as TileService;
+#[cfg(not(feature = "file-server"))]
+use bbox_common::service::DummyService as FileService;
+#[cfg(not(feature = "feature-server"))]
+use bbox_common::service::DummyService as FeatureService;
+#[cfg(not(feature = "processes-server"))]
+use bbox_common::service::DummyService as ProcessesService;
+#[cfg(not(feature = "routing-server"))]
+use bbox_common::service::DummyService as RoutingService;
 
 #[actix_web::main]
-async fn webserver() -> std::io::Result<()> {
-    let mut core = CoreService::from_config().await;
+async fn run_service() -> std::io::Result<()> {
+    let mut core = CoreService::new();
 
-    let bbox_service = BboxService::from_config().await;
-    core.add_service(&bbox_service);
-
-    #[cfg(feature = "map-server")]
-    let map_service = bbox_map_server::MapService::from_config().await;
-    #[cfg(feature = "map-server")]
+    let mut map_service = MapService::default();
     core.add_service(&map_service);
 
-    #[cfg(feature = "tile-server")]
-    let mut tile_service = bbox_tile_server::TileService::from_config().await;
-    #[cfg(all(feature = "tile-server", feature = "map-server"))]
-    tile_service.set_map_service(&map_service);
-    #[cfg(feature = "tile-server")]
+    let mut tile_service = TileService::default();
     core.add_service(&tile_service);
 
-    #[cfg(feature = "file-server")]
-    let file_service = bbox_file_server::FileService::from_config().await;
-    #[cfg(feature = "file-server")]
+    let mut file_service = FileService::default();
     core.add_service(&file_service);
 
-    #[cfg(feature = "feature-server")]
-    let feature_service = bbox_feature_server::FeatureService::from_config().await;
-    #[cfg(feature = "feature-server")]
+    let mut feature_service = FeatureService::default();
     core.add_service(&feature_service);
 
-    #[cfg(feature = "processes-server")]
-    let processes_service = bbox_processes_server::ProcessesService::from_config().await;
-    #[cfg(feature = "processes-server")]
+    let mut processes_service = ProcessesService::default();
     core.add_service(&processes_service);
 
-    #[cfg(feature = "routing-server")]
-    let routing_service = bbox_routing_server::RoutingService::from_config().await;
-    #[cfg(feature = "routing-server")]
+    let mut routing_service = RoutingService::default();
     core.add_service(&routing_service);
+
+    let mut bbox_service = BboxService::default();
+    core.add_service(&bbox_service);
+
+    let matches = core.cli_matches();
+
+    core.read_config(&matches).await;
+    map_service.read_config(&matches).await;
+    tile_service.read_config(&matches).await;
+    file_service.read_config(&matches).await;
+    feature_service.read_config(&matches).await;
+    processes_service.read_config(&matches).await;
+    routing_service.read_config(&matches).await;
+    bbox_service.read_config(&matches).await;
+
+    #[cfg(all(feature = "tile-server", feature = "map-server"))]
+    tile_service.set_map_service(&map_service);
+
+    if map_service.cli_run(&matches).await {
+        return Ok(());
+    }
+    if tile_service.cli_run(&matches).await {
+        return Ok(());
+    }
+    if file_service.cli_run(&matches).await {
+        return Ok(());
+    }
+    if feature_service.cli_run(&matches).await {
+        return Ok(());
+    }
+    if processes_service.cli_run(&matches).await {
+        return Ok(());
+    }
+    if routing_service.cli_run(&matches).await {
+        return Ok(());
+    }
 
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
@@ -81,41 +100,17 @@ async fn webserver() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
             .configure(bbox_common::static_assets::register_endpoints)
+            .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| feature_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| processes_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| routing_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| bbox_service.register_endpoints(&mut cfg, &core));
-
-        #[cfg(feature = "map-server")]
-        {
-            app = app.configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core));
-        }
-
-        #[cfg(feature = "tile-server")]
-        {
-            app = app.configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core));
-        }
-
-        #[cfg(feature = "feature-server")]
-        {
-            app = app.configure(|mut cfg| feature_service.register_endpoints(&mut cfg, &core));
-        }
 
         #[cfg(feature = "map-viewer")]
         {
             app = app.configure(bbox_map_viewer::endpoints::register);
-        }
-
-        #[cfg(feature = "file-server")]
-        {
-            app = app.configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core));
-        }
-
-        #[cfg(feature = "processes-server")]
-        {
-            app = app.configure(|mut cfg| processes_service.register_endpoints(&mut cfg, &core));
-        }
-
-        #[cfg(feature = "routing-server")]
-        {
-            app = app.configure(|mut cfg| routing_service.register_endpoints(&mut cfg, &core));
         }
 
         app
@@ -127,10 +122,5 @@ async fn webserver() -> std::io::Result<()> {
 }
 
 fn main() {
-    let args = Cli::parse();
-    if let Some(config) = args.config {
-        env::set_var("BBOX_CONFIG", &config);
-    }
-    bbox_common::logger::init();
-    webserver().unwrap();
+    run_service().unwrap();
 }

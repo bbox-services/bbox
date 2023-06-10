@@ -10,6 +10,7 @@ async-trait = { workspace = true }
 awc = "3.0.0"
 bbox-common = { path = "../bbox-common" }
 chrono = { version = "0.4", features = ["serde"] }
+clap = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

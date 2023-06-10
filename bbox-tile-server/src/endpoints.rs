@@ -142,5 +142,8 @@ impl TileService {
                 web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
                     .route(web::get().to(map_tile)),
             );
+        if cfg!(not(feature = "map-server")) {
+            cfg.app_data(web::Data::new(WmsMetrics::new()));
+        }
     }
 }

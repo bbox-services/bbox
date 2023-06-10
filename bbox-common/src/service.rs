@@ -1,4 +1,5 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
+use crate::cli::{Cli, Commands, NoArgs, NoCommands};
 use crate::config::WebserverCfg;
 use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
@@ -6,11 +7,17 @@ use crate::ogcapi::{ApiLink, CoreCollection};
 use actix_web::{middleware, web, App, HttpServer};
 use actix_web_opentelemetry::{RequestMetrics, RequestTracing};
 use async_trait::async_trait;
+use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
+use log::warn;
 use prometheus::Registry;
+use std::env;
 
 #[async_trait]
-pub trait OgcApiService: Clone + Send {
-    async fn from_config() -> Self;
+pub trait OgcApiService: Default + Clone + Send {
+    type CliCommands: Subcommand + Parser + core::fmt::Debug;
+    type CliArgs: Args + core::fmt::Debug;
+
+    async fn read_config(&mut self, cli: &ArgMatches);
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         Vec::new()
     }
@@ -24,19 +31,59 @@ pub trait OgcApiService: Clone + Send {
         None
     }
     fn add_metrics(&self, _prometheus: &Registry) {}
+    async fn cli_run(&self, _cli: &ArgMatches) -> bool {
+        false
+    }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService);
+}
+
+#[derive(Clone, Default)]
+pub struct DummyService;
+
+#[async_trait]
+impl OgcApiService for DummyService {
+    type CliCommands = NoCommands;
+    type CliArgs = NoArgs;
+
+    async fn read_config(&mut self, _cli: &ArgMatches) {}
+    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig, _core: &CoreService) {}
 }
 
 #[derive(Clone)]
 pub struct CoreService {
+    pub(crate) cli: Command,
     pub web_config: WebserverCfg,
     pub(crate) ogcapi: OgcApiInventory,
     pub(crate) openapi: OpenApiDoc,
     pub(crate) metrics: Option<Metrics>,
 }
 
+impl Default for CoreService {
+    fn default() -> Self {
+        CoreService {
+            cli: NoCommands::command(),
+            web_config: WebserverCfg::default(),
+            ogcapi: OgcApiInventory::default(),
+            openapi: OpenApiDoc::new(),
+            metrics: None,
+        }
+    }
+}
+
 impl CoreService {
-    pub fn add_service(&mut self, svc: &impl OgcApiService) {
+    pub fn new() -> Self {
+        let mut svc = CoreService::default();
+        svc.add_service(&svc.clone());
+        svc
+    }
+    pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
+        // Add cli commands
+        let mut cli = T::CliCommands::augment_subcommands(self.cli.clone());
+        if std::any::type_name::<T::CliArgs>() != "bbox_common::cli::NoArgs" {
+            cli = T::CliArgs::augment_args(cli);
+        }
+        self.cli = cli;
+
         let api_base = "";
 
         self.ogcapi
@@ -59,6 +106,10 @@ impl CoreService {
             svc.add_metrics(metrics.exporter.registry())
         }
     }
+    pub fn cli_matches(&self) -> ArgMatches {
+        // cli.about("BBOX tile server")
+        self.cli.clone().get_matches()
+    }
     pub fn has_metrics(&self) -> bool {
         self.metrics.is_some()
     }
@@ -79,18 +130,21 @@ impl CoreService {
 
 #[async_trait]
 impl OgcApiService for CoreService {
-    async fn from_config() -> Self {
-        let web_config = WebserverCfg::from_config();
-        let metrics = init_metrics();
-        let common = CoreService {
-            web_config,
-            ogcapi: OgcApiInventory::new(),
-            openapi: OpenApiDoc::new(),
-            metrics,
+    type CliCommands = Commands;
+    type CliArgs = Cli;
+
+    async fn read_config(&mut self, cli: &ArgMatches) {
+        let Ok(args) = Cli::from_arg_matches(cli) else {
+            warn!("Cli::from_arg_matches error");
+            return;
         };
-        let mut service = common.clone();
-        service.add_service(&common);
-        service
+        if let Some(config) = args.config {
+            env::set_var("BBOX_CONFIG", &config);
+        }
+        logger::init();
+
+        self.web_config = WebserverCfg::from_config();
+        self.metrics = init_metrics();
     }
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         vec![
@@ -143,13 +197,20 @@ impl OgcApiService for CoreService {
 }
 
 #[actix_web::main]
-pub async fn webserver<T: OgcApiService + 'static>() -> std::io::Result<()> {
-    logger::init();
+pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result<()> {
+    let mut core = CoreService::new();
 
-    let mut core = CoreService::from_config().await;
-
-    let service = T::from_config().await;
+    let mut service = T::default();
     core.add_service(&service);
+
+    let matches = core.cli_matches();
+
+    core.read_config(&matches).await;
+    service.read_config(&matches).await;
+
+    if service.cli_run(&matches).await {
+        return Ok(());
+    }
 
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();

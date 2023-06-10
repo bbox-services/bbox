@@ -5,8 +5,8 @@ mod error;
 mod service;
 
 use crate::service::RoutingService;
-use bbox_common::service::webserver;
+use bbox_common::service::run_service;
 
 fn main() {
-    webserver::<RoutingService>().unwrap();
+    run_service::<RoutingService>().unwrap();
 }

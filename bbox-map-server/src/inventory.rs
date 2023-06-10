@@ -2,7 +2,7 @@ use crate::wms_capabilities::*;
 use serde::Serialize;
 use serde_xml_rs::from_reader;
 
-#[derive(Serialize, Clone, Debug)]
+#[derive(Serialize, Clone, Default, Debug)]
 pub struct Inventory {
     pub wms_services: Vec<WmsService>,
 }

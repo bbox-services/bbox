@@ -22,7 +22,7 @@ use std::collections::HashMap;
 //                      │  (Pg, Gpkg)  │
 //                      └──────────────┘
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Inventory {
     // Key: collection_id
     feat_collections: HashMap<String, FeatureCollection>,

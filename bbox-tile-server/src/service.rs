@@ -1,13 +1,16 @@
 use crate::cache::{CacheLayout, TileCache, TileCacheError};
+use crate::cli::Commands;
 use crate::config::*;
 use crate::tilesource::{
     wms_fcgi::MapService, wms_fcgi::WmsMetrics, SourceType, TileSource, TileSourceError,
 };
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::cli::NoArgs;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
 use bbox_common::service::{CoreService, OgcApiService};
+use clap::{ArgMatches, FromArgMatches};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
@@ -64,10 +67,11 @@ type TileCacheConfigs = HashMap<String, TileCacheCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {
-    async fn from_config() -> Self {
-        let config = TileserverCfg::from_config();
-        let mut service = Self::default();
+    type CliCommands = Commands;
+    type CliArgs = NoArgs;
 
+    async fn read_config(&mut self, _cli: &ArgMatches) {
+        let config = TileserverCfg::from_config();
         // Register custom grids
         let mut grids = tms().clone();
         for grid in config.grid {
@@ -106,10 +110,23 @@ impl OgcApiService for TileService {
                 source,
                 cache,
             };
-            service.tilesets.insert(ts.name, tileset);
-            service.grids.insert(tms_id, tms);
+            self.tilesets.insert(ts.name, tileset);
+            self.grids.insert(tms_id, tms);
         }
-        service
+    }
+
+    async fn cli_run(&self, cli: &ArgMatches) -> bool {
+        match Commands::from_arg_matches(cli) {
+            Ok(Commands::Seed(seedargs)) => {
+                self.seed_by_grid(&seedargs).await.ok();
+                true
+            }
+            Ok(Commands::Upload(uploadargs)) => {
+                self.upload(&uploadargs).await.ok();
+                true
+            }
+            _ => false,
+        }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![

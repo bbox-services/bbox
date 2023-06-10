@@ -5,11 +5,13 @@ use crate::metrics::init_metrics;
 use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
+use bbox_common::cli::{NoArgs, NoCommands};
 use bbox_common::service::{CoreService, OgcApiService};
+use clap::ArgMatches;
 use prometheus::Registry;
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct MapService {
     // Dispatcher is not Clone, so we wrap as web::Data already here
     pub(crate) fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
@@ -48,10 +50,15 @@ async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
 
 #[async_trait]
 impl OgcApiService for MapService {
-    async fn from_config() -> Self {
+    type CliCommands = NoCommands;
+    type CliArgs = NoArgs;
+
+    async fn read_config(&mut self, _cli: &ArgMatches) {
         let config = WmsServerCfg::from_config();
         let wms_backend = init_wms_backend(&config).await;
-        wms_backend
+        self.fcgi_clients = wms_backend.fcgi_clients;
+        self.suffix_fcgi = wms_backend.suffix_fcgi;
+        self.inventory = wms_backend.inventory;
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
