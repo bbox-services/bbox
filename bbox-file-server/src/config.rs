@@ -18,6 +18,6 @@ pub struct StaticDirCfg {
 
 impl FileserverCfg {
     pub fn from_config() -> Self {
-        from_config_opt_or_exit("tileserver").unwrap_or_default()
+        from_config_opt_or_exit("fileserver").unwrap_or_default()
     }
 }
