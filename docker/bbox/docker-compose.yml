@@ -214,6 +214,18 @@ services:
 #     volumes:
 #       - teamengine-data:/usr/local/tomcat/te_base/users
 
+  teamengine-tiles:
+    profiles: [teamengine-tiles]
+    image: ogccite/ets-ogcapi-tiles10:latest
+    # Alpha version build:
+    # git clone https://github.com/opengeospatial/ets-ogcapi-tiles10
+    # export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+    # mvn install -Dsource=docker:run -P docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - 127.0.0.1:8081:8080
+
 volumes:
   postgres-data:
     driver: local
