@@ -1,4 +1,4 @@
-use bbox_common::config::from_config_or_exit;
+use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -21,7 +21,7 @@ pub struct DsPostgisCfg {
 
 impl DatasourceCfg {
     pub fn from_config() -> Self {
-        from_config_or_exit("datasource")
+        from_config_opt_or_exit("datasource").unwrap_or_default()
     }
     pub fn from_path(path: &str) -> Self {
         let mut cfg = DatasourceCfg::default();

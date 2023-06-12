@@ -5,7 +5,7 @@ use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use actix_web::{middleware, web, App, HttpServer};
-use actix_web_opentelemetry::{RequestMetrics, RequestTracing};
+use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
 use log::warn;
@@ -118,7 +118,11 @@ impl CoreService {
         RequestTracing::new()
     }
     pub fn req_metrics(&self) -> RequestMetrics {
-        self.metrics.as_ref().unwrap().request_metrics.clone()
+        if let Some(metrics) = &self.metrics {
+            metrics.request_metrics.clone()
+        } else {
+            RequestMetricsBuilder::new().build(opentelemetry::global::meter("bbox"))
+        }
     }
     pub fn workers(&self) -> usize {
         self.web_config.worker_threads()

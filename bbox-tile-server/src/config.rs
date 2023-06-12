@@ -1,4 +1,4 @@
-use bbox_common::config::from_config_or_exit;
+use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -125,7 +125,7 @@ pub struct S3CacheCfg {
 
 impl TileserverCfg {
     pub fn from_config() -> Self {
-        from_config_or_exit("tileserver")
+        from_config_opt_or_exit("tileserver").unwrap_or_default()
     }
 }
 

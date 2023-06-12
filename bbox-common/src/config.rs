@@ -73,7 +73,7 @@ impl Default for WebserverCfg {
 
 impl WebserverCfg {
     pub fn from_config() -> Self {
-        from_config_or_exit("webserver")
+        from_config_opt_or_exit("webserver").unwrap_or_default()
     }
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())
@@ -107,8 +107,8 @@ pub struct JaegerCfg {
 }
 
 impl MetricsCfg {
-    pub fn from_config() -> Self {
-        from_config_or_exit("metrics")
+    pub fn from_config() -> Option<Self> {
+        from_config_opt_or_exit("metrics")
     }
 }
 

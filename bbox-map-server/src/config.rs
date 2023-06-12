@@ -1,5 +1,5 @@
 use crate::wms_fcgi_backend::{MockFcgiBackend, QgisFcgiBackend, UmnFcgiBackend};
-use bbox_common::config::from_config_or_exit;
+use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -75,7 +75,7 @@ impl Default for WmsServerCfg {
 
 impl WmsServerCfg {
     pub fn from_config() -> Self {
-        from_config_or_exit("wmsserver")
+        from_config_opt_or_exit("wmsserver").unwrap_or_default()
     }
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())

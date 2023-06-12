@@ -28,7 +28,9 @@ fn init_tracer(config: &MetricsCfg) {
 }
 
 pub(crate) fn init_metrics() -> Option<Metrics> {
-    let metrics_cfg = MetricsCfg::from_config();
+    let Some(metrics_cfg) = MetricsCfg::from_config() else {
+        return None;
+    };
 
     init_tracer(&metrics_cfg);
 
