@@ -4,11 +4,11 @@ BBOX tile server
 Map tile serving.
 
 Features:
-- [ ] Raster tile server (Backends: QGIS Server and MapServer)
+- [x] Raster tile server (Backends: QGIS Server and MapServer)
 - [ ] Vector tile server (GeoZero backend: PostGIS, GeoPackage, ...)
 - [ ] OGC API - Tiles
 - [ ] OGC WMTS, XYZ
-- [ ] Tile proxy server (Backends: WMS)
+- [x] Tile proxy server (Backends: WMS)
 
 
 Tile seeder
@@ -22,7 +22,7 @@ Features:
 
 ### Usage
 
-Run tile server:
+Run tile server with bbox.toml configuration:
 
     # Reduce log output for testing
     export BBOX_WMSSERVER__NUM_FCGI_PROCESSES=1
@@ -41,6 +41,12 @@ Tile requests:
     curl -o /tmp/tilegz.mvt -H 'Content-Encoding: gzip' http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
 
     curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/ne_extracts/2/2/2
+
+Run tile server without configuration:
+
+    cargo run -- serve ../data/liechtenstein.mbtiles
+
+    curl -o /tmp/tile.mvt http://localhost:8080/xyz/liechtenstein/14/8621/5759.mvt
 
 OGC API entry points:
 

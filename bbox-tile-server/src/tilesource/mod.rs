@@ -130,6 +130,13 @@ impl TileSource {
             }
         }
     }
+    pub fn config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
+        if let Some(cfg) = mbtiles::MbtilesSource::config_from_cli_arg(file_or_url) {
+            Some(SourceParamCfg::Mbtiles(cfg))
+        } else {
+            None
+        }
+    }
     pub fn read(&self) -> &dyn TileRead {
         match self {
             #[cfg(feature = "map-server")]

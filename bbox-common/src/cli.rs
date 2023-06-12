@@ -1,12 +1,23 @@
 use clap::{Args, Parser};
 use std::path::PathBuf;
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Cli {
+#[derive(Args, Debug)]
+pub struct GlobalArgs {
     /// Config file (Default: bbox.toml)
     #[arg(short, long, value_name = "FILE")]
     pub config: Option<PathBuf>,
+}
+
+#[derive(Parser, Debug)]
+pub enum CommonCommands {
+    /// Run service
+    Serve(ServeArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct ServeArgs {
+    /// Serve service from file or URL
+    pub file_or_url: Option<String>,
 }
 
 /* t-rex serve:
@@ -16,12 +27,6 @@ OPTIONS:
     --loglevel <error|warn|info|debug|trace>    Log level (Default: info)
     --port <PORT>                               Bind web server to this port
 */
-
-#[derive(Parser, Debug)]
-pub enum Commands {
-    /// Run service
-    Serve {},
-}
 
 #[derive(Parser, Debug)]
 pub enum NoCommands {}

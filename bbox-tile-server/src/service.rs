@@ -70,8 +70,8 @@ impl OgcApiService for TileService {
     type CliCommands = Commands;
     type CliArgs = NoArgs;
 
-    async fn read_config(&mut self, _cli: &ArgMatches) {
-        let config = TileserverCfg::from_config();
+    async fn read_config(&mut self, cli: &ArgMatches) {
+        let config = TileserverCfg::from_config(cli);
         // Register custom grids
         let mut grids = tms().clone();
         for grid in config.grid {

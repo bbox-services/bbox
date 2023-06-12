@@ -7,7 +7,9 @@ use async_trait::async_trait;
 use bbox_common::config::error_exit;
 use log::info;
 use martin_mbtiles::MbtilesPool;
+use std::ffi::OsStr;
 use std::io::Cursor;
+use std::path::Path;
 use tile_grid::Xyz;
 use tilejson::TileJSON;
 
@@ -24,6 +26,17 @@ impl MbtilesSource {
             .unwrap_or_else(error_exit);
         //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
         MbtilesSource { mbt }
+    }
+    pub fn config_from_cli_arg(file_or_url: &str) -> Option<MbtilesSourceParamsCfg> {
+        match Path::new(file_or_url).extension().and_then(OsStr::to_str) {
+            Some("mbtiles") => {
+                let cfg = MbtilesSourceParamsCfg {
+                    path: file_or_url.into(),
+                };
+                Some(cfg)
+            }
+            _ => None,
+        }
     }
 }
 

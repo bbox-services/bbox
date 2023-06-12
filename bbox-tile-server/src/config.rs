@@ -1,6 +1,10 @@
+use crate::tilesource::TileSource;
+use bbox_common::cli::CommonCommands;
 use bbox_common::config::from_config_opt_or_exit;
+use clap::{ArgMatches, FromArgMatches};
+use log::info;
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
@@ -124,8 +128,30 @@ pub struct S3CacheCfg {
 }
 
 impl TileserverCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("tileserver").unwrap_or_default()
+    pub fn from_config(cli: &ArgMatches) -> Self {
+        let mut cfg: TileserverCfg = from_config_opt_or_exit("tileserver").unwrap_or_default();
+
+        // Get config from CLI
+        if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
+            if let Some(file_or_url) = args.file_or_url {
+                if let Some(source_cfg) = TileSource::config_from_cli_arg(&file_or_url) {
+                    let name = if let Some(name) = Path::new(&file_or_url).file_stem() {
+                        name.to_string_lossy().to_string()
+                    } else {
+                        file_or_url.to_string()
+                    };
+                    info!("Adding tileset `{name}`");
+                    let ts = TileSetCfg {
+                        name,
+                        tms: None,
+                        params: source_cfg,
+                        cache: None,
+                    };
+                    cfg.tileset.push(ts);
+                }
+            }
+        }
+        cfg
     }
 }
 

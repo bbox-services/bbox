@@ -1,5 +1,5 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
-use crate::cli::{Cli, Commands, NoArgs, NoCommands};
+use crate::cli::{CommonCommands, GlobalArgs, NoArgs, NoCommands};
 use crate::config::WebserverCfg;
 use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
@@ -134,12 +134,12 @@ impl CoreService {
 
 #[async_trait]
 impl OgcApiService for CoreService {
-    type CliCommands = Commands;
-    type CliArgs = Cli;
+    type CliCommands = CommonCommands;
+    type CliArgs = GlobalArgs;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
-        let Ok(args) = Cli::from_arg_matches(cli) else {
-            warn!("Cli::from_arg_matches error");
+        let Ok(args) = GlobalArgs::from_arg_matches(cli) else {
+            warn!("GlobalArgs::from_arg_matches error");
             return;
         };
         if let Some(config) = args.config {
