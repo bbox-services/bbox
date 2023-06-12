@@ -50,21 +50,17 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 // -- Common configuration --
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {
-    #[serde(default = "default_server_addr")]
     pub server_addr: String,
     worker_threads: Option<usize>,
     public_server_url: Option<String>,
 }
 
-fn default_server_addr() -> String {
-    "127.0.0.1:8080".to_string()
-}
-
 impl Default for WebserverCfg {
     fn default() -> Self {
         WebserverCfg {
-            server_addr: default_server_addr(),
+            server_addr: "127.0.0.1:8080".to_string(),
             worker_threads: None,
             public_server_url: None,
         }

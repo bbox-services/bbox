@@ -1,12 +1,12 @@
 use crate::wms_fcgi_backend::{MockFcgiBackend, QgisFcgiBackend, UmnFcgiBackend};
 use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
+use std::env;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct WmsServerCfg {
     num_fcgi_processes: Option<usize>,
-    #[serde(default = "default_fcgi_client_pool_size")]
     pub fcgi_client_pool_size: usize,
     pub wait_timeout: Option<u64>,
     pub create_timeout: Option<u64>,
@@ -14,7 +14,6 @@ pub struct WmsServerCfg {
     pub qgis_backend: Option<QgisBackendCfg>,
     pub umn_backend: Option<UmnBackendCfg>,
     pub mock_backend: Option<MockBackendCfg>,
-    #[serde(default = "default_search_projects")]
     pub search_projects: bool,
 }
 
@@ -33,12 +32,37 @@ pub struct QgisBackendSuffixCfg {
     pub path: String,
 }
 
+impl QgisBackendCfg {
+    pub fn new(basedir: &str) -> Self {
+        QgisBackendCfg {
+            exe_location: None,
+            project_basedir: basedir.to_string(),
+            qgs: Some(QgisBackendSuffixCfg {
+                path: "/qgis".to_string(),
+            }),
+            qgz: Some(QgisBackendSuffixCfg {
+                path: "/qgz".to_string(),
+            }),
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct UmnBackendCfg {
     pub exe_location: Option<String>,
     pub project_basedir: String,
     pub path: String,
+}
+
+impl UmnBackendCfg {
+    pub fn new(basedir: &str) -> Self {
+        UmnBackendCfg {
+            exe_location: None,
+            project_basedir: basedir.to_string(),
+            path: "/wms/map".to_string(),
+        }
+    }
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -48,28 +72,25 @@ pub struct MockBackendCfg {
     pub path: String,
 }
 
-fn default_fcgi_client_pool_size() -> usize {
-    1
-}
-
-fn default_search_projects() -> bool {
-    // we want an inventory for the map viewer
-    cfg!(feature = "inventory")
-}
-
 impl Default for WmsServerCfg {
     fn default() -> Self {
-        WmsServerCfg {
+        let mut cfg = WmsServerCfg {
             num_fcgi_processes: None,
-            fcgi_client_pool_size: default_fcgi_client_pool_size(),
+            fcgi_client_pool_size: 1,
             wait_timeout: Some(90000),
             create_timeout: Some(500),
             recycle_timeout: Some(500),
             qgis_backend: None,
             umn_backend: None,
             mock_backend: None,
-            search_projects: default_search_projects(),
+            // we want an inventory for the map viewer
+            search_projects: cfg!(feature = "inventory"),
+        };
+        if let Some(cwd) = env::current_dir().map(|p| p.into_os_string()).ok() {
+            cfg.qgis_backend = Some(QgisBackendCfg::new(&cwd.to_string_lossy()));
+            cfg.umn_backend = Some(UmnBackendCfg::new(&cwd.to_string_lossy()));
         }
+        cfg
     }
 }
 

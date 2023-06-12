@@ -7,15 +7,11 @@ use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct TileserverCfg {
-    #[serde(default)]
     pub tileset: Vec<TileSetCfg>,
-    #[serde(default)]
     pub grid: Vec<GridCfg>,
-    #[serde(default)]
     pub source: Vec<TileSourceCfg>,
-    #[serde(default)]
     pub cache: Vec<TileCacheProviderCfg>,
 }
 

@@ -2,6 +2,7 @@ use bbox_common::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
+#[serde(default, deny_unknown_fields)]
 pub struct RoutingServerCfg {
     pub service: Vec<RoutingServiceCfg>,
 }

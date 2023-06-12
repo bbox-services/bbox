@@ -2,6 +2,7 @@ use bbox_common::config::config_error_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
+#[serde(default, deny_unknown_fields)]
 pub struct ProcessesServerCfg {
     pub dagster_backend: Option<DagsterBackendCfg>,
 }
