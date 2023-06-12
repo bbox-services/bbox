@@ -46,4 +46,4 @@ WORKDIR /var/www
 USER www-data
 ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
 EXPOSE 8080
-CMD ["bbox-app"]
+CMD ["bbox-app", "serve"]
