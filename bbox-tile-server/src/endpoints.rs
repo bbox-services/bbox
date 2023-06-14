@@ -3,8 +3,7 @@ use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_common::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_common::service::CoreService;
-
-use tile_grid::Xyz;
+use tile_grid::{Crs, DataType, Link, TileSetItem, TileSets, Xyz};
 
 /// XYZ endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
@@ -126,6 +125,103 @@ async fn tile_request(
     }
 }
 
+/// list of available tilesets
+// tiles
+async fn get_tile_sets_list() -> HttpResponse {
+    // hardcoded list, required for core conformance test
+    let tile_matrix_set_id = "mbtiles_mvt_fl";
+    let tilesets = TileSets {
+        tilesets: vec![TileSetItem {
+            title: Some(tile_matrix_set_id.to_string()),
+            data_type: DataType::Vector,
+            crs: Crs::from_epsg(3857),
+            tile_matrix_set_uri: Some(
+                "http://www.opengis.net/def/tilematrixset/OGC/1.0/WebMercatorQuad".to_string(),
+            ),
+            links: vec![
+                Link {
+                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+                    r#type: Some("application/json".to_string()),
+                    title: Some("WebMercatorQuadTileMatrixSet definition (as JSON)".to_string()),
+                    href: "/tileMatrixSets/WebMercatorQuad".to_string(),
+                    hreflang: None,
+                    length: None,
+                },
+                Link {
+                    rel: "self".to_string(),
+                    r#type: Some("application/json".to_string()),
+                    title: Some(format!(
+                        "Tileset metadata for {tile_matrix_set_id} (as JSON)"
+                    )),
+                    href: format!("/tiles/{tile_matrix_set_id}"),
+                    hreflang: None,
+                    length: None,
+                },
+                Link {
+                    rel: "self".to_string(),
+                    r#type: Some("application/json+tilejson".to_string()),
+                    title: Some(format!(
+                        "Tileset metadata for {tile_matrix_set_id} (in TileJSON format)"
+                    )),
+                    href: format!("/xyz/{tile_matrix_set_id}.json"),
+                    hreflang: None,
+                    length: None,
+                },
+                Link {
+                    rel: "item".to_string(),
+                    r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
+                    title: Some(format!("Tiles for {tile_matrix_set_id} (as MVT)")),
+                    href: format!(
+                        "/map/tiles/{tile_matrix_set_id}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}"
+                    ),
+                    hreflang: None,
+                    length: None,
+                },
+            ],
+        }],
+        links: None,
+    };
+    HttpResponse::Ok().json(tilesets)
+}
+
+/// tileset metadata
+// tiles/{tileMatrixSetId}
+async fn get_tile_set(tile_matrix_set_id: web::Path<String>) -> HttpResponse {
+    // hardcoded TileSet, required for core conformance test
+    let tileset = format!(
+        r#"{{
+       "title": "{tile_matrix_set_id}",
+       "tileMatrixSetURI": "http://www.opengis.net/def/tilematrixset/OGC/1.0/WebMercatorQuad",
+       "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+       "dataType": "vector",
+       "links": [
+          {{
+             "rel": "self",
+             "type": "application/json",
+             "title": "The JSON representation of the tileset",
+             "href": "/tiles/{tile_matrix_set_id}"
+          }},
+          {{
+             "rel": "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme",
+             "type": "application/json",
+             "title": "TileMatrixSet definition (as JSON)",
+             "href": "/tileMatrixSets/WebMercatorQuad"
+          }},
+          {{
+             "rel": "item",
+             "type": "application/vnd.mapbox-vector-tile",
+             "title": "Tiles for {tile_matrix_set_id} (as MVT)",
+             "href": "/map/tiles/{tile_matrix_set_id}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}",
+             "templated": true
+          }}
+       ]
+    }}"#
+    );
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(tileset)
+}
+
 impl TileService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
         cfg.app_data(web::Data::new(self.clone()))
@@ -141,7 +237,9 @@ impl TileService {
             .service(
                 web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
                     .route(web::get().to(map_tile)),
-            );
+            )
+            .service(web::resource("/tiles/{tileMatrixSetId}").route(web::get().to(get_tile_set)))
+            .service(web::resource("/tiles").route(web::get().to(get_tile_sets_list)));
         if cfg!(not(feature = "map-server")) {
             cfg.app_data(web::Data::new(WmsMetrics::new()));
         }

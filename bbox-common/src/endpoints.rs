@@ -77,7 +77,8 @@ pub fn req_parent_path(req: &HttpRequest) -> String {
         .to_string()
 }
 
-pub fn relurl(req: &HttpRequest, path: &str) -> String {
+/// Absolute URL from path
+pub fn absurl(req: &HttpRequest, path: &str) -> String {
     let conninfo = req.connection_info();
     let pathbase = path.split('/').nth(1).unwrap_or("");
     let reqbase = req
@@ -92,18 +93,21 @@ pub fn relurl(req: &HttpRequest, path: &str) -> String {
             }
         })
         .unwrap_or("".to_string());
-    format!(
-        "{}://{}{}{}",
-        conninfo.scheme(),
-        conninfo.host(),
-        reqbase,
-        path
-    )
+    format!("{}://{}{reqbase}{path}", conninfo.scheme(), conninfo.host())
 }
 
 /// landing page
-async fn index(ogcapi: web::Data<OgcApiInventory>, _req: HttpRequest) -> HttpResponse {
-    let links = ogcapi.landing_page_links.to_vec(); //TODO: convert urls with relurl (?)
+async fn index(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> HttpResponse {
+    // Make links absolute. Some clients (like OGC conformance tester) expect it.
+    let links = ogcapi
+        .landing_page_links
+        .iter()
+        .map(|link| {
+            let mut l = link.clone();
+            l.href = absurl(&req, &link.href);
+            l
+        })
+        .collect();
     let landing_page = CoreLandingPage {
         title: Some("BBOX OGC API".to_string()),
         description: Some("BBOX OGC API landing page".to_string()),

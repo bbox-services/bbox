@@ -3,7 +3,7 @@ use crate::inventory::Inventory;
 use crate::service::FeatureService;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_common::api::OgcApiInventory;
-use bbox_common::endpoints::relurl;
+use bbox_common::endpoints::absurl;
 use bbox_common::ogcapi::{ApiLink, CoreCollections};
 use bbox_common::service::CoreService;
 use bbox_common::templates::{create_env_embedded, html_accepted, render_endpoint};
@@ -18,14 +18,14 @@ async fn collections(
 ) -> Result<HttpResponse, Error> {
     let collections = CoreCollections {
         links: vec![ApiLink {
-            href: relurl(&req, "/collections.json"),
+            href: absurl(&req, "/collections.json"),
             rel: Some("self".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("this document".to_string()),
             hreflang: None,
             length: None,
         }],
-        collections: ogcapi.collections.to_vec(), //TODO: convert urls with relurl (?)
+        collections: ogcapi.collections.clone(), //TODO: convert urls with absurl (?)
     };
     if html_accepted(&req).await {
         render_endpoint(

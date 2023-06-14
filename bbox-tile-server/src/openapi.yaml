@@ -251,43 +251,43 @@ paths:
   #         "$ref": "#/components/responses/NotAcceptable"
   #       '500':
   #         "$ref": "#/components/responses/ServerError"
-  # "/tiles":
-  #   get:
-  #     tags:
-  #     - Vector Tiles
-  #     summary: Retrieve a list of available vector tilesets for the dataset
-  #     operationId: ".dataset.vector.getTileSetsList"
-  #     parameters:
-  #     - "$ref": "#/components/parameters/f-metadata"
-  #     responses:
-  #       '200':
-  #         "$ref": "#/components/responses/TileSetsList"
-  #       '404':
-  #         "$ref": "#/components/responses/NotFound"
-  #       '406':
-  #         "$ref": "#/components/responses/NotAcceptable"
-  #       '500':
-  #         "$ref": "#/components/responses/ServerError"
-  # "/tiles/{tileMatrixSetId}":
-  #   get:
-  #     tags:
-  #     - Vector Tiles
-  #     summary: Retrieve the vector tileset metadata for the whole dataset and the
-  #       specified tiling scheme (tile matrix set)
-  #     operationId: ".dataset.vector.getTileSet"
-  #     parameters:
-  #     - "$ref": "#/components/parameters/collections"
-  #     - "$ref": "#/components/parameters/tileMatrixSetId"
-  #     - "$ref": "#/components/parameters/f-metadata"
-  #     responses:
-  #       '200':
-  #         "$ref": "#/components/responses/TileSet"
-  #       '404':
-  #         "$ref": "#/components/responses/NotFound"
-  #       '406':
-  #         "$ref": "#/components/responses/NotAcceptable"
-  #       '500':
-  #         "$ref": "#/components/responses/ServerError"
+  "/tiles":
+    get:
+      tags:
+      - Vector Tiles
+      summary: Retrieve a list of available vector tilesets for the dataset
+      operationId: ".dataset.vector.getTileSetsList"
+      # parameters:
+      # - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          "$ref": "#/components/responses/TileSetsList"
+        '404':
+          "$ref": "#/components/responses/NotFound"
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
+  "/tiles/{tileMatrixSetId}":
+    get:
+      tags:
+      - Vector Tiles
+      summary: Retrieve the vector tileset metadata for the whole dataset and the
+        specified tiling scheme (tile matrix set)
+      operationId: ".dataset.vector.getTileSet"
+      parameters:
+      # - "$ref": "#/components/parameters/collections"
+      - "$ref": "#/components/parameters/tileMatrixSetId"
+      # - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          "$ref": "#/components/responses/TileSet"
+        '404':
+          "$ref": "#/components/responses/NotFound"
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
   # "/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
   #   get:
   #     tags:

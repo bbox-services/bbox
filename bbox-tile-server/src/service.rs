@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use bbox_common::cli::NoArgs;
 use bbox_common::config::error_exit;
 use bbox_common::endpoints::TileResponse;
+use bbox_common::ogcapi::ApiLink;
 use bbox_common::service::{CoreService, OgcApiService};
 use clap::{ArgMatches, FromArgMatches};
 use serde_json::json;
@@ -128,6 +129,26 @@ impl OgcApiService for TileService {
             _ => false,
         }
     }
+    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
+        vec![
+            ApiLink {
+                href: "/tiles".to_string(),
+                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector".to_string()),
+                type_: Some("application/json".to_string()),
+                title: Some("List of available vector features tilesets".to_string()),
+                hreflang: None,
+                length: None,
+            },
+            ApiLink {
+                href: "/tiles".to_string(),
+                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-map".to_string()),
+                type_: Some("application/json".to_string()),
+                title: Some("List of available map tilesets".to_string()),
+                hreflang: None,
+                length: None,
+            },
+        ]
+    }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
             // Core
@@ -153,7 +174,7 @@ impl OgcApiService for TileService {
             // JPEG
             "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/jpeg".to_string(),
             // TIFF
-            "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tiff".to_string(),
+            // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tiff".to_string(),
             // NetCDF
             // "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/netcdf".to_string(),
             // GeoJSON
