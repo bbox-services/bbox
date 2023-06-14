@@ -26,6 +26,6 @@ resetdb:
 
 teamengine:
 	docker compose up -d teamengine
-	# open http://localhost:8081/teamengine/
+	# open http://localhost:8081/te2/
 	# Login with ogctest / ogctest
 	# Landing page location: http://bbox:8080/

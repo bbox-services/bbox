@@ -50,7 +50,7 @@ Run tile server without configuration:
 
 OGC API entry points:
 
-    curl -H 'Accept: application/json' http://localhost:8080/ | jq .
+    curl -s -H 'Accept: application/json' http://localhost:8080/ | jq .
 
     curl -s http://localhost:8080/openapi.json | jq .
 

@@ -170,8 +170,7 @@ services:
 
   teamengine:
     profiles: [all,teamengine]
-    image: ogccite/teamengine-production:latest
-    #image: ogccite/teamengine-beta:latest -> http://localhost:8081/te2/
+    image: ogccite/teamengine-beta:latest # -> http://localhost:8081/te2/
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
