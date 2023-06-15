@@ -1,4 +1,3 @@
-use crate::config::WmsServerCfg;
 use crate::fcgi_process::*;
 use crate::metrics::{wms_metrics, WmsMetrics};
 use crate::service::MapService;
@@ -270,8 +269,7 @@ pub async fn wms_fcgi_req(
 
 impl MapService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let config = WmsServerCfg::from_config();
-        let metrics = wms_metrics(config.num_fcgi_processes());
+        let metrics = wms_metrics(self.num_fcgi_processes);
 
         cfg.app_data(web::Data::new((*metrics).clone()));
 

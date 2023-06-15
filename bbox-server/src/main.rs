@@ -2,9 +2,9 @@ mod endpoints;
 mod service;
 
 use crate::service::BboxService;
-use actix_web::middleware::Condition;
-use actix_web::{middleware, App, HttpServer};
+use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
+use std::path::Path;
 
 #[cfg(feature = "feature-server")]
 use bbox_feature_server::FeatureService;
@@ -19,18 +19,18 @@ use bbox_routing_server::RoutingService;
 #[cfg(feature = "tile-server")]
 use bbox_tile_server::TileService;
 
-#[cfg(not(feature = "map-server"))]
-use bbox_common::service::DummyService as MapService;
-#[cfg(not(feature = "tile-server"))]
-use bbox_common::service::DummyService as TileService;
-#[cfg(not(feature = "file-server"))]
-use bbox_common::service::DummyService as FileService;
 #[cfg(not(feature = "feature-server"))]
 use bbox_common::service::DummyService as FeatureService;
+#[cfg(not(feature = "file-server"))]
+use bbox_common::service::DummyService as FileService;
+#[cfg(not(feature = "map-server"))]
+use bbox_common::service::DummyService as MapService;
 #[cfg(not(feature = "processes-server"))]
 use bbox_common::service::DummyService as ProcessesService;
 #[cfg(not(feature = "routing-server"))]
 use bbox_common::service::DummyService as RoutingService;
+#[cfg(not(feature = "tile-server"))]
+use bbox_common::service::DummyService as TileService;
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
@@ -60,12 +60,12 @@ async fn run_service() -> std::io::Result<()> {
     let matches = core.cli_matches();
 
     core.read_config(&matches).await;
-    map_service.read_config(&matches).await;
-    tile_service.read_config(&matches).await;
     file_service.read_config(&matches).await;
     feature_service.read_config(&matches).await;
     processes_service.read_config(&matches).await;
     routing_service.read_config(&matches).await;
+    map_service.read_config(&matches).await;
+    tile_service.read_config(&matches).await;
     bbox_service.read_config(&matches).await;
 
     #[cfg(all(feature = "tile-server", feature = "map-server"))]
@@ -90,9 +90,10 @@ async fn run_service() -> std::io::Result<()> {
         return Ok(());
     }
 
+    let project = map_service.default_project.clone();
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Condition::new(core.has_metrics(), core.middleware()))
             .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
@@ -115,10 +116,26 @@ async fn run_service() -> std::io::Result<()> {
 
         app
     })
-    .bind(server_addr)?
+    .bind(&server_addr)?
     .workers(workers)
-    .run()
-    .await
+    .shutdown_timeout(3) // default: 30s
+    .run();
+
+    // if log_enabled!(Level::Info) {
+    //     println!("{ASCIILOGO}");
+    // }
+
+    if cfg!(feature = "map-viewer") {
+        let mut open_url = format!("http://{server_addr}/");
+        if let Some(project) = project {
+            if let Some(name) = Path::new(&project).file_stem() {
+                open_url = format!("{open_url}map/{}/", name.to_string_lossy());
+            }
+        }
+        open::that(&open_url).ok();
+    }
+
+    server.await
 }
 
 fn main() {

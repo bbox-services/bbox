@@ -1,7 +1,13 @@
 use crate::wms_fcgi_backend::{MockFcgiBackend, QgisFcgiBackend, UmnFcgiBackend};
+use bbox_common::cli::CommonCommands;
 use bbox_common::config::from_config_opt_or_exit;
+use clap::{ArgMatches, FromArgMatches};
+use log::warn;
 use serde::Deserialize;
 use std::env;
+use std::ffi::OsStr;
+use std::fs::File;
+use std::path::Path;
 
 #[derive(Deserialize, Debug)]
 #[serde(default, deny_unknown_fields)]
@@ -15,6 +21,7 @@ pub struct WmsServerCfg {
     pub umn_backend: Option<UmnBackendCfg>,
     pub mock_backend: Option<MockBackendCfg>,
     pub search_projects: bool,
+    pub default_project: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -85,6 +92,7 @@ impl Default for WmsServerCfg {
             mock_backend: None,
             // we want an inventory for the map viewer
             search_projects: cfg!(feature = "inventory"),
+            default_project: None,
         };
         if let Some(cwd) = env::current_dir().map(|p| p.into_os_string()).ok() {
             cfg.qgis_backend = Some(QgisBackendCfg::new(&cwd.to_string_lossy()));
@@ -95,11 +103,57 @@ impl Default for WmsServerCfg {
 }
 
 impl WmsServerCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("wmsserver").unwrap_or_default()
+    pub fn from_config(cli: &ArgMatches) -> Self {
+        // Check if there is a backend configuration
+        let has_qgis_config =
+            from_config_opt_or_exit::<QgisBackendCfg>("wmsserver.qgis_backend").is_some();
+        let has_umn_config =
+            from_config_opt_or_exit::<UmnBackendCfg>("wmsserver.umn_backend").is_some();
+        let mut cfg: WmsServerCfg = from_config_opt_or_exit("wmsserver").unwrap_or_default();
+
+        // Get config from CLI
+        if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
+            if let Some(file_or_url) = args.file_or_url {
+                // Set project_basedir from file_or_url
+                match Path::new(&file_or_url).extension().and_then(OsStr::to_str) {
+                    Some("qgs") | Some("qgz") => {
+                        if let Some(backend) = cfg.qgis_backend.as_mut() {
+                            if !has_qgis_config
+                                && set_backend_basedir(&mut backend.project_basedir, &file_or_url)
+                            {
+                                cfg.default_project = Some(file_or_url);
+                            }
+                        }
+                    }
+                    Some("map") => {
+                        if let Some(backend) = cfg.umn_backend.as_mut() {
+                            if !has_umn_config
+                                && set_backend_basedir(&mut backend.project_basedir, &file_or_url)
+                            {
+                                cfg.default_project = Some(file_or_url);
+                            }
+                        }
+                    }
+                    _ => { /* ignore other suffixes */ }
+                }
+            }
+        }
+        cfg
     }
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())
+    }
+}
+
+fn set_backend_basedir(project_basedir: &mut String, file_or_url: &str) -> bool {
+    if File::open(file_or_url).is_ok() {
+        if let Some(dir) = Path::new(file_or_url).parent() {
+            *project_basedir = dir.to_string_lossy().to_string();
+        }
+        true
+    } else {
+        warn!("Can't read file `{file_or_url}` - ignoring");
+        false
     }
 }
 

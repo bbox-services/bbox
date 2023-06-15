@@ -17,14 +17,19 @@ pub struct MapService {
     pub(crate) fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
     /// client index for each suffix
     suffix_fcgi: HashMap<String, usize>,
+    /// Number of FCGI processes per backend
+    pub(crate) num_fcgi_processes: usize,
+    pub default_project: Option<String>,
     pub(crate) inventory: Inventory,
 }
 
 async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
-    let (process_pools, inventory) = detect_backends().unwrap();
+    let num_fcgi_processes = config.num_fcgi_processes();
+    let default_project = config.default_project.clone();
+    let (process_pools, inventory) = detect_backends(config).unwrap();
     let fcgi_clients = process_pools
         .iter()
-        .map(|process_pool| web::Data::new(process_pool.client_dispatcher(&config)))
+        .map(|process_pool| web::Data::new(process_pool.client_dispatcher(config)))
         .collect::<Vec<_>>();
     let mut suffix_fcgi = HashMap::new();
     for (poolno, fcgi_pool) in process_pools.iter().enumerate() {
@@ -44,6 +49,8 @@ async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
     MapService {
         fcgi_clients,
         suffix_fcgi,
+        num_fcgi_processes,
+        default_project,
         inventory,
     }
 }
@@ -53,12 +60,9 @@ impl OgcApiService for MapService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
 
-    async fn read_config(&mut self, _cli: &ArgMatches) {
-        let config = WmsServerCfg::from_config();
-        let wms_backend = init_wms_backend(&config).await;
-        self.fcgi_clients = wms_backend.fcgi_clients;
-        self.suffix_fcgi = wms_backend.suffix_fcgi;
-        self.inventory = wms_backend.inventory;
+    async fn read_config(&mut self, cli: &ArgMatches) {
+        let config = WmsServerCfg::from_config(cli);
+        *self = init_wms_backend(&config).await;
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -112,8 +116,7 @@ impl OgcApiService for MapService {
         Some(include_str!("openapi.yaml"))
     }
     fn add_metrics(&self, prometheus: &Registry) {
-        let config = WmsServerCfg::from_config();
-        init_metrics(&config, prometheus);
+        init_metrics(self.num_fcgi_processes, prometheus);
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)

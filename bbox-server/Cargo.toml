@@ -28,6 +28,7 @@ bbox-tile-server = { path = "../bbox-tile-server", default-features = false, opt
 clap = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
+open = "4.1.0"
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

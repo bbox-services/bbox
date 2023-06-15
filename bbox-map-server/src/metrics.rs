@@ -1,4 +1,3 @@
-use crate::config::WmsServerCfg;
 use once_cell::sync::OnceCell;
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec, Registry};
 
@@ -84,8 +83,8 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
     })
 }
 
-pub fn init_metrics(config: &WmsServerCfg, prometheus: &Registry) {
-    let metrics = wms_metrics(config.num_fcgi_processes());
+pub fn init_metrics(num_fcgi_processes: usize, prometheus: &Registry) {
+    let metrics = wms_metrics(num_fcgi_processes);
     // We use the Prometheus API, using
     // https://docs.rs/opentelemetry-prometheus/
     // would be more portable

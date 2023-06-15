@@ -153,21 +153,22 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
         .map(|&c| c.to_string())
 }
 
-pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
-    let config = WmsServerCfg::from_config();
+pub fn detect_backends(
+    config: &WmsServerCfg,
+) -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();
     let mut wms_inventory = Vec::new();
     let mut backends: Vec<&dyn FcgiBackendType> = Vec::new();
-    let qgis_backend = config.qgis_backend.map(|b| b.backend());
+    let qgis_backend = config.qgis_backend.as_ref().map(|b| b.backend());
     if let Some(ref b) = qgis_backend {
         backends.push(b)
     }
-    let umn_backend = config.umn_backend.map(|b| b.backend());
+    let umn_backend = config.umn_backend.as_ref().map(|b| b.backend());
     if let Some(ref b) = umn_backend {
         backends.push(b)
     }
-    let mock_backend = config.mock_backend.map(|b| b.backend());
+    let mock_backend = config.mock_backend.as_ref().map(|b| b.backend());
     if let Some(ref b) = mock_backend {
         backends.push(b)
     }

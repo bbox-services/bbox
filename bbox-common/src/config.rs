@@ -2,6 +2,7 @@ use actix_web::HttpRequest;
 use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
+use log::info;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use std::env;
@@ -10,11 +11,17 @@ use std::env;
 pub fn app_config() -> &'static Figment {
     static CONFIG: OnceCell<Figment> = OnceCell::new();
     &CONFIG.get_or_init(|| {
-        Figment::new()
+        let config = Figment::new()
             .merge(Toml::file(
                 env::var("BBOX_CONFIG").unwrap_or("bbox.toml".to_string()),
             ))
-            .merge(Env::prefixed("BBOX_").split("__"))
+            .merge(Env::prefixed("BBOX_").split("__"));
+        if let Some(meta) = config.metadata().next() {
+            if let Some(source) = &meta.source {
+                info!("Reading configuration from `{source}`");
+            }
+        }
+        config
     })
 }
 
