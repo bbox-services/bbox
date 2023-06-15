@@ -47,7 +47,7 @@ impl WmsService {
             ))
             .send()
             .await
-            .unwrap();
+            .expect("GetCapabilities");
 
         let body = response.body().await.unwrap();
         let cap: WmsCapabilities = from_reader(body.as_ref()).unwrap();

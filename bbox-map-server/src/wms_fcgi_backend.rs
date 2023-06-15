@@ -222,7 +222,9 @@ pub fn detect_backends() -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
                                 } else {
                                     format!("{url_base}/{rel_path}/{project}")
                                 };
-                                let id = wms_path.replace(&url_base, "").replace('/', "_");
+                                let id = wms_path
+                                    .replace(&format!("{url_base}/"), "")
+                                    .replace('/', "_");
                                 let cap_type = backend.cap_type();
                                 WmsService {
                                     id,
