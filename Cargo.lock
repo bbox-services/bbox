@@ -4193,9 +4193,9 @@ dependencies = [
 
 [[package]]
 name = "tile-grid"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9644aeb68e7ff4fd2a5e3d8fef2e777cbfe4dce30662b9921b5504ee1da206c"
+checksum = "9b57cef548fda6f42e870ed9106b6c15af81f34e4b7f679d8620b3be21d02039"
 dependencies = [
  "chrono",
  "once_cell",

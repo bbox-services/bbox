@@ -37,7 +37,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = "3.3.0"
 thiserror = { workspace = true }
-tile-grid = "0.5.0"
+tile-grid = "0.5.2"
 tilejson = "0.3.2"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 
