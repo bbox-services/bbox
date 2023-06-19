@@ -1,6 +1,7 @@
 mod config;
 mod endpoints;
 mod qgis_plugins;
+mod runtime_templates;
 mod service;
 
 use crate::service::FileService;

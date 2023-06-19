@@ -1,8 +1,9 @@
 use crate::config::FileserverCfg;
 use crate::qgis_plugins::*;
+use crate::runtime_templates::RuntimeTemplates;
 use crate::service::{FileService, PluginIndex};
 use actix_files::{Files, NamedFile};
-use actix_web::{web, HttpRequest, Result};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bbox_common::app_dir;
 use bbox_common::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_common::service::CoreService;
@@ -10,6 +11,20 @@ use log::{info, warn};
 use std::io::Write;
 use std::path::Path;
 use tempfile::tempfile;
+
+async fn templates(
+    envs: web::Data<PluginIndex>,
+    name: web::Path<String>,
+) -> Result<HttpResponse, actix_web::Error> {
+    // let template = TEMPLATE_ENV
+    //     .get_template("plugins.xml")
+    //     .expect("couln't load template `plugins.xml`");
+    // let plugin_xml = template
+    //     .render(context!(plugins => plugins.plugins, url => url))
+    //     .expect("Plugin render failed");
+    dbg!(&name);
+    todo!()
+}
 
 async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> Result<NamedFile> {
     // http://localhost:8080/qgis/plugins.xml -> http://localhost:8080/plugins/qgis/
@@ -26,9 +41,9 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
 
 impl FileService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let static_cfg = FileserverCfg::from_config();
+        let service_cfg = FileserverCfg::from_config();
 
-        for static_dir in &static_cfg.static_ {
+        for static_dir in &service_cfg.static_ {
             let dir = app_dir(&static_dir.dir);
             if Path::new(&dir).is_dir() {
                 info!("Serving static files from directory '{dir}'");
@@ -38,9 +53,28 @@ impl FileService {
             }
         }
 
+        let mut template_envs = RuntimeTemplates::new();
+        for template_dir in &service_cfg.template {
+            let dir = app_dir(&template_dir.dir);
+            if Path::new(&dir).is_dir() {
+                info!("Serving template files from directory '{dir}'");
+                template_envs.add(&dir);
+                cfg.route(
+                    &format!("/{}/{{tileset}}", template_dir.path),
+                    web::get().to(templates),
+                );
+                // .service(web::resource("/xyz/{tileset}.style.json").route(web::get().to(stylejson)))
+            } else {
+                warn!("Template file directory '{dir}' not found");
+            }
+        }
+        if !template_envs.is_empty() {
+            cfg.app_data(web::Data::new(template_envs));
+        }
+
         cfg.app_data(web::Data::new(self.plugins_index.clone()));
 
-        for repo in &static_cfg.repo {
+        for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
             if Path::new(&dir).is_dir() {
                 info!("Serving QGIS plugin repository from directory '{dir}'");

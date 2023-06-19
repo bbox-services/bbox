@@ -23,10 +23,10 @@ impl OgcApiService for FileService {
     type CliArgs = NoArgs;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
-        let static_cfg = FileserverCfg::from_config();
+        let service_cfg = FileserverCfg::from_config();
 
         self.plugins_index = PluginIndex::new();
-        for repo in &static_cfg.repo {
+        for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
             if Path::new(&dir).is_dir() {
                 info!("Serving QGIS plugin repository from directory '{dir}'");
@@ -37,6 +37,8 @@ impl OgcApiService for FileService {
                 warn!("QGIS plugin repository file directory '{dir}' not found");
             }
         }
+
+        // static and template dir config is processed in OgcApiService::register
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)

@@ -1,5 +1,5 @@
 use actix_web::{http::header, web, FromRequest, HttpRequest, HttpResponse};
-use minijinja::{Environment, Error, Source, State};
+use minijinja::{Environment, Error, State};
 use rust_embed::RustEmbed;
 use serde::Serialize;
 
@@ -23,36 +23,35 @@ trait LoadFromEmbedded {
     fn add_embedded_template<E: RustEmbed>(&mut self, e: &E, fname: &str);
 }
 
-impl LoadFromEmbedded for Source {
-    fn add_embedded_template<E: RustEmbed>(&mut self, _: &E, fname: &str) {
-        let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
-        self.add_template(fname, templ).unwrap();
-    }
-}
+// impl LoadFromEmbedded for Source {
+//     fn add_embedded_template<E: RustEmbed>(&mut self, _: &E, fname: &str) {
+//         let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
+//         self.add_template(fname, templ).unwrap();
+//     }
+// }
 
 pub fn create_env(path: &str, extensions: &[&str]) -> Environment<'static> {
-    create_env_ext(|source| {
-        source.load_from_path(path, extensions).unwrap();
+    create_env_ext(|env| {
+        env.load_from_path(path, extensions).unwrap();
     })
 }
 
 pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
-    create_env_ext(|source| {
+    create_env_ext(|env| {
         for f in E::iter() {
-            source.add_embedded_template(e, &f);
+            env.add_embedded_template(e, &f);
         }
     })
 }
 
-fn create_env_ext(ext: impl Fn(&mut Source)) -> Environment<'static> {
+fn create_env_ext(ext: impl Fn(&mut Environment<'static>)) -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
-    let mut source = Source::new();
     for f in BaseTemplates::iter() {
-        source.add_embedded_template(&BaseTemplates, &f);
+        let templ = String::from_utf8(BaseTemplates::get(&f).unwrap().to_vec()).unwrap();
+        env.add_template_owned(f, templ).unwrap();
     }
-    ext(&mut source);
-    env.set_source(source);
+    ext(&mut env);
     env
 }
 
