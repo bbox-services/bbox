@@ -26,9 +26,9 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
 
 impl FileService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let static_cfg = FileserverCfg::from_config();
+        let service_cfg = FileserverCfg::from_config();
 
-        for static_dir in &static_cfg.static_ {
+        for static_dir in &service_cfg.static_ {
             let dir = app_dir(&static_dir.dir);
             if Path::new(&dir).is_dir() {
                 info!("Serving static files from directory '{dir}'");
@@ -40,7 +40,7 @@ impl FileService {
 
         cfg.app_data(web::Data::new(self.plugins_index.clone()));
 
-        for repo in &static_cfg.repo {
+        for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
             if Path::new(&dir).is_dir() {
                 info!("Serving QGIS plugin repository from directory '{dir}'");

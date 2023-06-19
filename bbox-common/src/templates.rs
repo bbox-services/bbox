@@ -1,5 +1,5 @@
 use actix_web::{http::header, web, FromRequest, HttpRequest, HttpResponse};
-use minijinja::{Environment, Error, Source, State};
+use minijinja::{path_loader, Environment, Error, State};
 use rust_embed::RustEmbed;
 use serde::Serialize;
 
@@ -19,41 +19,32 @@ fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, Err
     Ok(s)
 }
 
-trait LoadFromEmbedded {
-    fn add_embedded_template<E: RustEmbed>(&mut self, e: &E, fname: &str);
-}
-
-impl LoadFromEmbedded for Source {
-    fn add_embedded_template<E: RustEmbed>(&mut self, _: &E, fname: &str) {
-        let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
-        self.add_template(fname, templ).unwrap();
-    }
-}
-
-pub fn create_env(path: &str, extensions: &[&str]) -> Environment<'static> {
-    create_env_ext(|source| {
-        source.load_from_path(path, extensions).unwrap();
-    })
+pub fn create_env(path: &str, _extensions: &[&str]) -> Environment<'static> {
+    let mut env = create_base_env();
+    env.set_loader(path_loader(path));
+    env
 }
 
 pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
-    create_env_ext(|source| {
-        for f in E::iter() {
-            source.add_embedded_template(e, &f);
-        }
-    })
+    let mut env = create_base_env();
+    for f in E::iter() {
+        add_embedded_template(&mut env, e, &f);
+    }
+    env
 }
 
-fn create_env_ext(ext: impl Fn(&mut Source)) -> Environment<'static> {
+fn create_base_env() -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
-    let mut source = Source::new();
     for f in BaseTemplates::iter() {
-        source.add_embedded_template(&BaseTemplates, &f);
+        add_embedded_template(&mut env, &BaseTemplates, &f);
     }
-    ext(&mut source);
-    env.set_source(source);
     env
+}
+
+fn add_embedded_template<E: RustEmbed>(env: &mut Environment<'static>, _: &E, fname: &str) {
+    let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
+    env.add_template_owned(fname.to_string(), templ).unwrap();
 }
 
 /// Return rendered template
