@@ -72,7 +72,9 @@ Map viewer examples:
 
     x-www-browser http://127.0.0.1:8080/data/usergrid.html?debug=1
 
-    x-www-browser http://localhost:8080/data/maplibre.html
+Map viewer template examples:
+
+    x-www-browser http://localhost:8080/html/maplibre/mbtiles_mvt_fl
 
 
 Relase Build:
