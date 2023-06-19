@@ -14,9 +14,10 @@ members = [
 default-members = ["bbox-server"]
 
 [workspace.dependencies]
-actix-web = "4.0.0"
+actix-web = { version = "4.0.0", features = ["rustls"] }
 async-stream = "0.3.4"
 async-trait = "0.1.65"
+awc = "3.0.0" # features = ["rustls"]
 clap = { version = "4.2.1", features = ["derive"] }
 futures = "0.3.21"
 geozero = { version = "0.9.2" }
@@ -29,7 +30,7 @@ prometheus = { version = "0.13", default-features = false }
 rust-embed = { version = "5.6.0", features = ["compression"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.57"
-sqlx = { version = "0.6.2", default-features = false, features = [ "runtime-tokio-native-tls", "sqlite", "postgres" ] }
+sqlx = { version = "0.6.2", default-features = false, features = [ "runtime-tokio-rustls", "sqlite", "postgres" ] }
 thiserror = "1.0.31"
 tokio = { version = "1.19.2" }
 

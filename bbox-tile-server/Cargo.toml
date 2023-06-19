@@ -27,12 +27,12 @@ futures = "0.3"
 futures-util = "0.3.21"
 indicatif = "0.16.2"
 log = { workspace = true }
-martin-mbtiles = { version = "0.2.1", default-features = false }
+martin-mbtiles = { version = "0.2.1", default-features = false, features = ["rustls"], git = "https://github.com/pka/martin", branch = "sqlx-rustls" }
 num_cpus = { workspace = true }
 prometheus = { workspace = true }
-reqwest = "0.11.11"
-rusoto_core = "0.47.0"
-rusoto_s3 = "0.47.0"
+reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls"] }
+rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }
+rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tempfile = "3.3.0"
