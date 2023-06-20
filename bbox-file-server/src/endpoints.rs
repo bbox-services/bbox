@@ -57,7 +57,7 @@ impl FileService {
             let dir = app_dir(&static_dir.dir);
             if Path::new(&dir).is_dir() {
                 info!(
-                    "Serving static files from directory '{dir}' on '/{}'",
+                    "Serving static files from directory '{dir}' on '{}'",
                     &static_dir.path
                 );
                 cfg.service(Files::new(&static_dir.path, &dir));
@@ -70,11 +70,11 @@ impl FileService {
         for template_dir in &service_cfg.template {
             let dir = app_dir(&template_dir.dir);
             if Path::new(&dir).is_dir() {
-                let dest = format!("/{}", &template_dir.path);
+                let dest = &template_dir.path;
                 info!("Serving template files from directory '{dir}' on '{dest}'");
                 template_envs.add(&dir, &dest);
                 cfg.route(
-                    &format!("/{}/{{name}}/{{param}}", template_dir.path),
+                    &format!("{dest}/{{name}}/{{param}}"),
                     web::get().to(templates),
                 );
             } else {
@@ -88,7 +88,7 @@ impl FileService {
         for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
             if Path::new(&dir).is_dir() {
-                let xmldir = format!("/{}/plugins.xml", repo.path);
+                let xmldir = format!("{}/plugins.xml", repo.path);
                 info!("Serving QGIS plugin repository from directory '{dir}' on '{xmldir}'");
                 cfg.service(Files::new(
                     &format!("/{}/static", repo.path),

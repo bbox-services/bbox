@@ -10,7 +10,7 @@ pub struct DatasourceCfg {
 
 #[derive(Deserialize, Debug)]
 pub struct DsFiledirCfg {
-    pub path: String,
+    pub dir: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -25,7 +25,7 @@ impl DatasourceCfg {
     pub fn from_path(path: &str) -> Self {
         let mut cfg = DatasourceCfg::default();
         cfg.directory.push(DsFiledirCfg {
-            path: path.to_string(),
+            dir: path.to_string(),
         });
         cfg
     }

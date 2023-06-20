@@ -29,10 +29,10 @@ impl OgcApiService for FileService {
         for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
             if Path::new(&dir).is_dir() {
-                info!("Serving QGIS plugin repository from directory '{dir}'");
+                info!("Scanning QGIS plugin repository directory '{dir}'");
                 let plugins = plugin_files(&dir);
                 self.plugins_index
-                    .insert(format!("/{}/plugins.xml", repo.path), plugins);
+                    .insert(format!("{}/plugins.xml", repo.path), plugins);
             } else {
                 warn!("QGIS plugin repository file directory '{dir}' not found");
             }

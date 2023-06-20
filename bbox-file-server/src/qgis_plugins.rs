@@ -11,7 +11,9 @@ use zip::result::ZipResult;
 
 #[derive(Deserialize, Debug)]
 pub struct QgisPluginRepoCfg {
+    /// endpoint path for publishing
     pub path: String,
+    /// template file directory
     pub dir: String,
 }
 

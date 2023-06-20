@@ -45,7 +45,7 @@ impl Inventory {
     pub async fn scan(config: &DatasourceCfg) -> Inventory {
         let mut inventory = Inventory::new();
         for dir_ds in &config.directory {
-            let base_dir = &dir_ds.path;
+            let base_dir = &dir_ds.dir;
             info!("Scanning '{base_dir}' for feature collections");
             let files = file_search::search(base_dir, "*.gpkg");
             info!("Found {} matching file(s)", files.len());

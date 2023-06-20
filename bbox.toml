@@ -14,32 +14,33 @@ path = "/metrics"
 # Jaeger tracing
 # Environment variable prefix: BBOX_METRICS__JAEGER__
 #agent_endpoint = "localhost:6831"
+
 [[datasource.directory]]
-path = "../data"
+dir = "../data"
 
 #[[datasource.postgis]]
 #url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[fileserver.static]]
 # Static file serving
-# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
+# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="/data"}]'
 # ./data/* -> http://localhost:8080/data/
 dir = "./data"
-path = "data"
+path = "/data"
 
 [[fileserver.template]]
 # Template file serving
-# Env var example: BBOX_FILESERVER__TEMPLATE='[{dir="templates",path="html"}]'
+# Env var example: BBOX_FILESERVER__TEMPLATE='[{dir="templates",path="/html"}]'
 # ./templates/name.html -> http://localhost:8080/html/name/param
 dir = "./templates"
-path = "html"
+path = "/html"
 
 [[fileserver.repo]]
 # QGIS plugin repository
-# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="qgisrepo"}]'
+# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="/qgisrepo"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
 dir = "./plugins"
-path = "qgisrepo"
+path = "/qgisrepo"
 
 [wmsserver]
 # WMS server settings
