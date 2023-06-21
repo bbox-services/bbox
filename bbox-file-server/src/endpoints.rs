@@ -91,12 +91,12 @@ impl FileService {
                 let xmldir = format!("{}/plugins.xml", repo.path);
                 info!("Serving QGIS plugin repository from directory '{dir}' on '{xmldir}'");
                 cfg.service(Files::new(
-                    &format!("/{}/static", repo.path),
+                    &format!("{}/static", repo.path),
                     app_dir("bbox-file-server/src/static"), // TODO: RustEmbed !
                 ))
                 .route(&xmldir, web::get().to(plugin_xml))
                 // TODO: same prefix not possible?
-                .service(Files::new(&format!("/plugins/{}", repo.path), &dir));
+                .service(Files::new(&format!("/plugins{}", repo.path), &dir));
             } else {
                 // warn!("QGIS plugin repository file directory '{dir}' not found");
             }
