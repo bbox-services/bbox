@@ -4,6 +4,7 @@ use crate::config::WebserverCfg;
 use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
+use crate::tls::load_rustls_config;
 use actix_web::{middleware, web, App, HttpServer};
 use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
@@ -127,6 +128,14 @@ impl CoreService {
     pub fn workers(&self) -> usize {
         self.web_config.worker_threads()
     }
+    pub fn tls_config(&self) -> Option<rustls::ServerConfig> {
+        if let Some(cert) = &self.web_config.tls_cert {
+            if let Some(key) = &self.web_config.tls_key {
+                return Some(load_rustls_config(&cert, &key));
+            }
+        }
+        None
+    }
     pub fn server_addr(&self) -> &str {
         &self.web_config.server_addr
     }
@@ -218,15 +227,18 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
 
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
-    HttpServer::new(move || {
+    let tls_config = core.tls_config();
+    let mut server = HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| service.register_endpoints(&mut cfg, &core))
-    })
-    .bind(server_addr)?
-    .workers(workers)
-    .run()
-    .await
+    });
+    if let Some(tls_config) = tls_config {
+        server = server.bind_rustls(server_addr, tls_config)?;
+    } else {
+        server = server.bind(server_addr)?;
+    }
+    server.workers(workers).run().await
 }

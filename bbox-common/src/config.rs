@@ -62,6 +62,8 @@ pub struct WebserverCfg {
     pub server_addr: String,
     worker_threads: Option<usize>,
     public_server_url: Option<String>,
+    pub tls_cert: Option<String>,
+    pub tls_key: Option<String>,
 }
 
 impl Default for WebserverCfg {
@@ -70,6 +72,8 @@ impl Default for WebserverCfg {
             server_addr: "127.0.0.1:8080".to_string(),
             worker_threads: None,
             public_server_url: None,
+            tls_cert: None,
+            tls_key: None,
         }
     }
 }

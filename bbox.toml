@@ -2,6 +2,8 @@
 # Web server settings
 # Environment variable prefix: BBOX_WEBSERVER__
 # server_addr = "0.0.0.0:8080"  # Default: 127.0.0.1:8080
+# tls_cert = "localhost+1.pem"
+# tls_key = "localhost+1-key.pem"
 # worker_threads = 4  # Default: number of CPU cores
 # public_server_url = "http://host.docker.internal:8080" # Default: Request address
 

@@ -28,6 +28,8 @@ opentelemetry-jaeger = { version = "0.17", features = ["rt-tokio"] }
 opentelemetry-prometheus = { version = "0.11" }
 prometheus = { workspace = true }
 rust-embed = { workspace = true }
+rustls = "0.20.8" # Same as actix-tls -> tokio-rustls
+rustls-pemfile = "1.0.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = "0.8.24"

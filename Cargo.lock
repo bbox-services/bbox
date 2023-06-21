@@ -683,6 +683,8 @@ dependencies = [
  "opentelemetry-prometheus",
  "prometheus",
  "rust-embed",
+ "rustls 0.20.8",
+ "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_yaml",

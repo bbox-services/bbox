@@ -10,6 +10,7 @@ pub mod service;
 pub mod static_assets;
 pub mod static_files;
 pub mod templates;
+pub mod tls;
 
 // pub use utoipa::{path as api_path, Component as ApiComponent, OpenApi};
 

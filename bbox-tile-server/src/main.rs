@@ -54,7 +54,8 @@ async fn run_service() -> std::io::Result<()> {
 
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
-    HttpServer::new(move || {
+    let tls_config = core.tls_config();
+    let mut server = HttpServer::new(move || {
         App::new()
             .wrap(Condition::new(core.has_metrics(), core.middleware()))
             .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
@@ -65,11 +66,13 @@ async fn run_service() -> std::io::Result<()> {
             .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core))
-    })
-    .bind(server_addr)?
-    .workers(workers)
-    .run()
-    .await
+    });
+    if let Some(tls_config) = tls_config {
+        server = server.bind_rustls(server_addr, tls_config)?;
+    } else {
+        server = server.bind(server_addr)?;
+    }
+    server.workers(workers).run().await
 }
 
 fn main() {

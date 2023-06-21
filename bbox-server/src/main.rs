@@ -93,7 +93,8 @@ async fn run_service() -> std::io::Result<()> {
     let project = map_service.default_project.clone();
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
-    let server = HttpServer::new(move || {
+    let tls_config = core.tls_config();
+    let mut server = HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Condition::new(core.has_metrics(), core.middleware()))
             .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
@@ -116,10 +117,13 @@ async fn run_service() -> std::io::Result<()> {
 
         app
     })
-    .bind(&server_addr)?
     .workers(workers)
-    .shutdown_timeout(3) // default: 30s
-    .run();
+    .shutdown_timeout(3); // default: 30s
+    if let Some(tls_config) = tls_config {
+        server = server.bind_rustls(&server_addr, tls_config)?;
+    } else {
+        server = server.bind(&server_addr)?;
+    }
 
     // if log_enabled!(Level::Info) {
     //     println!("{ASCIILOGO}");
@@ -135,7 +139,7 @@ async fn run_service() -> std::io::Result<()> {
         open::that(&open_url).ok();
     }
 
-    server.await
+    server.run().await
 }
 
 fn main() {
