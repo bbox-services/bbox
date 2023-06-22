@@ -27,7 +27,7 @@ pub fn load_rustls_config(tls_cert: &str, tls_key: &str) -> rustls::ServerConfig
 
     // load TLS key/cert files
     let cert_file = &mut BufReader::new(File::open(&app_dir(tls_cert)).unwrap_or_else(error_exit));
-    let key_file = &mut BufReader::new(File::open(app_dir(tls_key)).unwrap_or_else(error_exit));
+    let key_file = &mut BufReader::new(File::open(&app_dir(tls_key)).unwrap_or_else(error_exit));
 
     // convert files to key/cert objects
     let cert_chain = certs(cert_file)

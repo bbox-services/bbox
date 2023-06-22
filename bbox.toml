@@ -7,6 +7,13 @@
 # worker_threads = 4  # Default: number of CPU cores
 # public_server_url = "http://host.docker.internal:8080" # Default: Request address
 
+#[auth.oidc]
+# OIDC Authentication
+# Environment variable prefix: BBOX_AUTH__OIDC__
+#client_id = "xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+#client_secret = "xxxxxxxxxxxxxxxxxxxxxxxx" # Set with BBOX_AUTH__OIDC__CLIENT_SECRET
+#issuer_url = "https://accounts.google.com"
+
 [metrics.prometheus]
 # Prometheus metrics endpoint
 # Environment variable prefix: BBOX_METRICS__PROMETHEUS__

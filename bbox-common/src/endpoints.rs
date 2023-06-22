@@ -1,14 +1,17 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
+use crate::auth::oidc::{AuthRequest, OidcClient};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::CoreService;
-use actix_web::web::Bytes;
+use actix_session::Session;
 use actix_web::{
-    guard, guard::Guard, guard::GuardContext, http::header, web, HttpRequest, HttpResponse,
+    error::ErrorInternalServerError, guard, guard::Guard, guard::GuardContext, http::header,
+    http::StatusCode, web, web::Bytes, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_opentelemetry::PrometheusMetricsHandler;
 use async_stream::stream;
 use futures_core::stream::Stream;
+use log::info;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::io::Read;
@@ -150,6 +153,32 @@ async fn health() -> HttpResponse {
     HttpResponse::Ok().body("OK")
 }
 
+async fn login(oidc: web::Data<OidcClient>) -> impl Responder {
+    web::Redirect::to(oidc.authorize_url.clone()).using_status_code(StatusCode::FOUND)
+}
+
+async fn auth(
+    session: Session,
+    oidc: web::Data<OidcClient>,
+    params: web::Query<AuthRequest>,
+) -> actix_web::Result<impl Responder> {
+    let identity = params.auth(&oidc).await.map_err(ErrorInternalServerError)?;
+    info!(
+        "username: `{}` groups: {:?}",
+        identity.username, identity.groups
+    );
+
+    session.insert("username", identity.username).unwrap();
+    session.insert("groups", identity.groups).unwrap();
+
+    Ok(web::Redirect::to("/").using_status_code(StatusCode::FOUND))
+}
+
+async fn logout(session: Session) -> impl Responder {
+    session.clear();
+    web::Redirect::to("/").using_status_code(StatusCode::FOUND)
+}
+
 impl CoreService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
         cfg.app_data(web::Data::new(self.web_config.clone()))
@@ -181,6 +210,13 @@ impl CoreService {
                     .route(web::get().to(openapi_json)),
             )
             .service(web::resource("/health").to(health));
+
+        if let Some(oidc) = &self.oidc {
+            cfg.app_data(web::Data::new(oidc.clone()))
+                .service(web::resource("/login").route(web::get().to(login)))
+                .service(web::resource("/auth").route(web::get().to(auth)))
+                .service(web::resource("/logout").route(web::get().to(logout)));
+        }
 
         if let Some(metrics) = &self.metrics {
             let metrics_handler = PrometheusMetricsHandler::new(metrics.exporter.clone());

@@ -30,7 +30,7 @@ log = { workspace = true }
 martin-mbtiles = { version = "0.2.1", default-features = false, features = ["rustls"], git = "https://github.com/pka/martin", branch = "sqlx-rustls" }
 num_cpus = { workspace = true }
 prometheus = { workspace = true }
-reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls"] }
+reqwest = { workspace = true }
 rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }
 rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }

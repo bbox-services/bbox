@@ -1,11 +1,16 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
+use crate::auth::oidc::OidcClient;
 use crate::cli::{CommonCommands, GlobalArgs, NoArgs, NoCommands};
-use crate::config::WebserverCfg;
+use crate::config::{AuthCfg, WebserverCfg};
 use crate::logger;
 use crate::metrics::{init_metrics, Metrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use crate::tls::load_rustls_config;
-use actix_web::{middleware, web, App, HttpServer};
+use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{
+    cookie::{time::Duration, Key},
+    middleware, web, App, HttpServer,
+};
 use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
@@ -57,6 +62,7 @@ pub struct CoreService {
     pub(crate) ogcapi: OgcApiInventory,
     pub(crate) openapi: OpenApiDoc,
     pub(crate) metrics: Option<Metrics>,
+    pub(crate) oidc: Option<OidcClient>,
 }
 
 impl Default for CoreService {
@@ -67,6 +73,7 @@ impl Default for CoreService {
             ogcapi: OgcApiInventory::default(),
             openapi: OpenApiDoc::new(),
             metrics: None,
+            oidc: None,
         }
     }
 }
@@ -157,7 +164,11 @@ impl OgcApiService for CoreService {
         logger::init();
 
         self.web_config = WebserverCfg::from_config();
+        let auth_cfg = AuthCfg::from_config();
         self.metrics = init_metrics();
+        if let Some(cfg) = &auth_cfg.oidc {
+            self.oidc = Some(OidcClient::from_config(cfg).await);
+        }
     }
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         vec![
@@ -225,15 +236,26 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
         return Ok(());
     }
 
+    let secret_key = Key::generate();
+    let session_ttl = Duration::minutes(1);
+
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
     let mut server = HttpServer::new(move || {
         App::new()
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
             .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| service.register_endpoints(&mut cfg, &core))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .cookie_name("bbox".to_owned())
+                    .cookie_secure(false)
+                    .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
+                    .build(),
+            )
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::NormalizePath::trim())
+            .wrap(middleware::Logger::default())
     });
     if let Some(tls_config) = tls_config {
         server = server.bind_rustls(server_addr, tls_config)?;

@@ -1,4 +1,5 @@
 pub mod api;
+pub mod auth;
 pub mod cli;
 pub mod config;
 pub mod endpoints;
@@ -11,8 +12,6 @@ pub mod static_assets;
 pub mod static_files;
 pub mod templates;
 pub mod tls;
-
-// pub use utoipa::{path as api_path, Component as ApiComponent, OpenApi};
 
 use std::env;
 use std::path::Path;

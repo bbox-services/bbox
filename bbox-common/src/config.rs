@@ -1,3 +1,4 @@
+use crate::auth::oidc::OidcAuthCfg;
 use actix_web::HttpRequest;
 use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
@@ -92,6 +93,18 @@ impl WebserverCfg {
             let conninfo = req.connection_info();
             format!("{}://{}", conninfo.scheme(), conninfo.host(),)
         }
+    }
+}
+
+#[derive(Deserialize, Default, Clone, Debug)]
+#[serde(default, deny_unknown_fields)]
+pub struct AuthCfg {
+    pub oidc: Option<OidcAuthCfg>,
+}
+
+impl AuthCfg {
+    pub fn from_config() -> Self {
+        from_config_opt_or_exit("auth").unwrap_or_default()
     }
 }
 
