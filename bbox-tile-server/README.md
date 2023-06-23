@@ -25,7 +25,7 @@ Features:
 Run tile server with bbox.toml configuration:
 
     # Reduce log output for testing
-    export BBOX_WMSSERVER__NUM_FCGI_PROCESSES=1
+    export BBOX_MAPSERVER__NUM_FCGI_PROCESSES=1
     cargo run serve
 
 Tile requests:

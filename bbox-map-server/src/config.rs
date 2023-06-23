@@ -11,7 +11,7 @@ use std::path::Path;
 
 #[derive(Deserialize, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct WmsServerCfg {
+pub struct MapServerCfg {
     num_fcgi_processes: Option<usize>,
     pub fcgi_client_pool_size: usize,
     pub wait_timeout: Option<u64>,
@@ -79,9 +79,9 @@ pub struct MockBackendCfg {
     pub path: String,
 }
 
-impl Default for WmsServerCfg {
+impl Default for MapServerCfg {
     fn default() -> Self {
-        let mut cfg = WmsServerCfg {
+        let mut cfg = MapServerCfg {
             num_fcgi_processes: None,
             fcgi_client_pool_size: 1,
             wait_timeout: Some(90000),
@@ -102,14 +102,14 @@ impl Default for WmsServerCfg {
     }
 }
 
-impl WmsServerCfg {
+impl MapServerCfg {
     pub fn from_config(cli: &ArgMatches) -> Self {
         // Check if there is a backend configuration
         let has_qgis_config =
-            from_config_opt_or_exit::<QgisBackendCfg>("wmsserver.qgis_backend").is_some();
+            from_config_opt_or_exit::<QgisBackendCfg>("mapserver.qgis_backend").is_some();
         let has_umn_config =
-            from_config_opt_or_exit::<UmnBackendCfg>("wmsserver.umn_backend").is_some();
-        let mut cfg: WmsServerCfg = from_config_opt_or_exit("wmsserver").unwrap_or_default();
+            from_config_opt_or_exit::<UmnBackendCfg>("mapserver.umn_backend").is_some();
+        let mut cfg: MapServerCfg = from_config_opt_or_exit("mapserver").unwrap_or_default();
 
         // Get config from CLI
         if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {

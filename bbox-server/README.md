@@ -39,27 +39,27 @@ Configuraton is read from `bbox.toml` and environment variables.
 # dir = "./plugins"
 # path = "qgis"
 
-[wmsserver]
-# WMS server settings
-# Environment variable prefix: BBOX_WMSSERVER__
+[mapserver]
+# Map server settings
+# Environment variable prefix: BBOX_MAPSERVER__
 path = "/wms"                # Base path of WMS endpoints
 # num_fcgi_processes = 4     # Default: number of CPU cores
 # fcgi_client_pool_size = 1  # FCGI client pool size. Default: 1
 search_projects = false      # Scan directories and build inventory
 
-[wmsserver.qgis]
+[mapserver.qgis]
 # QGIS Server settings
-# Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__QGIS_BACKEND__
 # project_basedir = "."      # Base dir for project files (.qgs, .qgz)
 
-[wmsserver.umn]
+[mapserver.umn]
 # UMN MapServer settings
-# Environment variable prefix: BBOX_WMSSERVER__UMN_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__UMN_BACKEND__
 # project_basedir = "."      # Base dir for project files (.map)
 
-[wmsserver.mock]
+[mapserver.mock]
 # Enable FCGI mockup backend (for testing)
-# Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__MOCK_BACKEND__
 
 [metrics.prometheus]
 # Prometheus metrics endpoint

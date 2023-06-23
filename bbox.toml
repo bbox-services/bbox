@@ -51,29 +51,29 @@ path = "/html"
 dir = "./plugins"
 path = "/qgisrepo"
 
-[wmsserver]
-# WMS server settings
-# Environment variable prefix: BBOX_WMSSERVER__
+[mapserver]
+# Map server settings
+# Environment variable prefix: BBOX_MAPSERVER__
 # num_fcgi_processes = 4     # Default: number of CPU cores
 # wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s
 # search_projects = false    # Scan directories and build inventory
 
-[wmsserver.qgis_backend]
+[mapserver.qgis_backend]
 # QGIS Server settings
-# Environment variable prefix: BBOX_WMSSERVER__QGIS_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__QGIS_BACKEND__
 project_basedir = "../data"  # Base dir for project files (.qgs, .qgz)
 qgs.path = "/qgis"           # WMS URL base path
 qgz.path = "/qgz"            # WMS URL base path
 
-[wmsserver.umn_backend]
+[mapserver.umn_backend]
 # UMN MapServer settings
-# Environment variable prefix: BBOX_WMSSERVER__UMN_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__UMN_BACKEND__
 project_basedir = "../data"  # Base dir for project files (.map)
 path = "/wms/map"            # WMS URL base path
 
-#[wmsserver.mock_backend]
+#[mapserver.mock_backend]
 # Enable FCGI mockup backend (for testing)
-# Environment variable prefix: BBOX_WMSSERVER__MOCK_BACKEND__
+# Environment variable prefix: BBOX_MAPSERVER__MOCK_BACKEND__
 # path = "/wms/mock"
 
 #[processes.dagster_backend]

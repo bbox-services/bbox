@@ -14,7 +14,7 @@
 //! └────────────────────┘         └─────────────────┘
 //! ```
 
-use crate::config::WmsServerCfg;
+use crate::config::MapServerCfg;
 use crate::dispatcher::{DispatchConfig, Dispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
@@ -173,7 +173,7 @@ impl FcgiProcessPool {
     }
 
     /// Create client pool for each process and return dispatcher
-    pub fn client_dispatcher(&self, wms_config: &WmsServerCfg) -> FcgiDispatcher {
+    pub fn client_dispatcher(&self, wms_config: &MapServerCfg) -> FcgiDispatcher {
         debug!("Creating {} FcgiDispatcher", self.backend_name);
         let config = DispatchConfig::new();
         let pools = (0..self.num_processes)

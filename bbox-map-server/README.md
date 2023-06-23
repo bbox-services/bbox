@@ -17,7 +17,7 @@ Usage
     cargo run
 
 Configuration:
-* `BBOX_WMSSERVER__NUM_FCGI_PROCESSES`: Number of FCGI processes (default: number of CPU cores)
+* `BBOX_MAPSERVER__NUM_FCGI_PROCESSES`: Number of FCGI processes (default: number of CPU cores)
 
 
 Request examples:

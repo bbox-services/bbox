@@ -154,7 +154,7 @@ fn find_exe(locations: Vec<&str>) -> Option<String> {
 }
 
 pub fn detect_backends(
-    config: &WmsServerCfg,
+    config: &MapServerCfg,
 ) -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();

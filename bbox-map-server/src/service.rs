@@ -1,4 +1,4 @@
-use crate::config::WmsServerCfg;
+use crate::config::MapServerCfg;
 use crate::fcgi_process::FcgiDispatcher;
 use crate::inventory::Inventory;
 use crate::metrics::init_metrics;
@@ -23,7 +23,7 @@ pub struct MapService {
     pub(crate) inventory: Inventory,
 }
 
-async fn init_wms_backend(config: &WmsServerCfg) -> MapService {
+async fn init_wms_backend(config: &MapServerCfg) -> MapService {
     let num_fcgi_processes = config.num_fcgi_processes();
     let default_project = config.default_project.clone();
     let (process_pools, inventory) = detect_backends(config).unwrap();
@@ -61,7 +61,7 @@ impl OgcApiService for MapService {
     type CliArgs = NoArgs;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
-        let config = WmsServerCfg::from_config(cli);
+        let config = MapServerCfg::from_config(cli);
         *self = init_wms_backend(&config).await;
     }
     fn conformance_classes(&self) -> Vec<String> {
