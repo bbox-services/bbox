@@ -1,7 +1,7 @@
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::cli::{NoArgs, NoCommands};
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
 
 #[derive(Clone, Default)]

@@ -2,8 +2,8 @@ use crate::fcgi_process::*;
 use crate::metrics::{wms_metrics, WmsMetrics};
 use crate::service::MapService;
 use actix_web::{guard, web, HttpRequest, HttpResponse};
-use bbox_common::endpoints::TileResponse;
-use bbox_common::service::CoreService;
+use bbox_core::endpoints::TileResponse;
+use bbox_core::service::CoreService;
 use log::{debug, info, warn};
 use opentelemetry::{
     global,

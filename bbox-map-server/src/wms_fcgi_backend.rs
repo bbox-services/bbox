@@ -1,7 +1,7 @@
 use crate::config::*;
 use crate::fcgi_process::FcgiProcessPool;
 use crate::inventory::*;
-use bbox_common::{app_dir, file_search};
+use bbox_core::{app_dir, file_search};
 use log::info;
 use std::collections::{HashMap, HashSet};
 use std::env;

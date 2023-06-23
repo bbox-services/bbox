@@ -1,4 +1,4 @@
-use bbox_common::config::config_error_exit;
+use bbox_core::config::config_error_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -22,7 +22,7 @@ pub struct DagsterBackendCfg {
 
 impl ProcessesServerCfg {
     pub fn from_config() -> Self {
-        let config = bbox_common::config::app_config();
+        let config = bbox_core::config::app_config();
         if config.find_value("processes").is_ok() {
             let cfg: Self = config
                 .extract_inner("processes")

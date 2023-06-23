@@ -1,6 +1,6 @@
 use crate::tilesource::TileSource;
-use bbox_common::cli::CommonCommands;
-use bbox_common::config::from_config_opt_or_exit;
+use bbox_core::cli::CommonCommands;
+use bbox_core::config::from_config_opt_or_exit;
 use clap::{ArgMatches, FromArgMatches};
 use log::info;
 use serde::Deserialize;

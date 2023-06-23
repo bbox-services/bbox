@@ -2,9 +2,9 @@ use crate::config::DatasourceCfg;
 use crate::inventory::Inventory;
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::cli::{NoArgs, NoCommands};
-use bbox_common::ogcapi::{ApiLink, CoreCollection};
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::ogcapi::{ApiLink, CoreCollection};
+use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
 
 #[derive(Clone, Default)]

@@ -2,7 +2,7 @@ use crate::cache::{
     files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileWriter,
 };
 use crate::service::TileService;
-use bbox_common::config::error_exit;
+use bbox_core::config::error_exit;
 use clap::{Args, Parser};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};

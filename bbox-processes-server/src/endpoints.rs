@@ -8,7 +8,7 @@ use actix_files::NamedFile;
 use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
-use bbox_common::service::CoreService;
+use bbox_core::service::CoreService;
 use log::{info, warn};
 use serde_json::json;
 

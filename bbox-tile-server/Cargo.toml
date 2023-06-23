@@ -16,7 +16,7 @@ actix-web = { workspace = true }
 anyhow = "1.0.52"
 async-channel = "1.6.1"
 async-trait = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 bbox-asset-server = { path = "../bbox-asset-server", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bytes = "1.1.0"

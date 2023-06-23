@@ -17,7 +17,7 @@ tile-server = ["bbox-tile-server"]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
 bbox-asset-server = { path = "../bbox-asset-server", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }

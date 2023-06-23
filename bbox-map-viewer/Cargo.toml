@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 actix-web = { workspace = true }
-bbox-common = { path = "../bbox-common", features=["html"] }
+bbox-core = { path = "../bbox-core", features=["html"] }
 bbox-feature-server = { path = "../bbox-feature-server" }
 bbox-map-server = { path = "../bbox-map-server" }
 log = { workspace = true }

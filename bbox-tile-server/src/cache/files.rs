@@ -2,7 +2,7 @@ use crate::cache::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileRead
 use crate::cli::SeedArgs;
 use crate::config::FileCacheCfg;
 use async_trait::async_trait;
-use bbox_common::endpoints::TileResponse;
+use bbox_core::endpoints::TileResponse;
 use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};

@@ -1,4 +1,4 @@
-use bbox_common::{file_search, templates::create_env_embedded};
+use bbox_core::{file_search, templates::create_env_embedded};
 use configparser::ini::Ini;
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;

@@ -7,7 +7,7 @@ mod tilesource;
 
 use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_core::service::{CoreService, OgcApiService};
 
 #[cfg(feature = "asset-server")]
 use bbox_asset_server::AssetService;
@@ -15,9 +15,9 @@ use bbox_asset_server::AssetService;
 use bbox_map_server::MapService;
 
 #[cfg(not(feature = "map-server"))]
-use bbox_common::service::DummyService as MapService;
+use bbox_core::service::DummyService as MapService;
 #[cfg(not(feature = "asset-server"))]
-use bbox_common::service::DummyService as AssetService;
+use bbox_core::service::DummyService as AssetService;
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
@@ -62,7 +62,7 @@ async fn run_service() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
-            .configure(bbox_common::static_assets::register_endpoints)
+            .configure(bbox_core::static_assets::register_endpoints)
             .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| asset_service.register_endpoints(&mut cfg, &core))

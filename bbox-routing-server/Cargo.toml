@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 bincode = "1.3.3"
 clap = { workspace = true }
 fast_paths = { git = "https://github.com/pka/fast_paths", branch="edges-access" }

@@ -87,7 +87,7 @@ impl CoreService {
     pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
         // Add cli commands
         let mut cli = T::CliCommands::augment_subcommands(self.cli.clone());
-        if std::any::type_name::<T::CliArgs>() != "bbox_common::cli::NoArgs" {
+        if std::any::type_name::<T::CliArgs>() != "bbox_core::cli::NoArgs" {
             cli = T::CliArgs::augment_args(cli);
         }
         self.cli = cli;

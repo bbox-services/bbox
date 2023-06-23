@@ -1,7 +1,7 @@
 use crate::service::BboxService;
 use actix_web::{web, Error, HttpResponse};
-use bbox_common::service::CoreService;
-use bbox_common::templates::{create_env_embedded, render_endpoint};
+use bbox_core::service::CoreService;
+use bbox_core::templates::{create_env_embedded, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;

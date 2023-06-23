@@ -735,7 +735,7 @@ dependencies = [
  "actix-files",
  "actix-web",
  "async-trait",
- "bbox-common",
+ "bbox-core",
  "clap 4.3.5",
  "configparser",
  "log",
@@ -748,7 +748,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "bbox-common"
+name = "bbox-core"
 version = "0.1.0"
 dependencies = [
  "actix-session",
@@ -789,7 +789,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "async-trait",
- "bbox-common",
+ "bbox-core",
  "clap 4.3.5",
  "futures",
  "geozero",
@@ -812,7 +812,7 @@ dependencies = [
  "async-process",
  "async-trait",
  "awc",
- "bbox-common",
+ "bbox-core",
  "bufstream",
  "clap 4.3.5",
  "deadpool",
@@ -835,7 +835,7 @@ name = "bbox-map-viewer"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "bbox-common",
+ "bbox-core",
  "bbox-feature-server",
  "bbox-map-server",
  "log",
@@ -855,7 +855,7 @@ dependencies = [
  "actix-web",
  "async-trait",
  "awc",
- "bbox-common",
+ "bbox-core",
  "chrono",
  "clap 4.3.5",
  "log",
@@ -872,7 +872,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "async-trait",
- "bbox-common",
+ "bbox-core",
  "bincode",
  "clap 4.3.5",
  "fast_paths",
@@ -900,7 +900,7 @@ dependencies = [
  "actix-web",
  "async-trait",
  "bbox-asset-server",
- "bbox-common",
+ "bbox-core",
  "bbox-feature-server",
  "bbox-map-server",
  "bbox-map-viewer",
@@ -925,7 +925,7 @@ dependencies = [
  "async-channel",
  "async-trait",
  "bbox-asset-server",
- "bbox-common",
+ "bbox-core",
  "bbox-map-server",
  "bytes 1.4.0",
  "clap 4.3.5",

@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
-use bbox_common::ogcapi::*;
+use bbox_core::ogcapi::*;
 
 pub mod gpkg;
 pub mod postgis;

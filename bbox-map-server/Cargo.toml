@@ -12,7 +12,7 @@ actix-web = { workspace = true }
 async-process = "1.0.0"
 async-trait = { workspace = true }
 awc = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 bufstream = "0.1.4"
 clap = { workspace = true }
 deadpool = { version = "0.9.2", default-features = false, features = ["managed", "rt_tokio_1"] }

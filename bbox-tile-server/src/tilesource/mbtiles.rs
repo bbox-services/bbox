@@ -4,7 +4,7 @@ use crate::tilesource::{
     wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use async_trait::async_trait;
-use bbox_common::config::error_exit;
+use bbox_core::config::error_exit;
 use log::info;
 use martin_mbtiles::MbtilesPool;
 use std::ffi::OsStr;

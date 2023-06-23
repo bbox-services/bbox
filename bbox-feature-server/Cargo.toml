@@ -5,12 +5,12 @@ authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
 
 [features]
-html = ["bbox-common/html"]
+html = ["bbox-core/html"]
 
 [dependencies]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 clap = { workspace = true }
 futures = { workspace = true }
 geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }

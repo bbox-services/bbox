@@ -6,8 +6,8 @@ pub mod wms_http;
 use crate::config::{SourceParamCfg, TileSourceProviderCfg};
 use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
-use bbox_common::config::error_exit;
-use bbox_common::endpoints::TileResponse;
+use bbox_core::config::error_exit;
+use bbox_core::endpoints::TileResponse;
 use tile_grid::{RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
 

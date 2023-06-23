@@ -1,8 +1,8 @@
 use crate::qwc2_config::*;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
-use bbox_common::endpoints::abs_req_baseurl;
-use bbox_common::static_files::EmbedFile;
-use bbox_common::templates::create_env_embedded;
+use bbox_core::endpoints::abs_req_baseurl;
+use bbox_core::static_files::EmbedFile;
+use bbox_core::templates::create_env_embedded;
 use bbox_map_server::inventory::{Inventory, WmsService};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;

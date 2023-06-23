@@ -5,8 +5,8 @@
 FROM rust:bullseye as builder
 
 COPY Cargo.lock Cargo.toml ./
-RUN mkdir bbox-common bbox-feature-server bbox-asset-server bbox-map-server bbox-map-server/mock-fcgi-wms bbox-map-viewer bbox-processes-server bbox-routing-server bbox-server bbox-tile-server
-COPY bbox-common/Cargo.toml ./bbox-common/Cargo.toml
+RUN mkdir bbox-core bbox-feature-server bbox-asset-server bbox-map-server bbox-map-server/mock-fcgi-wms bbox-map-viewer bbox-processes-server bbox-routing-server bbox-server bbox-tile-server
+COPY bbox-core/Cargo.toml ./bbox-core/Cargo.toml
 COPY bbox-feature-server/Cargo.toml ./bbox-feature-server/Cargo.toml
 COPY bbox-asset-server/Cargo.toml ./bbox-asset-server/Cargo.toml
 COPY bbox-map-server/Cargo.toml ./bbox-map-server/Cargo.toml

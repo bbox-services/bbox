@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "bbox-common",
+    "bbox-core",
     "bbox-feature-server",
     "bbox-asset-server",
     "bbox-map-server",

@@ -1,8 +1,8 @@
 use crate::service::TileService;
 use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
-use bbox_common::endpoints::{abs_req_baseurl, req_parent_path};
-use bbox_common::service::CoreService;
+use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
+use bbox_core::service::CoreService;
 use tile_grid::{
     Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
 };

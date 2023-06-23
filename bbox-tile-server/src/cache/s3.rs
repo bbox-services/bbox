@@ -2,7 +2,7 @@ use crate::cache::{BoxRead, TileCacheError, TileCacheType, TileReader, TileWrite
 use crate::cli::SeedArgs;
 use crate::config::S3CacheCfg;
 use async_trait::async_trait;
-use bbox_common::endpoints::TileResponse;
+use bbox_core::endpoints::TileResponse;
 use log::debug;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;

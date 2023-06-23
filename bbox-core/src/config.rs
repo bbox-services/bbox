@@ -150,7 +150,7 @@ mod tests {
             .merge(Toml::file("Cargo.toml"))
             .merge(Env::prefixed("CARGO_"));
         let package: Package = config.extract_inner("package").unwrap();
-        assert_eq!(package.name, "bbox-common");
+        assert_eq!(package.name, "bbox-core");
         assert_eq!(package.edition.unwrap(), "2018");
     }
 }

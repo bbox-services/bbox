@@ -6,11 +6,11 @@ use crate::tilesource::{
 };
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::cli::NoArgs;
-use bbox_common::config::error_exit;
-use bbox_common::endpoints::TileResponse;
-use bbox_common::ogcapi::ApiLink;
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_core::cli::NoArgs;
+use bbox_core::config::error_exit;
+use bbox_core::endpoints::TileResponse;
+use bbox_core::ogcapi::ApiLink;
+use bbox_core::service::{CoreService, OgcApiService};
 use clap::{ArgMatches, FromArgMatches};
 use serde_json::json;
 use std::collections::HashMap;

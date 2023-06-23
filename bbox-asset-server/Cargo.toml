@@ -7,7 +7,7 @@ edition = "2018"
 actix-files = "0.6.0"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-common = { path = "../bbox-common" }
+bbox-core = { path = "../bbox-core" }
 clap = { workspace = true }
 configparser = "3.0.0"
 log = { workspace = true }

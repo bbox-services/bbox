@@ -2,9 +2,9 @@ use crate::config::ProcessesServerCfg;
 use crate::dagster::DagsterBackend;
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_common::cli::{NoArgs, NoCommands};
-use bbox_common::ogcapi::ApiLink;
-use bbox_common::service::{CoreService, OgcApiService};
+use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::ogcapi::ApiLink;
+use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
 
 #[derive(Clone, Default)]
