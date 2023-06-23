@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Don't change this name - it is used by the merge protection rules
+    name: Build ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macOS-latest
+            target: x86_64-apple-darwin
+          - os: macOS-latest
+            target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Rust Versions
+        shell: bash
+        run: |
+          rustc --version
+          cargo --version
+      - name: Lint
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run build
+        shell: bash
+        run: |
+          if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
+            # Skip bbox-map-server on Windows (uses Unix sockets)
+            cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server
+          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
+            rustup target add aarch64-apple-darwin
+            # compile without debug symbols
+            RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-server
+          else
+            cargo build --release --target ${{ matrix.target }} --package bbox-server
+          fi
+          mkdir target_releases
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            mv target/${{ matrix.target }}/release/bbox-server.exe target_releases
+          else
+            mv target/${{ matrix.target }}/release/bbox-server target_releases
+          fi
+      - name: Save build artifact build-${{ matrix.target }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.target }}
+          path: target_releases/*
+
+  test:
+    # Don't change this name - it is used by the merge protection rules
+    name: Test & package ${{ matrix.target }}
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            ext: ''
+            target: x86_64-unknown-linux-gnu
+            name: bbox-server-Linux-x86_64.tar.gz
+          - os: windows-latest
+            ext: '.exe'
+            target: x86_64-pc-windows-msvc
+            name: bbox-server-Windows-x86_64.zip
+          - os: macOS-latest
+            ext: ''
+            target: x86_64-apple-darwin
+            name: bbox-server-Darwin-x86_64.tar.gz
+          - os: ubuntu-latest
+            ext: ''
+            target: aarch64-apple-darwin
+            name: bbox-server-Darwin-aarch64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+      # - name: Start postgres
+      #   if: matrix.target != 'aarch64-apple-darwin'
+      #   uses: nyurik/action-setup-postgis@v1
+      #   id: pg
+      #   with:
+      #     username: test
+      #     password: test
+      #     database: test
+      #     rights: --superuser
+      # - name: Log DATABASE_URL string
+      #   shell: bash
+      #   run: |
+      #     echo "DATABASE_URL=$DATABASE_URL"
+      #     echo "And in base64 to bypass Github's obfuscation:"
+      #     echo "$DATABASE_URL" | base64
+      #   env:
+      #     DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
+      # - name: Init database
+      #   if: matrix.target != 'aarch64-apple-darwin'
+      #   shell: bash
+      #   run: tests/fixtures/initdb.sh
+      #   env:
+      #     DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
+      - name: Unit Tests (Linux)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: |
+          cargo test --all
+          rm -rf target
+        # env:
+        #   DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-${{ matrix.target }}
+          path: target/
+
+      - name: Package
+        shell: bash
+        run: |
+          cd target/
+          # Symbol stripping does not work cross-platform
+          if [[ "${{ matrix.target }}" != "aarch64-apple-darwin" ]]; then
+            strip bbox-server${{ matrix.ext }}
+          fi
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a ../${{ matrix.name }} bbox-server${{ matrix.ext }}
+          else
+            tar czvf ../${{ matrix.name }} bbox-server${{ matrix.ext }}
+          fi
+          cd -
+      - name: Generate SHA-256 (MacOS)
+        if: matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin'
+        run: shasum -a 256 ${{ matrix.name }}
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          files: 'bbox-server*'
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,12 +1,18 @@
 name: Docker images
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
 
 jobs:
 
     build:
       runs-on: ubuntu-latest
-      if: github.event_name == 'push'
 
       steps:
 
@@ -30,18 +36,6 @@ jobs:
           buildoptions: "--target qgis-server"
           tags: "${{ steps.get_tag.outputs.tag }}"
           dockerfile: docker/Dockerfile-qgis-server
-
-      - name: Build and publish processes-server
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        env:
-          BUILD_DIR: bbox-processes-server
-        with:
-          name: sourcepole/bbox-processes-server
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          buildargs: BUILD_DIR
-          tags: "${{ steps.get_tag.outputs.tag }}"
-          dockerfile: docker/Dockerfile
 
       - name: Build and Publish bbox-qgis-server
         uses: elgohr/Publish-Docker-Github-Action@v5
