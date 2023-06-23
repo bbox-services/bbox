@@ -1,5 +1,7 @@
-BBOX services
-=============
+# BBOX services
+
+[![CI build](https://github.com/sourcepole/bbox/workflows/CI/badge.svg)](https://github.com/sourcepole/bbox/actions)
+[![Docker](https://img.shields.io/docker/v/sourcepole/bbox-server-qgis?label=Docker%20image&sort=semver)](https://hub.docker.com/r/sourcepole/bbox-server-qgis)
 
 Composable spatial services.
 
@@ -17,16 +19,14 @@ Components:
 * [BBOX asset server](bbox-asset-server/)
 
 
-Build and run
--------------
+## Build and run
 
     cd bbox-server
-    cargo install --all-features --path .
+    cargo install --path .
     ~/.cargo/bin/bbox-server
 
 
-Docker
-------
+## Docker
 
     docker build -f ./Dockerfile-qgis-server -t bbox .
 
