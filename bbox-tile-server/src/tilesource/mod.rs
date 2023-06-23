@@ -14,6 +14,7 @@ use tilejson::TileJSON;
 #[cfg(not(feature = "map-server"))]
 pub mod wms_fcgi {
     // Replacements for bbox_map_server types
+    #[derive(Default)]
     pub struct WmsMetrics;
     pub type MapService = ();
     pub type FcgiError = std::io::Error;

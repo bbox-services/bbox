@@ -90,7 +90,10 @@ async fn run_service() -> std::io::Result<()> {
         return Ok(());
     }
 
+    #[cfg(feature = "map-server")]
     let project = map_service.default_project.clone();
+    #[cfg(not(feature = "map-server"))]
+    let project: Option<String> = None;
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
