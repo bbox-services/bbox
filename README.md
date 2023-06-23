@@ -28,12 +28,12 @@ Components:
 
 ## Docker
 
-    docker build -f ./Dockerfile-qgis-server -t bbox .
+    docker run -p 8080:8080 sourcepole/bbox-server-qgis
 
-Run with environment variables:
+Serve tiles from file:
 
-    docker run -p 8080:8080 -e BBOX_WEBSERVER__SERVER_ADDR=0.0.0.0:8080 bbox
+    docker run -p 8080:8080 -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis bbox-server serve /assets/liechtenstein.mbtiles
 
 Run with configuration file:
 
-    docker run -p 8080:8080 -v bbox.toml:/var/www/bbox.toml:ro bbox
+    docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
