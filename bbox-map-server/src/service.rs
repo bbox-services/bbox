@@ -16,6 +16,7 @@ pub struct MapService {
     // Dispatcher is not Clone, so we wrap as web::Data already here
     pub(crate) fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
     /// client index for each suffix
+    #[allow(dead_code)]
     suffix_fcgi: HashMap<String, usize>,
     /// Number of FCGI processes per backend
     pub(crate) num_fcgi_processes: usize,
@@ -124,6 +125,7 @@ impl OgcApiService for MapService {
 }
 
 impl MapService {
+    #[allow(dead_code)]
     pub fn fcgi_dispatcher(&self, suffix: &str) -> Option<&FcgiDispatcher> {
         self.suffix_fcgi
             .get(suffix)

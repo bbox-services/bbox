@@ -8,7 +8,7 @@ use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;
 use std::fs::{self, File};
 use std::io::{BufReader, Read};
-use std::path::PathBuf;
+use std::path::Path;
 use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
@@ -91,8 +91,8 @@ impl TileWriter for S3Cache {
 
 impl S3Cache {
     /// Put tile from temporary file
-    pub async fn put_file(&self, base_dir: &PathBuf, path: String) -> Result<(), TileCacheError> {
-        let mut fullpath = base_dir.clone();
+    pub async fn put_file(&self, base_dir: &Path, path: String) -> Result<(), TileCacheError> {
+        let mut fullpath = base_dir.to_path_buf();
         fullpath.push(&path);
         let p = fullpath.as_path();
         let reader = Box::new(BufReader::new(

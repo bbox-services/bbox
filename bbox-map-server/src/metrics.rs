@@ -10,8 +10,8 @@ pub struct WmsMetrics {
     pub fcgi_cache_hit: Vec<IntGaugeVec>,
 }
 
-impl WmsMetrics {
-    pub fn new() -> Self {
+impl Default for WmsMetrics {
+    fn default() -> Self {
         WmsMetrics {
             wms_requests_counter: IntCounterVec::new(
                 prometheus::core::Opts::new("dummy", "dummy"),
@@ -28,7 +28,7 @@ impl WmsMetrics {
 
 pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
     static METRICS: OnceCell<WmsMetrics> = OnceCell::new();
-    &METRICS.get_or_init(|| {
+    METRICS.get_or_init(|| {
         let opts = prometheus::opts!("requests_total", "Total number of WMS requests")
             .namespace("bbox_wms");
         let wms_requests_counter =

@@ -81,6 +81,7 @@ pub struct LayerInfo {
 #[async_trait]
 pub trait TileRead: Sync {
     /// Request tile from source
+    #[allow(clippy::too_many_arguments)]
     async fn xyz_request(
         &self,
         service: &TileService,
@@ -132,11 +133,7 @@ impl TileSource {
         }
     }
     pub fn config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
-        if let Some(cfg) = mbtiles::MbtilesSource::config_from_cli_arg(file_or_url) {
-            Some(SourceParamCfg::Mbtiles(cfg))
-        } else {
-            None
-        }
+        mbtiles::MbtilesSource::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
     }
     pub fn read(&self) -> &dyn TileRead {
         match self {

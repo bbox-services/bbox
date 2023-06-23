@@ -103,15 +103,15 @@ async fn run_service() -> std::io::Result<()> {
             .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
+            .configure(|cfg| core.register_endpoints(cfg, &core))
             .configure(bbox_core::static_assets::register_endpoints)
-            .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| feature_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| asset_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| processes_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| routing_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| bbox_service.register_endpoints(&mut cfg, &core));
+            .configure(|cfg| map_service.register_endpoints(cfg, &core))
+            .configure(|cfg| tile_service.register_endpoints(cfg, &core))
+            .configure(|cfg| feature_service.register_endpoints(cfg, &core))
+            .configure(|cfg| asset_service.register_endpoints(cfg, &core))
+            .configure(|cfg| processes_service.register_endpoints(cfg, &core))
+            .configure(|cfg| routing_service.register_endpoints(cfg, &core))
+            .configure(|cfg| bbox_service.register_endpoints(cfg, &core));
 
         #[cfg(feature = "map-viewer")]
         {

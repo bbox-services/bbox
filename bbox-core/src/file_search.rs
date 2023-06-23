@@ -22,11 +22,9 @@ pub fn search<P: AsRef<Path>>(basedir: P, pattern: &str) -> Vec<PathBuf> {
         .types(types)
         .build();
     let mut files = Vec::new();
-    for entry in walker {
-        if let Ok(entry) = entry {
-            if !entry.file_type().expect("stdin not supported").is_dir() {
-                files.push(entry.path().to_path_buf());
-            }
+    for entry in walker.flatten() {
+        if !entry.file_type().expect("stdin not supported").is_dir() {
+            files.push(entry.path().to_path_buf());
         }
     }
     files

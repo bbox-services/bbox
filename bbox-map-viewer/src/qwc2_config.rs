@@ -205,7 +205,7 @@ impl Theme {
         caps: &ogc::WmsCapabilities,
         url: &String,
     ) -> Option<Self> {
-        if caps.capability.layers.len() == 0 {
+        if caps.capability.layers.is_empty() {
             return None;
         }
         if caps.capability.layers.len() > 1 {
@@ -331,19 +331,19 @@ impl Theme {
     }
 }
 
-fn parse_layer_tree(ogc_layers: &Vec<ogc::Layer>) -> Vec<Layer> {
+fn parse_layer_tree(ogc_layers: &[ogc::Layer]) -> Vec<Layer> {
     let layers: Vec<Layer> = ogc_layers
         .iter()
         // skip layers without geometry
         //TODO: layer.$.geometryType == "WKBNoGeometry" || layer.$.geometryType == "NoGeometry") {
         .map(|l| {
             let sublayers = parse_layer_tree(&l.layers);
-            let expanded = if sublayers.len() == 0 {
+            let expanded = if sublayers.is_empty() {
                 None
             } else {
                 l.expanded
             };
-            let sublayers = if sublayers.len() == 0 {
+            let sublayers = if sublayers.is_empty() {
                 None
             } else {
                 Some(sublayers)
@@ -354,7 +354,7 @@ fn parse_layer_tree(ogc_layers: &Vec<ogc::Layer>) -> Vec<Layer> {
                 title: l.title.as_ref().unwrap_or(&"".to_string()).clone(),
                 visibility: l.visible.or(Some(true)),
                 queryable: l.queryable,
-                display_field: l.display_field.as_ref().map(|c| c.clone()),
+                display_field: l.display_field.as_ref().cloned(),
                 attribution: l.attribution.as_ref().map(|attr| Attribution {
                     title: Some(attr.title.clone()),
                     online_resource: Some(attr.online_resource.href.clone()),

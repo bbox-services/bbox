@@ -68,9 +68,9 @@ impl FcgiProcess {
         debug!("Spawning {} on {}", fcgi_path, socket_path);
         let socket = Path::new(socket_path);
         if socket.exists() {
-            std::fs::remove_file(&socket)?;
+            std::fs::remove_file(socket)?;
         }
-        let listener = UnixListener::bind(&socket)?;
+        let listener = UnixListener::bind(socket)?;
         let fd = listener.as_raw_fd();
         let fcgi_io = unsafe { Stdio::from_raw_fd(fd) };
 
@@ -96,7 +96,7 @@ impl Drop for FcgiProcess {
         let socket = Path::new(&self.socket_path);
         if socket.exists() {
             debug!("Removing socket {}", &self.socket_path);
-            let _ = std::fs::remove_file(&socket);
+            let _ = std::fs::remove_file(socket);
         }
     }
 }
@@ -136,7 +136,7 @@ impl FcgiProcessPool {
                 .project_files()
                 .iter()
                 .flat_map(|s| {
-                    backend.url_base(&s).map(|b| FcgiSuffixUrl {
+                    backend.url_base(s).map(|b| FcgiSuffixUrl {
                         suffix: s.to_string(),
                         url_base: b.to_string(),
                     })

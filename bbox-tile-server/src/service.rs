@@ -225,7 +225,7 @@ impl TileService {
         tile: &Xyz,
         format: &str,
     ) -> Result<TileResponse, TileSourceError> {
-        let metrics = WmsMetrics::new(); // TODO: get from self.map_service
+        let metrics = WmsMetrics::default(); // TODO: get from self.map_service
         let source = self
             .source(tileset)
             .ok_or(TileSourceError::TileSourceNotFound(tileset.to_string()))?;
@@ -244,6 +244,7 @@ impl TileService {
             .await
     }
     /// Get tile with cache lookup
+    #[allow(clippy::too_many_arguments)]
     pub async fn tile_cached(
         &self,
         tileset: &str,
@@ -285,7 +286,7 @@ impl TileService {
             // Read tile into memory
             let mut body = Vec::new();
             tiledata.body.read_to_end(&mut body)?;
-            let path = CacheLayout::ZXY.path_string(&PathBuf::new(), tile, format);
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, format);
             tileset
                 .cache
                 .write()
@@ -346,7 +347,7 @@ impl TileService {
             .map(|layer| {
                 // Default paint type
                 let default_type = if let Some(ref geomtype) = layer.geometry_type {
-                    match &geomtype as &str {
+                    match geomtype as &str {
                         "POINT" => "circle",
                         _ => "line",
                     }

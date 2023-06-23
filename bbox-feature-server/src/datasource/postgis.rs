@@ -44,11 +44,11 @@ impl CollectionDatasource for PgDatasource {
             FROM geometry_columns contents
               JOIN spatial_ref_sys refsys ON refsys.srid = contents.srid
         "#;
-        let mut rows = sqlx::query(&sql).fetch(&self.pool);
+        let mut rows = sqlx::query(sql).fetch(&self.pool);
         while let Some(row) = rows.try_next().await? {
             let table_schema: String = row.try_get("f_table_schema")?;
             let table_name: String = row.try_get("f_table_name")?;
-            let info = table_info(&self, &table_schema, &table_name).await?;
+            let info = table_info(self, &table_schema, &table_name).await?;
             let id = &table_name.clone();
             let bbox = query_bbox(&info)
                 .await
@@ -138,7 +138,7 @@ impl CollectionInfoDs for PgCollectionInfo {
         let number_returned = rows.len() as u64;
         let items = rows
             .iter()
-            .map(|row| row_to_feature(&row, &self))
+            .map(|row| row_to_feature(row, self))
             .collect::<Result<Vec<_>>>()?;
         let result = ItemsResult {
             features: items,
@@ -168,7 +168,7 @@ impl CollectionInfoDs for PgCollectionInfo {
             .fetch_optional(&self.ds.pool)
             .await?
         {
-            let mut item = row_to_feature(&row, &self)?;
+            let mut item = row_to_feature(&row, self)?;
             item.links = vec![
                 ApiLink {
                     href: format!("/collections/{collection_id}/items/{feature_id}"),
@@ -301,8 +301,7 @@ mod tests {
         assert!(collections.len() >= 3);
         assert!(collections
             .iter()
-            .find(|col| col.collection.id == "ne_10m_rivers_lake_centerlines")
-            .is_some());
+            .any(|col| col.collection.id == "ne_10m_rivers_lake_centerlines"));
     }
 
     #[tokio::test]

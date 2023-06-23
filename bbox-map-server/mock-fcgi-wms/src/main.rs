@@ -25,7 +25,7 @@ fn main() {
         let project = req
             .param("REQUEST_URI")
             .map(|p| {
-                let p = p.split("?").next().expect("remove query part");
+                let p = p.split('?').next().expect("remove query part");
                 Path::new(&p)
                     .file_stem()
                     .expect("file_stem missing")
@@ -37,9 +37,9 @@ fn main() {
 
         let query = req.param("QUERY_STRING").unwrap_or("".to_string());
         let mut query_map = HashMap::new();
-        for param in query.split("&") {
-            let param_vec: Vec<&str> = param.split("=").collect();
-            query_map.insert(param_vec[0], param_vec.get(1).unwrap_or(&"").clone());
+        for param in query.split('&') {
+            let param_vec: Vec<&str> = param.split('=').collect();
+            query_map.insert(param_vec[0], *param_vec.get(1).unwrap_or(&""));
         }
 
         let t = query_map

@@ -72,7 +72,7 @@ impl AssetService {
             if Path::new(&dir).is_dir() {
                 let dest = &template_dir.path;
                 info!("Serving template files from directory '{dir}' on '{dest}'");
-                template_envs.add(&dir, &dest);
+                template_envs.add(&dir, dest);
                 cfg.route(
                     &format!("{dest}/{{name}}/{{param}}"),
                     web::get().to(templates),

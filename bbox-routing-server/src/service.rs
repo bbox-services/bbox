@@ -28,7 +28,7 @@ impl OgcApiService for RoutingService {
         self.router = match config.service.len() {
             1 => {
                 let service = &config.service[0];
-                Some(Router::from_config(&service).await.unwrap())
+                Some(Router::from_config(service).await.unwrap())
             }
             0 => {
                 warn!("No routing config available");

@@ -30,10 +30,10 @@ where
     let typename = std::any::type_name::<E>();
     ETAG.with(|m| {
         if let Some(map) = m.borrow().get(typename) {
-            return map.get(&filename).map(|u| *u);
+            return map.get(&filename).copied();
         }
         let map = init_etag::<E>();
-        let r = map.get(&filename).map(|u| *u);
+        let r = map.get(&filename).copied();
         m.borrow_mut().insert(typename, map);
         r
     })
@@ -46,7 +46,7 @@ where
     let mut map = BTreeMap::new();
     for file in E::iter() {
         let file = file.as_ref();
-        let etag = match E::get(file).and_then(|c| Some(fxhash::hash64(&c))) {
+        let etag = match E::get(file).map(|c| fxhash::hash64(&c)) {
             Some(etag) => etag,
             None => continue,
         };
@@ -99,14 +99,14 @@ impl EmbedFile {
         while let Ok(new_path) = path.strip_prefix(".") {
             path = new_path;
         }
-        Self::open_impl::<E>(&path).ok_or(io_not_found("File not found"))
+        Self::open_impl::<E>(path).ok_or(io_not_found("File not found"))
     }
 
     fn open_impl<E>(path: &Path) -> Option<EmbedFile>
     where
         E: RustEmbed,
     {
-        let content_type = mime_guess::from_path(&path).first_or_octet_stream();
+        let content_type = mime_guess::from_path(path).first_or_octet_stream();
         let filename = path.to_str()?;
         let etag = get_etag::<E>(filename);
         let r = EmbedFile {

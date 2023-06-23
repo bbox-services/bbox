@@ -54,12 +54,7 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn url_base(&self, suffix: &str) -> Option<&str> {
         match suffix {
             "qgs" => self.config.qgs.as_ref().map(|cfg| cfg.path.as_str()),
-            "qgz" => self
-                .config
-                .qgz
-                .as_ref()
-                .clone()
-                .map(|cfg| cfg.path.as_str()),
+            "qgz" => self.config.qgz.as_ref().map(|cfg| cfg.path.as_str()),
             _ => None,
         }
     }
@@ -181,7 +176,7 @@ pub fn detect_backends(
                 let mut all_paths = HashSet::new();
                 for suffix in backend.project_files() {
                     let Some(url_base) = backend.url_base(suffix) else { continue; };
-                    let files = file_search::search(&base, &format!("*.{suffix}"));
+                    let files = file_search::search(base, &format!("*.{suffix}"));
                     info!("Found {} file(s) matching *.{suffix}", files.len());
                     all_paths.extend(
                         files
@@ -218,7 +213,7 @@ pub fn detect_backends(
                                     .expect("wrong prefix")
                                     .to_str()
                                     .expect("Invalid UTF-8 path name");
-                                let wms_path = if rel_path == "" {
+                                let wms_path = if rel_path.is_empty() {
                                     format!("{url_base}/{project}")
                                 } else {
                                     format!("{url_base}/{rel_path}/{project}")

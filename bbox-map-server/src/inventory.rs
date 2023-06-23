@@ -25,18 +25,18 @@ impl WmsService {
     fn _project(&self) -> &str {
         self.wms_path.split('/').last().expect("invalid wms_path")
     }
-
+    #[allow(dead_code)]
     fn cap_request(&self) -> &str {
         match self.cap_type {
             CapType::Ogc => "GetCapabilities",
             CapType::Qgis => "GetProjectSettings",
         }
     }
-
+    #[allow(dead_code)]
     pub fn url(&self, base_url: &str) -> String {
         format!("{}{}", base_url, self.wms_path)
     }
-
+    #[allow(dead_code)]
     pub async fn capabilities(&self, base_url: &str) -> WmsCapabilities {
         let client = awc::Client::default();
         let mut response = client

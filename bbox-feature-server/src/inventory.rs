@@ -184,7 +184,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let feature = match fc
+        match fc
             .info
             .collection_ds()
             .item(collection_id, feature_id)
@@ -195,8 +195,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection item for {collection_id}: {e}");
                 None
             }
-        };
-        feature
+        }
     }
 }
 

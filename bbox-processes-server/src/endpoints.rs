@@ -118,12 +118,12 @@ async fn execute(
             headerval
                 .to_str()
                 .ok()
-                .and_then(|headerstr| Some(headerstr.contains("respond-async")))
+                .map(|headerstr| headerstr.contains("respond-async"))
         })
         .unwrap_or(false);
     // TODO: support sync/async-only processes
     if prefer_async {
-        let resp = match backend.execute(&process_id, &*parameters).await {
+        let resp = match backend.execute(&process_id, &parameters).await {
             /* responses:
                     200:
                       $ref: 'http://schemas.opengis.net/ogcapi/processes/part1/1.0/openapi/responses/ExecuteSync.yaml'
@@ -136,7 +136,7 @@ async fn execute(
         };
         Either::Left(resp)
     } else {
-        let job_result = backend.execute_sync(&process_id, &*parameters).await;
+        let job_result = backend.execute_sync(&process_id, &parameters).await;
         // TODO: respect parameters.response != "raw"
         job_result_response(job_result)
     }

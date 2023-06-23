@@ -48,6 +48,12 @@ impl DagsterBackend {
     }
 }
 
+impl Default for DagsterBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // --- process_list ---
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -332,7 +338,7 @@ impl DagsterBackend {
             Ok(resp) => {
                 if let Some(result) = resp.data.runs_or_error.results.first() {
                     if let Some(asset) = result.assets.last() {
-                        if asset.asset_materializations.len() > 0 {
+                        if !asset.asset_materializations.is_empty() {
                             if let Some(meta) =
                                 &asset.asset_materializations[0].metadata_entries.first()
                             {
@@ -347,28 +353,26 @@ impl DagsterBackend {
                                     )))
                                 }
                             } else {
-                                Err(error::Error::BackendExecutionError(format!(
-                                    "MetadataEntry missing"
-                                )))
+                                Err(error::Error::BackendExecutionError(
+                                    "MetadataEntry missing".to_string(),
+                                ))
                             }
                         } else {
-                            Err(error::Error::BackendExecutionError(format!(
-                                "AssetMaterialization missing"
-                            )))
+                            Err(error::Error::BackendExecutionError(
+                                "AssetMaterialization missing".to_string(),
+                            ))
                         }
+                    } else if let Some((message, description, error)) =
+                        self.extract_error_message(&resp)
+                    {
+                        Ok(JobResult::Json(json!({
+                            "message": message,
+                            "description": description,
+                            "error": error,
+                        })))
                     } else {
-                        if let Some((message, description, error)) =
-                            self.extract_error_message(&resp)
-                        {
-                            Ok(JobResult::Json(json!({
-                                "message": message,
-                                "description": description,
-                                "error": error,
-                            })))
-                        } else {
-                            // No Assets and no ExecutionStepFailureEvent
-                            Ok(JobResult::Json(json!(result.status)))
-                        }
+                        // No Assets and no ExecutionStepFailureEvent
+                        Ok(JobResult::Json(json!(result.status)))
                     }
                 } else {
                     Err(error::Error::NotFound(

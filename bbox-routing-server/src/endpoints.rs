@@ -181,7 +181,7 @@ async fn basic_route(
 ) -> actix_web::Result<HttpResponse, actix_web::Error> {
     fn split_pair(numlist: &str) -> error::Result<(f64, f64)> {
         let arr: Vec<f64> = numlist
-            .split(",")
+            .split(',')
             .map(|v| {
                 v.parse()
                     .expect("Error parsing `{numlist}` as list of float values")
@@ -272,7 +272,7 @@ mod tests {
 
         let req = test::TestRequest::post()
             .uri("/routes")
-            .set_json(&RouteDefinition {
+            .set_json(RouteDefinition {
                 name: Some("A to B".to_string()),
                 preference: None,
                 waypoints: Waypoints {

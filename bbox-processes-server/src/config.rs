@@ -26,7 +26,7 @@ impl ProcessesServerCfg {
         if config.find_value("processes").is_ok() {
             let cfg: Self = config
                 .extract_inner("processes")
-                .map_err(|err| config_error_exit(err))
+                .map_err(config_error_exit)
                 .unwrap();
             if !cfg.has_backend() {
                 config_error_exit("Processing backend configuration missing");

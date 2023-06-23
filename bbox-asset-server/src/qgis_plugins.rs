@@ -54,10 +54,9 @@ pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
     let template = TEMPLATE_ENV
         .get_template("plugins.xml")
         .expect("couln't load template `plugins.xml`");
-    let plugin_xml = template
+    template
         .render(context!(plugins => plugins.plugins, url => url))
-        .expect("Plugin render failed");
-    plugin_xml
+        .expect("Plugin render failed")
 }
 
 fn read_metadata(fname: &PathBuf) -> ZipResult<Plugin> {
@@ -108,7 +107,7 @@ fn read_metadata(fname: &PathBuf) -> ZipResult<Plugin> {
     Err(zip::result::ZipError::FileNotFound)
 }
 
-pub fn plugin_metadata(plugin_fnames: &Vec<PathBuf>) -> Plugins {
+pub fn plugin_metadata(plugin_fnames: &[PathBuf]) -> Plugins {
     let plugins: Vec<Plugin> = plugin_fnames
         .iter()
         .filter_map(|fname| read_metadata(fname).ok())

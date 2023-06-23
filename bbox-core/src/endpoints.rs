@@ -41,13 +41,8 @@ impl TileResponse {
 }
 
 /// Middleware for content negotiation
+#[derive(Default)]
 pub struct JsonContentGuard;
-
-impl JsonContentGuard {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl Guard for JsonContentGuard {
     fn check(&self, ctx: &GuardContext<'_>) -> bool {
@@ -89,7 +84,7 @@ pub fn absurl(req: &HttpRequest, path: &str) -> String {
         .split('/')
         .nth(1)
         .map(|p| {
-            if p == "" || p == pathbase {
+            if p.is_empty() || p == pathbase {
                 "".to_string()
             } else {
                 format!("/{}", p)
@@ -187,12 +182,12 @@ impl CoreService {
             // OGC validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
             .service(
                 web::resource("/")
-                    .guard(JsonContentGuard::new())
+                    .guard(JsonContentGuard::default())
                     .route(web::get().to(index)),
             )
             .service(
                 web::resource("/conformance")
-                    .guard(JsonContentGuard::new())
+                    .guard(JsonContentGuard::default())
                     .route(web::get().to(conformance)),
             )
             .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
@@ -206,7 +201,7 @@ impl CoreService {
             )
             .service(
                 web::resource("/openapi")
-                    .guard(JsonContentGuard::new())
+                    .guard(JsonContentGuard::default())
                     .route(web::get().to(openapi_json)),
             )
             .service(web::resource("/health").to(health));

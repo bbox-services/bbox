@@ -14,7 +14,7 @@ struct BaseTemplates;
 struct BaseTemplates;
 
 fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, Error> {
-    let mut s = value.clone();
+    let mut s = value;
     s.truncate(new_len);
     Ok(s)
 }

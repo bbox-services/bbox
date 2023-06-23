@@ -39,7 +39,7 @@ pub async fn put_files_seq(args: &UploadArgs) -> anyhow::Result<()> {
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*").into_iter();
+    let files = file_search::search(srcdir, "*").into_iter();
     for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
         let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
@@ -85,7 +85,7 @@ pub async fn put_files_tasks(args: &UploadArgs) -> anyhow::Result<()> {
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*").into_iter();
+    let files = file_search::search(srcdir, "*").into_iter();
     for path in files.progress() {
         let bucket = bucket.clone();
         let prefix = prefix.clone();
@@ -136,7 +136,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*").into_iter();
+    let files = file_search::search(srcdir, "*").into_iter();
     for path in files.progress() {
         let prefix = prefix.clone();
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
@@ -158,10 +158,9 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
 }
 
 async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHandle<T>> {
-    match futures_util::future::select_all(tasks).await {
-        // Ignoring all errors
-        (_result, _index, remaining) => remaining,
-    }
+    let (_result, _index, remaining) = futures_util::future::select_all(tasks).await;
+    // Ignoring all errors
+    remaining
 }
 
 pub async fn put_files_channels(args: &UploadArgs) -> anyhow::Result<()> {
@@ -188,7 +187,7 @@ pub async fn put_files_channels(args: &UploadArgs) -> anyhow::Result<()> {
     };
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
-    let files = file_search::search(&srcdir, "*").into_iter();
+    let files = file_search::search(srcdir, "*").into_iter();
     for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
 

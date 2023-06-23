@@ -64,10 +64,7 @@ impl RequestDispatcher for Dispatcher {
             }
         };
         let prio = self.prio(&query);
-        let pool_no = self.prio_dispatch[prio].select(&query);
-        // dbg!(self);
-        // dbg!(pool_no);
-        pool_no
+        self.prio_dispatch[prio].select(&query)
     }
 }
 
@@ -103,8 +100,7 @@ impl PrioDispatch {
             self.object_count[idx] += 1;
             idx
         };
-        let pool_no = self.pool_no_offset + idx;
-        pool_no
+        self.pool_no_offset + idx
     }
 }
 

@@ -3,6 +3,7 @@ use crate::models;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     // Backend errors
     #[error(transparent)]

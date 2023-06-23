@@ -50,7 +50,7 @@ impl WmsHttpSource {
     }
 
     async fn bbox_request(&self, extent: &BoundingBox) -> Result<TileResponse, TileSourceError> {
-        let wms_resp = self.get_map_response(&extent).await?;
+        let wms_resp = self.get_map_response(extent).await?;
         let content_type = wms_resp
             .headers()
             .get("content-type")

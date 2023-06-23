@@ -8,7 +8,7 @@ pub struct OgcApiInventory {
 }
 
 /// OpenAPi doc collection
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct OpenApiDoc(serde_yaml::Value);
 
 impl OpenApiDoc {
@@ -29,7 +29,7 @@ impl OpenApiDoc {
             if let Some(components) = self.0.get_mut("components") {
                 // merge 1st level children ("parameters", "responses", "schemas")
                 for (key, _val) in rhs_components.as_mapping().unwrap().iter() {
-                    merge_level(components, &rhs_components, key.as_str().unwrap());
+                    merge_level(components, rhs_components, key.as_str().unwrap());
                 }
             } else {
                 self.0

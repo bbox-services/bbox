@@ -56,15 +56,15 @@ impl TileWriter for FileCache {
 
 impl TileReader for FileCache {
     fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse> {
-        let p = CacheLayout::ZXY.path(&self.base_dir, tile, format);
-        if let Ok(f) = File::open(&p) {
-            return Some(TileResponse {
+        let p = CacheLayout::Zxy.path(&self.base_dir, tile, format);
+        if let Ok(f) = File::open(p) {
+            Some(TileResponse {
                 content_type: None, // TODO: from `format`
                 headers: TileResponse::new_headers(),
                 body: Box::new(BufReader::new(f)),
-            });
+            })
         } else {
-            return None;
+            None
         }
     }
 }

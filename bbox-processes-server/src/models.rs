@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 #![allow(unused_mut)]
 #![allow(unused_variables)]
+#![allow(clippy::all)]
 
 use crate::models;
 // #[cfg(any(feature = "client", feature = "server"))]

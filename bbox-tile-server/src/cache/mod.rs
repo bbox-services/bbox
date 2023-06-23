@@ -11,7 +11,7 @@ use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
 
 pub type BoxRead = Box<dyn Read + Send + Sync>;
@@ -52,14 +52,14 @@ pub enum TileCache {
 
 #[derive(Clone, Debug)]
 pub enum CacheLayout {
-    ZXY,
+    Zxy,
 }
 
 impl CacheLayout {
-    pub fn path(&self, base_dir: &PathBuf, tile: &Xyz, format: &str) -> PathBuf {
-        let mut path = base_dir.clone();
+    pub fn path(&self, base_dir: &Path, tile: &Xyz, format: &str) -> PathBuf {
+        let mut path = base_dir.to_path_buf();
         match self {
-            CacheLayout::ZXY => {
+            CacheLayout::Zxy => {
                 // "{z}/{x}/{y}.{format}"
                 path.push(&tile.z.to_string());
                 path.push(&tile.x.to_string());
@@ -69,7 +69,7 @@ impl CacheLayout {
         }
         path
     }
-    pub fn path_string(&self, base_dir: &PathBuf, tile: &Xyz, format: &str) -> String {
+    pub fn path_string(&self, base_dir: &Path, tile: &Xyz, format: &str) -> String {
         self.path(base_dir, tile, format)
             .into_os_string()
             .to_string_lossy()
@@ -96,11 +96,9 @@ impl TileReader for NoCache {
 impl TileCache {
     pub fn from_config(config: &TileCacheCfg, tileset_name: &str) -> Self {
         match &config {
-            TileCacheCfg::Files(cfg) => {
-                TileCache::Files(FileCache::from_config(&cfg, tileset_name))
-            }
+            TileCacheCfg::Files(cfg) => TileCache::Files(FileCache::from_config(cfg, tileset_name)),
             TileCacheCfg::S3(cfg) => {
-                TileCache::S3(S3Cache::from_config(&cfg).unwrap_or_else(error_exit))
+                TileCache::S3(S3Cache::from_config(cfg).unwrap_or_else(error_exit))
             }
         }
     }

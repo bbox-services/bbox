@@ -34,9 +34,7 @@ pub(crate) fn init_metrics() -> Option<Metrics> {
 
     init_tracer(&metrics_cfg);
 
-    if metrics_cfg.prometheus.is_none() {
-        return None;
-    }
+    metrics_cfg.prometheus.as_ref()?;
 
     // Request metrics middleware
     let meter = global::meter("bbox");

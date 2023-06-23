@@ -94,7 +94,7 @@ impl Default for MapServerCfg {
             search_projects: cfg!(feature = "inventory"),
             default_project: None,
         };
-        if let Some(cwd) = env::current_dir().map(|p| p.into_os_string()).ok() {
+        if let Ok(cwd) = env::current_dir().map(|p| p.into_os_string()) {
             cfg.qgis_backend = Some(QgisBackendCfg::new(&cwd.to_string_lossy()));
             cfg.umn_backend = Some(UmnBackendCfg::new(&cwd.to_string_lossy()));
         }

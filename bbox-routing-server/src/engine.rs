@@ -173,6 +173,7 @@ impl Router {
     }
 
     /// Calculates the shortest path from any of the `sources` to any of the `targets` coordinates.
+    #[allow(dead_code)]
     pub fn calc_path_multiple_sources_and_targets(
         &self,
         sources: Vec<(f64, f64)>,
@@ -205,15 +206,12 @@ impl Router {
     }
 
     pub fn path_to_valhalla_json(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
-        let coords = paths
-            .iter()
-            .map(|p| {
-                p.get_nodes().iter().map(|node_id| {
-                    let (x, y) = self.index.node_coords[*node_id];
-                    geo_types::Coord { x, y }
-                })
+        let coords = paths.iter().flat_map(|p| {
+            p.get_nodes().iter().map(|node_id| {
+                let (x, y) = self.index.node_coords[*node_id];
+                geo_types::Coord { x, y }
             })
-            .flatten();
+        });
         let polyline = polyline::encode_coordinates(coords, 6).unwrap();
         json!({
           "trip": {
@@ -231,6 +229,7 @@ impl Router {
     }
 
     /// Output internal routing graph as GeoJSON (for checking correctness)
+    #[allow(dead_code)]
     pub fn fast_graph_to_geojson(&self, out: &mut dyn Write) {
         let features = self.graph.edges_fwd.iter().map(|edge| {
             let (x1, y1) = self.index.node_coords[edge.base_node];

@@ -71,6 +71,7 @@ async fn map_tile(
     tile_request(service, &tileset, x, y, z, format, metrics, req).await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn tile_request(
     service: web::Data<TileService>,
     tileset: &str,
@@ -89,17 +90,18 @@ async fn tile_request(
             headerval
                 .to_str()
                 .ok()
-                .and_then(|headerstr| Some(headerstr.contains("gzip")))
+                .map(|headerstr| headerstr.contains("gzip"))
         })
         .unwrap_or(false);
+    let conn_info = req.connection_info().clone();
     match service
         .tile_cached(
-            &tileset,
+            tileset,
             &tile,
             format,
             gzip,
-            req.connection_info().scheme(),
-            req.connection_info().host(),
+            conn_info.scheme(),
+            conn_info.host(),
             req.path(),
             &metrics,
         )
@@ -268,7 +270,7 @@ impl TileService {
             .service(web::resource("/tiles/{tileMatrixSetId}").route(web::get().to(get_tile_set)))
             .service(web::resource("/tiles").route(web::get().to(get_tile_sets_list)));
         if cfg!(not(feature = "map-server")) {
-            cfg.app_data(web::Data::new(WmsMetrics::new()));
+            cfg.app_data(web::Data::new(WmsMetrics::default()));
         }
     }
 }

@@ -49,7 +49,7 @@ impl CollectionDatasource for GpkgDatasource {
               --JOIN gpkg_geometry_columns geom_cols ON geom_cols.table_name = contents.table_name
             WHERE data_type='features'
         "#;
-        let mut rows = sqlx::query(&sql).fetch(&self.pool);
+        let mut rows = sqlx::query(sql).fetch(&self.pool);
         while let Some(row) = rows.try_next().await? {
             let table_name: &str = row.try_get("table_name")?;
             let id = table_name.to_string();
@@ -82,7 +82,7 @@ impl CollectionDatasource for GpkgDatasource {
                     length: None,
                 }],
             };
-            let info = table_info(&self, table_name).await?;
+            let info = table_info(self, table_name).await?;
             let fc = FeatureCollection {
                 collection,
                 info: CollectionInfo::GpkgCollectionInfo(info),
@@ -119,7 +119,7 @@ impl CollectionInfoDs for GpkgCollectionInfo {
         let number_returned = rows.len() as u64;
         let items = rows
             .iter()
-            .map(|row| row_to_feature(&row, &self))
+            .map(|row| row_to_feature(row, self))
             .collect::<Result<Vec<_>>>()?;
         let result = ItemsResult {
             features: items,
@@ -140,7 +140,7 @@ impl CollectionInfoDs for GpkgCollectionInfo {
             .fetch_optional(&self.ds.pool)
             .await?
         {
-            let mut item = row_to_feature(&row, &self)?;
+            let mut item = row_to_feature(&row, self)?;
             item.links = vec![
                 ApiLink {
                     href: format!("/collections/{collection_id}/items/{feature_id}"),
@@ -201,6 +201,7 @@ fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionInfo) -> Result<Co
     let mut id = None;
     let mut properties = json!({});
     for col in row.columns() {
+        #[allow(clippy::if_same_then_else)]
         if col.name() == table_info.geometry_column {
             // Skip geometry
         } else if col.name() == "__total_cnt" {

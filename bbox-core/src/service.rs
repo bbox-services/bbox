@@ -96,7 +96,7 @@ impl CoreService {
 
         self.ogcapi
             .landing_page_links
-            .extend(svc.landing_page_links(&api_base));
+            .extend(svc.landing_page_links(api_base));
         self.ogcapi
             .conformance_classes
             .extend(svc.conformance_classes());
@@ -104,9 +104,9 @@ impl CoreService {
 
         if let Some(yaml) = svc.openapi_yaml() {
             if self.openapi.is_empty() {
-                self.openapi = OpenApiDoc::from_yaml(yaml, &api_base);
+                self.openapi = OpenApiDoc::from_yaml(yaml, api_base);
             } else {
-                self.openapi.extend(yaml, &api_base);
+                self.openapi.extend(yaml, api_base);
             }
         }
 
@@ -138,7 +138,7 @@ impl CoreService {
     pub fn tls_config(&self) -> Option<rustls::ServerConfig> {
         if let Some(cert) = &self.web_config.tls_cert {
             if let Some(key) = &self.web_config.tls_key {
-                return Some(load_rustls_config(&cert, &key));
+                return Some(load_rustls_config(cert, key));
             }
         }
         None
@@ -159,7 +159,7 @@ impl OgcApiService for CoreService {
             return;
         };
         if let Some(config) = args.config {
-            env::set_var("BBOX_CONFIG", &config);
+            env::set_var("BBOX_CONFIG", config);
         }
         logger::init();
 
@@ -244,8 +244,8 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
     let tls_config = core.tls_config();
     let mut server = HttpServer::new(move || {
         App::new()
-            .configure(|mut cfg| core.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| service.register_endpoints(&mut cfg, &core))
+            .configure(|cfg| core.register_endpoints(cfg, &core))
+            .configure(|cfg| service.register_endpoints(cfg, &core))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_name("bbox".to_owned())

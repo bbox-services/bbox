@@ -41,6 +41,7 @@ impl WmsFcgiSource {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn bbox_request(
         &self,
         service: &TileService,
@@ -58,7 +59,7 @@ impl WmsFcgiSource {
             .expect("map_service")
             .fcgi_dispatcher(&self.suffix)
             .ok_or(TileSourceError::SuffixNotFound(self.suffix.clone()))?;
-        let fcgi_query = self.get_map_request(crs, &extent, format);
+        let fcgi_query = self.get_map_request(crs, extent, format);
         let project = &self.project;
         let body = "".to_string();
         wms_fcgi_req(
@@ -70,7 +71,7 @@ impl WmsFcgiSource {
             "GET",
             body,
             project,
-            &metrics,
+            metrics,
         )
         .await
         .map_err(Into::into)

@@ -43,10 +43,11 @@ async fn wms_fcgi(
     req: HttpRequest,
 ) -> Result<HttpResponse, actix_web::Error> {
     let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
+    let conn_info = req.connection_info().clone();
     wms_fcgi_request(
         &fcgi_dispatcher,
-        req.connection_info().scheme(),
-        req.connection_info().host(),
+        conn_info.scheme(),
+        conn_info.host(),
         req.path(),
         &fcgi_query,
         req.method().as_str(),
@@ -57,6 +58,7 @@ async fn wms_fcgi(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn wms_fcgi_request(
     fcgi_dispatcher: &FcgiDispatcher,
     scheme: &str,
@@ -88,6 +90,7 @@ pub async fn wms_fcgi_request(
     Ok(response.streaming(wms_resp.into_stream()))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn wms_fcgi_req(
     fcgi_dispatcher: &FcgiDispatcher,
     scheme: &str,
@@ -171,7 +174,7 @@ pub async fn wms_fcgi_req(
     let mut params = fastcgi_client::Params::new()
         .set_request_method(req_method)
         .set_request_uri(req_path)
-        .set_server_name(host_port.get(0).unwrap_or(&""))
+        .set_server_name(host_port.first().unwrap_or(&""))
         .set_query_string(fcgi_query)
         .set_content_length(&len);
     if let Some(port) = host_port.get(1) {
@@ -238,7 +241,7 @@ pub async fn wms_fcgi_req(
             "X-metrics" => {
                 // cache_count:2,cache_hit:13,cache_miss:2
                 for entry in value.split(',') {
-                    let keyval: Vec<&str> = entry.splitn(2, ":").collect();
+                    let keyval: Vec<&str> = entry.splitn(2, ':').collect();
                     match keyval[0] {
                         "cache_count" => metrics.fcgi_cache_count[fcgino]
                             .with_label_values(&[fcgi_dispatcher.backend_name()])

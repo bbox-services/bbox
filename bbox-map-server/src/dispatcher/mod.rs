@@ -25,6 +25,7 @@ impl DispatchConfig {
 }
 
 pub trait RequestDispatcher {
+    #[allow(clippy::ptr_arg)]
     fn new(config: &DispatchConfig, pools: &Vec<FcgiClientPool>) -> Self;
     fn select(&mut self, query_str: &str) -> usize;
 }

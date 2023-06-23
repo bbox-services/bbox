@@ -46,10 +46,10 @@ impl FilterParams {
             self.bbox.as_ref().map(|v| format!("bbox={v}")),
         ]
         .into_iter()
-        .filter_map(|v| v)
+        .flatten()
         .collect::<Vec<String>>()
         .join("&");
-        if args.len() > 0 {
+        if !args.is_empty() {
             // replace & with ?
             args.replace_range(0..1, "?");
         }
@@ -58,7 +58,7 @@ impl FilterParams {
     pub fn bbox(&self) -> Result<Option<Vec<f64>>, std::num::ParseFloatError> {
         if let Some(bboxstr) = &self.bbox {
             let bbox: Vec<f64> = bboxstr
-                .split(",")
+                .split(',')
                 .map(|v| v.parse())
                 .collect::<Result<Vec<_>, _>>()?;
             if bbox.len() == 4 || bbox.len() == 6 {

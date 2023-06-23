@@ -173,7 +173,7 @@ impl TileService {
         let tms = self.grid(&tileset.tms)?;
         let bbox = if let Some(numlist) = &args.extent {
             let arr: Vec<f64> = numlist
-                .split(",")
+                .split(',')
                 .map(|v| {
                     v.parse()
                         .expect("Error parsing 'extent' as list of float values")
@@ -222,7 +222,7 @@ impl TileService {
         let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
         for tile in griditer {
-            let path = CacheLayout::ZXY.path_string(&PathBuf::new(), &tile, "png");
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &tile, "png");
             progress.set_message(path.clone());
             progress.inc(1);
             // TODO: we should not clone for each tile, only for a pool of tasks
@@ -270,19 +270,18 @@ impl TileService {
 
     pub async fn upload(&self, args: &UploadArgs) -> anyhow::Result<()> {
         match args.mode {
-            Mode::Sequential => s3putfiles::put_files_seq(&args).await,
-            Mode::Tasks => s3putfiles::put_files_tasks(&args).await,
-            Mode::Channels => s3putfiles::put_files_channels(&args).await,
+            Mode::Sequential => s3putfiles::put_files_seq(args).await,
+            Mode::Tasks => s3putfiles::put_files_tasks(args).await,
+            Mode::Channels => s3putfiles::put_files_channels(args).await,
         }
     }
 }
 
 async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHandle<T>> {
     // debug!("await_one_task with {} spawned tasks left", tasks.len());
-    match futures_util::future::select_all(tasks).await {
-        // Ignoring all errors
-        (_result, _index, remaining) => remaining,
-    }
+    let (_result, _index, remaining) = futures_util::future::select_all(tasks).await;
+    // Ignoring all errors
+    remaining
 }
 
 // pub fn seed(args: &SeedArgs) {

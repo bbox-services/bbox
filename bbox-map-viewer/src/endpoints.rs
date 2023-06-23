@@ -44,7 +44,7 @@ async fn favicon() -> Result<EmbedFile, Error> {
 }
 
 async fn maps(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    map_assets(&*filename)
+    map_assets(&filename)
 }
 
 async fn map(path: web::Path<(String, PathBuf)>) -> Result<EmbedFile, Error> {

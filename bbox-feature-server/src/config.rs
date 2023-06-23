@@ -22,6 +22,7 @@ impl DatasourceCfg {
     pub fn from_config() -> Self {
         from_config_opt_or_exit("datasource").unwrap_or_default()
     }
+    #[allow(dead_code)]
     pub fn from_path(path: &str) -> Self {
         let mut cfg = DatasourceCfg::default();
         cfg.directory.push(DsFiledirCfg {
