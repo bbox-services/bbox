@@ -2,7 +2,7 @@
 members = [
     "bbox-common",
     "bbox-feature-server",
-    "bbox-file-server",
+    "bbox-asset-server",
     "bbox-map-server",
     "bbox-map-server/mock-fcgi-wms",
     "bbox-map-viewer",

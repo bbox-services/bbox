@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct FileserverCfg {
+pub struct AssetserverCfg {
     #[serde(rename = "static")]
     pub static_: Vec<StaticDirCfg>,
     pub template: Vec<TemplateDirCfg>,
@@ -20,8 +20,8 @@ pub struct StaticDirCfg {
     pub dir: String,
 }
 
-impl FileserverCfg {
+impl AssetserverCfg {
     pub fn from_config() -> Self {
-        from_config_opt_or_exit("fileserver").unwrap_or_default()
+        from_config_opt_or_exit("assets").unwrap_or_default()
     }
 }

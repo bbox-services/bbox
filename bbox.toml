@@ -30,23 +30,23 @@ dir = "../data"
 #[[datasource.postgis]]
 #url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
-[[fileserver.static]]
+[[assets.static]]
 # Static file serving
-# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="/data"}]'
+# Env var example: BBOX_ASSETS__STATIC='[{dir="data",path="/data"}]'
 # ./data/* -> http://localhost:8080/data/
 dir = "./data"
 path = "/data"
 
-[[fileserver.template]]
+[[assets.template]]
 # Template file serving
-# Env var example: BBOX_FILESERVER__TEMPLATE='[{dir="templates",path="/html"}]'
+# Env var example: BBOX_ASSETS__TEMPLATE='[{dir="templates",path="/html"}]'
 # ./templates/name.html -> http://localhost:8080/html/name/param
 dir = "./templates"
 path = "/html"
 
-[[fileserver.repo]]
+[[assets.repo]]
 # QGIS plugin repository
-# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="/qgisrepo"}]'
+# Env var example: BBOX_ASSETS__REPO='[{dir="plugins",path="/qgisrepo"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
 dir = "./plugins"
 path = "/qgisrepo"

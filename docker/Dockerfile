@@ -5,10 +5,10 @@
 FROM rust:bullseye as builder
 
 COPY Cargo.lock Cargo.toml ./
-RUN mkdir bbox-common bbox-feature-serverbbox-file-server bbox-map-server bbox-map-server/mock-fcgi-wms bbox-map-viewer bbox-processes-server bbox-routing-server bbox-server bbox-tile-server
+RUN mkdir bbox-common bbox-feature-server bbox-asset-server bbox-map-server bbox-map-server/mock-fcgi-wms bbox-map-viewer bbox-processes-server bbox-routing-server bbox-server bbox-tile-server
 COPY bbox-common/Cargo.toml ./bbox-common/Cargo.toml
 COPY bbox-feature-server/Cargo.toml ./bbox-feature-server/Cargo.toml
-COPY bbox-file-server/Cargo.toml ./bbox-file-server/Cargo.toml
+COPY bbox-asset-server/Cargo.toml ./bbox-asset-server/Cargo.toml
 COPY bbox-map-server/Cargo.toml ./bbox-map-server/Cargo.toml
 COPY bbox-map-server/mock-fcgi-wms/Cargo.toml ./bbox-map-server/mock-fcgi-wms/Cargo.toml
 COPY bbox-map-viewer/Cargo.toml ./bbox-map-viewer/Cargo.toml

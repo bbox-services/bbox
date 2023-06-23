@@ -6,10 +6,10 @@ use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
 use std::path::Path;
 
+#[cfg(feature = "asset-server")]
+use bbox_asset_server::AssetService;
 #[cfg(feature = "feature-server")]
 use bbox_feature_server::FeatureService;
-#[cfg(feature = "file-server")]
-use bbox_file_server::FileService;
 #[cfg(feature = "map-server")]
 use bbox_map_server::MapService;
 #[cfg(feature = "processes-server")]
@@ -21,8 +21,8 @@ use bbox_tile_server::TileService;
 
 #[cfg(not(feature = "feature-server"))]
 use bbox_common::service::DummyService as FeatureService;
-#[cfg(not(feature = "file-server"))]
-use bbox_common::service::DummyService as FileService;
+#[cfg(not(feature = "asset-server"))]
+use bbox_common::service::DummyService as AssetService;
 #[cfg(not(feature = "map-server"))]
 use bbox_common::service::DummyService as MapService;
 #[cfg(not(feature = "processes-server"))]
@@ -42,8 +42,8 @@ async fn run_service() -> std::io::Result<()> {
     let mut tile_service = TileService::default();
     core.add_service(&tile_service);
 
-    let mut file_service = FileService::default();
-    core.add_service(&file_service);
+    let mut asset_service = AssetService::default();
+    core.add_service(&asset_service);
 
     let mut feature_service = FeatureService::default();
     core.add_service(&feature_service);
@@ -60,7 +60,7 @@ async fn run_service() -> std::io::Result<()> {
     let matches = core.cli_matches();
 
     core.read_config(&matches).await;
-    file_service.read_config(&matches).await;
+    asset_service.read_config(&matches).await;
     feature_service.read_config(&matches).await;
     processes_service.read_config(&matches).await;
     routing_service.read_config(&matches).await;
@@ -77,7 +77,7 @@ async fn run_service() -> std::io::Result<()> {
     if tile_service.cli_run(&matches).await {
         return Ok(());
     }
-    if file_service.cli_run(&matches).await {
+    if asset_service.cli_run(&matches).await {
         return Ok(());
     }
     if feature_service.cli_run(&matches).await {
@@ -105,7 +105,7 @@ async fn run_service() -> std::io::Result<()> {
             .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| feature_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| asset_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| processes_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| routing_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| bbox_service.register_endpoints(&mut cfg, &core));

@@ -9,15 +9,15 @@ use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_common::service::{CoreService, OgcApiService};
 
-#[cfg(feature = "file-server")]
-use bbox_file_server::FileService;
+#[cfg(feature = "asset-server")]
+use bbox_asset_server::AssetService;
 #[cfg(feature = "map-server")]
 use bbox_map_server::MapService;
 
 #[cfg(not(feature = "map-server"))]
 use bbox_common::service::DummyService as MapService;
-#[cfg(not(feature = "file-server"))]
-use bbox_common::service::DummyService as FileService;
+#[cfg(not(feature = "asset-server"))]
+use bbox_common::service::DummyService as AssetService;
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
@@ -29,15 +29,15 @@ async fn run_service() -> std::io::Result<()> {
     let mut tile_service = TileService::default();
     core.add_service(&tile_service);
 
-    let mut file_service = FileService::default();
-    core.add_service(&file_service);
+    let mut asset_service = AssetService::default();
+    core.add_service(&asset_service);
 
     let matches = core.cli_matches();
 
     core.read_config(&matches).await;
     map_service.read_config(&matches).await;
     tile_service.read_config(&matches).await;
-    file_service.read_config(&matches).await;
+    asset_service.read_config(&matches).await;
 
     #[cfg(feature = "map-server")]
     tile_service.set_map_service(&map_service);
@@ -48,7 +48,7 @@ async fn run_service() -> std::io::Result<()> {
     if tile_service.cli_run(&matches).await {
         return Ok(());
     }
-    if file_service.cli_run(&matches).await {
+    if asset_service.cli_run(&matches).await {
         return Ok(());
     }
 
@@ -65,7 +65,7 @@ async fn run_service() -> std::io::Result<()> {
             .configure(bbox_common::static_assets::register_endpoints)
             .configure(|mut cfg| map_service.register_endpoints(&mut cfg, &core))
             .configure(|mut cfg| tile_service.register_endpoints(&mut cfg, &core))
-            .configure(|mut cfg| file_service.register_endpoints(&mut cfg, &core))
+            .configure(|mut cfg| asset_service.register_endpoints(&mut cfg, &core))
     });
     if let Some(tls_config) = tls_config {
         server = server.bind_rustls(server_addr, tls_config)?;

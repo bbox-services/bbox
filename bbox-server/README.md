@@ -25,16 +25,16 @@ Configuraton is read from `bbox.toml` and environment variables.
 # server_addr = "127.0.0.1:8080"  # Default: 127.0.0.1:8080
 # worker_threads = 4  # Default: number of CPU cores
 
-[[fileserver.static]] 
+[[assets.static]] 
 # Static file serving
-# Env var example: BBOX_FILESERVER__STATIC='[{dir="data",path="data"}]'
+# Env var example: BBOX_ASSETS__STATIC='[{dir="data",path="data"}]'
 # ./data/* -> http://localhost:8080/data/
 # dir = "./data"
 # path = "data"
 
-[[fileserver.repo]]
+[[assets.repo]]
 # QGIS plugin repository
-# Env var example: BBOX_FILESERVER__REPO='[{dir="plugins",path="qgis"}]'
+# Env var example: BBOX_ASSETS__REPO='[{dir="plugins",path="qgis"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgis/plugins.xml
 # dir = "./plugins"
 # path = "qgis"

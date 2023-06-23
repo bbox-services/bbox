@@ -1,4 +1,4 @@
-use crate::config::FileserverCfg;
+use crate::config::AssetserverCfg;
 use crate::qgis_plugins::plugin_files;
 use actix_web::web;
 use async_trait::async_trait;
@@ -13,17 +13,17 @@ use std::path::{Path, PathBuf};
 pub type PluginIndex = HashMap<String, Vec<PathBuf>>;
 
 #[derive(Clone, Default)]
-pub struct FileService {
+pub struct AssetService {
     pub plugins_index: PluginIndex,
 }
 
 #[async_trait]
-impl OgcApiService for FileService {
+impl OgcApiService for AssetService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
-        let service_cfg = FileserverCfg::from_config();
+        let service_cfg = AssetserverCfg::from_config();
 
         self.plugins_index = PluginIndex::new();
         for repo in &service_cfg.repo {

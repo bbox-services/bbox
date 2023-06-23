@@ -1,5 +1,5 @@
 [package]
-name = "bbox-file-server"
+name = "bbox-asset-server"
 version = "0.1.0"
 edition = "2018"
 
@@ -19,5 +19,5 @@ tempfile = "3.2.0"
 zip = { version = "0.5.13", default-features = false, features = ["deflate"] }
 
 [[bin]]
-name = "bbox-file-server"
+name = "bbox-asset-server"
 path = "src/main.rs"

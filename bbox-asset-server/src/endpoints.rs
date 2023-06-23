@@ -1,7 +1,7 @@
-use crate::config::FileserverCfg;
+use crate::config::AssetserverCfg;
 use crate::qgis_plugins::*;
 use crate::runtime_templates::RuntimeTemplates;
-use crate::service::{FileService, PluginIndex};
+use crate::service::{AssetService, PluginIndex};
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bbox_common::app_dir;
@@ -49,9 +49,9 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
     Ok(NamedFile::from_file(file, "plugin.xml")?)
 }
 
-impl FileService {
+impl AssetService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let service_cfg = FileserverCfg::from_config();
+        let service_cfg = AssetserverCfg::from_config();
 
         for static_dir in &service_cfg.static_ {
             let dir = app_dir(&static_dir.dir);
@@ -92,7 +92,7 @@ impl FileService {
                 info!("Serving QGIS plugin repository from directory '{dir}' on '{xmldir}'");
                 cfg.service(Files::new(
                     &format!("{}/static", repo.path),
-                    app_dir("bbox-file-server/src/static"), // TODO: RustEmbed !
+                    app_dir("bbox-asset-server/src/static"), // TODO: RustEmbed !
                 ))
                 .route(&xmldir, web::get().to(plugin_xml))
                 // TODO: same prefix not possible?
