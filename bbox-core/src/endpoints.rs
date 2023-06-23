@@ -30,10 +30,7 @@ impl TileResponse {
         HashMap::new()
     }
     pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
-        let bytes = self
-            .body
-            .bytes()
-            .map_while(|val| if let Ok(b) = val { Some(b) } else { None });
+        let bytes = self.body.bytes().map_while(|val| val.ok());
         stream! {
             yield Ok::<_, Infallible>(web::Bytes::from_iter(bytes));
         }
