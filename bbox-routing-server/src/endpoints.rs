@@ -260,7 +260,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_route() -> Result<(), Error> {
-        let router = Router::from_gpkg("../data/railway-test.gpkg", "flows", "geom")
+        let router = Router::from_gpkg("../assets/railway-test.gpkg", "flows", "geom")
             .await
             .unwrap();
         let app = test::init_service(

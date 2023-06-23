@@ -243,7 +243,7 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_content() {
-        let pool = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
+        let pool = GpkgDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
         let collections = pool.collections().await.unwrap();
@@ -264,7 +264,7 @@ mod tests {
     #[tokio::test]
     async fn gpkg_features() {
         let filter = FilterParams::default();
-        let ds = GpkgDatasource::new_pool("../data/ne_extracts.gpkg")
+        let ds = GpkgDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
         let info = GpkgCollectionInfo {

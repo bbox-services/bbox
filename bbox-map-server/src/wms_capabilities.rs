@@ -174,8 +174,7 @@ mod test {
 
     #[test]
     fn umn() {
-        let s = r##"
-<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
+        let s = r##"<?xml version='1.0' encoding="UTF-8" standalone="no" ?>
 <WMS_Capabilities version="1.3.0"  xmlns="http://www.opengis.net/wms"   xmlns:sld="http://www.opengis.net/sld"   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   xmlns:ms="http://mapserver.gis.umn.edu/mapserver"   xsi:schemaLocation="http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd  http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/sld_capabilities.xsd  http://mapserver.gis.umn.edu/mapserver http://localhost/cgi-bin/mapserv?service=WMS&amp;version=1.3.0&amp;request=GetSchemaExtension">
 
 <!-- MapServer version 7.4.3 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
@@ -338,8 +337,7 @@ mod test {
 
     #[test]
     fn qgis() {
-        let s = r##"
-<?xml version="1.0" encoding="utf-8"?>
+        let s = r##"<?xml version="1.0" encoding="utf-8"?>
 <WMS_Capabilities xmlns:sld="http://www.opengis.net/sld" version="1.3.0" xmlns="http://www.opengis.net/wms" xmlns:qgs="http://www.qgis.org/wms" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/sld_capabilities.xsd http://www.qgis.org/wms http://127.0.0.1:8080/wms/qgs/ne?SERVICE=WMS&amp;REQUEST=GetSchemaExtension">
  <Service>
   <Name>WMS</Name>
@@ -641,8 +639,7 @@ mod test {
 
     #[test]
     fn qgis_getprojectsettings() {
-        let s = r##"
-<?xml version="1.0" encoding="utf-8"?>
+        let s = r##"<?xml version="1.0" encoding="utf-8"?>
 <WMS_Capabilities xsi:schemaLocation="http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/sld_capabilities.xsd http://www.qgis.org/wms http://127.0.0.1:8080/wms/qgs/ne?SERVICE=WMS&amp;REQUEST=GetSchemaExtension" xmlns="http://www.opengis.net/wms" xmlns:sld="http://www.opengis.net/sld" version="1.3.0" xmlns:qgs="http://www.qgis.org/wms" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
  <Service>
   <Name>WMS</Name>

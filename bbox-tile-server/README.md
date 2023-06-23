@@ -44,7 +44,7 @@ Tile requests:
 
 Run tile server without configuration:
 
-    cargo run -- serve ../data/liechtenstein.mbtiles
+    cargo run -- serve ../assets/liechtenstein.mbtiles
 
     curl -o /tmp/tile.mvt http://localhost:8080/xyz/liechtenstein/14/8621/5759.mvt
 
@@ -70,7 +70,7 @@ Style JSON requests:
 
 Map viewer examples:
 
-    x-www-browser http://127.0.0.1:8080/data/usergrid.html?debug=1
+    x-www-browser http://127.0.0.1:8080/assets/usergrid.html?debug=1
 
 Map viewer template examples:
 
@@ -132,14 +132,14 @@ Stop MinIO:
 ### Using Maputnik for MVT styling
 
 * Download latest public.zip from https://github.com/maputnik/editor/releases
-* Unpack into ../data/ and rename public to maputnik
+* Unpack into ../assets/ and rename public to maputnik
 
 Open example:
 
-    http://localhost:8080/data/maputnik/index.html?style=http://localhost:8080/data/maplibre-style.json
-    http://localhost:8080/data/maputnik/index.html#11.0/47.0944/9.5076
+    http://localhost:8080/assets/maputnik/index.html?style=http://localhost:8080/assets/maplibre-style.json
+    http://localhost:8080/assets/maputnik/index.html#11.0/47.0944/9.5076
 
-    http://localhost:8080/data/maputnik/index.html?style=http://localhost:8080/xyz/mbtiles_mvt_fl.style.json
+    http://localhost:8080/assets/maputnik/index.html?style=http://localhost:8080/xyz/mbtiles_mvt_fl.style.json
 
 
 ### S3 upload benchmarks

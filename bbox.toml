@@ -25,17 +25,17 @@ path = "/metrics"
 #agent_endpoint = "localhost:6831"
 
 [[datasource.directory]]
-dir = "../data"
+dir = "../assets"
 
 #[[datasource.postgis]]
 #url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[assets.static]]
 # Static file serving
-# Env var example: BBOX_ASSETS__STATIC='[{dir="data",path="/data"}]'
-# ./data/* -> http://localhost:8080/data/
-dir = "./data"
-path = "/data"
+# Env var example: BBOX_ASSETS__STATIC='[{dir="assets",path="/assets"}]'
+# ./assets/* -> http://localhost:8080/assets/
+dir = "./assets"
+path = "/assets"
 
 [[assets.template]]
 # Template file serving
@@ -61,15 +61,15 @@ path = "/qgisrepo"
 [mapserver.qgis_backend]
 # QGIS Server settings
 # Environment variable prefix: BBOX_MAPSERVER__QGIS_BACKEND__
-project_basedir = "../data"  # Base dir for project files (.qgs, .qgz)
-qgs.path = "/qgis"           # WMS URL base path
-qgz.path = "/qgz"            # WMS URL base path
+project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"             # WMS URL base path
+qgz.path = "/qgz"              # WMS URL base path
 
 [mapserver.umn_backend]
 # UMN MapServer settings
 # Environment variable prefix: BBOX_MAPSERVER__UMN_BACKEND__
-project_basedir = "../data"  # Base dir for project files (.map)
-path = "/wms/map"            # WMS URL base path
+project_basedir = "../assets"  # Base dir for project files (.map)
+path = "/wms/map"              # WMS URL base path
 
 #[mapserver.mock_backend]
 # Enable FCGI mockup backend (for testing)
@@ -85,14 +85,14 @@ path = "/wms/map"            # WMS URL base path
 
 #[[routing.service]]
 #profile = "railway"
-#gpkg = "../data/railway-test.gpkg"
+#gpkg = "../assets/railway-test.gpkg"
 #table = "flows"
 #geom = "geom"
 
 # -- custom grids --
 
 [[tileserver.grid]]
-json = "../data/custom-grid-lv95.json"
+json = "../assets/custom-grid-lv95.json"
 
 # -- tile source provider configuration --
 
@@ -140,4 +140,4 @@ params = "transparent=true"
 
 [[tileserver.tileset]]
 name = "mbtiles_mvt_fl"
-mbtiles = { path = "../data/liechtenstein.mbtiles" }
+mbtiles = { path = "../assets/liechtenstein.mbtiles" }

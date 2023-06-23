@@ -27,10 +27,10 @@ Configuraton is read from `bbox.toml` and environment variables.
 
 [[assets.static]] 
 # Static file serving
-# Env var example: BBOX_ASSETS__STATIC='[{dir="data",path="data"}]'
-# ./data/* -> http://localhost:8080/data/
-# dir = "./data"
-# path = "data"
+# Env var example: BBOX_ASSETS__STATIC='[{dir="assets",path="assets"}]'
+# ./assets/* -> http://localhost:8080/assets/
+# dir = "./assets"
+# path = "/assets"
 
 [[assets.repo]]
 # QGIS plugin repository

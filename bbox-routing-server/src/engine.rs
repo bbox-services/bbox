@@ -257,7 +257,7 @@ mod tests {
 
     #[tokio::test]
     async fn chgraph() {
-        let router = Router::from_gpkg("../data/railway-test.gpkg", "flows", "geom")
+        let router = Router::from_gpkg("../assets/railway-test.gpkg", "flows", "geom")
             .await
             .unwrap();
 

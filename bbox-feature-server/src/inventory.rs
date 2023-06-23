@@ -206,7 +206,7 @@ mod tests {
 
     #[tokio::test]
     async fn inventory_scan() {
-        let inventory = Inventory::scan(&DatasourceCfg::from_path("../data")).await;
+        let inventory = Inventory::scan(&DatasourceCfg::from_path("../assets")).await;
         // assert_eq!(inventory.collections().len(), 3);
         assert!(inventory.collections().len() >= 3);
         assert_eq!(

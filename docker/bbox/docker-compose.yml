@@ -9,7 +9,7 @@ services:
     #   - PGPASSWORD=$PG_PASS
     volumes:
       - ./bbox-full.toml:/var/www/bbox.toml:ro
-      - ../../data:/data
+      - ../../assets:/assets
       - ../../plugins:/var/www/plugins:ro
 
   postgresql:
