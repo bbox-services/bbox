@@ -6,6 +6,7 @@ use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
+use log::info;
 
 #[derive(Clone, Default)]
 pub struct ProcessesService {
@@ -19,10 +20,9 @@ impl OgcApiService for ProcessesService {
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
         let config = ProcessesServerCfg::from_config();
-        // if !config.has_backend() {
-        //     info!("Missing processing backend configuration - skipping endpoints");
-        //     return;
-        // }
+        if !config.has_backend() {
+            info!("Processing backend configuration missing - service disabled");
+        }
         self.backend = config.dagster_backend.map(|_cfg| DagsterBackend::new());
     }
     fn conformance_classes(&self) -> Vec<String> {
@@ -54,6 +54,8 @@ impl OgcApiService for ProcessesService {
         Some(include_str!("openapi.yaml"))
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
+        if self.backend.is_some() {
+            self.register(cfg, core)
+        }
     }
 }

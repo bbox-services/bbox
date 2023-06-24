@@ -4,6 +4,7 @@ mod service;
 use crate::service::BboxService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_core::service::{CoreService, OgcApiService};
+use log::info;
 use std::path::Path;
 
 #[cfg(feature = "asset-server")]
@@ -123,8 +124,10 @@ async fn run_service() -> std::io::Result<()> {
     .workers(workers)
     .shutdown_timeout(3); // default: 30s
     if let Some(tls_config) = tls_config {
+        info!("Starting web server at https://{server_addr}");
         server = server.bind_rustls(&server_addr, tls_config)?;
     } else {
+        info!("Starting web server at http://{server_addr}");
         server = server.bind(&server_addr)?;
     }
 

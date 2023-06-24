@@ -14,7 +14,7 @@ use actix_web::{
 use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
-use log::warn;
+use log::{info, warn};
 use prometheus::Registry;
 use std::env;
 
@@ -258,8 +258,10 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
             .wrap(middleware::Logger::default())
     });
     if let Some(tls_config) = tls_config {
+        info!("Starting web server at https://{server_addr}");
         server = server.bind_rustls(server_addr, tls_config)?;
     } else {
+        info!("Starting web server at http://{server_addr}");
         server = server.bind(server_addr)?;
     }
     server.workers(workers).run().await

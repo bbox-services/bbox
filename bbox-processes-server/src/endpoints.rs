@@ -211,10 +211,6 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
 
 impl ProcessesService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        if self.backend.is_none() {
-            info!("Missing processing backend configuration - skipping endpoints");
-            return;
-        }
         cfg.service(web::resource("/processes").route(web::get().to(process_list)))
             .service(
                 web::resource("/processes/{processID}")

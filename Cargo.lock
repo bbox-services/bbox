@@ -908,6 +908,7 @@ dependencies = [
  "bbox-routing-server",
  "bbox-tile-server",
  "clap 4.3.5",
+ "log",
  "minijinja",
  "once_cell",
  "open",

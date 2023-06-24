@@ -27,6 +27,7 @@ bbox-routing-server = { path = "../bbox-routing-server", optional = true }
 bbox-tile-server = { path = "../bbox-tile-server", default-features = false, optional = true }
 clap = { workspace = true }
 minijinja = { workspace = true }
+log = { workspace = true }
 once_cell = { workspace = true }
 open = "4.1.0"
 rust-embed = { workspace = true }
