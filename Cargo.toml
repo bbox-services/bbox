@@ -14,6 +14,9 @@ members = [
 default-members = ["bbox-server"]
 
 [workspace.package]
+edition = "2021"
+rust-version = "1.65"
+repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]

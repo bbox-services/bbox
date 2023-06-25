@@ -2,7 +2,9 @@
 name = "bbox-feature-server"
 version = "0.1.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.65"
+repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [features]
