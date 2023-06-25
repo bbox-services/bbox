@@ -3,6 +3,7 @@ name = "bbox-map-server"
 version = "0.1.0"
 authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
 
 [features]
 inventory = []

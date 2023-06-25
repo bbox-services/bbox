@@ -13,6 +13,9 @@ members = [
 ]
 default-members = ["bbox-server"]
 
+[workspace.package]
+license = "MIT OR Apache-2.0"
+
 [workspace.dependencies]
 actix-web = { version = "4.0.0", features = ["rustls"] }
 async-stream = "0.3.4"
