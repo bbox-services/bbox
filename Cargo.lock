@@ -836,7 +836,6 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "bbox-core",
- "bbox-feature-server",
  "bbox-map-server",
  "log",
  "minijinja",

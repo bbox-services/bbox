@@ -10,7 +10,6 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 actix-web = { workspace = true }
 bbox-core = { path = "../bbox-core", features=["html"] }
-bbox-feature-server = { path = "../bbox-feature-server" }
 bbox-map-server = { path = "../bbox-map-server" }
 log = { workspace = true }
 minijinja = { workspace = true }
