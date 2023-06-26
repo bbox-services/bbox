@@ -1,6 +1,6 @@
 [package]
 name = "bbox-server"
-version = "0.1.0"
+version = "0.5.0-alpha0"
 edition = "2021"
 rust-version = "1.65"
 repository = "https://github.com/sourcepole/bbox"
