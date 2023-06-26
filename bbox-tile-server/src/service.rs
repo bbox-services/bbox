@@ -219,7 +219,9 @@ impl TileService {
         let extent = tms.xy_bounds(tile);
         let srid = tms.crs().as_srid();
         let tile_matrix = tms.matrix(tile.z);
-        // TODO: Handle x,y,z out of grid or service limits (return None)
+        if !tms.is_valid(tile) {
+            return Err(TileSourceError::TileXyzError);
+        }
         let tile_width = tile_matrix.as_ref().tile_width;
         let tile_height = tile_matrix.as_ref().tile_height;
         Ok(QueryExtent {
