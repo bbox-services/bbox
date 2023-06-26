@@ -1,10 +1,11 @@
 use crate::config::WmsFcgiSourceParamsCfg;
-use crate::service::TileService;
+use crate::service::{QueryExtent, TileService};
 use crate::tilesource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
-use tile_grid::{BoundingBox, Xyz};
+use std::num::NonZeroU16;
+use tile_grid::Xyz;
 use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
@@ -12,6 +13,7 @@ pub struct WmsFcgiSource {
     pub project: String,
     pub suffix: String,
     pub query: String,
+    pub tile_size: Option<NonZeroU16>,
 }
 
 impl WmsFcgiSource {
@@ -19,11 +21,9 @@ impl WmsFcgiSource {
         let project = cfg.project.clone();
         let suffix = cfg.suffix.clone();
         let query = format!(
-            "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&WIDTH={}&HEIGHT={}&LAYERS={}&STYLES=&{}",
+            "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&LAYERS={}&STYLES=&{}",
             &project,
             &suffix,
-            256, //grid.width,
-            256, //grid.height,
             cfg.layers,
             cfg.params.as_ref().unwrap_or(&"".to_string()),
         );
@@ -31,13 +31,28 @@ impl WmsFcgiSource {
             project,
             suffix,
             query,
+            tile_size: cfg.tile_size,
         }
     }
 
-    pub fn get_map_request(&self, crs: i32, extent: &BoundingBox, format: &str) -> String {
+    pub fn get_map_request(&self, extent_info: &QueryExtent, format: &str) -> String {
+        let (width, height) = if let Some(size) = self.tile_size {
+            (size, size)
+        } else {
+            (extent_info.tile_width, extent_info.tile_height)
+        };
+        let extent = &extent_info.extent;
         format!(
-            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&FORMAT={}",
-            self.query, crs, extent.left, extent.bottom, extent.right, extent.top, format
+            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&WIDTH={}&HEIGHT={}&FORMAT={}",
+            self.query,
+            extent_info.srid,
+            extent.left,
+            extent.bottom,
+            extent.right,
+            extent.top,
+            width,
+            height,
+            format
         )
     }
 
@@ -45,8 +60,7 @@ impl WmsFcgiSource {
     async fn bbox_request(
         &self,
         service: &TileService,
-        extent: &BoundingBox,
-        crs: i32,
+        extent_info: &QueryExtent,
         format: &str,
         scheme: &str,
         host: &str,
@@ -59,7 +73,7 @@ impl WmsFcgiSource {
             .expect("map_service")
             .fcgi_dispatcher(&self.suffix)
             .ok_or(TileSourceError::SuffixNotFound(self.suffix.clone()))?;
-        let fcgi_query = self.get_map_request(crs, extent, format);
+        let fcgi_query = self.get_map_request(extent_info, format);
         let project = &self.project;
         let body = "".to_string();
         wms_fcgi_req(
@@ -91,9 +105,15 @@ impl TileRead for WmsFcgiSource {
         req_path: &str,
         metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
-        let (extent, crs) = service.xyz_extent(tms_id, tile)?;
+        let extent_info = service.xyz_extent(tms_id, tile)?;
         self.bbox_request(
-            service, &extent, crs, format, scheme, host, req_path, metrics,
+            service,
+            &extent_info,
+            format,
+            scheme,
+            host,
+            req_path,
+            metrics,
         )
         .await
     }

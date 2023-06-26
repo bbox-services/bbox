@@ -4,6 +4,7 @@ use bbox_core::config::from_config_opt_or_exit;
 use clap::{ArgMatches, FromArgMatches};
 use log::info;
 use serde::Deserialize;
+use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Default, Debug)]
@@ -87,6 +88,9 @@ pub struct WmsFcgiSourceParamsCfg {
     pub layers: String,
     /// Additional WMS params like transparent=true
     pub params: Option<String>,
+    /// Width and height of tile. Defaults to grid tile size (usually 256x256)
+    // TODO: per layer for MVT, investigate for OGC Tiles
+    pub tile_size: Option<NonZeroU16>,
 }
 
 #[derive(Deserialize, Clone, Debug)]

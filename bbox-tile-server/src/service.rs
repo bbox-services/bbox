@@ -15,6 +15,7 @@ use clap::{ArgMatches, FromArgMatches};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
+use std::num::NonZeroU16;
 use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
 use tilejson::TileJSON;
@@ -191,6 +192,13 @@ impl OgcApiService for TileService {
     }
 }
 
+pub struct QueryExtent {
+    pub extent: BoundingBox,
+    pub srid: i32,
+    pub tile_width: NonZeroU16,
+    pub tile_height: NonZeroU16,
+}
+
 impl TileService {
     pub fn set_map_service(&mut self, service: &MapService) {
         self.map_service = Some(service.clone());
@@ -206,16 +214,20 @@ impl TileService {
             .get(tms)
             .ok_or(RegistryError::TmsNotFound(tms.to_string()))
     }
-    pub fn xyz_extent(
-        &self,
-        tms_id: &str,
-        tile: &Xyz,
-    ) -> Result<(BoundingBox, i32), TileSourceError> {
+    pub fn xyz_extent(&self, tms_id: &str, tile: &Xyz) -> Result<QueryExtent, TileSourceError> {
         let tms = self.grid(tms_id)?;
         let extent = tms.xy_bounds(tile);
+        let srid = tms.crs().as_srid();
+        let tile_matrix = tms.matrix(tile.z);
         // TODO: Handle x,y,z out of grid or service limits (return None)
-        let crs = tms.crs().as_srid();
-        Ok((extent, crs))
+        let tile_width = tile_matrix.as_ref().tile_width;
+        let tile_height = tile_matrix.as_ref().tile_height;
+        Ok(QueryExtent {
+            extent,
+            srid,
+            tile_width,
+            tile_height,
+        })
     }
     /// Tile request
     pub async fn read_tile(

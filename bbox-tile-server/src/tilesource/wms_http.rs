@@ -77,8 +77,8 @@ impl TileRead for WmsHttpSource {
         _req_path: &str,
         _metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
-        let (extent, _crs) = service.xyz_extent(tms_id, tile)?;
-        self.bbox_request(&extent).await
+        let extent_info = service.xyz_extent(tms_id, tile)?;
+        self.bbox_request(&extent_info.extent).await
     }
     fn source_type(&self) -> SourceType {
         SourceType::Raster
