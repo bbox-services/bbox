@@ -1,23 +1,29 @@
 # BBOX services
 
+Composable spatial services.
+
 [![CI build](https://github.com/sourcepole/bbox/workflows/CI/badge.svg)](https://github.com/sourcepole/bbox/actions)
 [![Docker](https://img.shields.io/docker/v/sourcepole/bbox-server-qgis?label=Docker%20image&sort=semver)](https://hub.docker.com/r/sourcepole/bbox-server-qgis)
 
-Composable spatial services.
-
-Features:
-* OGC WMS Server (backends: QGIS Server + UNN Mapserver)
-* Built-in map viewer
-* Static file server
-* Instrumentation: Prometheus and Jaeger tracing
-* Healths endpoints for Kubernetes hosting
+```
+ ___ ___  _____  __
+| _ ) _ )/ _ \ \/ /
+| _ \ _ \ (_) >  < 
+|___/___/\___/_/\_\
+```
 
 Components:
-* [BBOX map server](bbox-map-server/)
-* [BBOX map viewer](bbox-map-viewer/)
-* [BBOX OGC API Features service](bbox-feature-server/)
-* [BBOX asset server](bbox-asset-server/)
+* [BBOX Feature server](bbox-feature-server): OGC API Features service
+* [BBOX Map server](bbox-map-server): OGC API Map service
+* [BBOX Tile server](bbox-tile-server): OGC API Tile service
+* [BBOX Asset server](bbox-asset-server): Serving static and templated files
+* [BBOX Processes server](bbox-processes-server): OGC API Processes service
 
+Features:
+* Built-in high performance HTTP server
+* QWC2 Map viewer
+* Instrumentation: Prometheus and Jaeger tracing
+* Healths endpoints for Docker and Kubernetes hosting
 
 ## Build and run
 
@@ -25,6 +31,9 @@ Components:
     cargo install --path .
     ~/.cargo/bin/bbox-server
 
+## Binaries
+
+Go to the [latest release](https://github.com/sourcepole/bbox/releases) and download an executable for your platform.
 
 ## Docker
 
