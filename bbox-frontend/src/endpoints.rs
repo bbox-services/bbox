@@ -2,7 +2,7 @@ use crate::qwc2_config::*;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use bbox_core::endpoints::abs_req_baseurl;
 use bbox_core::static_files::EmbedFile;
-use bbox_core::templates::create_env_embedded;
+use bbox_core::templates::{create_env_embedded, render_endpoint};
 use bbox_map_server::inventory::{Inventory, WmsService};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
@@ -13,10 +13,10 @@ use std::path::PathBuf;
 #[folder = "templates/"]
 struct Templates;
 
-static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
-    let template = TEMPLATE_ENV
+    let template = TEMPLATES
         .get_template("index.html")
         .expect("couln't load template `index.html`");
     let links = vec![
@@ -115,6 +115,28 @@ async fn proj(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
     )?)
 }
 
+async fn swagger(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("swagger").join(path.as_ref()),
+    )?)
+}
+
+async fn swaggerui_html() -> Result<HttpResponse, Error> {
+    render_endpoint(&TEMPLATES, "swaggerui.html", context!(cur_menu=>"API")).await
+}
+
+async fn redoc(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("redoc").join(path.as_ref()),
+    )?)
+}
+
+async fn redoc_html() -> Result<HttpResponse, Error> {
+    render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
+}
+
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
@@ -124,5 +146,9 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         .service(web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)))
         .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)))
         .service(web::resource(r#"/ol/{filename:.*}"#).route(web::get().to(ol)))
-        .service(web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(proj)));
+        .service(web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(proj)))
+        .service(web::resource(r#"/swagger/{filename:.*}"#).route(web::get().to(swagger)))
+        .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui_html)))
+        .service(web::resource(r#"/redoc/{filename:.*}"#).route(web::get().to(redoc)))
+        .service(web::resource("/redoc.html").route(web::get().to(redoc_html)));
 }

@@ -13,7 +13,5 @@ impl OgcApiService for BboxService {
     type CliArgs = NoArgs;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {}
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
-    }
+    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig, _core: &CoreService) {}
 }

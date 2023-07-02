@@ -48,10 +48,10 @@ pub struct Plugin {
 #[folder = "src/templates/"]
 struct Templates;
 
-static TEMPLATE_ENV: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
 
 pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
-    let template = TEMPLATE_ENV
+    let template = TEMPLATES
         .get_template("plugins.xml")
         .expect("couln't load template `plugins.xml`");
     template

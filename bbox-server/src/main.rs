@@ -1,4 +1,3 @@
-mod endpoints;
 mod service;
 
 use crate::service::BboxService;
