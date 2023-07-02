@@ -124,7 +124,7 @@ struct Templates;
 #[cfg(not(feature = "html"))]
 type Templates = bbox_core::templates::NoTemplates;
 
-static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded::<Templates>());
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(create_env_embedded::<Templates>);
 
 impl FeatureService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {

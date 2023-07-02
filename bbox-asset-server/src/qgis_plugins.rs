@@ -48,7 +48,7 @@ pub struct Plugin {
 #[folder = "src/templates/"]
 struct Templates;
 
-static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded::<Templates>());
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(create_env_embedded::<Templates>);
 
 pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
     let template = TEMPLATES

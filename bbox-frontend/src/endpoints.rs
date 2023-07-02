@@ -12,7 +12,7 @@ use std::path::PathBuf;
 #[folder = "templates/"]
 struct Templates;
 
-static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded::<Templates>());
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(create_env_embedded::<Templates>);
 
 async fn index(inventory: web::Data<MapInventory>) -> Result<HttpResponse, Error> {
     let template = TEMPLATES
