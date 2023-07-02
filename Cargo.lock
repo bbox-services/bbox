@@ -805,6 +805,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bbox-frontend"
+version = "0.5.0-alpha0"
+dependencies = [
+ "actix-web",
+ "bbox-core",
+ "bbox-map-server",
+ "log",
+ "minijinja",
+ "once_cell",
+ "rand 0.7.3",
+ "rust-embed",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bbox-map-server"
 version = "0.5.0-alpha0"
 dependencies = [
@@ -828,22 +844,6 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "bbox-map-viewer"
-version = "0.5.0-alpha0"
-dependencies = [
- "actix-web",
- "bbox-core",
- "bbox-map-server",
- "log",
- "minijinja",
- "once_cell",
- "rand 0.7.3",
- "rust-embed",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -901,8 +901,8 @@ dependencies = [
  "bbox-asset-server",
  "bbox-core",
  "bbox-feature-server",
+ "bbox-frontend",
  "bbox-map-server",
- "bbox-map-viewer",
  "bbox-processes-server",
  "bbox-routing-server",
  "bbox-tile-server",

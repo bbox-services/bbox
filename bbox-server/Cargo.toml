@@ -7,31 +7,31 @@ repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "html", "map-viewer"]
-html = ["bbox-core/html", "bbox-feature-server?/html"]
+default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "html", "frontend"]
 feature-server = ["bbox-feature-server"]
 asset-server = ["bbox-asset-server"]
 map-server = ["bbox-map-server", "bbox-tile-server?/map-server"]
-map-viewer = ["bbox-map-viewer", "bbox-map-server/inventory"]
 processes-server = ["bbox-processes-server"]
 routing-server = ["bbox-routing-server"]
 tile-server = ["bbox-tile-server"]
+html = ["bbox-core/html", "bbox-feature-server?/html"]
+frontend = ["bbox-frontend", "bbox-map-server/inventory"]
 
 [dependencies]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
+bbox-asset-server = { path = "../bbox-asset-server", optional = true }
 bbox-core = { path = "../bbox-core" }
 bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
-bbox-asset-server = { path = "../bbox-asset-server", optional = true }
+bbox-frontend = { path = "../bbox-frontend", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
-bbox-map-viewer = { path = "../bbox-map-viewer", optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", optional = true }
 bbox-tile-server = { path = "../bbox-tile-server", default-features = false, optional = true }
 clap = { workspace = true }
-minijinja = { workspace = true }
 log = { workspace = true }
+minijinja = { workspace = true }
 once_cell = { workspace = true }
 open = "4.1.0"
 rust-embed = { workspace = true }

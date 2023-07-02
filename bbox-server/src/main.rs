@@ -114,9 +114,9 @@ async fn run_service() -> std::io::Result<()> {
             .configure(|cfg| routing_service.register_endpoints(cfg, &core))
             .configure(|cfg| bbox_service.register_endpoints(cfg, &core));
 
-        #[cfg(feature = "map-viewer")]
+        #[cfg(feature = "frontend")]
         {
-            app = app.configure(bbox_map_viewer::endpoints::register);
+            app = app.configure(bbox_frontend::endpoints::register);
         }
 
         app
@@ -135,7 +135,7 @@ async fn run_service() -> std::io::Result<()> {
     //     println!("{ASCIILOGO}");
     // }
 
-    if cfg!(feature = "map-viewer") {
+    if cfg!(feature = "frontend") {
         let mut open_url = format!("http://{server_addr}/");
         if let Some(project) = project {
             if let Some(name) = Path::new(&project).file_stem() {

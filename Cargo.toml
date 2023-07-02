@@ -1,11 +1,11 @@
 [workspace]
 members = [
+    "bbox-asset-server",
     "bbox-core",
     "bbox-feature-server",
-    "bbox-asset-server",
+    "bbox-frontend",
     "bbox-map-server",
     "bbox-map-server/mock-fcgi-wms",
-    "bbox-map-viewer",
     "bbox-processes-server",
     "bbox-routing-server",
     "bbox-server",
