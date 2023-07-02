@@ -8,10 +8,11 @@ repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["redoc", "qwc2", "openlayers", "maplibre", "proj"]
+default = ["redoc", "openlayers", "maplibre", "proj"]
+all = ["default", "qwc2", "swaggerui"]
 redoc = []
 swaggerui = []
-qwc2 = ["bbox-map-server"]
+qwc2 = ["bbox-map-server/inventory"]
 openlayers = []
 maplibre = []
 proj = []

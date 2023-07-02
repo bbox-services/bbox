@@ -7,15 +7,15 @@ repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "html", "frontend"]
+default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "frontend", "qwc2"]
 feature-server = ["bbox-feature-server"]
 asset-server = ["bbox-asset-server"]
 map-server = ["bbox-map-server", "bbox-tile-server?/map-server"]
 processes-server = ["bbox-processes-server"]
 routing-server = ["bbox-routing-server"]
 tile-server = ["bbox-tile-server"]
-html = ["bbox-core/html", "bbox-feature-server?/html"]
-frontend = ["bbox-frontend", "bbox-map-server/inventory"]
+frontend = ["bbox-frontend", "bbox-feature-server?/html"]
+qwc2 = ["bbox-frontend?/qwc2"]
 
 [dependencies]
 actix-service = "2.0.2"
@@ -23,7 +23,7 @@ actix-web = { workspace = true }
 async-trait = { workspace = true }
 bbox-asset-server = { path = "../bbox-asset-server", optional = true }
 bbox-core = { path = "../bbox-core" }
-bbox-feature-server = { path = "../bbox-feature-server", features=["html"], optional = true }
+bbox-feature-server = { path = "../bbox-feature-server", optional = true }
 bbox-frontend = { path = "../bbox-frontend", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bbox-processes-server = { path = "../bbox-processes-server", optional = true }

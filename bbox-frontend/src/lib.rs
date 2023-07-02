@@ -13,6 +13,7 @@ mod qwc2 {
     #[derive(serde::Serialize)]
     pub struct WmsService;
 
+    #[derive(Default)]
     pub struct MapInventory {
         pub wms_services: Vec<WmsService>,
     }

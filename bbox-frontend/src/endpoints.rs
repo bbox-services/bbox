@@ -174,4 +174,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
                 web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)),
             );
     }
+    if cfg!(not(feature = "qwc2")) {
+        cfg.app_data(web::Data::new(MapInventory::default()));
+    }
 }

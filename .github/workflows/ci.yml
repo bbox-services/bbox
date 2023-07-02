@@ -45,7 +45,7 @@ jobs:
         run: |
           if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
             # Skip bbox-map-server on Windows (uses Unix sockets)
-            cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,html
+            cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,frontend
           elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
             rustup target add aarch64-apple-darwin
             # compile without debug symbols
