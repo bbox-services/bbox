@@ -94,11 +94,19 @@ async fn themes_json(
     ThemesJson::from_capabilities(caps, default_theme)
 }
 
+async fn maplibre(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("maplibre").join(path.as_ref()),
+    )?)
+}
+
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
         .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
         .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
         .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
-        .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)));
+        .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)))
+        .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)));
 }
