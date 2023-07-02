@@ -10,7 +10,7 @@
         <ul>
         {% for entry in wms_services %}
           <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
-                                    <a href="/map/{{ entry.id }}/">Viewer</a>
+                                    <a href="/qwc2_map/{{ entry.id }}/">Viewer</a>
           </li>
         {% endfor %}
         </ul>
@@ -20,7 +20,7 @@
       <div class="right-side">
         <h2>Links</h2>
         <ul>
-          <li><a href="/maps/">Map viewer</a></li>
+          <li><a href="/qwc2/">Map viewer</a></li>
           <li><a href="/metrics">Metrics endpoint</a></li>
         </ul>
       </div>

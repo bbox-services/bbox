@@ -33,7 +33,7 @@ impl From<FcgiError> for actix_web::Error {
 /// WMS/WFS endpoint
 // /qgis/{project}?REQUEST=WMS&..
 // /qgz/{project}?REQUEST=WMS&..
-// /map/{project}?REQUEST=WMS&..
+// /wms/map/{project}?REQUEST=WMS&..
 async fn wms_fcgi(
     fcgi_dispatcher: web::Data<FcgiDispatcher>,
     suffix: web::Data<String>,

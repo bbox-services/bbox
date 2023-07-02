@@ -43,16 +43,16 @@ async fn favicon() -> Result<EmbedFile, Error> {
     Ok(EmbedFile::open(&Statics, PathBuf::from("favicon.ico"))?)
 }
 
-async fn maps(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    map_assets(&filename)
+async fn qwc2_viewer(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    qwc2_assets(&filename)
 }
 
-async fn map(path: web::Path<(String, PathBuf)>) -> Result<EmbedFile, Error> {
-    // Used for /map/{theme}/index.html and /map/{theme}/config.json
-    map_assets(&path.1)
+async fn qwc2_map(path: web::Path<(String, PathBuf)>) -> Result<EmbedFile, Error> {
+    // Used for /qwc2_map/{theme}/index.html and /qwc2_map/{theme}/config.json
+    qwc2_assets(&path.1)
 }
 
-fn map_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
+fn qwc2_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
     let filename = if filename == &PathBuf::from("") {
         PathBuf::from("index.html")
     } else {
@@ -60,11 +60,11 @@ fn map_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
     };
     Ok(EmbedFile::open(
         &Statics,
-        PathBuf::from("map").join(filename),
+        PathBuf::from("qwc2").join(filename),
     )?)
 }
 
-async fn map_themes(
+async fn qwc2_themes(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -72,7 +72,7 @@ async fn map_themes(
     Ok(HttpResponse::Ok().json(json))
 }
 
-async fn map_theme(
+async fn qwc2_theme(
     id: web::Path<String>,
     inventory: web::Data<Inventory>,
     req: HttpRequest,
@@ -104,9 +104,9 @@ async fn maplibre(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
-        .service(web::resource("/maps/themes.json").route(web::get().to(map_themes)))
-        .service(web::resource(r#"/maps/{filename:.*}"#).route(web::get().to(maps)))
-        .service(web::resource("/map/{id}/themes.json").route(web::get().to(map_theme)))
-        .service(web::resource(r#"/map/{id}/{filename:.*}"#).route(web::get().to(map)))
+        .service(web::resource("/qwc2/themes.json").route(web::get().to(qwc2_themes)))
+        .service(web::resource(r#"/qwc2/{filename:.*}"#).route(web::get().to(qwc2_viewer)))
+        .service(web::resource("/qwc2_map/{id}/themes.json").route(web::get().to(qwc2_theme)))
+        .service(web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)))
         .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)));
 }

@@ -139,7 +139,7 @@ async fn run_service() -> std::io::Result<()> {
         let mut open_url = format!("http://{server_addr}/");
         if let Some(project) = project {
             if let Some(name) = Path::new(&project).file_stem() {
-                open_url = format!("{open_url}map/{}/", name.to_string_lossy());
+                open_url = format!("{open_url}qwc2_map/{}/", name.to_string_lossy());
             }
         }
         open::that(&open_url).ok();
