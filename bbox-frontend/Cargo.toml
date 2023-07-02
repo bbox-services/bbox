@@ -7,10 +7,19 @@ rust-version = "1.65"
 repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
+[features]
+default = ["redoc", "qwc2", "openlayers", "maplibre", "proj"]
+redoc = []
+swaggerui = []
+qwc2 = ["bbox-map-server"]
+openlayers = []
+maplibre = []
+proj = []
+
 [dependencies]
 actix-web = { workspace = true }
 bbox-core = { path = "../bbox-core", features=["html"] }
-bbox-map-server = { path = "../bbox-map-server" }
+bbox-map-server = { path = "../bbox-map-server", optional = true }
 log = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }

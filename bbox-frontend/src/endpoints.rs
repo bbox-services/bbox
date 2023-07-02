@@ -1,9 +1,8 @@
-use crate::qwc2_config::*;
+use crate::{themes_json, MapInventory};
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use bbox_core::endpoints::abs_req_baseurl;
 use bbox_core::static_files::EmbedFile;
 use bbox_core::templates::{create_env_embedded, render_endpoint};
-use bbox_map_server::inventory::{Inventory, WmsService};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
@@ -13,9 +12,9 @@ use std::path::PathBuf;
 #[folder = "templates/"]
 struct Templates;
 
-static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded::<Templates>());
 
-async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
+async fn index(inventory: web::Data<MapInventory>) -> Result<HttpResponse, Error> {
     let template = TEMPLATES
         .get_template("index.html")
         .expect("couln't load template `index.html`");
@@ -35,13 +34,23 @@ async fn index(inventory: web::Data<Inventory>) -> Result<HttpResponse, Error> {
 }
 
 #[derive(RustEmbed)]
-#[folder = "static/"]
-struct Statics;
+#[folder = "static/core/"]
+struct CoreStatics;
 
 #[get("/favicon.ico")]
 async fn favicon() -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(&Statics, PathBuf::from("favicon.ico"))?)
+    Ok(EmbedFile::open::<CoreStatics, _>(PathBuf::from(
+        "favicon.ico",
+    ))?)
 }
+
+#[cfg(feature = "qwc2")]
+#[derive(RustEmbed)]
+#[folder = "static/qwc2/"]
+struct Qwc2Statics;
+
+#[cfg(not(feature = "qwc2"))]
+type Qwc2Statics = bbox_core::static_files::EmptyDir;
 
 async fn qwc2_viewer(filename: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
     qwc2_assets(&filename)
@@ -58,14 +67,11 @@ fn qwc2_assets(filename: &PathBuf) -> Result<EmbedFile, Error> {
     } else {
         filename.to_path_buf()
     };
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("qwc2").join(filename),
-    )?)
+    Ok(EmbedFile::open::<Qwc2Statics, _>(filename)?)
 }
 
 async fn qwc2_themes(
-    inventory: web::Data<Inventory>,
+    inventory: web::Data<MapInventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let json = themes_json(&inventory.wms_services, abs_req_baseurl(&req), None).await;
@@ -74,7 +80,7 @@ async fn qwc2_themes(
 
 async fn qwc2_theme(
     id: web::Path<String>,
-    inventory: web::Data<Inventory>,
+    inventory: web::Data<MapInventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     // let wms_service = inventory.wms_services.iter().find(|wms| wms.id == *id).unwrap().clone();
@@ -82,55 +88,68 @@ async fn qwc2_theme(
     Ok(HttpResponse::Ok().json(json))
 }
 
-async fn themes_json(
-    wms_services: &Vec<WmsService>,
-    base_url: String,
-    default_theme: Option<&str>,
-) -> ThemesJson {
-    let mut caps = Vec::new();
-    for wms in wms_services {
-        caps.push((wms, wms.capabilities(&base_url).await, wms.url(&base_url)));
-    }
-    ThemesJson::from_capabilities(caps, default_theme)
-}
+#[cfg(feature = "maplibre")]
+#[derive(RustEmbed)]
+#[folder = "static/maplibre/"]
+struct MaplibreStatics;
+
+#[cfg(not(feature = "maplibre"))]
+type MaplibreStatics = bbox_core::static_files::EmptyDir;
 
 async fn maplibre(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("maplibre").join(path.as_ref()),
-    )?)
+    Ok(EmbedFile::open::<MaplibreStatics, _>(path.as_ref())?)
 }
+
+#[cfg(feature = "openlayers")]
+#[derive(RustEmbed)]
+#[folder = "static/ol/"]
+struct OlStatics;
+
+#[cfg(not(feature = "openlayers"))]
+type OlStatics = bbox_core::static_files::EmptyDir;
 
 async fn ol(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("ol").join(path.as_ref()),
-    )?)
+    Ok(EmbedFile::open::<OlStatics, _>(path.as_ref())?)
 }
+
+#[cfg(feature = "proj")]
+#[derive(RustEmbed)]
+#[folder = "static/proj/"]
+struct ProjStatics;
+
+#[cfg(not(feature = "proj"))]
+type ProjStatics = bbox_core::static_files::EmptyDir;
 
 async fn proj(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("proj").join(path.as_ref()),
-    )?)
+    Ok(EmbedFile::open::<ProjStatics, _>(path.as_ref())?)
 }
 
+#[cfg(feature = "swagger")]
+#[derive(RustEmbed)]
+#[folder = "static/swagger/"]
+struct SwaggerStatics;
+
+#[cfg(not(feature = "swagger"))]
+type SwaggerStatics = bbox_core::static_files::EmptyDir;
+
 async fn swagger(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("swagger").join(path.as_ref()),
-    )?)
+    Ok(EmbedFile::open::<SwaggerStatics, _>(path.as_ref())?)
 }
 
 async fn swaggerui_html() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "swaggerui.html", context!(cur_menu=>"API")).await
 }
 
+#[cfg(feature = "redoc")]
+#[derive(RustEmbed)]
+#[folder = "static/redoc/"]
+struct RedocStatics;
+
+#[cfg(not(feature = "redoc"))]
+type RedocStatics = bbox_core::static_files::EmptyDir;
+
 async fn redoc(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open(
-        &Statics,
-        PathBuf::from("redoc").join(path.as_ref()),
-    )?)
+    Ok(EmbedFile::open::<RedocStatics, _>(path.as_ref())?)
 }
 
 async fn redoc_html() -> Result<HttpResponse, Error> {
@@ -140,10 +159,6 @@ async fn redoc_html() -> Result<HttpResponse, Error> {
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
-        .service(web::resource("/qwc2/themes.json").route(web::get().to(qwc2_themes)))
-        .service(web::resource(r#"/qwc2/{filename:.*}"#).route(web::get().to(qwc2_viewer)))
-        .service(web::resource("/qwc2_map/{id}/themes.json").route(web::get().to(qwc2_theme)))
-        .service(web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)))
         .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)))
         .service(web::resource(r#"/ol/{filename:.*}"#).route(web::get().to(ol)))
         .service(web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(proj)))
@@ -151,4 +166,12 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui_html)))
         .service(web::resource(r#"/redoc/{filename:.*}"#).route(web::get().to(redoc)))
         .service(web::resource("/redoc.html").route(web::get().to(redoc_html)));
+    if cfg!(feature = "qwc2") {
+        cfg.service(web::resource("/qwc2/themes.json").route(web::get().to(qwc2_themes)))
+            .service(web::resource(r#"/qwc2/{filename:.*}"#).route(web::get().to(qwc2_viewer)))
+            .service(web::resource("/qwc2_map/{id}/themes.json").route(web::get().to(qwc2_theme)))
+            .service(
+                web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)),
+            );
+    }
 }

@@ -9,7 +9,6 @@ use bbox_core::service::CoreService;
 use bbox_core::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
-use rust_embed::RustEmbed;
 
 /// the feature collections in the dataset
 async fn collections(
@@ -118,16 +117,14 @@ async fn feature(
 }
 
 #[cfg(feature = "html")]
-#[derive(RustEmbed)]
+#[derive(rust_embed::RustEmbed)]
 #[folder = "templates/"]
 struct Templates;
 
 #[cfg(not(feature = "html"))]
-#[derive(RustEmbed)]
-#[folder = "src/empty/"]
-struct Templates;
+type Templates = bbox_core::templates::NoTemplates;
 
-static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded(&Templates));
+static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(|| create_env_embedded::<Templates>());
 
 impl FeatureService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {

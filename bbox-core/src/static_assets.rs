@@ -9,9 +9,7 @@ use std::path::PathBuf;
 struct Statics;
 
 #[cfg(not(feature = "html"))]
-#[derive(RustEmbed)]
-#[folder = "src/empty/"]
-struct Statics;
+type Statics = crate::static_files::EmptyDir;
 
 async fn static_asset(req: HttpRequest) -> Result<EmbedFile, Error> {
     let filename = &req.path()[1..];
@@ -20,10 +18,10 @@ async fn static_asset(req: HttpRequest) -> Result<EmbedFile, Error> {
     // } else {
     //     filename.to_path_buf()
     // };
-    Ok(EmbedFile::open(&Statics, PathBuf::from(filename))?)
+    Ok(EmbedFile::open::<Statics, _>(PathBuf::from(filename))?)
 }
 
-pub fn register_embedded_endpoints<E: RustEmbed>(_e: &E, cfg: &mut web::ServiceConfig) {
+pub fn register_embedded_endpoints<E: RustEmbed>(cfg: &mut web::ServiceConfig) {
     let base_url = "/";
     for f in E::iter() {
         cfg.service(
@@ -33,5 +31,5 @@ pub fn register_embedded_endpoints<E: RustEmbed>(_e: &E, cfg: &mut web::ServiceC
 }
 
 pub fn register_endpoints(cfg: &mut web::ServiceConfig) {
-    register_embedded_endpoints(&Statics, cfg);
+    register_embedded_endpoints::<Statics>(cfg);
 }

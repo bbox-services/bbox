@@ -3,15 +3,17 @@ use minijinja::{path_loader, Environment, Error, State};
 use rust_embed::RustEmbed;
 use serde::Serialize;
 
+#[derive(RustEmbed)]
+#[folder = "src/empty/"]
+pub struct NoTemplates;
+
 #[cfg(feature = "html")]
 #[derive(RustEmbed)]
 #[folder = "templates/"]
 struct BaseTemplates;
 
 #[cfg(not(feature = "html"))]
-#[derive(RustEmbed)]
-#[folder = "src/empty/"]
-struct BaseTemplates;
+type BaseTemplates = NoTemplates;
 
 fn truncate(_state: &State, value: String, new_len: usize) -> Result<String, Error> {
     let mut s = value;
@@ -25,10 +27,10 @@ pub fn create_env(path: &str, _extensions: &[&str]) -> Environment<'static> {
     env
 }
 
-pub fn create_env_embedded<E: RustEmbed>(e: &E) -> Environment<'static> {
+pub fn create_env_embedded<E: RustEmbed>() -> Environment<'static> {
     let mut env = create_base_env();
     for f in E::iter() {
-        add_embedded_template(&mut env, e, &f);
+        add_embedded_template::<E>(&mut env, &f);
     }
     env
 }
@@ -37,12 +39,12 @@ fn create_base_env() -> Environment<'static> {
     let mut env = Environment::new();
     env.add_filter("truncate", truncate);
     for f in BaseTemplates::iter() {
-        add_embedded_template(&mut env, &BaseTemplates, &f);
+        add_embedded_template::<BaseTemplates>(&mut env, &f);
     }
     env
 }
 
-fn add_embedded_template<E: RustEmbed>(env: &mut Environment<'static>, _: &E, fname: &str) {
+fn add_embedded_template<E: RustEmbed>(env: &mut Environment<'static>, fname: &str) {
     let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
     env.add_template_owned(fname.to_string(), templ).unwrap();
 }

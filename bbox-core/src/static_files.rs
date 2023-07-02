@@ -9,6 +9,10 @@ use std::collections::{BTreeMap, HashMap};
 use std::io;
 use std::path::Path;
 
+#[derive(RustEmbed)]
+#[folder = "src/empty/"]
+pub struct EmptyDir;
+
 type EtagMap = HashMap<&'static str, BTreeMap<String, u64>>;
 
 // ETags of resource in RustEmbed classes should never be changed since resources be embeded into the binary.
@@ -90,7 +94,7 @@ pub struct EmbedFile {
 }
 
 impl EmbedFile {
-    pub fn open<E, P>(_: &E, path: P) -> io::Result<EmbedFile>
+    pub fn open<E, P>(path: P) -> io::Result<EmbedFile>
     where
         E: RustEmbed,
         P: AsRef<Path>,

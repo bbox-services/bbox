@@ -1,4 +1,4 @@
-use bbox_map_server::inventory;
+use bbox_map_server::inventory::WmsService;
 use bbox_map_server::wms_capabilities as ogc;
 use log::warn;
 use once_cell::sync::Lazy;
@@ -173,7 +173,7 @@ pub struct BackgroundLayer {
 
 impl ThemesJson {
     pub fn from_capabilities(
-        caps: Vec<(&inventory::WmsService, ogc::WmsCapabilities, String)>,
+        caps: Vec<(&WmsService, ogc::WmsCapabilities, String)>,
         default_theme: Option<&str>,
     ) -> Self {
         let themes: Vec<Theme> = caps
@@ -385,6 +385,18 @@ fn parse_layer_tree(ogc_layers: &[ogc::Layer]) -> Vec<Layer> {
         })
         .collect();
     layers
+}
+
+pub async fn themes_json(
+    wms_services: &Vec<WmsService>,
+    base_url: String,
+    default_theme: Option<&str>,
+) -> ThemesJson {
+    let mut caps = Vec::new();
+    for wms in wms_services {
+        caps.push((wms, wms.capabilities(&base_url).await, wms.url(&base_url)));
+    }
+    ThemesJson::from_capabilities(caps, default_theme)
 }
 
 static THEMES_JSON: Lazy<ThemesJson> = Lazy::new(|| {
