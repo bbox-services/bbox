@@ -32,27 +32,9 @@
         </li>
         {% else %}
         <li>
-          <a href="#" {% if cur_menu == "Home" %}class="active"{% endif %}>
+          <a href="/" {% if cur_menu == "Home" %}class="active"{% endif %}>
             <i class='bx bx-grid-alt' ></i>
             <span class="links_name">Home</span>
-          </a>
-        </li>
-        <li>
-          <a href="/" {% if cur_menu == "Maps" %}class="active"{% endif %}>
-            <i class='bx bx-map-alt' ></i>
-            <span class="links_name">Maps</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" {% if cur_menu == "Routing" %}class="active"{% endif %}>
-            <i class='bx bx-navigation' ></i>
-            <span class="links_name">Routing</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" {% if cur_menu == "Processes" %}class="active"{% endif %}>
-            <i class='bx bx-git-branch' ></i>
-            <span class="links_name">Processes</span>
           </a>
         </li>
         <li>
@@ -62,9 +44,9 @@
           </a>
         </li>
         <li>
-          <a href="#" {% if cur_menu == "Catalog" %}class="active"{% endif %}>
-            <i class='bx bx-book-alt' ></i>
-            <span class="links_name">Catalog</span>
+          <a {# href="#" #} class="disabled" {% if cur_menu == "Processes" %}class="active"{% endif %}>
+            <i class='bx bx-git-branch' ></i>
+            <span class="links_name">Processes</span>
           </a>
         </li>
         <li>
@@ -73,12 +55,20 @@
             <span class="links_name">API</span>
           </a>
         </li>
+        {#
+        <li>
+          <a href="#" {% if cur_menu == "Routing" %}class="active"{% endif %}>
+            <i class='bx bx-navigation' ></i>
+            <span class="links_name">Routing</span>
+          </a>
+        </li>
         <li>
           <a href="#">
             <i class='bx bx-cog' ></i>
             <span class="links_name">Admin</span>
           </a>
         </li>
+        #}
         {% endfor %}
       </ul>
   </div>

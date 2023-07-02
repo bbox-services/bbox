@@ -53,6 +53,9 @@
 .sidebar .nav-links li a.active{
   background: #081D45;
 }
+.sidebar .nav-links li a.disabled{
+  opacity: 0.6;
+}
 .sidebar .nav-links li a:hover{
   background: #081D45;
 }

@@ -100,7 +100,8 @@ impl CoreService {
         self.ogcapi
             .conformance_classes
             .extend(svc.conformance_classes());
-        self.ogcapi.collections.extend(svc.collections());
+        //TODO: svc.collections() is empty before read_config is called
+        //self.ogcapi.collections.extend(svc.collections());
 
         if let Some(yaml) = svc.openapi_yaml() {
             if self.openapi.is_empty() {

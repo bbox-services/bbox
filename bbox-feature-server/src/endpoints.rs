@@ -12,7 +12,8 @@ use once_cell::sync::Lazy;
 
 /// the feature collections in the dataset
 async fn collections(
-    ogcapi: web::Data<OgcApiInventory>,
+    _ogcapi: web::Data<OgcApiInventory>,
+    inventory: web::Data<Inventory>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let collections = CoreCollections {
@@ -24,7 +25,8 @@ async fn collections(
             hreflang: None,
             length: None,
         }],
-        collections: ogcapi.collections.clone(), //TODO: convert urls with absurl (?)
+        //TODO: include also collections from other services
+        collections: inventory.collections(), //TODO: convert urls with absurl (?)
     };
     if html_accepted(&req).await {
         render_endpoint(
