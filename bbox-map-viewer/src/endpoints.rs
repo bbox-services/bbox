@@ -101,6 +101,20 @@ async fn maplibre(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
     )?)
 }
 
+async fn ol(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("ol").join(path.as_ref()),
+    )?)
+}
+
+async fn proj(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open(
+        &Statics,
+        PathBuf::from("proj").join(path.as_ref()),
+    )?)
+}
+
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
         .service(favicon)
@@ -108,5 +122,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         .service(web::resource(r#"/qwc2/{filename:.*}"#).route(web::get().to(qwc2_viewer)))
         .service(web::resource("/qwc2_map/{id}/themes.json").route(web::get().to(qwc2_theme)))
         .service(web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)))
-        .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)));
+        .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)))
+        .service(web::resource(r#"/ol/{filename:.*}"#).route(web::get().to(ol)))
+        .service(web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(proj)));
 }

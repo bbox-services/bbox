@@ -1,8 +1,13 @@
 # Download and prapare data and embedded JS/CSS
 
+ol_version = 7.4.0
 maplibre_version = 3.1.0
+proj_version = 2.8.1
 
-all: assets/ne_extracts.gpkg bbox-map-viewer/static/maplibre/maplibre-gl.js bbox-map-viewer/static/maplibre/maplibre-gl.css
+all: assets/ne_extracts.gpkg \
+     bbox-map-viewer/static/maplibre/maplibre-gl.js bbox-map-viewer/static/maplibre/maplibre-gl.css \
+     bbox-map-viewer/static/ol/ol.min.js bbox-map-viewer/static/ol/ol.min.css \
+     bbox-map-viewer/static/proj/proj4.min.js
 
 assets/download/natural_earth_vector.gpkg.zip:
 	mkdir -p assets/download
@@ -22,3 +27,12 @@ bbox-map-viewer/static/maplibre/maplibre-gl.js:
 
 bbox-map-viewer/static/maplibre/maplibre-gl.css:
 	wget -O $@ https://unpkg.com/maplibre-gl@$(maplibre_version)/dist/maplibre-gl.css
+
+bbox-map-viewer/static/ol/ol.min.js:
+	wget -O $@ https://cdn.jsdelivr.net/npm/ol@$(ol_version)/dist/ol.min.js
+
+bbox-map-viewer/static/ol/ol.min.css:
+	wget -O $@ https://cdn.jsdelivr.net/npm/ol@$(ol_version)/ol.min.css
+
+bbox-map-viewer/static/proj/proj4.min.js:
+	wget -O $@ https://cdn.jsdelivr.net/npm/proj4@$(proj_version)/dist/proj4.min.js
