@@ -30,8 +30,8 @@ pub enum CollectionInfo {
 impl CollectionInfo {
     pub fn collection_ds(&self) -> &dyn CollectionInfoDs {
         match self {
-            CollectionInfo::GpkgCollectionInfo(ds) => ds as &dyn CollectionInfoDs,
-            CollectionInfo::PgCollectionInfo(ds) => ds as &dyn CollectionInfoDs,
+            CollectionInfo::GpkgCollectionInfo(ds) => ds,
+            CollectionInfo::PgCollectionInfo(ds) => ds,
         }
     }
 }

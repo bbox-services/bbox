@@ -3,45 +3,43 @@
 {% block title %}Maps{% endblock %}
 
 {% block content %}
-  <div class="overview-boxes">
-    <div class="box">
-      <div class="right-side">
-        <h2>WMS catalog</h2>
-        <ul>
-        {% for entry in wms_services %}
-          <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
-                                    <a href="/qwc2_map/{{ entry.id }}/">Viewer</a>
-          </li>
-        {% endfor %}
-        </ul>
-      </div>
-    </div>
-    <div class="box">
-      <div class="right-side">
-        <h2>Links</h2>
-        <ul>
-          <li><a href="/qwc2/">Map viewer</a></li>
-          <li><a href="/metrics">Metrics endpoint</a></li>
-        </ul>
-      </div>
+  <div class="card w-96 bg-base-100 shadow-xl m-5">
+    <div class="card-body">
+      <h2 class="card-title">WMS catalog</h2>
+      <ul class="list-disc">
+      {% for entry in wms_services %}
+        <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
+                                  <a href="/qwc2_map/{{ entry.id }}/">Viewer</a>
+        </li>
+      {% endfor %}
+      </ul>
     </div>
   </div>
-  <div class="wide-boxes">
-    <div class="box">
-      <h2>WMS request examples</h2>
-      <div class="wide-details">
-        <ul class="details">
-        {% for link in links %}
-          <li><a href="{{ link | safe }}">{{ link|truncate(20) }}</a></li>
-        {% endfor %}
-        </ul>
-      </div>
+  <div class="card w-96 bg-base-100 shadow-xl m-5">
+    <div class="card-body">
+      <h2 class="card-title">WMS request examples</h2>
+      <ul class="list-disc">
+      {% for link in links %}
+        <li><a href="{{ link | safe }}">{{ link|truncate(20) }}</a></li>
+      {% endfor %}
+      </ul>
     </div>
-    <div class="box">
-      <h2>OGC API Features</h2>
-      <ul>
+  </div>
+  <div class="card w-96 bg-base-100 shadow-xl m-5">
+    <div class="card-body">
+      <h2 class="card-title">OGC API Features</h2>
+      <ul class="list-disc">
         <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li>
         <li><a href="/openapi.json">OpenAPI spec (JSON)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="card w-96 bg-base-100 shadow-xl m-5">
+    <div class="card-body">
+      <h2 class="card-title">Links</h2>
+      <ul class="list-disc">
+        <li><a href="/qwc2/">Map viewer</a></li>
+        <li><a href="/metrics">Metrics endpoint</a></li>
       </ul>
     </div>
   </div>

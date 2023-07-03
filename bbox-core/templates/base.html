@@ -1,101 +1,68 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
-  <head>
-    <meta charset="UTF-8">
+<html data-theme="cupcake">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=devide-width, initial-scale=1.0" />
     <title>BBOX - {% block title %}Home{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {# https://github.com/getbase/base #}
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/core.css">
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/code.css">
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/forms.css">
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/tables.css">
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/typography.css">
-    <link rel="stylesheet" href="https://unpkg.com/@getbase/base/headings.css">
-    <link rel="stylesheet" href="/style.css">
-    <link href='https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css' rel='stylesheet'>
-    {% block head %}
-    {% endblock %}
-   </head>
-<body onload="{% block onload %}{% endblock %}">
-  <div class="sidebar">
-    <div class="logo-details">
-      <i class='bx bx-border-outer'></i>
-      <span class="logo_name">BBOX</span>
-    </div>
-      <ul class="nav-links">
-        {% for item in menu_items %}
-        <li>
-          <a href="{{ item.href }}" {% if cur_menu == item.title %}class="active"{% endif %}>
-            <i class='{{ item.icon }}' ></i>
-            <span class="links_name">{{ item.title }}</span>
-          </a>
-        </li>
-        {% else %}
-        <li>
-          <a href="/" {% if cur_menu == "Home" %}class="active"{% endif %}>
-            <i class='bx bx-grid-alt' ></i>
-            <span class="links_name">Home</span>
-          </a>
-        </li>
-        <li>
-          <a href="/collections" {% if cur_menu == "Collections" %}class="active"{% endif %}>
-            <i class='bx bx-list-ul' ></i>
-            <span class="links_name">Collections</span>
-          </a>
-        </li>
-        <li>
-          <a {# href="#" #} class="disabled" {% if cur_menu == "Processes" %}class="active"{% endif %}>
-            <i class='bx bx-git-branch' ></i>
-            <span class="links_name">Processes</span>
-          </a>
-        </li>
-        <li>
-          <a href="/redoc.html" {% if cur_menu == "API" %}class="active"{% endif %}>
-            <i class='bx bx-code-alt' ></i>
-            <span class="links_name">API</span>
-          </a>
-        </li>
-        {#
-        <li>
-          <a href="#" {% if cur_menu == "Routing" %}class="active"{% endif %}>
-            <i class='bx bx-navigation' ></i>
-            <span class="links_name">Routing</span>
-          </a>
-        </li>
-        <li>
-          <a href="#">
-            <i class='bx bx-cog' ></i>
-            <span class="links_name">Admin</span>
-          </a>
-        </li>
-        #}
-        {% endfor %}
-      </ul>
-  </div>
-  <section class="home-section">
-    <nav>
-      <div class="sidebar-button">
-        <i class='bx bx-menu sidebarBtn'></i>
-        <span class="dashboard">{% block dashtitle %}{% endblock %}</span>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.7/dist/full.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" />
+    {% block head %} {% endblock %}
+</head>
+<body>
+    <div>
+        <div class="drawer md:drawer-open">
+            <input id="main-sidebar" type="checkbox" class="drawer-toggle" />
+            <div class="drawer-content flex flex-col items-left justify-start">
+                <label for="main-sidebar" class="btn drawer-button md:hidden">Toggle Menu</label>
+                {% block content %}{% endblock %}
+            </div>
+            <div class="drawer-side">
+                <label for="main-sidebar" class="drawer-overlay"></label>
+
+                <div class="bg-base-200 pl-8 pt-5">
+                    <i class='bx bx-border-outer'></i>
+                    <span class="text-xl font-bold">BBOX</span>
+                </div>
+
+                <ul class="menu bg-base-200 w-56 h-full rounded-box">
+
+                    <li>
+                        <a href="/" {% if cur_menu=="Home" %}class="active" {% endif %}>
+                            <i class="bx bx-grid-alt"></i> Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/collections" {% if cur_menu=="Collections" %}class="active" {% endif %}>
+                            <i class="bx bx-list-ul"></i> Collections
+                        </a>
+                    </li>
+                    <li class="disabled">
+                        <a {# href="#" #} {% if cur_menu=="Processes" %}class="active" {% endif %}>
+                            <i class="bx bx-git-branch"></i> Processes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/redoc.html" {% if cur_menu=="API" %}class="active" {% endif %}>
+                            <i class="bx bx-code-alt"></i> API
+                        </a>
+                    </li>
+                    {#
+                    <li>
+                        <a href="#" {% if cur_menu=="Routing" %}class="active" {% endif %}>
+                            <i class="bx bx-navigation"></i> Routing
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class='bx bx-cog'></i> Admin
+                        </a>
+                    </li>
+                    #}
+                </ul>
+            </div>
+        </div>
       </div>
-    </nav>
-
-    <div class="home-content">
-      {% block content %}{% endblock %}
-    </div>
-  </section>
-
-  <script>
-   let sidebar = document.querySelector(".sidebar");
-let sidebarBtn = document.querySelector(".sidebarBtn");
-sidebarBtn.onclick = function() {
-  sidebar.classList.toggle("active");
-  if(sidebar.classList.contains("active")){
-  sidebarBtn.classList.replace("bx-menu" ,"bx-menu-alt-right");
-}else
-  sidebarBtn.classList.replace("bx-menu-alt-right", "bx-menu");
-}
- </script>
-
 </body>
+
 </html>
