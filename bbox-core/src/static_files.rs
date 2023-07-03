@@ -1,17 +1,33 @@
 use actix_web::{
     body::BoxBody,
     http::{header, StatusCode},
-    HttpMessage, HttpRequest, HttpResponse, Responder,
+    web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
 };
 use rust_embed::RustEmbed;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::io;
 use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(RustEmbed)]
 #[folder = "src/empty/"]
 pub struct EmptyDir;
+
+/// endpoint for static files
+pub async fn embedded<E: RustEmbed>(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open::<E, _>(path.as_ref())?)
+}
+
+/// endpoint for static files with index.html
+pub async fn embedded_index<E: RustEmbed>(path: web::Path<PathBuf>) -> Result<EmbedFile, Error> {
+    let filename = if path.as_ref() == &PathBuf::from("") {
+        PathBuf::from("index.html")
+    } else {
+        path.to_path_buf()
+    };
+    Ok(EmbedFile::open::<E, _>(filename)?)
+}
 
 type EtagMap = HashMap<&'static str, BTreeMap<String, u64>>;
 

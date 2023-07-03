@@ -13,11 +13,6 @@ type Statics = crate::static_files::EmptyDir;
 
 async fn static_asset(req: HttpRequest) -> Result<EmbedFile, Error> {
     let filename = &req.path()[1..];
-    // let filename = if filename == &PathBuf::from("") {
-    //     PathBuf::from("index.html")
-    // } else {
-    //     filename.to_path_buf()
-    // };
     Ok(EmbedFile::open::<Statics, _>(PathBuf::from(filename))?)
 }
 
