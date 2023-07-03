@@ -3,6 +3,7 @@ use crate::auth::oidc::{AuthRequest, OidcClient};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::CoreService;
+use crate::static_assets::favicon;
 use actix_session::Session;
 use actix_web::{
     error::ErrorInternalServerError, guard, guard::Guard, guard::GuardContext, http::header,
@@ -187,6 +188,7 @@ impl CoreService {
                     .guard(JsonContentGuard::default())
                     .route(web::get().to(conformance)),
             )
+            .service(web::resource("/favicon.ico").route(web::get().to(favicon)))
             .service(web::resource("/openapi.yaml").route(web::get().to(openapi_yaml)))
             .service(web::resource("/openapi.json").route(web::get().to(openapi_json)))
             .service(

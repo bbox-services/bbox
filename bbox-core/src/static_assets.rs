@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 #[cfg(feature = "html")]
 #[derive(RustEmbed)]
-#[folder = "static/"]
+#[folder = "static/html/"]
 struct Statics;
 
 #[cfg(not(feature = "html"))]
@@ -19,6 +19,16 @@ async fn static_asset(req: HttpRequest) -> Result<EmbedFile, Error> {
     //     filename.to_path_buf()
     // };
     Ok(EmbedFile::open::<Statics, _>(PathBuf::from(filename))?)
+}
+
+#[derive(RustEmbed)]
+#[folder = "static/core/"]
+struct CoreStatics;
+
+pub(crate) async fn favicon() -> Result<EmbedFile, Error> {
+    Ok(EmbedFile::open::<CoreStatics, _>(PathBuf::from(
+        "favicon.ico",
+    ))?)
 }
 
 pub fn register_embedded_endpoints<E: RustEmbed>(cfg: &mut web::ServiceConfig) {

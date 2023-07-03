@@ -1,5 +1,5 @@
 use crate::{themes_json, MapInventory};
-use actix_web::{get, web, Error, HttpRequest, HttpResponse};
+use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_core::endpoints::abs_req_baseurl;
 use bbox_core::static_files::EmbedFile;
 use bbox_core::templates::{create_env_embedded, render_endpoint};
@@ -31,17 +31,6 @@ async fn index(inventory: web::Data<MapInventory>) -> Result<HttpResponse, Error
         )
         .expect("index.hmtl render failed");
     Ok(HttpResponse::Ok().content_type("text/html").body(index))
-}
-
-#[derive(RustEmbed)]
-#[folder = "static/core/"]
-struct CoreStatics;
-
-#[get("/favicon.ico")]
-async fn favicon() -> Result<EmbedFile, Error> {
-    Ok(EmbedFile::open::<CoreStatics, _>(PathBuf::from(
-        "favicon.ico",
-    ))?)
 }
 
 #[cfg(feature = "qwc2")]
@@ -158,7 +147,6 @@ async fn redoc_html() -> Result<HttpResponse, Error> {
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/").route(web::get().to(index)))
-        .service(favicon)
         .service(web::resource(r#"/maplibre/{filename:.*}"#).route(web::get().to(maplibre)))
         .service(web::resource(r#"/ol/{filename:.*}"#).route(web::get().to(ol)))
         .service(web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(proj)))
