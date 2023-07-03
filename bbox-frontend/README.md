@@ -1,8 +1,14 @@
-BBOX map viewer
-===============
+BBOX frontend
+=============
 
-QWC2 map viewer for BBOX services.
+HTML frontend for BBOX services.
 
 Features:
-- [ ] Automatic QGIS Server maps
-- [ ] Automatic MapServer maps
+- [ ] HTML landing page
+- [ ] Fonts and basic assets for MVT maps
+- [x] Redoc OpenAPI UI
+- [x] Swagger OpenAPI UI
+- Map viewers:
+  - [ ] QWC2 map viewer
+  - [ ] OpenLayers map viewer
+  - [ ] MapLibre map viewer

@@ -1,5 +1,8 @@
 use crate::{themes_json, MapInventory};
-use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web::{
+    web::{self, get, resource},
+    Error, HttpRequest, HttpResponse,
+};
 use bbox_core::endpoints::abs_req_baseurl;
 use bbox_core::static_files::{embedded, embedded_index, EmbedFile};
 use bbox_core::templates::{create_env_embedded, render_endpoint};
@@ -113,34 +116,21 @@ async fn redoc_html() -> Result<HttpResponse, Error> {
 }
 
 pub fn register(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/").route(web::get().to(index)))
+    cfg.service(resource("/").route(get().to(index)))
         .service(
-            web::resource(r#"/maplibre/{filename:.*}"#)
-                .route(web::get().to(embedded::<MaplibreStatics>)),
+            resource(r#"/maplibre/{filename:.*}"#).route(get().to(embedded::<MaplibreStatics>)),
         )
-        .service(web::resource(r#"/ol/{filename:.*}"#).route(web::get().to(embedded::<OlStatics>)))
-        .service(
-            web::resource(r#"/proj/{filename:.*}"#).route(web::get().to(embedded::<ProjStatics>)),
-        )
-        .service(
-            web::resource(r#"/swagger/{filename:.*}"#)
-                .route(web::get().to(embedded::<SwaggerStatics>)),
-        )
-        .service(web::resource("/swaggerui.html").route(web::get().to(swaggerui_html)))
-        .service(
-            web::resource(r#"/redoc/{filename:.*}"#).route(web::get().to(embedded::<RedocStatics>)),
-        )
-        .service(web::resource("/redoc.html").route(web::get().to(redoc_html)));
+        .service(resource(r#"/ol/{filename:.*}"#).route(get().to(embedded::<OlStatics>)))
+        .service(resource(r#"/proj/{filename:.*}"#).route(get().to(embedded::<ProjStatics>)))
+        .service(resource(r#"/swagger/{filename:.*}"#).route(get().to(embedded::<SwaggerStatics>)))
+        .service(resource("/swaggerui.html").route(get().to(swaggerui_html)))
+        .service(resource(r#"/redoc/{filename:.*}"#).route(get().to(embedded::<RedocStatics>)))
+        .service(resource("/redoc.html").route(get().to(redoc_html)));
     if cfg!(feature = "qwc2") {
-        cfg.service(web::resource("/qwc2/themes.json").route(web::get().to(qwc2_themes)))
-            .service(
-                web::resource(r#"/qwc2/{filename:.*}"#)
-                    .route(web::get().to(embedded::<Qwc2Statics>)),
-            )
-            .service(web::resource("/qwc2_map/{id}/themes.json").route(web::get().to(qwc2_theme)))
-            .service(
-                web::resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(web::get().to(qwc2_map)),
-            );
+        cfg.service(resource("/qwc2/themes.json").route(get().to(qwc2_themes)))
+            .service(resource(r#"/qwc2/{filename:.*}"#).route(get().to(embedded::<Qwc2Statics>)))
+            .service(resource("/qwc2_map/{id}/themes.json").route(get().to(qwc2_theme)))
+            .service(resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(get().to(qwc2_map)));
     }
     if cfg!(not(feature = "qwc2")) {
         cfg.app_data(web::Data::new(MapInventory::default()));
