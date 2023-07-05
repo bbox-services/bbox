@@ -8,7 +8,7 @@ use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
 pub struct TileserverCfg {
     pub tileset: Vec<TileSetCfg>,
     pub grid: Vec<GridCfg>,
@@ -17,7 +17,7 @@ pub struct TileserverCfg {
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct TileSourceCfg {
     pub name: String,
     #[serde(flatten)]
@@ -25,9 +25,10 @@ pub struct TileSourceCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum TileSourceProviderCfg {
     WmsFcgi,
-    #[serde(rename = "wms_proxy")]
+    #[serde(rename = "wms-proxy")]
     WmsHttp(WmsHttpSourceProviderCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles,
@@ -36,7 +37,7 @@ pub enum TileSourceProviderCfg {
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct TileSetCfg {
     pub name: String,
     /// Tile format (Default: Raster)
@@ -52,29 +53,32 @@ pub struct TileSetCfg {
 
 /// Custom grid definition
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct GridCfg {
     /// JSON file path
     pub json: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct WmsHttpSourceProviderCfg {
     pub baseurl: String,
     pub format: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum SourceParamCfg {
-    #[serde(rename = "wms_proxy")]
+    #[serde(rename = "wms-proxy")]
     WmsHttp(WmsHttpSourceParamsCfg),
-    #[serde(rename = "wms_project")]
+    #[serde(rename = "wms-project")]
     WmsFcgi(WmsFcgiSourceParamsCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesSourceParamsCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct WmsHttpSourceParamsCfg {
     /// name of WmsHttpSourceProviderCfg
     pub source: String,
@@ -82,6 +86,7 @@ pub struct WmsHttpSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct WmsFcgiSourceParamsCfg {
     pub project: String,
     pub suffix: String,
@@ -94,11 +99,13 @@ pub struct WmsFcgiSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct MbtilesSourceParamsCfg {
     pub path: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct TileCacheProviderCfg {
     pub name: String,
     // pub layout: CacheLayout,
@@ -107,7 +114,8 @@ pub struct TileCacheProviderCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "lowercase")]
+//FIXME?? #[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum TileCacheCfg {
     Files(FileCacheCfg),
     S3(S3CacheCfg),
@@ -115,11 +123,13 @@ pub enum TileCacheCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct FileCacheCfg {
     pub base_dir: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct S3CacheCfg {
     pub path: String,
     // pub s3_endpoint_url: Option<String>,

@@ -27,7 +27,7 @@ pub enum AuthError {
 }
 
 #[derive(Deserialize, Default, Clone, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
 pub struct OidcAuthCfg {
     pub client_id: String,
     pub client_secret: String,

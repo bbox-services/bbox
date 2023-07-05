@@ -2,13 +2,14 @@ use bbox_core::config::config_error_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct ProcessesServerCfg {
     pub dagster_backend: Option<DagsterBackendCfg>,
 }
 
 /// Dagster backend configuration
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct DagsterBackendCfg {
     /// GraphQL URL (e.g. `http://localhost:3000/graphql`)
     pub graphql_url: String,

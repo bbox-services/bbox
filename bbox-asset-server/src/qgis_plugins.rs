@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use zip::result::ZipResult;
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct QgisPluginRepoCfg {
     /// endpoint path for publishing
     pub path: String,

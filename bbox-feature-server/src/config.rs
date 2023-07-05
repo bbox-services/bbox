@@ -2,18 +2,20 @@ use bbox_core::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
 pub struct DatasourceCfg {
     pub directory: Vec<DsFiledirCfg>,
     pub postgis: Vec<DsPostgisCfg>,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct DsFiledirCfg {
     pub dir: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct DsPostgisCfg {
     pub url: String,
 }

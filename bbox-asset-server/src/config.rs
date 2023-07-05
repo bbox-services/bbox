@@ -4,7 +4,7 @@ use bbox_core::config::from_config_opt_or_exit;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
 pub struct AssetserverCfg {
     #[serde(rename = "static")]
     pub static_: Vec<StaticDirCfg>,
@@ -13,6 +13,7 @@ pub struct AssetserverCfg {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct StaticDirCfg {
     /// endpoint path for publishing
     pub path: String,
