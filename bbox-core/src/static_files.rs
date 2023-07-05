@@ -66,7 +66,7 @@ where
     let mut map = BTreeMap::new();
     for file in E::iter() {
         let file = file.as_ref();
-        let etag = match E::get(file).map(|c| fxhash::hash64(&c)) {
+        let etag = match E::get(file).map(|c| fxhash::hash64(&c.data)) {
             Some(etag) => etag,
             None => continue,
         };
@@ -130,7 +130,7 @@ impl EmbedFile {
         let filename = path.to_str()?;
         let etag = get_etag::<E>(filename);
         let r = EmbedFile {
-            content: E::get(filename)?.into_owned(),
+            content: E::get(filename)?.data.to_vec(),
             content_type,
             etag: etag.map(|etag| header::EntityTag::new_strong(format!("{:x}", etag))),
         };

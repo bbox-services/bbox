@@ -45,7 +45,7 @@ fn create_base_env() -> Environment<'static> {
 }
 
 fn add_embedded_template<E: RustEmbed>(env: &mut Environment<'static>, fname: &str) {
-    let templ = String::from_utf8(E::get(fname).unwrap().to_vec()).unwrap();
+    let templ = String::from_utf8(E::get(fname).unwrap().data.to_vec()).unwrap();
     env.add_template_owned(fname.to_string(), templ).unwrap();
 }
 
