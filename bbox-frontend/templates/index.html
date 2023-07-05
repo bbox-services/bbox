@@ -4,7 +4,8 @@
 {% block content_title %}Home{% endblock %}
 
 {% block content %}
-  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+  <div class="card w-96 bg-base-100 shadow-xl">
     <div class="card-body">
       <h2 class="card-title">Map catalog</h2>
       <ul class="list-disc">
@@ -16,7 +17,7 @@
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
+  <div class="card w-96 bg-base-100 shadow-xl">
     <div class="card-body">
       <h2 class="card-title">Map request examples</h2>
       <ul class="list-disc">
@@ -26,7 +27,7 @@
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
+  <div class="card w-96 bg-base-100 shadow-xl">
     <div class="card-body">
       <h2 class="card-title">OGC API endpoints</h2>
       <ul class="list-disc">
@@ -36,7 +37,7 @@
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
+  <div class="card w-96 bg-base-100 shadow-xl">
     <div class="card-body">
       <h2 class="card-title">Links</h2>
       <ul class="list-disc">
@@ -44,4 +45,5 @@
       </ul>
     </div>
   </div>
+</div>
 {% endblock %}
