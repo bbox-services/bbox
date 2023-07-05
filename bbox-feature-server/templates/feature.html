@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}Feature{% endblock %}
+{% block content_title %}{{ collection.title }} Item{% endblock %}
 
 {% block content %}
-<h2>{{ collection.title }} Item</h2>
-
+<article class="prose">
 <a href="/collections/{{collection.id}}/items/{{ feature.id }}.json">JSON</a><br/>
-
-<div class="divider"></div>
+</article>
 
 <table class="table table-zebra table-xs">
   <thead>
@@ -29,8 +28,6 @@
     {% endfor %}
   </tbody>
 </table>
-
-<div class="divider"></div>
 
 <ul class="menu menu-horizontal bg-base-200">
   <li class="menu-title">Links</li>

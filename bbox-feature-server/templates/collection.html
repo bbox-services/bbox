@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block title %}Collection{% endblock %}
+{% block content_title %}{{ collection.title }}{% endblock %}
 
 {% block content %}
-<h2>{{ collection.title }}</h2>
-
+<article class="prose">
 <a href="/collections/{{collection.id}}.json">JSON</a><br/>
 
 {{ collection.description }}
@@ -13,8 +13,7 @@
   {% if collection.extent.spatial %}<br/><small>{{collection.extent.spatial}}</small> {% endif %}
   {% if collection.extent.temporal %}<br/><small>{{collection.extent.temporal}}</small>{% endif %}
 {% endif %}
-
-<div class="divider"></div>
+</article>
 
 <ul class="menu menu-horizontal bg-base-200">
   <li class="menu-title">Links</li>

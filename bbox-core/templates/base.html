@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=devide-width, initial-scale=1.0" />
     <title>BBOX - {% block title %}Home{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.7/dist/full.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" />
     {% block head %} {% endblock %}
 </head>
@@ -13,20 +13,22 @@
     <div>
         <div class="drawer md:drawer-open">
             <input id="main-sidebar" type="checkbox" class="drawer-toggle" />
-            <div class="drawer-content flex flex-col items-left justify-start">
+            <div class="drawer-content flex flex-col items-left justify-start p-6">
                 <label for="main-sidebar" class="btn drawer-button md:hidden">Toggle Menu</label>
+                <article class="prose">
+                <h2>{% block content_title %}{% endblock %}</h2>
+                </article>
                 {% block content %}{% endblock %}
             </div>
             <div class="drawer-side">
                 <label for="main-sidebar" class="drawer-overlay"></label>
 
-                <div class="bg-base-200 pl-8 pt-5">
+                <div class="bg-base-200 pl-8 p-5">
                     <i class='bx bx-border-outer'></i>
                     <span class="text-xl font-bold">BBOX</span>
                 </div>
 
                 <ul class="menu bg-base-200 w-56 h-full rounded-box">
-
                     <li>
                         <a href="/" {% if cur_menu=="Home" %}class="active" {% endif %}>
                             <i class="bx bx-grid-alt"></i> Home

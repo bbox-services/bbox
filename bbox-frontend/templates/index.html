@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Maps{% endblock %}
+{% block title %}Home{% endblock %}
+{% block content_title %}Home{% endblock %}
 
 {% block content %}
-  <div class="card w-96 bg-base-100 shadow-xl m-5">
+  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
     <div class="card-body">
-      <h2 class="card-title">WMS catalog</h2>
+      <h2 class="card-title">Map catalog</h2>
       <ul class="list-disc">
       {% for entry in wms_services %}
         <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
@@ -15,9 +16,9 @@
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl m-5">
+  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
     <div class="card-body">
-      <h2 class="card-title">WMS request examples</h2>
+      <h2 class="card-title">Map request examples</h2>
       <ul class="list-disc">
       {% for link in links %}
         <li><a href="{{ link | safe }}">{{ link|truncate(20) }}</a></li>
@@ -25,20 +26,20 @@
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl m-5">
+  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
     <div class="card-body">
-      <h2 class="card-title">OGC API Features</h2>
+      <h2 class="card-title">OGC API endpoints</h2>
       <ul class="list-disc">
         <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li>
         <li><a href="/openapi.json">OpenAPI spec (JSON)</a></li>
+        <li><a href="/redoc">Redoc OpenAPI Docs</a></li>
       </ul>
     </div>
   </div>
-  <div class="card w-96 bg-base-100 shadow-xl m-5">
+  <div class="card w-96 bg-base-100 shadow-xl mr-5 mb-5">
     <div class="card-body">
       <h2 class="card-title">Links</h2>
       <ul class="list-disc">
-        <li><a href="/qwc2/">Map viewer</a></li>
         <li><a href="/metrics">Metrics endpoint</a></li>
       </ul>
     </div>
