@@ -15,6 +15,10 @@ use std::path::PathBuf;
 #[folder = "templates/"]
 struct Templates;
 
+#[derive(RustEmbed)]
+#[folder = "static/frontend/"]
+struct FrontendStatics;
+
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(create_env_embedded::<Templates>);
 
 async fn index(inventory: web::Data<MapInventory>) -> Result<HttpResponse, Error> {
@@ -119,6 +123,9 @@ async fn redoc_html() -> Result<HttpResponse, Error> {
 
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(resource("/").route(get().to(index)))
+        .service(
+            resource(r#"/frontend/{filename:.*}"#).route(get().to(embedded::<FrontendStatics>)),
+        )
         .service(
             resource(r#"/maplibre/{filename:.*}"#).route(get().to(embedded::<MaplibreStatics>)),
         )
