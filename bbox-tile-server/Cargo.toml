@@ -31,7 +31,7 @@ futures = "0.3"
 futures-util = "0.3.21"
 indicatif = "0.16.2"
 log = { workspace = true }
-martin-mbtiles = { version = "0.2.1", default-features = false, features = ["rustls"], git = "https://github.com/pka/martin", rev = "2e108cd" }
+martin-mbtiles = { version = "0.4.0", default-features = false, features = ["rustls"] }
 num_cpus = { workspace = true }
 prometheus = { workspace = true }
 reqwest = { workspace = true }
