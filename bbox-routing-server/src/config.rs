@@ -9,6 +9,7 @@ pub struct RoutingServerCfg {
 
 /// Routing service configuration
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct RoutingServiceCfg {
     pub profile: Option<String>,
     pub gpkg: String,

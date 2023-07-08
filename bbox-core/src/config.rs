@@ -111,17 +111,20 @@ impl AuthCfg {
 // -- Metrics --
 
 #[derive(Deserialize, Default, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct MetricsCfg {
     pub prometheus: Option<PrometheusCfg>,
     pub jaeger: Option<JaegerCfg>,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct PrometheusCfg {
     pub path: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct JaegerCfg {
     pub agent_endpoint: String,
 }

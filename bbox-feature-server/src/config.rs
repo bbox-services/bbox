@@ -9,11 +9,13 @@ pub struct DatasourceCfg {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct DsFiledirCfg {
     pub dir: String,
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct DsPostgisCfg {
     pub url: String,
 }

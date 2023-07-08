@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct TemplateDirCfg {
     /// endpoint path for publishing
     pub path: String,

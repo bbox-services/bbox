@@ -13,6 +13,7 @@ pub struct AssetserverCfg {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct StaticDirCfg {
     /// endpoint path for publishing
     pub path: String,

@@ -25,6 +25,7 @@ pub struct TileSourceCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub enum TileSourceProviderCfg {
     WmsFcgi,
     #[serde(rename = "wms_proxy")]
@@ -59,12 +60,14 @@ pub struct GridCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct WmsHttpSourceProviderCfg {
     pub baseurl: String,
     pub format: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub enum SourceParamCfg {
     #[serde(rename = "wms_proxy")]
     WmsHttp(WmsHttpSourceParamsCfg),
@@ -75,6 +78,7 @@ pub enum SourceParamCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct WmsHttpSourceParamsCfg {
     /// name of WmsHttpSourceProviderCfg
     pub source: String,
@@ -82,6 +86,7 @@ pub struct WmsHttpSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct WmsFcgiSourceParamsCfg {
     pub project: String,
     pub suffix: String,
@@ -94,11 +99,13 @@ pub struct WmsFcgiSourceParamsCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct MbtilesSourceParamsCfg {
     pub path: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct TileCacheProviderCfg {
     pub name: String,
     // pub layout: CacheLayout,
@@ -107,7 +114,7 @@ pub struct TileCacheProviderCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase", deny_unknown_fields)]
 pub enum TileCacheCfg {
     Files(FileCacheCfg),
     S3(S3CacheCfg),
@@ -115,11 +122,13 @@ pub enum TileCacheCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct FileCacheCfg {
     pub base_dir: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct S3CacheCfg {
     pub path: String,
     // pub s3_endpoint_url: Option<String>,
