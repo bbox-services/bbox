@@ -58,7 +58,7 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 // -- Common configuration --
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {
     pub server_addr: String,
     worker_threads: Option<usize>,
@@ -97,7 +97,7 @@ impl WebserverCfg {
 }
 
 #[derive(Deserialize, Default, Clone, Debug)]
-#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct AuthCfg {
     pub oidc: Option<OidcAuthCfg>,
 }
@@ -111,20 +111,17 @@ impl AuthCfg {
 // -- Metrics --
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct MetricsCfg {
     pub prometheus: Option<PrometheusCfg>,
     pub jaeger: Option<JaegerCfg>,
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct PrometheusCfg {
     pub path: String,
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub struct JaegerCfg {
     pub agent_endpoint: String,
 }

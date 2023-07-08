@@ -10,7 +10,7 @@ use std::fs::File;
 use std::path::Path;
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "kebab-case", default, deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct MapServerCfg {
     num_fcgi_processes: Option<usize>,
     pub fcgi_client_pool_size: usize,
@@ -25,7 +25,7 @@ pub struct MapServerCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct QgisBackendCfg {
     pub exe_location: Option<String>,
     pub project_basedir: String,
@@ -34,7 +34,7 @@ pub struct QgisBackendCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct QgisBackendSuffixCfg {
     pub path: String,
 }
@@ -55,7 +55,7 @@ impl QgisBackendCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub struct UmnBackendCfg {
     pub exe_location: Option<String>,
     pub project_basedir: String,
@@ -73,7 +73,7 @@ impl UmnBackendCfg {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "kebab-case", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 #[allow(dead_code)] // `MockBackendCfg` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
 pub struct MockBackendCfg {
     pub path: String,
