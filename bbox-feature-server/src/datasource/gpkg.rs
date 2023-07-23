@@ -1,4 +1,4 @@
-use crate::datasource::{CollectionDatasource, CollectionInfo, CollectionInfoDs, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -85,7 +85,7 @@ impl CollectionDatasource for GpkgDatasource {
             let info = table_info(self, table_name).await?;
             let fc = FeatureCollection {
                 collection,
-                info: CollectionInfo::GpkgCollectionInfo(info),
+                info: Box::new(info),
             };
             collections.push(fc);
         }
@@ -94,7 +94,7 @@ impl CollectionDatasource for GpkgDatasource {
 }
 
 #[async_trait]
-impl CollectionInfoDs for GpkgCollectionInfo {
+impl CollectionInfo for GpkgCollectionInfo {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let mut sql = format!(
             "SELECT *, count(*) OVER() AS __total_cnt FROM {table}",

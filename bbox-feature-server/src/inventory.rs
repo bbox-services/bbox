@@ -32,7 +32,7 @@ pub struct Inventory {
 /// Collection metadata with source specific infos like table name.
 pub struct FeatureCollection {
     pub collection: CoreCollection,
-    pub info: CollectionInfo,
+    pub info: Box<dyn CollectionInfo>,
 }
 
 impl Inventory {
@@ -120,7 +120,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let items = match fc.info.collection_ds().items(filter).await {
+        let items = match fc.info.items(filter).await {
             Ok(items) => items,
             Err(e) => {
                 warn!("Ignoring error getting collection items for {collection_id}: {e}");
@@ -184,12 +184,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        match fc
-            .info
-            .collection_ds()
-            .item(collection_id, feature_id)
-            .await
-        {
+        match fc.info.item(collection_id, feature_id).await {
             Ok(item) => item,
             Err(e) => {
                 warn!("Ignoring error getting collection item for {collection_id}: {e}");

@@ -15,6 +15,7 @@ actix-web = { workspace = true }
 async-trait = { workspace = true }
 bbox-core = { path = "../bbox-core" }
 clap = { workspace = true }
+dyn-clone = "1.0.6"
 futures = { workspace = true }
 geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 log = { workspace = true }

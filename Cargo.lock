@@ -782,6 +782,7 @@ dependencies = [
  "async-trait",
  "bbox-core",
  "clap",
+ "dyn-clone",
  "futures",
  "geozero",
  "log",

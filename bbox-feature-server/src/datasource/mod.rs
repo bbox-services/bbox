@@ -1,10 +1,9 @@
-use crate::datasource::gpkg::GpkgCollectionInfo;
-use crate::datasource::postgis::PgCollectionInfo;
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
+use dyn_clone::{clone_trait_object, DynClone};
 
 pub mod gpkg;
 pub mod postgis;
@@ -15,26 +14,12 @@ pub trait CollectionDatasource {
 }
 
 #[async_trait]
-pub trait CollectionInfoDs {
+pub trait CollectionInfo: DynClone + Sync + Send {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult>;
     async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
 }
 
-#[derive(Clone, Debug)]
-// Using Box<dyn CollectionInfoDs> instead of an enum fails with "(dyn datasource::CollectionInfoDs + 'static)` cannot be sent between threads safely"
-pub enum CollectionInfo {
-    GpkgCollectionInfo(GpkgCollectionInfo),
-    PgCollectionInfo(PgCollectionInfo),
-}
-
-impl CollectionInfo {
-    pub fn collection_ds(&self) -> &dyn CollectionInfoDs {
-        match self {
-            CollectionInfo::GpkgCollectionInfo(ds) => ds,
-            CollectionInfo::PgCollectionInfo(ds) => ds,
-        }
-    }
-}
+clone_trait_object!(CollectionInfo);
 
 pub struct ItemsResult {
     pub features: Vec<CoreFeature>,

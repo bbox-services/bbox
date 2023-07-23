@@ -1,4 +1,4 @@
-use crate::datasource::{CollectionDatasource, CollectionInfo, CollectionInfoDs, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -77,7 +77,7 @@ impl CollectionDatasource for PgDatasource {
             };
             let fc = FeatureCollection {
                 collection,
-                info: CollectionInfo::PgCollectionInfo(info),
+                info: Box::new(info),
             };
             collections.push(fc);
         }
@@ -86,7 +86,7 @@ impl CollectionDatasource for PgDatasource {
 }
 
 #[async_trait]
-impl CollectionInfoDs for PgCollectionInfo {
+impl CollectionInfo for PgCollectionInfo {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let geometry_column = &self.geometry_column;
         let schema = &self.table_schema;
