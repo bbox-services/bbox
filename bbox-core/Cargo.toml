@@ -41,6 +41,7 @@ rustls-pemfile = "1.0.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = "0.8.24"
+sqlx = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

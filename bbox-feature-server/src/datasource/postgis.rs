@@ -4,15 +4,10 @@ use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
+use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use log::warn;
-use sqlx::postgres::{PgPool, PgPoolOptions, PgRow};
-use sqlx::Row;
-
-#[derive(Clone, Debug)]
-pub struct PgDatasource {
-    pool: PgPool,
-}
+use sqlx::{postgres::PgRow, Row};
 
 #[derive(Clone, Debug)]
 pub struct PgCollectionInfo {
@@ -22,17 +17,6 @@ pub struct PgCollectionInfo {
     geometry_column: String,
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
-}
-
-impl PgDatasource {
-    pub async fn new_pool(url: &str) -> Result<Self> {
-        let pool = PgPoolOptions::new()
-            .min_connections(0)
-            .max_connections(8)
-            .connect(url)
-            .await?;
-        Ok(PgDatasource { pool })
-    }
 }
 
 #[async_trait]

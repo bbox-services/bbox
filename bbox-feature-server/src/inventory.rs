@@ -1,10 +1,10 @@
 use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
-use crate::datasource::postgis::PgDatasource;
 use crate::datasource::{CollectionDatasource, CollectionInfo};
 use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;
+use bbox_core::pg_ds::PgDatasource;
 use log::{info, warn};
 use std::collections::HashMap;
 

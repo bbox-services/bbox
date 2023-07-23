@@ -1,4 +1,5 @@
 use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::pg_ds::DsPostgisCfg;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -12,12 +13,6 @@ pub struct DatasourceCfg {
 #[serde(deny_unknown_fields)]
 pub struct DsFiledirCfg {
     pub dir: String,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct DsPostgisCfg {
-    pub url: String,
 }
 
 impl DatasourceCfg {

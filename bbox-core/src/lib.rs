@@ -8,6 +8,7 @@ pub mod file_search;
 pub mod logger;
 pub mod metrics;
 pub mod ogcapi;
+pub mod pg_ds;
 pub mod service;
 pub mod static_assets;
 pub mod static_files;
