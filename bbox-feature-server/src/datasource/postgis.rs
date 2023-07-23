@@ -1,4 +1,4 @@
-use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionSource, ItemsResult};
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -10,7 +10,7 @@ use log::warn;
 use sqlx::{postgres::PgRow, Row};
 
 #[derive(Clone, Debug)]
-pub struct PgCollectionInfo {
+pub struct PgCollectionSource {
     ds: PgDatasource,
     table_schema: String,
     table_name: String,
@@ -32,9 +32,9 @@ impl CollectionDatasource for PgDatasource {
         while let Some(row) = rows.try_next().await? {
             let table_schema: String = row.try_get("f_table_schema")?;
             let table_name: String = row.try_get("f_table_name")?;
-            let info = table_info(self, &table_schema, &table_name).await?;
+            let source = table_info(self, &table_schema, &table_name).await?;
             let id = &table_name.clone();
-            let bbox = query_bbox(&info)
+            let bbox = query_bbox(&source)
                 .await
                 .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
             let collection = CoreCollection {
@@ -61,7 +61,7 @@ impl CollectionDatasource for PgDatasource {
             };
             let fc = FeatureCollection {
                 collection,
-                info: Box::new(info),
+                source: Box::new(source),
             };
             collections.push(fc);
         }
@@ -70,7 +70,7 @@ impl CollectionDatasource for PgDatasource {
 }
 
 #[async_trait]
-impl CollectionInfo for PgCollectionInfo {
+impl CollectionSource for PgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let geometry_column = &self.geometry_column;
         let schema = &self.table_schema;
@@ -178,7 +178,7 @@ impl CollectionInfo for PgCollectionInfo {
     }
 }
 
-async fn query_bbox(info: &PgCollectionInfo) -> Result<Vec<f64>> {
+async fn query_bbox(source: &PgCollectionSource) -> Result<Vec<f64>> {
     // TODO: Transform to WGS84, if necessary
     let sql = &format!(
         r#"
@@ -189,11 +189,11 @@ async fn query_bbox(info: &PgCollectionInfo) -> Result<Vec<f64>> {
         SELECT ST_XMin(bbox), ST_YMin(bbox), ST_XMax(bbox), ST_YMax(bbox)
         FROM extent
     "#,
-        geometry_column = &info.geometry_column,
-        schema = &info.table_schema,
-        table = &info.table_name
+        geometry_column = &source.geometry_column,
+        schema = &source.table_schema,
+        table = &source.table_name
     );
-    let row = sqlx::query(sql).fetch_one(&info.ds.pool).await?;
+    let row = sqlx::query(sql).fetch_one(&source.ds.pool).await?;
     let extent: Vec<f64> = vec![
         row.try_get(0)?,
         row.try_get(1)?,
@@ -203,7 +203,7 @@ async fn query_bbox(info: &PgCollectionInfo) -> Result<Vec<f64>> {
     Ok(extent)
 }
 
-async fn table_info(ds: &PgDatasource, schema: &str, table: &str) -> Result<PgCollectionInfo> {
+async fn table_info(ds: &PgDatasource, schema: &str, table: &str) -> Result<PgCollectionSource> {
     let sql = &format!(
         r#"
         WITH pkeys AS (
@@ -235,7 +235,7 @@ async fn table_info(ds: &PgDatasource, schema: &str, table: &str) -> Result<PgCo
     } else {
         None
     };
-    Ok(PgCollectionInfo {
+    Ok(PgCollectionSource {
         ds: ds.clone(),
         table_schema: schema.to_string(),
         table_name: table.to_string(),
@@ -244,7 +244,7 @@ async fn table_info(ds: &PgDatasource, schema: &str, table: &str) -> Result<PgCo
     })
 }
 
-fn row_to_feature(row: &PgRow, _table_info: &PgCollectionInfo) -> Result<CoreFeature> {
+fn row_to_feature(row: &PgRow, _table_info: &PgCollectionSource) -> Result<CoreFeature> {
     let properties: serde_json::Value = row.try_get("properties")?;
     // properties[col.name()] = match col.type_info().name() {
     //     "VARCHAR"|"TEXT" => json!(row.try_get::<Option<&str>, _>(col.ordinal())?),
@@ -295,14 +295,14 @@ mod tests {
         let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
             .await
             .unwrap();
-        let info = PgCollectionInfo {
+        let source = PgCollectionSource {
             ds,
             table_schema: "ne".to_string(),
             table_name: "ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
         };
-        let items = info.items(&filter).await.unwrap();
+        let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 
@@ -318,14 +318,14 @@ mod tests {
         let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
             .await
             .unwrap();
-        let info = PgCollectionInfo {
+        let source = PgCollectionSource {
             ds,
             table_schema: "ne".to_string(),
             table_name: "ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
         };
-        let items = info.items(&filter).await.unwrap();
+        let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
     }
 }

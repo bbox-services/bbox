@@ -14,12 +14,12 @@ pub trait CollectionDatasource {
 }
 
 #[async_trait]
-pub trait CollectionInfo: DynClone + Sync + Send {
+pub trait CollectionSource: DynClone + Sync + Send {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult>;
     async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
 }
 
-clone_trait_object!(CollectionInfo);
+clone_trait_object!(CollectionSource);
 
 pub struct ItemsResult {
     pub features: Vec<CoreFeature>,

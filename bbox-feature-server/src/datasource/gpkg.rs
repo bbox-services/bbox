@@ -1,4 +1,4 @@
-use crate::datasource::{CollectionDatasource, CollectionInfo, ItemsResult};
+use crate::datasource::{CollectionDatasource, CollectionSource, ItemsResult};
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -17,7 +17,7 @@ pub struct GpkgDatasource {
 }
 
 #[derive(Clone, Debug)]
-pub struct GpkgCollectionInfo {
+pub struct GpkgCollectionSource {
     ds: GpkgDatasource,
     table: String,
     geometry_column: String,
@@ -82,10 +82,10 @@ impl CollectionDatasource for GpkgDatasource {
                     length: None,
                 }],
             };
-            let info = table_info(self, table_name).await?;
+            let source = table_info(self, table_name).await?;
             let fc = FeatureCollection {
                 collection,
-                info: Box::new(info),
+                source: Box::new(source),
             };
             collections.push(fc);
         }
@@ -94,7 +94,7 @@ impl CollectionDatasource for GpkgDatasource {
 }
 
 #[async_trait]
-impl CollectionInfo for GpkgCollectionInfo {
+impl CollectionSource for GpkgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let mut sql = format!(
             "SELECT *, count(*) OVER() AS __total_cnt FROM {table}",
@@ -166,7 +166,7 @@ impl CollectionInfo for GpkgCollectionInfo {
     }
 }
 
-async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionInfo> {
+async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionSource> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -189,7 +189,7 @@ async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionIn
     } else {
         None
     };
-    Ok(GpkgCollectionInfo {
+    Ok(GpkgCollectionSource {
         ds: ds.clone(),
         table: table.to_string(),
         geometry_column,
@@ -197,7 +197,7 @@ async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionIn
     })
 }
 
-fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionInfo) -> Result<CoreFeature> {
+fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionSource) -> Result<CoreFeature> {
     let mut id = None;
     let mut properties = json!({});
     for col in row.columns() {
@@ -268,13 +268,13 @@ mod tests {
         let ds = GpkgDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
-        let info = GpkgCollectionInfo {
+        let source = GpkgCollectionSource {
             ds,
             table: "ne_10m_lakes".to_string(),
             geometry_column: "geom".to_string(),
             pk_column: Some("fid".to_string()),
         };
-        let items = info.items(&filter).await.unwrap();
+        let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 }

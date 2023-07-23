@@ -1,6 +1,6 @@
 use crate::config::DatasourceCfg;
 use crate::datasource::gpkg::GpkgDatasource;
-use crate::datasource::{CollectionDatasource, CollectionInfo};
+use crate::datasource::{CollectionDatasource, CollectionSource};
 use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;
@@ -32,7 +32,7 @@ pub struct Inventory {
 /// Collection metadata with source specific infos like table name.
 pub struct FeatureCollection {
     pub collection: CoreCollection,
-    pub info: Box<dyn CollectionInfo>,
+    pub source: Box<dyn CollectionSource>,
 }
 
 impl Inventory {
@@ -80,7 +80,7 @@ impl Inventory {
                 }
             }
         }
-        // Close all connections, they will be reopendend on demand
+        // Close all connections, they will be reopened on demand
         // TODO: inventory.reset_pool().await.ok();
         inventory
     }
@@ -120,7 +120,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        let items = match fc.info.items(filter).await {
+        let items = match fc.source.items(filter).await {
             Ok(items) => items,
             Err(e) => {
                 warn!("Ignoring error getting collection items for {collection_id}: {e}");
@@ -184,7 +184,7 @@ impl Inventory {
                 warn!("Ignoring error getting collection {collection_id}");
                 return None
             };
-        match fc.info.item(collection_id, feature_id).await {
+        match fc.source.item(collection_id, feature_id).await {
             Ok(item) => item,
             Err(e) => {
                 warn!("Ignoring error getting collection item for {collection_id}: {e}");
