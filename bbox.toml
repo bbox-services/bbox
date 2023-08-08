@@ -91,53 +91,77 @@ path = "/wms/map"              # WMS URL base path
 
 # -- custom grids --
 
-[[tileserver.grid]]
+[[grid]]
 json = "../assets/custom-grid-lv95.json"
 
 # -- tile caches --
 
-[[tileserver.cache]]
+[[tilecache]]
 name = "tilecache"
-[tileserver.cache.files]
+[tilecache.files]
 base_dir = "/tmp/tilecache"
 
-#[[tileserver.cache]]
+#[[tilecache]]
 #name = "aws"
-#[tileserver.cache.s3]
+#[tilecache.s3]
 #path = "s3://tiles"
 
 # -- tile source provider configuration --
 
-[[tileserver.source]]
+[[tiledatasource]]
+name = "t_rex_tests"
+#default = true
+[tiledatasource.postgis]
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+
+[[tiledatasource]]
 name = "gebco"
-[tileserver.source.wms_proxy]
+[tiledatasource.wms_proxy]
 baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
 format = "image/jpeg"
 
 # -- tile sets --
 
-[[tileserver.tileset]]
+[[tileset]]
 name = "ne_extracts"
 wms_project = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
 cache = "tilecache"
 
-[[tileserver.tileset]]
+[[tileset]]
 name = "ne_umn"
 wms_project = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 
-[[tileserver.tileset]]
+[[tileset]]
 name = "gebco"
 wms_proxy = { source = "gebco", layers = "gebco_latest" }
 
-[[tileserver.tileset]]
+[[tileset]]
 name = "rivers_lakes"
 tms = "LV95"
-[tileserver.tileset.wms_project]
+[tileset.wms_project]
 project = "ne_extracts"
 suffix = "qgz"
 layers = "ne_10m_lakes,ne_10m_rivers_lake_centerlines"
 params = "transparent=true"
 
-[[tileserver.tileset]]
+[[tileset]]
 name = "mbtiles_mvt_fl"
 mbtiles = { path = "../assets/liechtenstein.mbtiles" }
+
+#[[tileset]]
+#name = "ne_10m_populated_places"
+#[tileset.postgis]
+#datasource = "t_rex_tests"
+#extent = [-179.58998, -90.00000, 179.38330, 82.48332]
+#[[tileset.postgis.layer]]
+#name = "ne_10m_populated_places"
+#table_name = "ne.ne_10m_populated_places"
+##geometry_field = "wkb_geometry"
+#fid_field = "fid"
+#geometry_type = "POINT"
+#srid = 3857
+#buffer_size = 0
+##make_valid = true
+#query_limit = 1000
+##[[tileset.postgis.layer.query]]
+##sql = """SELECT wkb_geometry,fid,scalerank,name,pop_max FROM ne.ne_10m_populated_places"""

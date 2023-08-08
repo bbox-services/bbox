@@ -1,6 +1,7 @@
 use crate::tilesource::TileSource;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::config::from_config_root_or_exit;
+use bbox_core::pg_ds::DsPostgisCfg;
 use clap::{ArgMatches, FromArgMatches};
 use log::info;
 use serde::Deserialize;
@@ -8,12 +9,12 @@ use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Default, Debug)]
-#[serde(default, deny_unknown_fields)]
+#[serde(default)]
 pub struct TileserverCfg {
     pub tileset: Vec<TileSetCfg>,
     pub grid: Vec<GridCfg>,
-    pub source: Vec<TileSourceCfg>,
-    pub cache: Vec<TileCacheProviderCfg>,
+    pub tiledatasource: Vec<TileSourceCfg>,
+    pub tilecache: Vec<TileCacheProviderCfg>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -24,12 +25,14 @@ pub struct TileSourceCfg {
     pub config: TileSourceProviderCfg,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub enum TileSourceProviderCfg {
     WmsFcgi,
     #[serde(rename = "wms_proxy")]
     WmsHttp(WmsHttpSourceProviderCfg),
+    #[serde(rename = "postgis")]
+    Postgis(DsPostgisCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles,
     // GdalData(GdalSource),
@@ -49,6 +52,7 @@ pub struct TileSetCfg {
     pub params: SourceParamCfg,
     /// Tile cache name (Default: no cache)
     pub cache: Option<String>,
+    pub cache_limits: Option<CacheLimitCfg>,
 }
 
 /// Custom grid definition
@@ -73,6 +77,8 @@ pub enum SourceParamCfg {
     WmsHttp(WmsHttpSourceParamsCfg),
     #[serde(rename = "wms_project")]
     WmsFcgi(WmsFcgiSourceParamsCfg),
+    #[serde(rename = "postgis")]
+    Postgis(PostgisSourceParamsCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesSourceParamsCfg),
 }
@@ -102,6 +108,103 @@ pub struct WmsFcgiSourceParamsCfg {
 #[serde(deny_unknown_fields)]
 pub struct MbtilesSourceParamsCfg {
     pub path: PathBuf,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct PostgisSourceParamsCfg {
+    /// Name of tileserver.source config (Default: first with matching type)
+    // maybe we should allow direct DS URLs?
+    // t-rex has datasource on layer level!
+    pub datasource: Option<String>,
+    pub extent: Option<ExtentCfg>,
+    pub minzoom: Option<u8>,
+    pub maxzoom: Option<u8>,
+    pub center: Option<(f64, f64)>,
+    pub start_zoom: Option<u8>,
+    pub attribution: Option<String>,
+    #[serde(rename = "layer")]
+    pub layers: Vec<VectorLayerCfg>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct ExtentCfg {
+    pub minx: f64,
+    pub miny: f64,
+    pub maxx: f64,
+    pub maxy: f64,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct VectorLayerCfg {
+    pub name: String,
+    pub geometry_field: Option<String>,
+    pub geometry_type: Option<String>,
+    /// Spatial reference system (PostGIS SRID)
+    pub srid: Option<i32>,
+    /// Assume geometry is in grid SRS
+    #[serde(default)]
+    pub no_transform: bool,
+    /// Name of feature ID field
+    pub fid_field: Option<String>,
+    // Input for derived queries
+    pub table_name: Option<String>,
+    pub query_limit: Option<u32>,
+    // Custom queries
+    #[serde(default)]
+    pub query: Vec<VectorLayerQueryCfg>,
+    pub minzoom: Option<u8>,
+    pub maxzoom: Option<u8>,
+    /// Width and height of the tile (Default: 4096. Grid default size is 256)
+    #[serde(default = "default_tile_size")]
+    pub tile_size: u32,
+    /// Simplify geometry (lines and polygons)
+    #[serde(default)]
+    pub simplify: bool,
+    /// Simplification tolerance (default to !pixel_width!/2)
+    #[serde(default = "default_tolerance")]
+    pub tolerance: String,
+    /// Tile buffer size in pixels (None: no clipping)
+    pub buffer_size: Option<u32>,
+    /// Fix invalid geometries before clipping (lines and polygons)
+    #[serde(default)]
+    pub make_valid: bool,
+    /// Apply ST_Shift_Longitude to (transformed) bbox
+    #[serde(default)]
+    pub shift_longitude: bool,
+}
+
+fn default_tile_size() -> u32 {
+    4096
+}
+
+const DEFAULT_TOLERANCE: &str = "!pixel_width!/2";
+
+fn default_tolerance() -> String {
+    DEFAULT_TOLERANCE.to_string()
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct VectorLayerQueryCfg {
+    #[serde(default)]
+    pub minzoom: u8,
+    pub maxzoom: Option<u8>,
+    /// Simplify geometry (override layer default setting)
+    pub simplify: Option<bool>,
+    /// Simplification tolerance (override layer default setting)
+    pub tolerance: Option<String>,
+    pub sql: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct CacheLimitCfg {
+    #[serde(default)]
+    pub minzoom: u8,
+    pub maxzoom: Option<u8>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -138,7 +241,7 @@ pub struct S3CacheCfg {
 
 impl TileserverCfg {
     pub fn from_config(cli: &ArgMatches) -> Self {
-        let mut cfg: TileserverCfg = from_config_opt_or_exit("tileserver").unwrap_or_default();
+        let mut cfg: TileserverCfg = from_config_root_or_exit();
 
         // Get config from CLI
         if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
@@ -155,6 +258,7 @@ impl TileserverCfg {
                         tms: None,
                         params: source_cfg,
                         cache: None,
+                        cache_limits: None,
                     };
                     cfg.tileset.push(ts);
                 }
@@ -162,6 +266,129 @@ impl TileserverCfg {
         }
         cfg
     }
+}
+
+static WORLD_EXTENT: ExtentCfg = ExtentCfg {
+    minx: -180.0,
+    miny: -90.0,
+    maxx: 180.0,
+    maxy: 90.0,
+};
+
+impl PostgisSourceParamsCfg {
+    pub fn minzoom(&self) -> u8 {
+        self.minzoom
+            .unwrap_or(self.layers.iter().map(|l| l.minzoom()).min().unwrap_or(0))
+    }
+    pub fn maxzoom(&self) -> u8 {
+        self.maxzoom.unwrap_or(
+            self.layers
+                .iter()
+                .map(|l| l.maxzoom(22))
+                .max()
+                .unwrap_or(22),
+        )
+    }
+    pub fn attribution(&self) -> String {
+        self.attribution.clone().unwrap_or("".to_string())
+    }
+    pub fn get_extent(&self) -> &ExtentCfg {
+        self.extent.as_ref().unwrap_or(&WORLD_EXTENT)
+    }
+    pub fn get_center(&self) -> (f64, f64) {
+        if self.center.is_none() {
+            let ext = self.get_extent();
+            (
+                ext.maxx - (ext.maxx - ext.minx) / 2.0,
+                ext.maxy - (ext.maxy - ext.miny) / 2.0,
+            )
+        } else {
+            self.center.unwrap()
+        }
+    }
+    pub fn get_start_zoom(&self) -> u8 {
+        self.start_zoom.unwrap_or(2)
+    }
+}
+
+impl VectorLayerCfg {
+    pub fn minzoom(&self) -> u8 {
+        self.minzoom
+            .unwrap_or(self.query.iter().map(|q| q.minzoom).min().unwrap_or(0))
+    }
+    pub fn maxzoom(&self, default: u8) -> u8 {
+        self.maxzoom.unwrap_or(
+            self.query
+                .iter()
+                .map(|q| q.maxzoom.unwrap_or(default))
+                .max()
+                .unwrap_or(default),
+        )
+    }
+    /// Collect min zoom levels with configuration
+    pub fn zoom_steps(&self) -> Vec<u8> {
+        let mut zoom_steps = self
+            .query
+            .iter()
+            .filter(|q| q.sql.is_some())
+            .map(|q| q.minzoom)
+            .collect::<Vec<_>>();
+        zoom_steps.sort();
+        if zoom_steps.is_empty() {
+            zoom_steps.push(self.minzoom());
+        } else if self.minzoom() < zoom_steps[0] {
+            zoom_steps.insert(0, self.minzoom());
+        }
+        zoom_steps
+    }
+    /// Query config for zoom level
+    fn query_cfg<F>(&self, level: u8, check: F) -> Option<&VectorLayerQueryCfg>
+    where
+        F: Fn(&VectorLayerQueryCfg) -> bool,
+    {
+        let mut queries = self
+            .query
+            .iter()
+            .map(|q| (q.minzoom, q.maxzoom.unwrap_or(22), q))
+            .collect::<Vec<_>>();
+        queries.sort_by_key(|ref t| t.0);
+        // Start at highest zoom level and find first match
+        let query = queries
+            .iter()
+            .rev()
+            .find(|ref q| level >= q.0 && level <= q.1 && check(q.2));
+        query.map(|q| q.2)
+    }
+    /// SQL query for zoom level
+    pub fn query(&self, level: u8) -> Option<&String> {
+        let query_cfg = self.query_cfg(level, |q| q.sql.is_some());
+        query_cfg.and_then(|q| q.sql.as_ref().and_then(|sql| Some(sql)))
+    }
+    /// simplify config for zoom level
+    pub fn simplify(&self, level: u8) -> bool {
+        let query_cfg = self.query_cfg(level, |q| q.simplify.is_some());
+        query_cfg.and_then(|q| q.simplify).unwrap_or(self.simplify)
+    }
+    /// tolerance config for zoom level
+    pub fn tolerance(&self, level: u8) -> &String {
+        let query_cfg = self.query_cfg(level, |q| q.tolerance.is_some());
+        query_cfg
+            .and_then(|q| q.tolerance.as_ref())
+            .unwrap_or(&self.tolerance)
+    }
+    // Layer properties needed e.g. for metadata.json
+    // pub fn metadata(&self) -> HashMap<&str, String> {
+    //     //TODO: return Zoom-Level Array
+    //     let mut metadata: HashMap<&str, String> = HashMap::new();
+    //     metadata.insert("id", self.name.clone());
+    //     metadata.insert("name", self.name.clone());
+    //     metadata.insert("description", "".to_string());
+    //     metadata.insert("buffer-size", self.buffer_size.unwrap_or(0).to_string());
+    //     metadata.insert("minzoom", self.minzoom().to_string());
+    //     metadata.insert("maxzoom", self.maxzoom(22).to_string());
+    //     //metadata.insert("srs", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over".to_string());
+    //     metadata
+    // }
 }
 
 // Mapproxy Yaml:

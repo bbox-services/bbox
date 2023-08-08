@@ -1,4 +1,7 @@
 pub mod mbtiles;
+mod mvt;
+pub mod postgis;
+mod postgis_queries;
 #[cfg(feature = "map-server")]
 pub mod wms_fcgi;
 pub mod wms_http;
@@ -8,6 +11,7 @@ use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
+use geozero::error::GeozeroError;
 use tile_grid::{RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
 
@@ -34,7 +38,7 @@ pub enum TileSource {
     // GdalData(GdalSource),
     // RasterData(GeorasterSource),
     // -- vector sources --
-    // PgData(PgQueries),
+    Postgis(postgis::PgSource),
     // OgrData(OgrQueries),
     // VectorData(GeozeroSource),
     // OsmData(OsmSource),
@@ -51,8 +55,8 @@ pub enum TileSource {
 pub enum TileSourceError {
     #[error("tileserver.source `{0}` not found")]
     TileSourceNotFound(String),
-    #[error("tileserver.source of type wms_proxy expected")]
-    TileSourceTypeError,
+    #[error("tileserver.source of type {0} expected")]
+    TileSourceTypeError(String),
     #[error("tile not found / out of bounds")]
     TileXyzError,
     #[error(transparent)]
@@ -61,6 +65,16 @@ pub enum TileSourceError {
     FcgiError(#[from] wms_fcgi::FcgiError),
     #[error("FCGI for suffix `{0}` not found")]
     SuffixNotFound(String),
+    #[error(transparent)]
+    DbError(#[from] sqlx::Error),
+    #[error("Source field type detection failed")]
+    TypeDetectionError,
+    #[error("Integer out of range")]
+    IntRangeError(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    GeozeroError(#[from] GeozeroError),
+    #[error("MVT encoding error")]
+    MvtEncodeError, // prost::error::EncodeError
     #[error(transparent)]
     WmsHttpError(#[from] reqwest::Error),
     #[error(transparent)]
@@ -111,7 +125,7 @@ impl TileSource {
             SourceParamCfg::WmsHttp(cfg) => {
                 let TileSourceProviderCfg::WmsHttp(provider) = sources.get(&cfg.source)
                     .unwrap_or_else(|| error_exit(TileSourceError::TileSourceNotFound(cfg.source.clone())))
-                else { error_exit(TileSourceError::TileSourceTypeError) };
+                else { error_exit(TileSourceError::TileSourceTypeError("wms_proxy".to_string())) };
                 TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
                     provider,
                     cfg,
@@ -127,6 +141,9 @@ impl TileSource {
                 // TODO: Emit warning
                 TileSource::Empty
             }
+            SourceParamCfg::Postgis(cfg) => {
+                TileSource::Postgis(postgis::PgSource::from_config(cfg, sources, tms).await)
+            }
             SourceParamCfg::Mbtiles(cfg) => {
                 TileSource::Mbtiles(mbtiles::MbtilesSource::from_config(cfg).await)
             }
@@ -140,6 +157,7 @@ impl TileSource {
             #[cfg(feature = "map-server")]
             TileSource::WmsFcgi(source) => source,
             TileSource::WmsHttp(source) => source,
+            TileSource::Postgis(source) => source,
             TileSource::Mbtiles(source) => source,
             TileSource::Empty => unimplemented!(),
         }

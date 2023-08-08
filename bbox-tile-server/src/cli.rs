@@ -1,7 +1,7 @@
 use crate::cache::{
     files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileWriter,
 };
-use crate::service::TileService;
+use crate::service::{ServiceError, TileService};
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -168,8 +168,11 @@ impl TileService {
         let task_queue_size = writer_task_count + threads * 2;
         let mut tasks = Vec::with_capacity(task_queue_size);
 
-        let tileset = self.tileset(&args.tileset).unwrap();
-        let source = self.source(&args.tileset).unwrap();
+        let tileset = self
+            .tileset(&args.tileset)
+            .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
+        let source = &tileset.source;
+        let suffix = tileset.tile_suffix().to_string();
         let tms = self.grid(&tileset.tms)?;
         let bbox = if let Some(numlist) = &args.extent {
             let arr: Vec<f64> = numlist
@@ -187,7 +190,7 @@ impl TileService {
             tms.xy_bbox()
         };
 
-        info!("Tile source {source:?}");
+        debug!("Tile source {source:?}");
         let file_dir = args
             .base_dir
             .as_ref()
@@ -222,19 +225,17 @@ impl TileService {
         let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
         for tile in griditer {
-            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &tile, "png");
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &tile, &suffix);
             progress.set_message(path.clone());
             progress.inc(1);
             // TODO: we should not clone for each tile, only for a pool of tasks
             let service = self.clone();
             let tileset = args.tileset.clone();
             let file_writer = file_writer.clone();
+            let suffix = suffix.clone();
             let tx = tx.clone();
             tasks.push(task::spawn(async move {
-                let tile = service
-                    .read_tile(&tileset, "WebMercatorQuad", &tile, "png")
-                    .await
-                    .unwrap();
+                let tile = service.read_tile(&tileset, &tile, &suffix).await.unwrap();
                 let input: BoxRead = Box::new(tile.body);
 
                 file_writer.put_tile(path.clone(), input).await.unwrap();

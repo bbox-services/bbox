@@ -37,6 +37,17 @@ pub fn from_config_or_exit<'a, T: Default + Deserialize<'a>>(tag: &str) -> T {
     }
 }
 
+pub fn from_config_root_or_exit<'a, T: Default + Deserialize<'a>>() -> T {
+    let config = app_config();
+    match config.extract() {
+        Ok(config) => config,
+        Err(err) => {
+            config_error_exit(err);
+            Default::default()
+        }
+    }
+}
+
 pub fn from_config_opt_or_exit<'a, T: Deserialize<'a>>(tag: &str) -> Option<T> {
     let config = app_config();
     config

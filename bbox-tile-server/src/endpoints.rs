@@ -1,8 +1,9 @@
-use crate::service::TileService;
+use crate::service::{ServiceError, TileService};
 use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::CoreService;
+use log::error;
 use tile_grid::{
     Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
 };
@@ -59,7 +60,10 @@ async fn map_tile(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y) = params.into_inner();
-    let default_format = "image/png; mode=8bit".to_string(); //TODO: From service
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    let default_format = ts.default_format().to_string();
     let mut format = &web::Header::<header::Accept>::extract(&req)
         .await
         .map(|accept| accept.preference().to_string())
@@ -125,7 +129,10 @@ async fn tile_request(
             Ok(r.streaming(tile_resp.into_stream()))
         }
         Ok(None) => Ok(HttpResponse::NoContent().finish()),
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+        Err(e) => {
+            error!("Tile creation error: {e}");
+            Ok(HttpResponse::InternalServerError().finish())
+        }
     }
 }
 

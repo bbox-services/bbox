@@ -74,7 +74,12 @@ Map viewer examples:
 
 Map viewer template examples:
 
-    x-www-browser http://localhost:8080/html/maplibre/mbtiles_mvt_fl
+    x-www-browser http://localhost:8080/html/maplibre-asset-style/mbtiles_mvt_fl
+
+With PG Service:
+
+    curl -s http://localhost:8080/xyz/ne_10m_populated_places.style.json | jq .
+    x-www-browser http://localhost:8080/html/maplibre/ne_10m_populated_places
 
 
 Relase Build:

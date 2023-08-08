@@ -29,6 +29,8 @@ crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
 futures = "0.3"
 futures-util = "0.3.21"
+#geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
+geozero = { git = "https://github.com/georust/geozero", branch = "mvttrans", features = [ "with-mvt", "with-postgis-sqlx" ] }
 indicatif = "0.16.2"
 log = { workspace = true }
 martin-mbtiles = { version = "0.4.0", default-features = false, features = ["rustls"] }
@@ -39,9 +41,11 @@ rusoto_core = { version = "0.47.0", default-features = false, features = ["rustl
 rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+sqlx = { workspace = true }
 tempfile = "3.3.0"
 thiserror = { workspace = true }
-tile-grid = "0.5.2"
+#tile-grid = "0.5.2"
+tile-grid = { git = "https://github.com/pka/tile-grid" }
 tilejson = "0.3.2"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 
