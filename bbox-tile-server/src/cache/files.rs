@@ -11,7 +11,7 @@ use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
 pub struct FileCache {
-    base_dir: PathBuf,
+    pub(crate) base_dir: PathBuf,
 }
 
 impl FileCache {
