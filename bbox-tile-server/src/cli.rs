@@ -46,16 +46,16 @@ pub enum Commands {
 #[derive(Debug, Args)]
 pub struct SeedArgs {
     /// tile set name
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub tileset: String,
     /// Minimum zoom level
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub minzoom: Option<u8>,
     /// Maximum zoom level
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub maxzoom: Option<u8>,
     /// Extent minx,miny,maxx,maxy (in grid reference system)
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub extent: Option<String>,
     /// S3 path to upload to (e.g. s3://tiles)
     #[arg(long, group = "output_s3", conflicts_with = "output_files")]
@@ -64,20 +64,20 @@ pub struct SeedArgs {
     #[arg(long, group = "output_files", conflicts_with = "output_s3")]
     pub base_dir: Option<String>,
     /// Number of threads to use, defaults to number of logical cores
-    #[arg(short, long, value_parser)]
+    #[arg(short, long)]
     pub threads: Option<usize>,
     /// Size of tasks queue for parallel processing
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub tasks: Option<usize>,
     /// Overwrite previously cached tiles
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub overwrite: Option<bool>,
 }
 
 #[derive(Debug, Args)]
 pub struct UploadArgs {
     /// Base directory of input files
-    #[arg(short, long, value_parser)]
+    #[arg(short, long)]
     pub srcdir: std::path::PathBuf,
     /// S3 path to upload to (e.g. s3://tiles)
     #[arg(long, group = "output_s3")]
@@ -86,10 +86,10 @@ pub struct UploadArgs {
     #[arg(short, long, value_enum, default_value("tasks"))]
     pub mode: Mode,
     /// Number of threads to use, defaults to number of logical cores
-    #[arg(short, long, value_parser)]
+    #[arg(short, long)]
     pub threads: Option<usize>,
     /// Size of tasks queue for parallel processing
-    #[arg(long, value_parser)]
+    #[arg(long)]
     pub tasks: Option<usize>,
 }
 

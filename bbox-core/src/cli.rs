@@ -6,6 +6,18 @@ pub struct GlobalArgs {
     /// Config file (Default: bbox.toml)
     #[arg(short, long, value_name = "FILE")]
     pub config: Option<PathBuf>,
+    /// Log level (Default: info)
+    #[arg(long)]
+    pub loglevel: Option<Loglevel>,
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+pub enum Loglevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
 }
 
 #[derive(Parser, Debug)]

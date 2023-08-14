@@ -162,7 +162,7 @@ impl OgcApiService for CoreService {
         if let Some(config) = args.config {
             env::set_var("BBOX_CONFIG", config);
         }
-        logger::init();
+        logger::init(args.loglevel);
 
         self.web_config = WebserverCfg::from_config();
         let auth_cfg = AuthCfg::from_config();
