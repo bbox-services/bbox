@@ -1,26 +1,89 @@
 BBOX tile server
 ================
 
-Map tile serving.
+Map tile serving and tile cache seeding.
 
 Features:
+- [x] Vector tile server (Source: PostGIS)
 - [x] Raster tile server (Backends: QGIS Server and MapServer)
-- [ ] Vector tile server (GeoZero backend: PostGIS, GeoPackage, ...)
-- [ ] OGC API - Tiles
-- [ ] OGC WMTS, XYZ
 - [x] Tile proxy server (Backends: WMS)
+- [x] OGC API - Tiles Core
+- [x] XYZ vector tiles with TileJSON metadata
+- [ ] OGC WMTS (via map service backend)
 
 
-Tile seeder
------------
-
-Features:
-- [ ] Parellelized seeding of raster and vector tiles
+Tile seeder features:
+- [ ] Parallelized seeding of raster and vector tiles
 - [x] Storage Backend: S3 - optimized for tile transfer
 - [x] Storage Backend: Local files
 
 
-### Usage
+## Configuration
+
+Vector tiles from PostGIS table:
+```toml
+[[tileset]]
+name = "ne_10m_populated_places"
+[tileset.postgis]
+datasource = "t_rex_tests"
+extent = [-179.58998, -90.00000, 179.38330, 82.48332]
+[[tileset.postgis.layer]]
+name = "ne_10m_populated_places"
+table_name = "ne.ne_10m_populated_places"
+#geometry_field = "wkb_geometry"
+fid_field = "fid"
+geometry_type = "POINT"
+srid = 3857
+buffer_size = 0
+#make_valid = true
+query_limit = 1000
+#[[tileset.postgis.layer.query]]
+#sql = """SELECT wkb_geometry,fid,scalerank,name,pop_max FROM ne.ne_10m_populated_places"""
+```
+
+Raster tiles with QGIS Server backend:
+```toml
+[[tileset]]
+name = "ne_extracts"
+wms_project = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
+cache = "tilecache"
+```
+
+Raster tiles with UMN Mapserver backend:
+```toml
+[[tileset]]
+name = "ne_umn"
+wms_project = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
+```
+
+Raster tiles from external WMS:
+```toml
+[[tileset]]
+name = "gebco"
+wms_proxy = { source = "gebco", layers = "gebco_latest" }
+```
+
+Tile caches:
+```toml
+[[tilecache]]
+name = "tilecache"
+[tilecache.files]
+base_dir = "/tmp/tilecache"
+
+[[tilecache]]
+name = "aws"
+[tilecache.s3]
+path = "s3://tiles"
+```
+
+Custom tile grid:
+```toml
+[[grid]]
+json = "../assets/custom-grid-lv95.json"
+```
+
+
+## Usage
 
 Run tile server with bbox.toml configuration:
 
