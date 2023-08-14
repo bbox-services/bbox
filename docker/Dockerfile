@@ -1,33 +1,31 @@
+# https://github.com/LukeMathWalker/cargo-chef
+FROM lukemathwalker/cargo-chef:latest-rust-slim-bookworm as chef
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR app
+
+# ------
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
 # ------------------------------------------------------------------------------
-# Cargo Build Stage
+# Build Stage
 # ------------------------------------------------------------------------------
 
-FROM rust:bullseye as builder
+FROM chef AS builder
 
-COPY Cargo.lock Cargo.toml ./
-RUN mkdir bbox-core bbox-feature-server bbox-asset-server bbox-map-server bbox-map-server/mock-fcgi-wms bbox-frontend bbox-processes-server bbox-routing-server bbox-server bbox-tile-server
-COPY bbox-core/Cargo.toml ./bbox-core/Cargo.toml
-COPY bbox-feature-server/Cargo.toml ./bbox-feature-server/Cargo.toml
-COPY bbox-asset-server/Cargo.toml ./bbox-asset-server/Cargo.toml
-COPY bbox-map-server/Cargo.toml ./bbox-map-server/Cargo.toml
-COPY bbox-map-server/mock-fcgi-wms/Cargo.toml ./bbox-map-server/mock-fcgi-wms/Cargo.toml
-COPY bbox-frontend/Cargo.toml ./bbox-frontend/Cargo.toml
-COPY bbox-processes-server/Cargo.toml ./bbox-processes-server/Cargo.toml
-COPY bbox-routing-server/Cargo.toml ./bbox-routing-server/Cargo.toml
-COPY bbox-server/Cargo.toml ./bbox-server/Cargo.toml
-COPY bbox-tile-server/Cargo.toml ./bbox-tile-server/Cargo.toml
-
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
-
-RUN mkdir .cargo
-RUN cargo vendor > .cargo/config
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
 COPY . .
 
 ARG BUILD_DIR=bbox-server
 ARG BUILD_FEATURES=""
 
-RUN cd $BUILD_DIR && cargo build --release $BUILD_FEATURES
 RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 
 # ------------------------------------------------------------------------------

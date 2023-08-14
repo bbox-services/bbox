@@ -1,16 +1,25 @@
-FROM rust:bullseye as builder
+FROM rust:bookworm as builder
 WORKDIR /usr/src/bbox
 COPY . .
-RUN cd bbox-map-server && CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo install --path .
+ARG BUILD_DIR=bbox-server
+ARG BUILD_FEATURES=""
 
-FROM debian:bullseye-slim
-# procps provides `ps` which is useful to have for debugging
+RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path .
+
+# ------
+FROM debian:bookworm-slim
+
 RUN apt-get update && apt-get install -y libcurl4 cgi-mapserver procps && \
     rm -rf /var/lib/apt/lists/*
-COPY --from=builder /usr/local/cargo/bin/bbox-map-server /usr/local/bin/bbox-map-server
+
+ARG BUILD_DIR=bbox-server
+ARG BUILDAPP=$BUILD_DIR
+
+COPY --from=builder /usr/local/cargo/bin/$BUILDAPP /usr/local/bin/$BUILDAPP
+RUN ln -s $BUILDAPP /usr/local/bin/bbox-app
 
 WORKDIR /var/www
 USER www-data
 ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
 EXPOSE 8080
-CMD ["bbox-map-server", "serve"]
+CMD ["bbox-app", "serve"]

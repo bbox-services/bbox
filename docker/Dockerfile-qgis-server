@@ -1,28 +1,23 @@
-FROM rust:bullseye as builder
+FROM rust:bookworm as builder
 WORKDIR /usr/src/bbox
 COPY . .
 ARG BUILD_DIR=bbox-server
 ARG BUILD_FEATURES=""
 
-RUN cd $BUILD_DIR && CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo install $BUILD_FEATURES --path .
+RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 
 # ------
-FROM debian:bullseye-slim as qgis-server
+FROM debian:bookworm-slim
 
 ARG DEBIAN_REPO=debian
 RUN apt-get update && \
     apt-get install --no-install-recommends -y ca-certificates gnupg2 curl apt-utils && \
     curl -L https://qgis.org/downloads/qgis-2022.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/qgis-archive.gpg --import && \
     chmod a+r /etc/apt/trusted.gpg.d/qgis-archive.gpg && \
-    echo "deb https://qgis.org/$DEBIAN_REPO bullseye main" > /etc/apt/sources.list.d/qgis.org.list && \
+    echo "deb https://qgis.org/$DEBIAN_REPO bookworm main" > /etc/apt/sources.list.d/qgis.org.list && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y qgis-server-wms qgis-server-wfs && \
     rm -rf /var/lib/apt/lists/*
-
-# allow to run on kernels < 3.15
-# see https://askubuntu.com/a/1163268
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y binutils && rm -rf /var/lib/apt/lists/* && \
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so.5
 
 # Workaround for broken Proj data (last tested with proj-data 6.3.1-1)
 RUN ln -s CHENYX06.gsb /usr/share/proj/CHENyx06a.gsb
@@ -41,31 +36,3 @@ USER www-data
 ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
 EXPOSE 8080
 CMD ["bbox-app", "serve"]
-
-# ------
-# Additional optional packages
-FROM qgis-server
-
-USER root
-
-#Fonts
-# add also asian fonts-noto - https://git.sourcepole.ch/sourcepole/qgiscloud-services/-/issues/363
-RUN echo "deb http://deb.debian.org/debian bullseye non-free" >> /etc/apt/sources.list && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ttf-bitstream-vera fonts-liberation ttf-ubuntu-font-family \
-                                                      fonts-noto && \
-    rm -rf /var/lib/apt/lists/*
-
-# Cadastra Font - siehe Cadastra/README.md
-#
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y fontconfig unzip && rm -rf /var/lib/apt/lists/*
-RUN curl -s -L -o /tmp/Cadastra.zip \
- 'https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/dokumente_geodaten/dokumente-geodaten-1/Cadastra_neue_Normen.zip/@@download/file/Cadastra_neue_Normen.zip' && \
- unzip -d /usr/share/fonts/truetype /tmp/Cadastra.zip '*.ttf' && \
- rm /tmp/Cadastra.zip
-
-RUN fc-cache -f && fc-list | sort
-
-USER www-data
-ENV BBOX_WEBSERVER__SERVER_ADDR="0.0.0.0:8080"
-EXPOSE 8080

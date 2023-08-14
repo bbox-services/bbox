@@ -16,7 +16,7 @@ jobs:
 
       steps:
 
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
 
       - name: Get version tag
         id: get_tag
@@ -33,16 +33,15 @@ jobs:
           name: sourcepole/bbox-server-qgis
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          buildoptions: "--target qgis-server"
           tags: "${{ steps.get_tag.outputs.tag }}"
           dockerfile: docker/Dockerfile-qgis-server
 
-      - name: Build and Publish bbox-qgis-server
+      - name: Build and Publish bbox-map-server-qgis
         uses: elgohr/Publish-Docker-Github-Action@v5
         env:
           BUILD_DIR: bbox-map-server
         with:
-          name: sourcepole/bbox-qgis-server
+          name: sourcepole/bbox-map-server-qgis
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           buildargs: BUILD_DIR
