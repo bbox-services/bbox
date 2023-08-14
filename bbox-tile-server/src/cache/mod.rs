@@ -38,6 +38,8 @@ pub trait TileWriter: DynClone {
 clone_trait_object!(TileWriter);
 
 pub trait TileReader {
+    /// Lookup tile in cache
+    fn exists(&self, path: &str) -> bool;
     /// Lookup tile in cache and return Read stream, if found
     fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse>;
 }
@@ -88,6 +90,9 @@ impl TileWriter for NoCache {
 }
 
 impl TileReader for NoCache {
+    fn exists(&self, _path: &str) -> bool {
+        false
+    }
     fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
         None
     }

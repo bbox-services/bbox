@@ -1,5 +1,6 @@
 use crate::cache::{
-    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileWriter,
+    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileReader,
+    TileWriter,
 };
 use crate::service::{ServiceError, TileService};
 use bbox_core::config::error_exit;
@@ -68,6 +69,9 @@ pub struct SeedArgs {
     /// Size of tasks queue for parallel processing
     #[arg(long, value_parser)]
     pub tasks: Option<usize>,
+    /// Overwrite previously cached tiles
+    #[arg(long, value_parser)]
+    pub overwrite: Option<bool>,
 }
 
 #[derive(Debug, Args)]
@@ -223,11 +227,18 @@ impl TileService {
         let minzoom = args.minzoom.unwrap_or(0);
         let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
         let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
+        let overwrite = args.overwrite.unwrap_or(false);
+        let mut cnt = 0;
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
         for tile in griditer {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &tile, &suffix);
             progress.set_message(path.clone());
             progress.inc(1);
+            let cache_exists = file_writer.exists(&path);
+            if cache_exists && !overwrite {
+                continue;
+            }
+            cnt += 1;
             // TODO: we should not clone for each tile, only for a pool of tasks
             let service = self.clone();
             let tileset = args.tileset.clone();
@@ -264,7 +275,7 @@ impl TileService {
         progress.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
         );
-        progress.finish_with_message(format!("{} tiles generated", progress.position()));
+        progress.finish_with_message(format!("{cnt} tiles generated"));
 
         Ok(())
     }

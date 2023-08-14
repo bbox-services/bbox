@@ -106,6 +106,10 @@ impl S3Cache {
 }
 
 impl TileReader for S3Cache {
+    fn exists(&self, _path: &str) -> bool {
+        // 2nd level cache lookup is not supported
+        false
+    }
     fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
         // 2nd level cache lookup is not supported
         None
