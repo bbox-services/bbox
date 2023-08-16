@@ -6,6 +6,7 @@ use log::info;
 use rstar::primitives::GeomWithData;
 use rstar::RTree;
 use serde_json::json;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
@@ -14,9 +15,13 @@ use std::path::Path;
 #[derive(Clone)]
 pub struct NodeIndex {
     tree: RTree<Node>,
+    /// lookup by node id for route result output
+    nodes: NodeLookup,
+    /// node id generation
     next_node_id: usize,
-    node_coords: Vec<(f64, f64)>,
 }
+
+type NodeLookup = HashMap<usize, (f64, f64)>;
 
 /// Node coordinates and id
 type Node = GeomWithData<[f64; 2], usize>;
@@ -25,22 +30,26 @@ impl NodeIndex {
     pub fn new() -> Self {
         NodeIndex {
             tree: RTree::new(),
+            nodes: Default::default(),
             next_node_id: 0,
-            node_coords: Vec::new(),
         }
     }
-    fn bulk_load(node_coords: Vec<(f64, f64)>) -> Self {
-        let nodes = node_coords
+    fn bulk_load(nodes: NodeLookup) -> Self {
+        let rtree_nodes = nodes
             .iter()
-            .enumerate()
-            .map(|(id, (x, y))| Node::new([*x, *y], id))
+            .map(|(id, (x, y))| Node::new([*x, *y], *id))
             .collect::<Vec<_>>();
-        let tree = RTree::bulk_load(nodes);
+        let tree = RTree::bulk_load(rtree_nodes);
+        let next_node_id = nodes.keys().max().unwrap_or(&0) + 1;
         NodeIndex {
             tree,
-            next_node_id: node_coords.len(),
-            node_coords,
+            nodes,
+            next_node_id,
         }
+    }
+    /// Lookup node coordinates
+    pub fn get_coord(&self, id: usize) -> Option<&(f64, f64)> {
+        self.nodes.get(&id)
     }
     /// Find or insert node
     pub fn entry(&mut self, x: f64, y: f64) -> usize {
@@ -50,9 +59,22 @@ impl NodeIndex {
         } else {
             let id = self.next_node_id;
             self.tree.insert(Node::new(coord, id));
-            self.node_coords.push((x, y));
+            self.nodes.insert(id, (x, y));
             self.next_node_id += 1;
             id
+        }
+    }
+    /// Insert node with given id (returns true, if new node is inserted)
+    pub fn insert(&mut self, x: f64, y: f64, id: usize) -> bool {
+        if self.nodes.contains_key(&id) {
+            // or: self.tree.contains(&node)
+            false
+        } else {
+            let coord = [x, y];
+            let node = Node::new(coord, id);
+            self.tree.insert(node);
+            self.nodes.insert(id, (x, y));
+            true
         }
     }
     /// Find nearest node within max distance
@@ -76,12 +98,12 @@ pub struct Router {
 impl Router {
     pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self> {
         let ds = ds_from_config(config).await?;
-        let cache_name = ds.cache_name().clone();
+        let cache_name = ds.cache_name().to_string();
         let router = if Router::cache_exists(&cache_name) {
             info!("Reading routing graph from disk");
             Router::from_disk(&cache_name)?
         } else {
-            let router = Router::from_ds(&ds).await?;
+            let router = Router::from_ds(ds).await?;
             info!("Saving routing graph");
             router.save_to_disk(&cache_name).unwrap();
             router
@@ -92,15 +114,15 @@ impl Router {
 
     fn cache_exists(base_name: &str) -> bool {
         // TODO: check if cache is up-to-date!
-        Path::new(&format!("{base_name}.coords.bin")).exists()
+        Path::new(&format!("{base_name}.nodes.bin")).exists()
     }
 
     fn from_disk(base_name: &str) -> Result<Self> {
-        let fname = format!("{base_name}.coords.bin");
+        let fname = format!("{base_name}.nodes.bin");
         let reader = BufReader::new(File::open(fname)?);
-        let node_coords: Vec<(f64, f64)> = bincode::deserialize_from(reader).unwrap();
+        let nodes: NodeLookup = bincode::deserialize_from(reader).unwrap();
 
-        let index = NodeIndex::bulk_load(node_coords);
+        let index = NodeIndex::bulk_load(nodes);
 
         let fname = format!("{base_name}.graph.bin");
         let reader = BufReader::new(File::open(fname)?);
@@ -115,16 +137,17 @@ impl Router {
         let writer = BufWriter::new(File::create(fname)?);
         bincode::serialize_into(writer, &self.graph)?;
 
-        let fname = format!("{base_name}.coords.bin");
+        let fname = format!("{base_name}.nodes.bin");
         let writer = BufWriter::new(File::create(fname)?);
-        bincode::serialize_into(writer, &self.index.node_coords)?;
+        bincode::serialize_into(writer, &self.index.nodes)?;
 
         Ok(())
     }
 
     /// Create routing graph from GeoPackage line geometries
-    pub async fn from_ds(ds: &impl RouterDs) -> Result<Self> {
-        let (mut input_graph, index) = ds.load().await?;
+    pub async fn from_ds(ds: Box<dyn RouterDs>) -> Result<Self> {
+        let load = ds.load();
+        let (mut input_graph, index) = load.await?;
 
         info!("Peparing routing graph");
         input_graph.freeze();
@@ -169,7 +192,7 @@ impl Router {
     pub fn path_to_geojson(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
         let features = paths.iter().map(|p| {
             let coords = p.get_nodes().iter().map(|node_id| {
-                let (x, y) = self.index.node_coords[*node_id];
+                let (x, y) = self.index.get_coord(*node_id).unwrap();
                 json!([x, y])
             }).collect::<Vec<_>>();
             json!({"type": "Feature", "geometry": {"type": "LineString", "coordinates": coords}})
@@ -183,7 +206,7 @@ impl Router {
     pub fn path_to_valhalla_json(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
         let coords = paths.iter().flat_map(|p| {
             p.get_nodes().iter().map(|node_id| {
-                let (x, y) = self.index.node_coords[*node_id];
+                let (x, y) = *self.index.get_coord(*node_id).unwrap();
                 geo_types::Coord { x, y }
             })
         });
@@ -207,8 +230,8 @@ impl Router {
     #[allow(dead_code)]
     pub fn fast_graph_to_geojson(&self, out: &mut dyn Write) {
         let features = self.graph.edges_fwd.iter().map(|edge| {
-            let (x1, y1) = self.index.node_coords[edge.base_node];
-            let (x2, y2) = self.index.node_coords[edge.adj_node];
+            let (x1, y1) = self.index.get_coord(edge.base_node).unwrap();
+            let (x2, y2) = self.index.get_coord(edge.adj_node).unwrap();
             let weight = edge.weight;
             format!(r#"{{"type": "Feature", "geometry": {{"type": "LineString", "coordinates": [[{x1}, {y1}],[{x2}, {y2}]] }}, "properties": {{"weight": {weight}}} }}"#)
         }).collect::<Vec<_>>().join(",\n");
@@ -237,7 +260,7 @@ pub mod tests {
             ..Default::default()
         };
         let ds = ds_from_config(&cfg).await.unwrap();
-        Router::from_ds(&ds).await.unwrap()
+        Router::from_ds(ds).await.unwrap()
     }
 
     #[tokio::test]
@@ -256,10 +279,22 @@ pub mod tests {
                 let weight = p.get_weight();
                 let nodes = p.get_nodes();
                 dbg!(&weight, &nodes);
+                assert_eq!(nodes.len(), 3);
             }
             Err(e) => {
-                println!("{e}")
+                assert!(false, "{e}");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn multi() {
+        let router = router("../assets/railway-test.gpkg", "flows", "geom").await;
+
+        let shortest_path = router.calc_path_multiple_sources_and_targets(
+            vec![(9.352133533333333, 47.09350116666666)],
+            vec![(9.3422712, 47.1011887)],
+        );
+        assert_eq!(shortest_path.unwrap().get_nodes().len(), 3);
     }
 }

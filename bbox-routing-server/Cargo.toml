@@ -18,7 +18,7 @@ futures = { workspace = true }
 geo = "0.19.0"
 geo-types = "0.7.6"
 geojson = "0.22.3"
-geozero = { workspace = true, features = [ "with-gpkg" ] }
+geozero = { workspace = true, features = [ "with-gpkg", "with-postgis-sqlx" ] }
 log = { workspace = true }
 polyline = "0.9.0"
 rstar = "0.9.2"

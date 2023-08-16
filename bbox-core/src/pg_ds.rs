@@ -26,7 +26,7 @@ impl PgDatasource {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct DsPostgisCfg {
     pub url: String,
