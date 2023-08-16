@@ -246,7 +246,6 @@ impl TileService {
         // let (tx_cache, rx_cache) = async_channel::bounded(task_queue_size);
         // for _ in 0..writer_task_count {
         //     let service = self.clone();
-        //     //let cache = tileset.cache.clone();
         //     let tileset = args.tileset.clone();
         //     let file_writer = file_writer.clone();
         //     let suffix = suffix.clone();
