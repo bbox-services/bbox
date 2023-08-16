@@ -1,24 +1,18 @@
 use crate::config::RoutingServiceCfg;
+use crate::ds::{ds_from_config, RouterDs};
 use crate::error::{self, Result};
-use fast_paths::{FastGraph, InputGraph, ShortestPath};
-use futures::TryStreamExt;
-use geo::prelude::GeodesicLength;
-use geo::LineString;
-use geozero::wkb;
+use fast_paths::{FastGraph, ShortestPath};
 use log::info;
 use rstar::primitives::GeomWithData;
 use rstar::RTree;
 use serde_json::json;
-use sqlx::sqlite::SqliteConnection;
-use sqlx::{Connection, Row};
-use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 
 /// R-Tree for node lookups
 #[derive(Clone)]
-struct NodeIndex {
+pub struct NodeIndex {
     tree: RTree<Node>,
     next_node_id: usize,
     node_coords: Vec<(f64, f64)>,
@@ -28,7 +22,7 @@ struct NodeIndex {
 type Node = GeomWithData<[f64; 2], usize>;
 
 impl NodeIndex {
-    fn new() -> Self {
+    pub fn new() -> Self {
         NodeIndex {
             tree: RTree::new(),
             next_node_id: 0,
@@ -49,7 +43,7 @@ impl NodeIndex {
         }
     }
     /// Find or insert node
-    fn entry(&mut self, x: f64, y: f64) -> usize {
+    pub fn entry(&mut self, x: f64, y: f64) -> usize {
         let coord = [x, y];
         if let Some(node) = self.tree.locate_at_point(&coord) {
             node.data
@@ -81,12 +75,13 @@ pub struct Router {
 
 impl Router {
     pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self> {
-        let cache_name = config.gpkg.clone();
+        let ds = ds_from_config(config).await?;
+        let cache_name = ds.cache_name().clone();
         let router = if Router::cache_exists(&cache_name) {
             info!("Reading routing graph from disk");
             Router::from_disk(&cache_name)?
         } else {
-            let router = Router::from_gpkg(&config.gpkg, &config.table, &config.geom).await?;
+            let router = Router::from_ds(&ds).await?;
             info!("Saving routing graph");
             router.save_to_disk(&cache_name).unwrap();
             router
@@ -128,28 +123,8 @@ impl Router {
     }
 
     /// Create routing graph from GeoPackage line geometries
-    pub async fn from_gpkg(gpkg: &str, table: &str, geom: &str) -> Result<Self> {
-        info!("Reading routing graph from {gpkg}");
-        let mut index = NodeIndex::new();
-        let mut input_graph = InputGraph::new();
-
-        let mut conn = SqliteConnection::connect(&format!("sqlite://{gpkg}")).await?;
-        let sql = format!("SELECT {geom} FROM {table}");
-        let mut rows = sqlx::query(&sql).fetch(&mut conn);
-
-        while let Some(row) = rows.try_next().await? {
-            let wkb: wkb::Decode<geo::Geometry<f64>> = row.try_get(geom)?;
-            let geom = wkb.geometry.unwrap();
-            //println!("{}", geom.to_wkt().unwrap());
-            let line = LineString::try_from(geom).unwrap();
-            let mut coords = line.points();
-            let src = coords.next().unwrap();
-            let dst = coords.last().unwrap();
-            let src_id = index.entry(src.x(), src.y());
-            let dst_id = index.entry(dst.x(), dst.y());
-            let weight = line.geodesic_length().round() as usize;
-            input_graph.add_edge_bidir(src_id, dst_id, weight);
-        }
+    pub async fn from_ds(ds: &impl RouterDs) -> Result<Self> {
+        let (mut input_graph, index) = ds.load().await?;
 
         info!("Peparing routing graph");
         input_graph.freeze();
@@ -251,14 +226,23 @@ impl Router {
 // }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
+
+    pub async fn router(gpkg: &str, table: &str, geom: &str) -> Router {
+        let cfg = RoutingServiceCfg {
+            gpkg: gpkg.to_string(),
+            table: table.to_string(),
+            geom: geom.to_string(),
+            ..Default::default()
+        };
+        let ds = ds_from_config(&cfg).await.unwrap();
+        Router::from_ds(&ds).await.unwrap()
+    }
 
     #[tokio::test]
     async fn chgraph() {
-        let router = Router::from_gpkg("../assets/railway-test.gpkg", "flows", "geom")
-            .await
-            .unwrap();
+        let router = router("../assets/railway-test.gpkg", "flows", "geom").await;
 
         // let mut out = File::create("chgraph.json").unwrap();
         // router.fast_graph_to_geojson(&mut out);

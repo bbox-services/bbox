@@ -8,7 +8,7 @@ pub struct RoutingServerCfg {
 }
 
 /// Routing service configuration
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct RoutingServiceCfg {
     pub profile: Option<String>,

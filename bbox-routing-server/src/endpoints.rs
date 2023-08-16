@@ -256,13 +256,12 @@ impl RoutingService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::tests::router;
     use actix_web::{body, dev::Service, http, test, App, Error};
 
     #[actix_web::test]
     async fn test_route() -> Result<(), Error> {
-        let router = Router::from_gpkg("../assets/railway-test.gpkg", "flows", "geom")
-            .await
-            .unwrap();
+        let router = router("../assets/railway-test.gpkg", "flows", "geom").await;
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(router))
