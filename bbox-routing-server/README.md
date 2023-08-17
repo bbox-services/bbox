@@ -15,7 +15,7 @@ Usage
 
 Request examples:
 
-    curl -X 'POST' \
+    curl -s -X 'POST' \
       'http://localhost:8080/routes?mode=sync' \
       -H 'accept: application/geo+json' \
       -H 'Content-Type: application/json' \
@@ -34,4 +34,9 @@ Request examples:
 
 Basic from/to request:
 
-    curl 'http://localhost:8080/routes/basic?profile=railway&from_pos=9.35213353,47.0935012&to_pos=9.3422712,47.1011887'
+    curl -s 'http://localhost:8080/routes/basic?profile=railway&from_pos=9.35213353,47.0935012&to_pos=9.3422712,47.1011887'
+
+
+Valhalla endpoint (e.g. for Valhalla QGIS Plugin):
+
+Base URL: http://localhost:8080/routes/valhalla

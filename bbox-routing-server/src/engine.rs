@@ -8,7 +8,7 @@ use rstar::RTree;
 use serde_json::json;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Write};
+use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
 /// R-Tree for node lookups
@@ -100,11 +100,9 @@ impl Router {
         let ds = ds_from_config(config).await?;
         let cache_name = ds.cache_name().to_string();
         let router = if Router::cache_exists(&cache_name) {
-            info!("Reading routing graph from disk");
             Router::from_disk(&cache_name)?
         } else {
             let router = Router::from_ds(ds).await?;
-            info!("Saving routing graph");
             router.save_to_disk(&cache_name).unwrap();
             router
         };
@@ -119,6 +117,7 @@ impl Router {
 
     fn from_disk(base_name: &str) -> Result<Self> {
         let fname = format!("{base_name}.nodes.bin");
+        info!("Reading routing graph from {fname}");
         let reader = BufReader::new(File::open(fname)?);
         let nodes: NodeLookup = bincode::deserialize_from(reader).unwrap();
 
@@ -134,6 +133,8 @@ impl Router {
     /// Saves graph and index to disk
     fn save_to_disk(&self, base_name: &str) -> Result<()> {
         let fname = format!("{base_name}.graph.bin");
+        info!("Saving routing graph to {fname}");
+        // TODO: zip file, reduces size by factor ~4
         let writer = BufWriter::new(File::create(fname)?);
         bincode::serialize_into(writer, &self.graph)?;
 
@@ -170,23 +171,23 @@ impl Router {
         fast_paths::calc_path(&self.graph, src_id, dst_id).ok_or(error::Error::NoRouteFound)
     }
 
-    /// Calculates the shortest path from any of the `sources` to any of the `targets` coordinates.
-    #[allow(dead_code)]
-    pub fn calc_path_multiple_sources_and_targets(
-        &self,
-        sources: Vec<(f64, f64)>,
-        targets: Vec<(f64, f64)>,
-    ) -> Option<ShortestPath> {
-        let sources = sources
-            .iter()
-            .map(|coord| (self.index.find(coord.0, coord.1).unwrap(), 0))
-            .collect();
-        let targets = targets
-            .iter()
-            .map(|coord| (self.index.find(coord.0, coord.1).unwrap(), 0))
-            .collect();
-        fast_paths::calc_path_multiple_sources_and_targets(&self.graph, sources, targets)
-    }
+    // Calculates the shortest path from any of the `sources` to any of the `targets` coordinates.
+    // fast_paths::calc_path_multiple_sources_and_targets is unreleased
+    // pub fn calc_path_multiple_sources_and_targets(
+    //     &self,
+    //     sources: Vec<(f64, f64)>,
+    //     targets: Vec<(f64, f64)>,
+    // ) -> Option<ShortestPath> {
+    //     let sources = sources
+    //         .iter()
+    //         .map(|coord| (self.index.find(coord.0, coord.1).unwrap(), 0))
+    //         .collect();
+    //     let targets = targets
+    //         .iter()
+    //         .map(|coord| (self.index.find(coord.0, coord.1).unwrap(), 0))
+    //         .collect();
+    //     fast_paths::calc_path_multiple_sources_and_targets(&self.graph, sources, targets)
+    // }
 
     /// Output paths as GeoJSON
     pub fn path_to_geojson(&self, paths: Vec<ShortestPath>) -> serde_json::Value {
@@ -226,27 +227,21 @@ impl Router {
         })
     }
 
-    /// Output internal routing graph as GeoJSON (for checking correctness)
-    #[allow(dead_code)]
-    pub fn fast_graph_to_geojson(&self, out: &mut dyn Write) {
-        let features = self.graph.edges_fwd.iter().map(|edge| {
-            let (x1, y1) = self.index.get_coord(edge.base_node).unwrap();
-            let (x2, y2) = self.index.get_coord(edge.adj_node).unwrap();
-            let weight = edge.weight;
-            format!(r#"{{"type": "Feature", "geometry": {{"type": "LineString", "coordinates": [[{x1}, {y1}],[{x2}, {y2}]] }}, "properties": {{"weight": {weight}}} }}"#)
-        }).collect::<Vec<_>>().join(",\n");
-        write!(
-            out,
-            r#"{{"type": "FeatureCollection", "features": [{features}]}}"#
-        )
-        .ok();
-    }
+    // Output internal routing graph as GeoJSON (for checking correctness)
+    // pub fn fast_graph_to_geojson(&self, out: &mut dyn Write) {
+    //     let features = self.graph.edges_fwd.iter().map(|edge| {
+    //         let (x1, y1) = self.index.get_coord(edge.base_node).unwrap();
+    //         let (x2, y2) = self.index.get_coord(edge.adj_node).unwrap();
+    //         let weight = edge.weight;
+    //         format!(r#"{{"type": "Feature", "geometry": {{"type": "LineString", "coordinates": [[{x1}, {y1}],[{x2}, {y2}]] }}, "properties": {{"weight": {weight}}} }}"#)
+    //     }).collect::<Vec<_>>().join(",\n");
+    //     write!(
+    //         out,
+    //         r#"{{"type": "FeatureCollection", "features": [{features}]}}"#
+    //     )
+    //     .ok();
+    // }
 }
-
-// pub async fn router(gpkg: &str, table: &str, geom: &str) -> &'static Router {
-//     static ROUTER: OnceCell<Router> = OnceCell::new();
-//     &ROUTER.get_or_init(|| async { Router::from_gpkg(gpkg, table, geom).await.unwrap() })
-// }
 
 #[cfg(test)]
 pub mod tests {
@@ -287,14 +282,14 @@ pub mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn multi() {
-        let router = router("../assets/railway-test.gpkg", "flows", "geom").await;
+    // #[tokio::test]
+    // async fn multi() {
+    //     let router = router("../assets/railway-test.gpkg", "flows", "geom").await;
 
-        let shortest_path = router.calc_path_multiple_sources_and_targets(
-            vec![(9.352133533333333, 47.09350116666666)],
-            vec![(9.3422712, 47.1011887)],
-        );
-        assert_eq!(shortest_path.unwrap().get_nodes().len(), 3);
-    }
+    //     let shortest_path = router.calc_path_multiple_sources_and_targets(
+    //         vec![(9.352133533333333, 47.09350116666666)],
+    //         vec![(9.3422712, 47.1011887)],
+    //     );
+    //     assert_eq!(shortest_path.unwrap().get_nodes().len(), 3);
+    // }
 }

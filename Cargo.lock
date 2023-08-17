@@ -1773,8 +1773,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "fast_paths"
-version = "0.3.0-SNAPSHOT"
-source = "git+https://github.com/pka/fast_paths?branch=edges-access#b311da1304d084fc5819f34204945e1a336da3a2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a8a62c6d5e007415b7ddc5092ae0c26ba0b8d365e58d175381e1362ca7198ec"
 dependencies = [
  "log",
  "priority-queue",
