@@ -36,6 +36,10 @@ Basic from/to request:
 
     curl -s 'http://localhost:8080/routes/basic?profile=railway&from_pos=9.35213353,47.0935012&to_pos=9.3422712,47.1011887'
 
+Zurich - Munich:
+
+    curl -s 'http://localhost:8080/routes/basic?profile=railway&from_pos=8.53636,47.37726&to_pos=11.56096,48.14019'
+
 
 Valhalla endpoint (e.g. for Valhalla QGIS Plugin):
 

@@ -1,5 +1,5 @@
 use crate::config::RoutingServiceCfg;
-use crate::engine::NodeIndex;
+use crate::engine::{NodeIndex, DEFAULT_SEARCH_DISTANCE};
 use crate::error::Result;
 use async_trait::async_trait;
 use bbox_core::pg_ds::PgDatasource;
@@ -42,7 +42,8 @@ impl RouterDs for GpkgLinesDs {
     /// Load from GeoPackage line geometries
     async fn load(&self) -> Result<GraphData> {
         info!("Reading routing graph from {}", self.0.gpkg);
-        let mut index = NodeIndex::new();
+        let dist = self.0.search_dist.unwrap_or(DEFAULT_SEARCH_DISTANCE);
+        let mut index = NodeIndex::new(dist);
         let mut input_graph = InputGraph::new();
 
         let geom = self.0.geom.as_str();
@@ -85,9 +86,10 @@ impl RouterDs for PgRouteTablesDs {
         let node_id = self.0.node_id.as_ref().unwrap();
         let node_src = self.0.node_src.as_ref().unwrap();
         let node_dst = self.0.node_dst.as_ref().unwrap();
+        let dist = self.0.search_dist.unwrap_or(DEFAULT_SEARCH_DISTANCE);
 
         info!("Reading routing graph from {url}");
-        let mut index = NodeIndex::new();
+        let mut index = NodeIndex::new(dist);
         let mut input_graph = InputGraph::new();
         let db = PgDatasource::new_pool(url).await.unwrap();
         let sql = format!(

@@ -13,6 +13,8 @@ pub struct RoutingServerCfg {
 #[serde(deny_unknown_fields)]
 pub struct RoutingServiceCfg {
     pub profile: Option<String>,
+    /// Node search distance
+    pub search_dist: Option<f64>,
     pub gpkg: String,
     pub postgis: Option<DsPostgisCfg>,
     /// Edge table

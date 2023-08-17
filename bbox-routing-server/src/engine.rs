@@ -15,6 +15,7 @@ use std::path::Path;
 #[derive(Clone)]
 pub struct NodeIndex {
     tree: RTree<Node>,
+    search_dist: f64,
     /// lookup by node id for route result output
     nodes: NodeLookup,
     /// node id generation
@@ -27,14 +28,16 @@ type NodeLookup = HashMap<usize, (f64, f64)>;
 type Node = GeomWithData<[f64; 2], usize>;
 
 impl NodeIndex {
-    pub fn new() -> Self {
+    pub fn new(search_dist: f64) -> Self {
         NodeIndex {
             tree: RTree::new(),
+            search_dist,
             nodes: Default::default(),
             next_node_id: 0,
         }
     }
-    fn bulk_load(nodes: NodeLookup) -> Self {
+
+    fn bulk_load(nodes: NodeLookup, search_dist: f64) -> Self {
         let rtree_nodes = nodes
             .iter()
             .map(|(id, (x, y))| Node::new([*x, *y], *id))
@@ -43,6 +46,7 @@ impl NodeIndex {
         let next_node_id = nodes.keys().max().unwrap_or(&0) + 1;
         NodeIndex {
             tree,
+            search_dist,
             nodes,
             next_node_id,
         }
@@ -79,7 +83,7 @@ impl NodeIndex {
     }
     /// Find nearest node within max distance
     fn find(&self, x: f64, y: f64) -> Option<usize> {
-        let max = 0.01; // ~ 10km CH
+        let max = self.search_dist;
         self.tree
             .nearest_neighbor_iter_with_distance_2(&[x, y])
             .next()
@@ -87,6 +91,8 @@ impl NodeIndex {
             .map(|(node, _dist)| node.data)
     }
 }
+
+pub const DEFAULT_SEARCH_DISTANCE: f64 = 0.01; // ~ 10km CH
 
 /// Routing engine using contraction hierarchies
 #[derive(Clone)]
@@ -98,9 +104,10 @@ pub struct Router {
 impl Router {
     pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self> {
         let ds = ds_from_config(config).await?;
+        let dist = config.search_dist.unwrap_or(DEFAULT_SEARCH_DISTANCE);
         let cache_name = ds.cache_name().to_string();
         let router = if Router::cache_exists(&cache_name) {
-            Router::from_disk(&cache_name)?
+            Router::from_disk(&cache_name, dist)?
         } else {
             let router = Router::from_ds(ds).await?;
             router.save_to_disk(&cache_name).unwrap();
@@ -115,13 +122,13 @@ impl Router {
         Path::new(&format!("{base_name}.nodes.bin")).exists()
     }
 
-    fn from_disk(base_name: &str) -> Result<Self> {
+    fn from_disk(base_name: &str, search_dist: f64) -> Result<Self> {
         let fname = format!("{base_name}.nodes.bin");
         info!("Reading routing graph from {fname}");
         let reader = BufReader::new(File::open(fname)?);
         let nodes: NodeLookup = bincode::deserialize_from(reader).unwrap();
 
-        let index = NodeIndex::bulk_load(nodes);
+        let index = NodeIndex::bulk_load(nodes, search_dist);
 
         let fname = format!("{base_name}.graph.bin");
         let reader = BufReader::new(File::open(fname)?);
