@@ -1,4 +1,7 @@
 FROM rust:bookworm as builder
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /usr/src/bbox
 COPY . .
 ARG BUILD_DIR=bbox-server

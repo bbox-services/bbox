@@ -34,6 +34,8 @@ jobs:
         run: |
           rustc --version
           cargo --version
+      - name: Install protoc
+        uses: arduino/setup-protoc@v2
       - name: Lint
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         shell: bash
