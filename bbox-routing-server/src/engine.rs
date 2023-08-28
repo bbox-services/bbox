@@ -70,6 +70,7 @@ impl NodeIndex {
     }
     /// Insert node with given id (returns true, if new node is inserted)
     pub fn insert(&mut self, x: f64, y: f64, id: usize) -> bool {
+        #[allow(clippy::map_entry)]
         if self.nodes.contains_key(&id) {
             // or: self.tree.contains(&node)
             false
@@ -284,7 +285,7 @@ pub mod tests {
                 assert_eq!(nodes.len(), 3);
             }
             Err(e) => {
-                assert!(false, "{e}");
+                panic!("{e}");
             }
         }
     }

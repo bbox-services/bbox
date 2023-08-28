@@ -268,6 +268,7 @@ impl TileserverCfg {
     }
 }
 
+#[allow(dead_code)]
 static WORLD_EXTENT: ExtentCfg = ExtentCfg {
     minx: -180.0,
     miny: -90.0,
@@ -275,6 +276,7 @@ static WORLD_EXTENT: ExtentCfg = ExtentCfg {
     maxy: 90.0,
 };
 
+#[allow(dead_code)]
 impl PostgisSourceParamsCfg {
     pub fn minzoom(&self) -> u8 {
         self.minzoom
@@ -351,18 +353,18 @@ impl VectorLayerCfg {
             .iter()
             .map(|q| (q.minzoom, q.maxzoom.unwrap_or(22), q))
             .collect::<Vec<_>>();
-        queries.sort_by_key(|ref t| t.0);
+        queries.sort_by_key(|t| t.0);
         // Start at highest zoom level and find first match
         let query = queries
             .iter()
             .rev()
-            .find(|ref q| level >= q.0 && level <= q.1 && check(q.2));
+            .find(|q| level >= q.0 && level <= q.1 && check(q.2));
         query.map(|q| q.2)
     }
     /// SQL query for zoom level
     pub fn query(&self, level: u8) -> Option<&String> {
         let query_cfg = self.query_cfg(level, |q| q.sql.is_some());
-        query_cfg.and_then(|q| q.sql.as_ref().and_then(|sql| Some(sql)))
+        query_cfg.and_then(|q| q.sql.as_ref())
     }
     /// simplify config for zoom level
     pub fn simplify(&self, level: u8) -> bool {

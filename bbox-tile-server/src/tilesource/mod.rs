@@ -123,9 +123,15 @@ impl TileSource {
     ) -> Self {
         match cfg {
             SourceParamCfg::WmsHttp(cfg) => {
-                let TileSourceProviderCfg::WmsHttp(provider) = sources.get(&cfg.source)
-                    .unwrap_or_else(|| error_exit(TileSourceError::TileSourceNotFound(cfg.source.clone())))
-                else { error_exit(TileSourceError::TileSourceTypeError("wms_proxy".to_string())) };
+                let TileSourceProviderCfg::WmsHttp(provider) =
+                    sources.get(&cfg.source).unwrap_or_else(|| {
+                        error_exit(TileSourceError::TileSourceNotFound(cfg.source.clone()))
+                    })
+                else {
+                    error_exit(TileSourceError::TileSourceTypeError(
+                        "wms_proxy".to_string(),
+                    ))
+                };
                 TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
                     provider,
                     cfg,

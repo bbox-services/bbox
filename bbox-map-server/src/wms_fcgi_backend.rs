@@ -175,7 +175,9 @@ pub fn detect_backends(
                 info!("Searching project files with project_basedir: {base}");
                 let mut all_paths = HashSet::new();
                 for suffix in backend.project_files() {
-                    let Some(url_base) = backend.url_base(suffix) else { continue; };
+                    let Some(url_base) = backend.url_base(suffix) else {
+                        continue;
+                    };
                     let files = file_search::search(base, &format!("*.{suffix}"));
                     info!("Found {} file(s) matching *.{suffix}", files.len());
                     all_paths.extend(
@@ -193,7 +195,9 @@ pub fn detect_backends(
                 // };
                 let basedir = PathBuf::from(&base);
                 for suffix in backend.project_files() {
-                    let Some(url_base) = backend.url_base(suffix) else { continue; };
+                    let Some(url_base) = backend.url_base(suffix) else {
+                        continue;
+                    };
                     wms_inventory.extend(
                         wms_inventory_files
                             .get(url_base)

@@ -44,7 +44,9 @@ pub trait OgcApiService: Default + Clone + Send {
 }
 
 #[derive(Clone, Default)]
-pub struct DummyService;
+pub struct DummyService {
+    _dummy: (),
+}
 
 #[async_trait]
 impl OgcApiService for DummyService {

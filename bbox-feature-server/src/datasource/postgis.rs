@@ -135,7 +135,7 @@ impl CollectionSource for PgCollectionSource {
     async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
         let Some(pk) = &self.pk_column else {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
-            return Ok(None)
+            return Ok(None);
         };
         let sql = format!(
             r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,

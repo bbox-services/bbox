@@ -68,9 +68,13 @@ impl PgSource {
         tms: &Tms,
     ) -> PgSource {
         let source_name = cfg.datasource.clone().unwrap_or("TODO".to_string());
-        let TileSourceProviderCfg::Postgis(source) = sources.get(&source_name)
-            .unwrap_or_else(|| error_exit(TileSourceError::TileSourceNotFound(source_name.to_string())))
-        else { error_exit(TileSourceError::TileSourceTypeError("postgis".to_string())) };
+        let TileSourceProviderCfg::Postgis(source) =
+            sources.get(&source_name).unwrap_or_else(|| {
+                error_exit(TileSourceError::TileSourceNotFound(source_name.to_string()))
+            })
+        else {
+            error_exit(TileSourceError::TileSourceTypeError("postgis".to_string()))
+        };
         debug!("Connecting to PostGIS DB {}", &source.url);
         let ds = PgDatasource::new_pool(&source.url)
             .await
@@ -91,7 +95,7 @@ impl PgSource {
         grid_srid: i32,
     ) -> Result<PgMvtLayer, TileSourceError> {
         // Configuration checks (TODO: add config_check to trait)
-        if layer.query.len() == 0 && layer.table_name.is_none() {
+        if layer.query.is_empty() && layer.table_name.is_none() {
             error!("Layer '{}': table_name undefined", layer.name);
             return Err(TileSourceError::TypeDetectionError);
         }
@@ -107,7 +111,7 @@ impl PgSource {
             match ds.pool.prepare(&field_query.sql).await {
                 Ok(stmt) => {
                     for col in stmt.columns() {
-                        let info = column_info(&col);
+                        let info = column_info(col);
                         if let Some(geom_col) = &layer.geometry_field {
                             if col.name() == geom_col && info != FieldTypeInfo::Geometry {
                                 error!(
@@ -176,7 +180,7 @@ impl PgSource {
             geometry_field: geom_name.to_string(),
             geometry_type: layer.geometry_type.clone(),
             fid_field: layer.fid_field.clone(),
-            query_limit: layer.query_limit.clone(),
+            query_limit: layer.query_limit,
             queries: layer_queries,
         })
     }
@@ -201,18 +205,18 @@ impl TileRead for PgSource {
         let mut mvt = MvtBuilder::new();
         for (id, layer) in &self.layers {
             let Some(query_info) = layer.queries.get(&tile.z) else {
-                continue
+                continue;
             };
             let mut query = query_info.stmt.query();
             for param in &query_info.params {
-                query = match param {
-                    &QueryParam::Bbox => query
+                query = match *param {
+                    QueryParam::Bbox => query
                         .bind(extent.left)
                         .bind(extent.bottom)
                         .bind(extent.right)
                         .bind(extent.top),
-                    &QueryParam::Zoom => query.bind(tile.z as i32),
-                    &QueryParam::PixelWidth => {
+                    QueryParam::Zoom => query.bind(tile.z as i32),
+                    QueryParam::PixelWidth => {
                         if let Some(pixel_width) = grid.resolution_z(tile.z) {
                             // correct: * 256.0 / layer.tile_size as f64
                             query.bind(pixel_width)
@@ -220,7 +224,7 @@ impl TileRead for PgSource {
                             query
                         }
                     }
-                    &QueryParam::ScaleDenominator => {
+                    QueryParam::ScaleDenominator => {
                         if let Some(m) = grid.matrix_z(tile.z) {
                             query.bind(m.scale_denominator)
                         } else {
@@ -231,7 +235,7 @@ impl TileRead for PgSource {
             }
             debug!("Query tile with {extent:?}");
             let mut rows = query.fetch(&self.ds.pool);
-            let mut mvt_layer = MvtBuilder::new_layer(&id);
+            let mut mvt_layer = MvtBuilder::new_layer(id);
             let tile_size = mvt_layer.extent.unwrap_or(4096);
             let mut cnt = 0;
             let query_limit = layer.query_limit.unwrap_or(0);
@@ -273,7 +277,7 @@ impl TileRead for PgSource {
             }
             mvt.push_layer(mvt_layer);
         }
-        let blob = mvt.to_blob()?;
+        let blob = mvt.into_blob()?;
         let content_type = Some("application/x-protobuf".to_string());
         let body = Box::new(Cursor::new(blob));
         Ok(TileResponse {
@@ -378,8 +382,8 @@ fn column_info(col: &PgColumn) -> FieldTypeInfo {
 /// Convert PG column value to MVT value
 fn column_value(row: &PgRow, field: &FieldInfo) -> Result<mvt::tile::Value, sqlx::Error> {
     let mut mvt_val = mvt::tile::Value::default();
-    let FieldTypeInfo::Property(pg_type) = &field.info  else {
-        return Ok(mvt_val) // Warning or error?
+    let FieldTypeInfo::Property(pg_type) = &field.info else {
+        return Ok(mvt_val); // Warning or error?
     };
     let col = field.name.as_str();
     match pg_type.name() {

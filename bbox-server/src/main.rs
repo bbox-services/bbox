@@ -54,7 +54,7 @@ async fn run_service() -> std::io::Result<()> {
     let mut routing_service = RoutingService::default();
     core.add_service(&routing_service);
 
-    let mut bbox_service = BboxService::default();
+    let mut bbox_service = BboxService;
     core.add_service(&bbox_service);
 
     let matches = core.cli_matches();

@@ -20,7 +20,7 @@ pub enum QueryParam {
 impl SqlQuery {
     /// Initial select query for column type detection
     pub fn build_field_query(layer: &VectorLayerCfg, user_query: Option<&String>) -> Self {
-        let sql = if let Some(&ref sql) = user_query {
+        let sql = if let Some(sql) = user_query {
             // Replace vars with valid SQL
             sql.replace("!bbox!", "ST_MakeEnvelope(0,0,0,0,3857)")
                 .replace("!zoom!", "0")
@@ -45,7 +45,7 @@ impl SqlQuery {
     pub fn build_tile_query(
         layer: &VectorLayerCfg,
         geom_name: &str,
-        data_columns: &Vec<FieldInfo>,
+        data_columns: &[FieldInfo],
         grid_srid: i32,
         zoom: u8,
         user_query: Option<&String>,
@@ -55,7 +55,7 @@ impl SqlQuery {
         let select_list = build_select_list(geom_expr, data_columns);
         let intersect_clause = format!(" WHERE {geom_name} && !bbox!");
 
-        if let Some(&ref user_query) = user_query {
+        if let Some(user_query) = user_query {
             // user query
             sqlquery = format!("SELECT {select_list} FROM ({user_query}) AS _q");
             if !user_query.contains("!bbox!") {
@@ -88,7 +88,7 @@ impl SqlQuery {
             sql = sql.replace("!bbox!", &bbox_expr);
         }
         // replace e.g. !zoom! with $5
-        for (var, par, cast) in vec![
+        for (var, par, cast) in [
             ("!zoom!", QueryParam::Zoom, ""),
             ("!pixel_width!", QueryParam::PixelWidth, "FLOAT8"),
             (
@@ -100,7 +100,7 @@ impl SqlQuery {
             if sql.contains(var) {
                 params.push(par);
                 numvars += 1;
-                if cast != "" {
+                if !cast.is_empty() {
                     sql = sql.replace(var, &format!("${numvars}::{cast}"));
                 } else {
                     sql = sql.replace(var, &format!("${numvars}"));
@@ -222,7 +222,7 @@ fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, zoom
 }
 
 /// Build select list expressions for feature query.
-fn build_select_list(geom_expr: String, data_columns: &Vec<FieldInfo>) -> String {
+fn build_select_list(geom_expr: String, data_columns: &[FieldInfo]) -> String {
     let cols: Vec<String> = data_columns
         .iter()
         .filter_map(|col| {
@@ -280,7 +280,6 @@ mod test {
     fn layer_cfg() -> (VectorLayerCfg, Vec<FieldInfo>) {
         let layer = VectorLayerCfg {
             name: "osm_place_point".to_string(),
-            datasource: None,
             geometry_field: Some("geometry".to_string()),
             geometry_type: None,
             srid: Some(3857),

@@ -42,19 +42,17 @@ pub struct TileSet {
 impl TileSet {
     pub fn tile_suffix(&self) -> &str {
         let source_type = self.source.read().source_type();
-        let suffix = match source_type {
+        match source_type {
             SourceType::Vector => "pbf",
             SourceType::Raster => "png",
-        };
-        suffix
+        }
     }
     pub fn default_format(&self) -> &str {
         let source_type = self.source.read().source_type();
-        let suffix = match source_type {
+        match source_type {
             SourceType::Vector => "application/x-protobuf",
             SourceType::Raster => "image/png; mode=8bit",
-        };
-        suffix
+        }
     }
     pub fn is_cachable_at(&self, zoom: u8) -> bool {
         if let TileCache::NoCache = self.cache {
@@ -240,6 +238,7 @@ impl TileService {
     pub fn tileset(&self, tileset: &str) -> Option<&TileSet> {
         self.tilesets.get(tileset)
     }
+    #[allow(dead_code)]
     pub fn source(&self, tileset: &str) -> Option<&TileSource> {
         self.tilesets.source(tileset)
     }

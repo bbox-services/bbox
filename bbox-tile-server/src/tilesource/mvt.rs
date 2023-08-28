@@ -44,7 +44,7 @@ impl MvtBuilder {
         layer.values = values.iter().map(|v| (*v).clone().into()).collect();
         self.tile.layers.push(layer);
     }
-    pub fn to_blob(self) -> Result<Vec<u8>, TileSourceError> {
+    pub fn into_blob(self) -> Result<Vec<u8>, TileSourceError> {
         let mut buf = Vec::new();
         self.tile
             .encode(&mut buf)

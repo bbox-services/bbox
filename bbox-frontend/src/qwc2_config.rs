@@ -844,7 +844,7 @@ mod test {
 
     #[test]
     fn deserialize() {
-        let themes_json_str = r##"{
+        let themes_json_str = r#"{
   "themes": {
     "title": "root",
     "subdirs": [],
@@ -1161,7 +1161,7 @@ mod test {
     ],
     "defaultWMSVersion": "1.3.0"
   }
-}"##;
+}"#;
 
         let jsonstr = serde_json::to_string_pretty(&THEMES_JSON as &ThemesJson).unwrap();
         println!("{}", jsonstr);

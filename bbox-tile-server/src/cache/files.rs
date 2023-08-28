@@ -57,7 +57,7 @@ impl TileWriter for FileCache {
 impl TileReader for FileCache {
     fn exists(&self, path: &str) -> bool {
         let mut fullpath = self.base_dir.clone();
-        fullpath.push(&path);
+        fullpath.push(path);
         fullpath.exists()
     }
     fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse> {

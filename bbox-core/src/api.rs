@@ -66,7 +66,7 @@ fn merge_level(yaml: &mut serde_yaml::Value, rhs_yaml: &serde_yaml::Value, key: 
         if let Some(elem) = yaml.get_mut(key) {
             elem.as_mapping_mut()
                 .unwrap()
-                .extend(rhs_elem.as_mapping().unwrap().clone().into_iter());
+                .extend(rhs_elem.as_mapping().unwrap().clone());
         } else {
             yaml.as_mapping_mut()
                 .unwrap()
@@ -128,10 +128,10 @@ info:
 
     #[test]
     fn yaml_add_path() {
-        let yaml = r##"---
+        let yaml = r#"---
 paths:
   /newpath: ""
-"##;
+"#;
         let yamlout = r##"---
 openapi: 3.0.2
 info:

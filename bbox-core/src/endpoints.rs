@@ -180,12 +180,12 @@ impl CoreService {
             // OGC validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
             .service(
                 web::resource("/")
-                    .guard(JsonContentGuard::default())
+                    .guard(JsonContentGuard)
                     .route(web::get().to(index)),
             )
             .service(
                 web::resource("/conformance")
-                    .guard(JsonContentGuard::default())
+                    .guard(JsonContentGuard)
                     .route(web::get().to(conformance)),
             )
             .service(web::resource("/favicon.ico").route(web::get().to(favicon)))
@@ -200,7 +200,7 @@ impl CoreService {
             )
             .service(
                 web::resource("/openapi")
-                    .guard(JsonContentGuard::default())
+                    .guard(JsonContentGuard)
                     .route(web::get().to(openapi_json)),
             )
             .service(web::resource("/health").to(health));

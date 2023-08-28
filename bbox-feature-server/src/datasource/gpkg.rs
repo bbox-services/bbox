@@ -132,7 +132,7 @@ impl CollectionSource for GpkgCollectionSource {
     async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
         let Some(pk) = &self.pk_column else {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
-            return Ok(None)
+            return Ok(None);
         };
         let sql = format!("SELECT * FROM {table} WHERE {pk} = ?", table = &self.table,);
         if let Some(row) = sqlx::query(&sql)

@@ -11,13 +11,11 @@ pub fn init(level: Option<Loglevel>) {
             Loglevel::Trace => "trace",
         };
         env::set_var("RUST_LOG", levelstr);
-    } else {
-        if env::var("RUST_LOG").is_err() {
-            env::set_var(
+    } else if env::var("RUST_LOG").is_err() {
+        env::set_var(
             "RUST_LOG",
             "info,bbox_map_server=debug,bbox_feature_server=debug,bbox_frontend=debug,sqlx=warn",
         );
-        }
     }
     env_logger::init();
 }

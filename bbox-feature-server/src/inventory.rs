@@ -117,9 +117,9 @@ impl Inventory {
         filter: &FilterParams,
     ) -> Option<CoreFeatures> {
         let Some(fc) = self.collection(collection_id) else {
-                warn!("Ignoring error getting collection {collection_id}");
-                return None
-            };
+            warn!("Ignoring error getting collection {collection_id}");
+            return None;
+        };
         let items = match fc.source.items(filter).await {
             Ok(items) => items,
             Err(e) => {
@@ -181,9 +181,9 @@ impl Inventory {
         feature_id: &str,
     ) -> Option<CoreFeature> {
         let Some(fc) = self.collection(collection_id) else {
-                warn!("Ignoring error getting collection {collection_id}");
-                return None
-            };
+            warn!("Ignoring error getting collection {collection_id}");
+            return None;
+        };
         match fc.source.item(collection_id, feature_id).await {
             Ok(item) => item,
             Err(e) => {
