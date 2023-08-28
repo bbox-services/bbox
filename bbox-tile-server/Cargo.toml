@@ -29,8 +29,7 @@ crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
 futures = "0.3"
 futures-util = "0.3.21"
-#geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
-geozero = { git = "https://github.com/georust/geozero", branch = "mvttrans", features = [ "with-mvt", "with-postgis-sqlx" ] }
+geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
 indicatif = "0.16.2"
 log = { workspace = true }
 martin-mbtiles = { version = "0.4.0", default-features = false, features = ["rustls"] }

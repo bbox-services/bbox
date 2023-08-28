@@ -26,7 +26,7 @@ async-trait = "0.1.65"
 awc = "3.0.0" # features = ["rustls"]
 clap = { version = "4.2.1", features = ["derive"] }
 futures = "0.3.21"
-geozero = { version = "0.10.0" }
+geozero = { version = "0.11.0" }
 log = "0.4.17"
 minijinja = { version = "1.0.0", features = ["loader"] }
 num_cpus = "1.13.1"
