@@ -95,6 +95,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+      - name: Install protoc
+        uses: arduino/setup-protoc@v2
       # - name: Start postgres
       #   if: matrix.target != 'aarch64-apple-darwin'
       #   uses: nyurik/action-setup-postgis@v1
