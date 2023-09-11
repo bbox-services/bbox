@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 alpha2 (2023-09-11)
+
+* Add PostGIS tile source
+* Use cache from config in seeder
+* Make tile cache overwriting optional
+* Add loglevel command line argument
+* Add PostGIS routing datasource
+
 ## 0.5.0 alpha1 (2023-07-06)
 
 * Fix collection list
