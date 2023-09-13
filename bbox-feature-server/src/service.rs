@@ -1,4 +1,4 @@
-use crate::config::DatasourceCfg;
+use crate::config::FeatureServiceCfg;
 use crate::inventory::Inventory;
 use actix_web::web;
 use async_trait::async_trait;
@@ -17,8 +17,8 @@ impl OgcApiService for FeatureService {
     type CliArgs = NoArgs;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
-        let config = DatasourceCfg::from_config();
-        self.inventory = Inventory::scan(&config).await;
+        let config = FeatureServiceCfg::from_config();
+        self.inventory = Inventory::scan(&config.collections).await;
     }
     fn conformance_classes(&self) -> Vec<String> {
         let mut classes = vec![

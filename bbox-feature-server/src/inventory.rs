@@ -1,6 +1,5 @@
-use crate::config::DatasourceCfg;
-use crate::datasource::gpkg::GpkgDatasource;
-use crate::datasource::{CollectionDatasource, CollectionSource};
+use crate::config::CollectionsCfg;
+use crate::datasource::{gpkg::GpkgDatasource, CollectionDatasource, CollectionSource};
 use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;
@@ -42,7 +41,7 @@ impl Inventory {
         }
     }
 
-    pub async fn scan(config: &DatasourceCfg) -> Inventory {
+    pub async fn scan(config: &CollectionsCfg) -> Inventory {
         let mut inventory = Inventory::new();
         for dir_ds in &config.directory {
             let base_dir = &dir_ds.dir;
@@ -200,7 +199,7 @@ mod tests {
 
     #[tokio::test]
     async fn inventory_scan() {
-        let inventory = Inventory::scan(&DatasourceCfg::from_path("../assets")).await;
+        let inventory = Inventory::scan(&CollectionsCfg::from_path("../assets")).await;
         // assert_eq!(inventory.collections().len(), 3);
         assert!(inventory.collections().len() >= 3);
         assert_eq!(

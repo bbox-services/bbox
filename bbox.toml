@@ -24,11 +24,28 @@ path = "/metrics"
 # Environment variable prefix: BBOX_METRICS__JAEGER__
 #agent_endpoint = "localhost:6831"
 
-[[datasource.directory]]
+# -- collection datasources --
+
+[[datasource]]
+name = "ne_extracts"
+[datasource.gpkg]
+path = "../assets/ne_extracts.gpkg"
+
+# -- collections with auto detection --
+
+[[collections.directory]]
 dir = "../assets"
 
-#[[datasource.postgis]]
+#[[collections.postgis]]
 #url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+
+# -- collections --
+
+[[collection]]
+name = "populated_places"
+[collection.gpkg]
+datasource = "ne_extracts"
+table = "ne_10m_populated_places"
 
 [[assets.static]]
 # Static file serving
