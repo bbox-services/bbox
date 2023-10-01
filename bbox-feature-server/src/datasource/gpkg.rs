@@ -1,4 +1,8 @@
-use crate::datasource::{CollectionDatasource, CollectionSource, ItemsResult};
+use crate::config::{DatasourceCfg, DsGpkgCfg, GpkgCollectionCfg};
+use crate::datasource::{
+    CollectionDatasource, CollectionSource, CollectionSourceCfg, ConfiguredCollectionCfg,
+    ItemsResult, NamedDatasourceCfg,
+};
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
@@ -10,6 +14,7 @@ use log::warn;
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Row, TypeInfo};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct GpkgDatasource {
@@ -26,7 +31,44 @@ pub struct GpkgCollectionSource {
     pk_column: Option<String>,
 }
 
+pub struct SourceConnections {
+    datasources: HashMap<String, DsGpkgCfg>,
+}
+
+impl SourceConnections {
+    pub fn new(ds_configs: &Vec<NamedDatasourceCfg>) -> Self {
+        let datasources: HashMap<String, DsGpkgCfg> = ds_configs
+            .into_iter()
+            .filter_map(|src| {
+                if let DatasourceCfg::Gpkg(cfg) = &src.datasource {
+                    Some((src.name.clone(), cfg.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        SourceConnections { datasources }
+    }
+    pub async fn setup_collection(
+        &mut self,
+        collection: &ConfiguredCollectionCfg,
+    ) -> Option<Result<FeatureCollection>> {
+        let CollectionSourceCfg::Gpkg(ref srccfg) = collection.source else {
+            return None;
+        };
+        let dscfg = self
+            .datasources
+            .get(&srccfg.datasource.clone().unwrap())
+            .unwrap();
+        let ds = GpkgDatasource::from_config(dscfg).await.unwrap();
+        Some(collection_info(&ds, srccfg, collection, None).await)
+    }
+}
+
 impl GpkgDatasource {
+    pub async fn from_config(cfg: &DsGpkgCfg) -> Result<Self> {
+        Self::new_pool(cfg.path.as_os_str().to_str().unwrap()).await
+    }
     pub async fn new_pool(gpkg: &str) -> Result<Self> {
         let conn_options = SqliteConnectOptions::new().filename(gpkg).read_only(true);
         let pool = SqlitePoolOptions::new()
@@ -54,39 +96,32 @@ impl CollectionDatasource for GpkgDatasource {
             let table_name: &str = row.try_get("table_name")?;
             let id = table_name.to_string();
             let title: String = row.try_get("identifier")?;
-
-            let collection = CoreCollection {
-                id: id.clone(),
-                title: Some(title.clone()),
-                description: row.try_get("description")?,
-                extent: Some(CoreExtent {
-                    spatial: Some(CoreExtentSpatial {
-                        bbox: vec![vec![
-                            row.try_get("min_x")?,
-                            row.try_get("min_y")?,
-                            row.try_get("max_x")?,
-                            row.try_get("max_y")?,
-                        ]],
-                        crs: None,
-                    }),
-                    temporal: None,
+            let extent = CoreExtent {
+                spatial: Some(CoreExtentSpatial {
+                    bbox: vec![vec![
+                        row.try_get("min_x")?,
+                        row.try_get("min_y")?,
+                        row.try_get("max_x")?,
+                        row.try_get("max_y")?,
+                    ]],
+                    crs: None,
                 }),
-                item_type: None,
-                crs: vec![],
-                links: vec![ApiLink {
-                    href: format!("/collections/{id}/items"),
-                    rel: Some("items".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some(title),
-                    hreflang: None,
-                    length: None,
-                }],
+                temporal: None,
             };
-            let source = table_info(self, table_name).await?;
-            let fc = FeatureCollection {
-                collection,
-                source: Box::new(source),
+            let ds = GpkgCollectionCfg {
+                datasource: None,
+                table: Some(table_name.to_string()),
             };
+            let coll_cfg = ConfiguredCollectionCfg {
+                source: CollectionSourceCfg::Gpkg(GpkgCollectionCfg {
+                    datasource: None,
+                    table: Some(table_name.to_string()),
+                }),
+                name: id.clone(),
+                title: Some(title),
+                description: row.try_get("description")?,
+            };
+            let fc = collection_info(self, &ds, &coll_cfg, Some(extent)).await?;
             collections.push(fc);
         }
         Ok(collections)
@@ -164,6 +199,39 @@ impl CollectionSource for GpkgCollectionSource {
             Ok(None)
         }
     }
+}
+
+async fn collection_info(
+    ds: &GpkgDatasource,
+    cfg: &GpkgCollectionCfg,
+    collection: &ConfiguredCollectionCfg,
+    extent: Option<CoreExtent>,
+) -> Result<FeatureCollection> {
+    let table_name = cfg.table.clone().unwrap();
+    let id = &collection.name;
+
+    let collection = CoreCollection {
+        id: id.clone(),
+        title: collection.title.clone(),
+        description: collection.description.clone(),
+        extent,
+        item_type: None,
+        crs: vec![],
+        links: vec![ApiLink {
+            href: format!("/collections/{id}/items"),
+            rel: Some("items".to_string()),
+            type_: Some("application/geo+json".to_string()),
+            title: collection.title.clone(),
+            hreflang: None,
+            length: None,
+        }],
+    };
+    let source = table_info(ds, &table_name).await?;
+    let fc = FeatureCollection {
+        collection,
+        source: Box::new(source),
+    };
+    Ok(fc)
 }
 
 async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionSource> {

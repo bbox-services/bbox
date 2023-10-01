@@ -16,6 +16,9 @@ pub struct PgDatasource {
 }
 
 impl PgDatasource {
+    pub async fn from_config(ds: &DsPostgisCfg) -> Result<Self> {
+        Self::new_pool(&ds.url).await
+    }
     pub async fn new_pool(url: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .min_connections(0)

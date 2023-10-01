@@ -43,6 +43,8 @@ dir = "../assets"
 
 [[collection]]
 name = "populated_places"
+title = "populated places"
+description = "Natural Earth populated places"
 [collection.gpkg]
 datasource = "ne_extracts"
 table = "ne_10m_populated_places"

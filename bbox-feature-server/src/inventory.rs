@@ -63,18 +63,15 @@ impl Inventory {
                 }
             }
         }
-        for postgis_ds in &config.postgis {
-            match PgDatasource::new_pool(&postgis_ds.url).await {
+        for cfg in &config.postgis {
+            match PgDatasource::from_config(&cfg).await {
                 Ok(ds) => {
                     if let Ok(collections) = ds.collections().await {
                         inventory.add_collections(collections);
                     }
                 }
                 Err(e) => {
-                    warn!(
-                        "Failed to create connection pool for '{}': {e}",
-                        &postgis_ds.url
-                    );
+                    warn!("Failed to create connection pool for '{}': {e}", &cfg.url);
                     continue;
                 }
             }
@@ -84,11 +81,15 @@ impl Inventory {
         inventory
     }
 
+    pub fn add_collection(&mut self, fc: FeatureCollection) {
+        let id = fc.collection.id.clone();
+        // TODO: Handle name collisions
+        self.feat_collections.insert(id, fc);
+    }
+
     fn add_collections(&mut self, feat_collections: Vec<FeatureCollection>) {
         for fc in feat_collections {
-            let id = fc.collection.id.clone();
-            // TODO: Handle name collisions
-            self.feat_collections.insert(id, fc);
+            self.add_collection(fc);
         }
     }
 

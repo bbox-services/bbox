@@ -1,5 +1,6 @@
 use bbox_core::config::from_config_root_or_exit;
 use bbox_core::pg_ds::DsPostgisCfg;
+use clap::ArgMatches;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -55,9 +56,10 @@ pub struct DatasourceCfg {
 pub struct FeatureServiceCfg {
     #[serde(rename = "datasource")]
     pub datasources: Vec<NamedDatasourceCfg>,
-    pub collections: CollectionsCfg,
+    #[serde(rename = "collections")]
+    pub auto_collections: CollectionsCfg,
     #[serde(rename = "collection")]
-    pub ccollections: Vec<ConfiguredCollectionCfg>,
+    pub collections: Vec<ConfiguredCollectionCfg>,
 }
 
 /// Collections with auto-detection
@@ -78,6 +80,9 @@ pub struct DsFiledirCfg {
 #[serde(deny_unknown_fields)]
 pub struct ConfiguredCollectionCfg {
     pub name: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    // extent: Option<CoreExtent>
     #[serde(flatten)]
     pub source: CollectionSourceCfg,
 }
@@ -99,6 +104,10 @@ pub struct PostgisCollectionCfg {
     pub datasource: Option<String>,
     // maybe we should allow direct DS URLs?
     // pub url: Option<String>,
+    pub table_schema: Option<String>,
+    pub table_name: Option<String>,
+    // pub geometry_column: Option<String>,
+    // pub pk_column: Option<String>,
     // pub sql: Option<String>,
 }
 
@@ -114,7 +123,7 @@ pub struct GpkgCollectionCfg {
 }
 
 impl FeatureServiceCfg {
-    pub fn from_config() -> Self {
+    pub fn from_config(_cli: &ArgMatches) -> Self {
         let cfg: FeatureServiceCfg = from_config_root_or_exit();
         cfg
     }

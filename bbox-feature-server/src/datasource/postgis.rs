@@ -1,13 +1,18 @@
-use crate::datasource::{CollectionDatasource, CollectionSource, ItemsResult};
+use crate::config::{CollectionSourceCfg, DatasourceCfg, PostgisCollectionCfg};
+use crate::datasource::{
+    CollectionDatasource, CollectionSource, ConfiguredCollectionCfg, ItemsResult,
+    NamedDatasourceCfg,
+};
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
-use bbox_core::pg_ds::PgDatasource;
+use bbox_core::pg_ds::{DsPostgisCfg, PgDatasource};
 use futures::TryStreamExt;
 use log::warn;
 use sqlx::{postgres::PgRow, Row};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct PgCollectionSource {
@@ -17,6 +22,40 @@ pub struct PgCollectionSource {
     geometry_column: String,
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
+}
+
+pub struct SourceConnections {
+    datasources: HashMap<String, DsPostgisCfg>,
+}
+
+impl SourceConnections {
+    pub fn new(ds_configs: &Vec<NamedDatasourceCfg>) -> Self {
+        let datasources: HashMap<String, DsPostgisCfg> = ds_configs
+            .into_iter()
+            .filter_map(|src| {
+                if let DatasourceCfg::Postgis(cfg) = &src.datasource {
+                    Some((src.name.clone(), cfg.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        SourceConnections { datasources }
+    }
+    pub async fn setup_collection(
+        &mut self,
+        collection: &ConfiguredCollectionCfg,
+    ) -> Option<Result<FeatureCollection>> {
+        let CollectionSourceCfg::Postgis(ref srccfg) = collection.source else {
+            return None;
+        };
+        let dscfg = self
+            .datasources
+            .get(&srccfg.datasource.clone().unwrap())
+            .unwrap();
+        let ds = PgDatasource::from_config(dscfg).await.unwrap();
+        Some(collection_info(&ds, srccfg).await)
+    }
 }
 
 #[async_trait]
@@ -32,37 +71,12 @@ impl CollectionDatasource for PgDatasource {
         while let Some(row) = rows.try_next().await? {
             let table_schema: String = row.try_get("f_table_schema")?;
             let table_name: String = row.try_get("f_table_name")?;
-            let source = table_info(self, &table_schema, &table_name).await?;
-            let id = &table_name.clone();
-            let bbox = query_bbox(&source)
-                .await
-                .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
-            let collection = CoreCollection {
-                id: id.clone(),
-                title: Some(id.clone()),
-                description: None,
-                extent: Some(CoreExtent {
-                    spatial: Some(CoreExtentSpatial {
-                        bbox: vec![bbox],
-                        crs: None,
-                    }),
-                    temporal: None,
-                }),
-                item_type: None,
-                crs: vec![],
-                links: vec![ApiLink {
-                    href: format!("/collections/{id}/items"),
-                    rel: Some("items".to_string()),
-                    type_: Some("application/geo+json".to_string()),
-                    title: Some(id.clone()),
-                    hreflang: None,
-                    length: None,
-                }],
+            let ds = PostgisCollectionCfg {
+                datasource: None,
+                table_schema: Some(table_schema),
+                table_name: Some(table_name),
             };
-            let fc = FeatureCollection {
-                collection,
-                source: Box::new(source),
-            };
+            let fc = collection_info(self, &ds).await?;
             collections.push(fc);
         }
         Ok(collections)
@@ -176,6 +190,49 @@ impl CollectionSource for PgCollectionSource {
             Ok(None)
         }
     }
+}
+
+async fn collection_info(
+    ds: &PgDatasource,
+    cfg: &PostgisCollectionCfg,
+) -> Result<FeatureCollection> {
+    let public = "public".to_string();
+    let table_schema = cfg.table_schema.as_ref().unwrap_or(&public);
+    let Some(table_name) = cfg.table_name.as_ref() else {
+        panic!()
+    };
+    let source = table_info(ds, &table_schema, &table_name).await?;
+    let id = &table_name.clone();
+    let bbox = query_bbox(&source)
+        .await
+        .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
+    let collection = CoreCollection {
+        id: id.clone(),
+        title: Some(id.clone()),
+        description: None,
+        extent: Some(CoreExtent {
+            spatial: Some(CoreExtentSpatial {
+                bbox: vec![bbox],
+                crs: None,
+            }),
+            temporal: None,
+        }),
+        item_type: None,
+        crs: vec![],
+        links: vec![ApiLink {
+            href: format!("/collections/{id}/items"),
+            rel: Some("items".to_string()),
+            type_: Some("application/geo+json".to_string()),
+            title: Some(id.clone()),
+            hreflang: None,
+            length: None,
+        }],
+    };
+    let fc = FeatureCollection {
+        collection,
+        source: Box::new(source),
+    };
+    Ok(fc)
 }
 
 async fn query_bbox(source: &PgCollectionSource) -> Result<Vec<f64>> {
