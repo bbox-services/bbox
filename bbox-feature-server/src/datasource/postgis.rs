@@ -1,6 +1,7 @@
 use crate::config::{CollectionSourceCfg, DatasourceCfg, PostgisCollectionCfg};
+use crate::datasource::CollectionDatasource;
 use crate::datasource::{
-    CollectionDatasource, CollectionSource, ConfiguredCollectionCfg, ItemsResult,
+    AutoscanCollectionDatasource, CollectionSource, ConfiguredCollectionCfg, ItemsResult,
     NamedDatasourceCfg,
 };
 use crate::error::Result;
@@ -8,7 +9,7 @@ use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
-use bbox_core::pg_ds::{DsPostgisCfg, PgDatasource};
+use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use log::warn;
 use sqlx::{postgres::PgRow, Row};
@@ -24,42 +25,41 @@ pub struct PgCollectionSource {
     pk_column: Option<String>,
 }
 
-pub struct SourceConnections {
-    datasources: HashMap<String, DsPostgisCfg>,
+pub struct DsPostgisHandler {
+    datasources: HashMap<String, PgDatasource>,
 }
 
-impl SourceConnections {
-    pub fn new(ds_configs: &Vec<NamedDatasourceCfg>) -> Self {
-        let datasources: HashMap<String, DsPostgisCfg> = ds_configs
-            .into_iter()
-            .filter_map(|src| {
-                if let DatasourceCfg::Postgis(cfg) = &src.datasource {
-                    Some((src.name.clone(), cfg.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        SourceConnections { datasources }
+#[async_trait]
+impl CollectionDatasource for DsPostgisHandler {
+    fn new() -> Self {
+        DsPostgisHandler {
+            datasources: HashMap::new(),
+        }
     }
-    pub async fn setup_collection(
+    async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
+        let DatasourceCfg::Postgis(ref cfg) = ds_config.datasource else {
+            panic!();
+        };
+        let ds = PgDatasource::from_config(cfg).await.unwrap();
+        self.datasources.insert(ds_config.name.clone(), ds);
+    }
+    async fn setup_collection(
         &mut self,
         collection: &ConfiguredCollectionCfg,
-    ) -> Option<Result<FeatureCollection>> {
+    ) -> Result<FeatureCollection> {
         let CollectionSourceCfg::Postgis(ref srccfg) = collection.source else {
-            return None;
+            panic!();
         };
-        let dscfg = self
-            .datasources
-            .get(&srccfg.datasource.clone().unwrap())
-            .unwrap();
-        let ds = PgDatasource::from_config(dscfg).await.unwrap();
-        Some(collection_info(&ds, srccfg).await)
+        let ds = match &srccfg.datasource {
+            None => self.datasources.values().next().unwrap(), //TODO: first entry from configuration
+            Some(name) => self.datasources.get(name).unwrap(),
+        };
+        collection_info(&ds, srccfg).await
     }
 }
 
 #[async_trait]
-impl CollectionDatasource for PgDatasource {
+impl AutoscanCollectionDatasource for PgDatasource {
     async fn collections(&self) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"

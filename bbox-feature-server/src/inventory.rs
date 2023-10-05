@@ -1,5 +1,5 @@
 use crate::config::CollectionsCfg;
-use crate::datasource::{gpkg::GpkgDatasource, CollectionDatasource, CollectionSource};
+use crate::datasource::{gpkg::GpkgDatasource, AutoscanCollectionDatasource, CollectionSource};
 use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;

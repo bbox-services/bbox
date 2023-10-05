@@ -1,5 +1,5 @@
 use crate::config::FeatureServiceCfg;
-use crate::datasource::DatasourceConnections;
+use crate::datasource::Datasources;
 use crate::inventory::Inventory;
 use actix_web::web;
 use async_trait::async_trait;
@@ -19,7 +19,7 @@ impl OgcApiService for FeatureService {
 
     async fn read_config(&mut self, cli: &ArgMatches) {
         let config = FeatureServiceCfg::from_config(cli);
-        let mut sources = DatasourceConnections::new(&config.datasources);
+        let mut sources = Datasources::create(&config.datasources).await;
 
         self.inventory = Inventory::scan(&config.auto_collections).await;
         for cfg in config.collections {

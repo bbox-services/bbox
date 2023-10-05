@@ -1,16 +1,19 @@
-use crate::config::{CollectionSourceCfg, ConfiguredCollectionCfg, NamedDatasourceCfg};
+use crate::config::{
+    CollectionSourceCfg, ConfiguredCollectionCfg, DatasourceCfg, NamedDatasourceCfg,
+};
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::CoreFeature;
 use dyn_clone::{clone_trait_object, DynClone};
+use std::collections::HashMap;
 
 pub mod gpkg;
 pub mod postgis;
 
 #[async_trait]
-pub trait CollectionDatasource {
+pub trait AutoscanCollectionDatasource {
     async fn collections(&self) -> Result<Vec<FeatureCollection>>;
 }
 
@@ -22,29 +25,72 @@ pub trait CollectionSource: DynClone + Sync + Send {
 
 clone_trait_object!(CollectionSource);
 
-pub struct DatasourceConnections {
-    gpkg_connections: gpkg::SourceConnections,
-    postgis_connections: postgis::SourceConnections,
+#[async_trait]
+pub trait CollectionDatasource: Send {
+    fn new() -> Self
+    where
+        Self: Sized;
+    async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg);
+    async fn setup_collection(
+        &mut self,
+        collection: &ConfiguredCollectionCfg,
+    ) -> Result<FeatureCollection>;
 }
 
-impl DatasourceConnections {
-    pub fn new(datasources: &Vec<NamedDatasourceCfg>) -> Self {
-        DatasourceConnections {
-            gpkg_connections: gpkg::SourceConnections::new(&datasources),
-            postgis_connections: postgis::SourceConnections::new(&datasources),
+/// Datasource connection pools
+pub struct Datasources {
+    ds_handler: HashMap<DatasourceType, Box<dyn CollectionDatasource>>,
+}
+
+impl Datasources {
+    pub async fn create(datasources: &Vec<NamedDatasourceCfg>) -> Self {
+        let mut ds_handler = HashMap::new();
+        for named_ds in datasources {
+            let ds = &named_ds.datasource;
+            let handler = ds_handler
+                .entry(ds.datasource_type())
+                .or_insert(ds.datasource_handler());
+            handler.add_ds(named_ds).await;
         }
+        Datasources { ds_handler }
     }
     pub async fn setup_collection(
         &mut self,
         collection: &ConfiguredCollectionCfg,
     ) -> Result<FeatureCollection> {
-        if let Some(fc) = self.gpkg_connections.setup_collection(collection).await {
-            return fc;
+        let source_type = collection.source.datasource_type();
+        let handler = self.ds_handler.get_mut(&source_type).unwrap();
+        handler.setup_collection(collection).await
+    }
+}
+
+#[derive(PartialEq, Eq, Hash)]
+enum DatasourceType {
+    Postgis,
+    Gpkg,
+}
+
+impl DatasourceCfg {
+    fn datasource_type(&self) -> DatasourceType {
+        match &self {
+            DatasourceCfg::Postgis { .. } => DatasourceType::Postgis,
+            DatasourceCfg::Gpkg { .. } => DatasourceType::Gpkg,
         }
-        if let Some(fc) = self.postgis_connections.setup_collection(collection).await {
-            return fc;
+    }
+    fn datasource_handler(&self) -> Box<dyn CollectionDatasource> {
+        match &self {
+            DatasourceCfg::Postgis { .. } => Box::new(postgis::DsPostgisHandler::new()),
+            DatasourceCfg::Gpkg { .. } => Box::new(gpkg::DsGpkgHandler::new()),
         }
-        panic!()
+    }
+}
+
+impl CollectionSourceCfg {
+    fn datasource_type(&self) -> DatasourceType {
+        match &self {
+            CollectionSourceCfg::Postgis { .. } => DatasourceType::Postgis,
+            CollectionSourceCfg::Gpkg { .. } => DatasourceType::Gpkg,
+        }
     }
 }
 

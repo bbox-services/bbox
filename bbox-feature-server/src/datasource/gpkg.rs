@@ -1,7 +1,7 @@
 use crate::config::{DatasourceCfg, DsGpkgCfg, GpkgCollectionCfg};
 use crate::datasource::{
-    CollectionDatasource, CollectionSource, CollectionSourceCfg, ConfiguredCollectionCfg,
-    ItemsResult, NamedDatasourceCfg,
+    AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
+    ConfiguredCollectionCfg, ItemsResult, NamedDatasourceCfg,
 };
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
@@ -31,37 +31,36 @@ pub struct GpkgCollectionSource {
     pk_column: Option<String>,
 }
 
-pub struct SourceConnections {
-    datasources: HashMap<String, DsGpkgCfg>,
+pub struct DsGpkgHandler {
+    datasources: HashMap<String, GpkgDatasource>,
 }
 
-impl SourceConnections {
-    pub fn new(ds_configs: &Vec<NamedDatasourceCfg>) -> Self {
-        let datasources: HashMap<String, DsGpkgCfg> = ds_configs
-            .into_iter()
-            .filter_map(|src| {
-                if let DatasourceCfg::Gpkg(cfg) = &src.datasource {
-                    Some((src.name.clone(), cfg.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        SourceConnections { datasources }
+#[async_trait]
+impl CollectionDatasource for DsGpkgHandler {
+    fn new() -> Self {
+        DsGpkgHandler {
+            datasources: HashMap::new(),
+        }
     }
-    pub async fn setup_collection(
+    async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
+        let DatasourceCfg::Gpkg(ref cfg) = ds_config.datasource else {
+            panic!();
+        };
+        let ds = GpkgDatasource::from_config(cfg).await.unwrap();
+        self.datasources.insert(ds_config.name.clone(), ds);
+    }
+    async fn setup_collection(
         &mut self,
         collection: &ConfiguredCollectionCfg,
-    ) -> Option<Result<FeatureCollection>> {
+    ) -> Result<FeatureCollection> {
         let CollectionSourceCfg::Gpkg(ref srccfg) = collection.source else {
-            return None;
+            panic!();
         };
-        let dscfg = self
-            .datasources
-            .get(&srccfg.datasource.clone().unwrap())
-            .unwrap();
-        let ds = GpkgDatasource::from_config(dscfg).await.unwrap();
-        Some(collection_info(&ds, srccfg, collection, None).await)
+        let ds = match &srccfg.datasource {
+            None => self.datasources.values().next().unwrap(), //TODO: first entry from configuration
+            Some(name) => self.datasources.get(name).unwrap(),
+        };
+        collection_info(&ds, srccfg, collection, None).await
     }
 }
 
@@ -81,7 +80,7 @@ impl GpkgDatasource {
 }
 
 #[async_trait]
-impl CollectionDatasource for GpkgDatasource {
+impl AutoscanCollectionDatasource for GpkgDatasource {
     async fn collections(&self) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"
