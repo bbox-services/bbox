@@ -12,6 +12,7 @@ members = [
     "bbox-tile-server",
 ]
 default-members = ["bbox-server"]
+resolver = "2"
 
 [workspace.package]
 edition = "2021"
