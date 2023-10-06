@@ -15,16 +15,6 @@ use log::warn;
 use sqlx::{postgres::PgRow, Row};
 use std::collections::HashMap;
 
-#[derive(Clone, Debug)]
-pub struct PgCollectionSource {
-    ds: PgDatasource,
-    table_schema: String,
-    table_name: String,
-    geometry_column: String,
-    /// Primary key column, None if multi column key.
-    pk_column: Option<String>,
-}
-
 pub struct DsPostgisHandler {
     datasources: HashMap<String, PgDatasource>,
     /// Default datasource
@@ -62,6 +52,16 @@ impl CollectionDatasource for DsPostgisHandler {
         let ds = self.datasources.get(name).unwrap();
         collection_info(&ds, srccfg).await
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct PgCollectionSource {
+    ds: PgDatasource,
+    table_schema: String,
+    table_name: String,
+    geometry_column: String,
+    /// Primary key column, None if multi column key.
+    pk_column: Option<String>,
 }
 
 #[async_trait]

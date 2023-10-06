@@ -17,13 +17,13 @@ use sqlx::{Column, Row, TypeInfo};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
-pub struct GpkgDatasource {
+pub struct SqliteDatasource {
     pool: SqlitePool,
 }
 
 #[derive(Clone, Debug)]
 pub struct GpkgCollectionSource {
-    ds: GpkgDatasource,
+    ds: SqliteDatasource,
     table: String,
     geometry_column: String,
     // geometry_type_name: String,
@@ -32,7 +32,7 @@ pub struct GpkgCollectionSource {
 }
 
 pub struct DsGpkgHandler {
-    datasources: HashMap<String, GpkgDatasource>,
+    datasources: HashMap<String, SqliteDatasource>,
     /// Default datasource
     default: Option<String>,
 }
@@ -49,7 +49,7 @@ impl CollectionDatasource for DsGpkgHandler {
         let DatasourceCfg::Gpkg(ref cfg) = ds_config.datasource else {
             panic!();
         };
-        let ds = GpkgDatasource::from_config(cfg).await.unwrap();
+        let ds = SqliteDatasource::from_config(cfg).await.unwrap();
         self.datasources.insert(ds_config.name.clone(), ds);
         self.default.get_or_insert(ds_config.name.clone());
     }
@@ -70,7 +70,7 @@ impl CollectionDatasource for DsGpkgHandler {
     }
 }
 
-impl GpkgDatasource {
+impl SqliteDatasource {
     pub async fn from_config(cfg: &DsGpkgCfg) -> Result<Self> {
         Self::new_pool(cfg.path.as_os_str().to_str().unwrap()).await
     }
@@ -81,12 +81,12 @@ impl GpkgDatasource {
             .max_connections(8)
             .connect_with(conn_options)
             .await?;
-        Ok(GpkgDatasource { pool })
+        Ok(SqliteDatasource { pool })
     }
 }
 
 #[async_trait]
-impl AutoscanCollectionDatasource for GpkgDatasource {
+impl AutoscanCollectionDatasource for SqliteDatasource {
     async fn collections(&self) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"
@@ -207,7 +207,7 @@ impl CollectionSource for GpkgCollectionSource {
 }
 
 async fn collection_info(
-    ds: &GpkgDatasource,
+    ds: &SqliteDatasource,
     cfg: &GpkgCollectionCfg,
     collection: &ConfiguredCollectionCfg,
     extent: Option<CoreExtent>,
@@ -239,7 +239,7 @@ async fn collection_info(
     Ok(fc)
 }
 
-async fn table_info(ds: &GpkgDatasource, table: &str) -> Result<GpkgCollectionSource> {
+async fn table_info(ds: &SqliteDatasource, table: &str) -> Result<GpkgCollectionSource> {
     // TODO: support multiple geometry columns
     let sql = r#"
         SELECT column_name, geometry_type_name,
@@ -317,7 +317,7 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_content() {
-        let pool = GpkgDatasource::new_pool("../assets/ne_extracts.gpkg")
+        let pool = SqliteDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
         let collections = pool.collections().await.unwrap();
@@ -338,7 +338,7 @@ mod tests {
     #[tokio::test]
     async fn gpkg_features() {
         let filter = FilterParams::default();
-        let ds = GpkgDatasource::new_pool("../assets/ne_extracts.gpkg")
+        let ds = SqliteDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
         let source = GpkgCollectionSource {

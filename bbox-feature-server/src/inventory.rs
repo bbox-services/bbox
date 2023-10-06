@@ -1,5 +1,5 @@
 use crate::config::CollectionsCfg;
-use crate::datasource::{gpkg::GpkgDatasource, AutoscanCollectionDatasource, CollectionSource};
+use crate::datasource::{gpkg::SqliteDatasource, AutoscanCollectionDatasource, CollectionSource};
 use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;
@@ -50,7 +50,7 @@ impl Inventory {
             info!("Found {} matching file(s)", files.len());
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
-                match GpkgDatasource::new_pool(&pathstr).await {
+                match SqliteDatasource::new_pool(&pathstr).await {
                     Ok(ds) => {
                         if let Ok(collections) = ds.collections().await {
                             inventory.add_collections(collections);
