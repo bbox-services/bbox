@@ -1,4 +1,4 @@
-use crate::config::{DatasourceCfg, DsGpkgCfg, GpkgCollectionCfg};
+use crate::config::GpkgCollectionCfg;
 use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
     ConfiguredCollectionCfg, ItemsResult, NamedDatasourceCfg,
@@ -7,6 +7,7 @@ use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
+use bbox_core::config::{DatasourceCfg, DsGpkgCfg};
 use bbox_core::ogcapi::*;
 use futures::TryStreamExt;
 use geozero::{geojson, wkb};
@@ -47,7 +48,7 @@ impl CollectionDatasource for DsGpkgHandler {
     }
     async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
         let DatasourceCfg::Gpkg(ref cfg) = ds_config.datasource else {
-            panic!();
+            panic!("Unexpected datasource type");
         };
         let ds = SqliteDatasource::from_config(cfg).await.unwrap();
         self.datasources.insert(ds_config.name.clone(), ds);

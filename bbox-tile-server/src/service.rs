@@ -7,7 +7,7 @@ use crate::tilesource::{
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::NoArgs;
-use bbox_core::config::error_exit;
+use bbox_core::config::{error_exit, DatasourceCfg};
 use bbox_core::endpoints::TileResponse;
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
@@ -93,7 +93,7 @@ impl SourceLookup for Tilesets {
     }
 }
 
-pub(crate) type TileSourceProviderConfigs = HashMap<String, TileSourceProviderCfg>;
+pub(crate) type TileSourceProviderConfigs = HashMap<String, DatasourceCfg>;
 type TileCacheConfigs = HashMap<String, TileCacheCfg>;
 
 #[async_trait]
@@ -105,7 +105,7 @@ impl OgcApiService for TileService {
         let config = TileserverCfg::from_config(cli);
         // Register custom grids
         let mut grids = tms().clone();
-        for grid in config.grid {
+        for grid in config.grids {
             let custom = TileMatrixSet::from_json_file(&grid.json).unwrap_or_else(error_exit);
             grids
                 .register(vec![custom], true)
@@ -113,18 +113,18 @@ impl OgcApiService for TileService {
         }
 
         let sources: TileSourceProviderConfigs = config
-            .tiledatasource
+            .datasources
             .into_iter()
-            .map(|src| (src.name.clone(), src.config))
+            .map(|src| (src.name.clone(), src.datasource))
             .collect();
 
         let caches: TileCacheConfigs = config
-            .tilecache
+            .tilecaches
             .into_iter()
             .map(|cfg| (cfg.name.clone(), cfg.cache))
             .collect();
 
-        for ts in config.tileset {
+        for ts in config.tilesets {
             let tms_id = ts.tms.unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
             let source = TileSource::from_config(&ts.params, &sources, &tms).await;

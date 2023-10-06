@@ -1,55 +1,7 @@
-use bbox_core::config::from_config_root_or_exit;
+use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
 use bbox_core::pg_ds::DsPostgisCfg;
 use clap::ArgMatches;
 use serde::Deserialize;
-use std::path::PathBuf;
-
-// ----------
-// Shared data source configurations
-// TODO: merge with core
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct NamedDatasourceCfg {
-    pub name: String,
-    #[serde(flatten)]
-    pub datasource: DatasourceCfg,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub enum DatasourceCfg {
-    #[serde(rename = "postgis")]
-    Postgis(DsPostgisCfg),
-    #[serde(rename = "gpkg")]
-    Gpkg(DsGpkgCfg),
-    // GdalData(GdalSource),
-}
-
-#[derive(Deserialize, Clone, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct DsGpkgCfg {
-    pub path: PathBuf,
-    // pub pool_min_connections(0)
-    // pub pool_max_connections(8)
-}
-
-/*
-// t-rex Datasource (top-level Array)
-#[derive(Deserialize, Clone, Debug)]
-pub struct DatasourceCfg {
-    pub name: Option<String>,
-    pub default: Option<bool>,
-    // Postgis
-    pub dbconn: Option<String>,
-    pub pool: Option<u16>,
-    pub connection_timeout: Option<u64>,
-    // GDAL
-    pub path: Option<String>,
-}
-*/
-
-// ----------
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default)]

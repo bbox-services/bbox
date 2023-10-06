@@ -1,7 +1,6 @@
 use crate::tilesource::TileSource;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::from_config_root_or_exit;
-use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
 use clap::{ArgMatches, FromArgMatches};
 use log::info;
 use serde::Deserialize;
@@ -11,32 +10,14 @@ use std::path::{Path, PathBuf};
 #[derive(Deserialize, Default, Debug)]
 #[serde(default)]
 pub struct TileserverCfg {
-    pub tileset: Vec<TileSetCfg>,
-    pub grid: Vec<GridCfg>,
-    pub tiledatasource: Vec<TileSourceCfg>,
-    pub tilecache: Vec<TileCacheProviderCfg>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct TileSourceCfg {
-    pub name: String,
-    #[serde(flatten)]
-    pub config: TileSourceProviderCfg,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub enum TileSourceProviderCfg {
-    WmsFcgi,
-    #[serde(rename = "wms_proxy")]
-    WmsHttp(WmsHttpSourceProviderCfg),
-    #[serde(rename = "postgis")]
-    Postgis(DsPostgisCfg),
-    #[serde(rename = "mbtiles")]
-    Mbtiles,
-    // GdalData(GdalSource),
-    // RasterData(GeorasterSource),
+    #[serde(rename = "grid")]
+    pub grids: Vec<GridCfg>,
+    #[serde(rename = "datasource")]
+    pub datasources: Vec<NamedDatasourceCfg>,
+    #[serde(rename = "tileset")]
+    pub tilesets: Vec<TileSetCfg>,
+    #[serde(rename = "tilecache")]
+    pub tilecaches: Vec<TileCacheProviderCfg>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -61,13 +42,6 @@ pub struct TileSetCfg {
 pub struct GridCfg {
     /// JSON file path
     pub json: String,
-}
-
-#[derive(Deserialize, Clone, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct WmsHttpSourceProviderCfg {
-    pub baseurl: String,
-    pub format: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -260,7 +234,7 @@ impl TileserverCfg {
                         cache: None,
                         cache_limits: None,
                     };
-                    cfg.tileset.push(ts);
+                    cfg.tilesets.push(ts);
                 }
             }
         }

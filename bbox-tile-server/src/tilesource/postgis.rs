@@ -4,10 +4,10 @@ use crate::tilesource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::WmsMetrics,
-    LayerInfo, SourceType, TileRead, TileResponse, TileSourceError, TileSourceProviderCfg,
+    LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use async_trait::async_trait;
-use bbox_core::config::error_exit;
+use bbox_core::config::{error_exit, DatasourceCfg};
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use geozero::{mvt, wkb, ToMvt};
@@ -68,11 +68,9 @@ impl PgSource {
         tms: &Tms,
     ) -> PgSource {
         let source_name = cfg.datasource.clone().unwrap_or("TODO".to_string());
-        let TileSourceProviderCfg::Postgis(source) =
-            sources.get(&source_name).unwrap_or_else(|| {
-                error_exit(TileSourceError::TileSourceNotFound(source_name.to_string()))
-            })
-        else {
+        let DatasourceCfg::Postgis(source) = sources.get(&source_name).unwrap_or_else(|| {
+            error_exit(TileSourceError::TileSourceNotFound(source_name.to_string()))
+        }) else {
             error_exit(TileSourceError::TileSourceTypeError("postgis".to_string()))
         };
         debug!("Connecting to PostGIS DB {}", &source.url);

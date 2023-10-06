@@ -6,10 +6,10 @@ mod postgis_queries;
 pub mod wms_fcgi;
 pub mod wms_http;
 
-use crate::config::{SourceParamCfg, TileSourceProviderCfg};
+use crate::config::SourceParamCfg;
 use crate::service::{TileService, TileSourceProviderConfigs};
 use async_trait::async_trait;
-use bbox_core::config::error_exit;
+use bbox_core::config::{error_exit, DatasourceCfg};
 use bbox_core::endpoints::TileResponse;
 use geozero::error::GeozeroError;
 use tile_grid::{RegistryError, Tms, Xyz};
@@ -123,7 +123,7 @@ impl TileSource {
     ) -> Self {
         match cfg {
             SourceParamCfg::WmsHttp(cfg) => {
-                let TileSourceProviderCfg::WmsHttp(provider) =
+                let DatasourceCfg::WmsHttp(provider) =
                     sources.get(&cfg.source).unwrap_or_else(|| {
                         error_exit(TileSourceError::TileSourceNotFound(cfg.source.clone()))
                     })
@@ -133,7 +133,7 @@ impl TileSource {
                     ))
                 };
                 TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
-                    provider,
+                    &provider,
                     cfg,
                     tms.crs().as_srid(),
                 ))

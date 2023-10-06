@@ -4,6 +4,7 @@ use crate::tilesource::{
     wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use async_trait::async_trait;
+use bbox_core::config::WmsHttpSourceProviderCfg;
 use log::debug;
 use std::io::Cursor;
 use tile_grid::{BoundingBox, Xyz};

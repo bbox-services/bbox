@@ -1,10 +1,9 @@
-use crate::config::{
-    CollectionSourceCfg, ConfiguredCollectionCfg, DatasourceCfg, NamedDatasourceCfg,
-};
+use crate::config::{CollectionSourceCfg, ConfiguredCollectionCfg};
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
+use bbox_core::config::{DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::ogcapi::CoreFeature;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::collections::HashMap;
@@ -68,20 +67,44 @@ impl Datasources {
 enum DatasourceType {
     Postgis,
     Gpkg,
+    Dummy,
 }
 
-impl DatasourceCfg {
+trait DatasourceHandler {
+    fn datasource_type(&self) -> DatasourceType;
+    fn datasource_handler(&self) -> Box<dyn CollectionDatasource>;
+}
+
+impl DatasourceHandler for DatasourceCfg {
     fn datasource_type(&self) -> DatasourceType {
         match &self {
             DatasourceCfg::Postgis { .. } => DatasourceType::Postgis,
             DatasourceCfg::Gpkg { .. } => DatasourceType::Gpkg,
+            _ => DatasourceType::Dummy,
         }
     }
     fn datasource_handler(&self) -> Box<dyn CollectionDatasource> {
         match &self {
             DatasourceCfg::Postgis { .. } => Box::new(postgis::DsPostgisHandler::new()),
             DatasourceCfg::Gpkg { .. } => Box::new(gpkg::DsGpkgHandler::new()),
+            _ => Box::new(DummyDsHandler::new()),
         }
+    }
+}
+
+struct DummyDsHandler;
+
+#[async_trait]
+impl CollectionDatasource for DummyDsHandler {
+    fn new() -> Self {
+        DummyDsHandler
+    }
+    async fn add_ds(&mut self, _ds_config: &NamedDatasourceCfg) {}
+    async fn setup_collection(
+        &mut self,
+        _collection: &ConfiguredCollectionCfg,
+    ) -> Result<FeatureCollection> {
+        panic!("Adding collection with unsupported datasource");
     }
 }
 

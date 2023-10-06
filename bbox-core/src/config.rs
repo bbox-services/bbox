@@ -1,4 +1,5 @@
 use crate::auth::oidc::OidcAuthCfg;
+use crate::pg_ds::DsPostgisCfg;
 use actix_web::HttpRequest;
 use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
@@ -7,6 +8,7 @@ use log::info;
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use std::env;
+use std::path::PathBuf;
 
 /// Application configuration singleton
 pub fn app_config() -> &'static Figment {
@@ -144,6 +146,65 @@ impl MetricsCfg {
     pub fn from_config() -> Option<Self> {
         from_config_opt_or_exit("metrics")
     }
+}
+
+// -- Datasources --
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct NamedDatasourceCfg {
+    pub name: String,
+    #[serde(flatten)]
+    pub datasource: DatasourceCfg,
+}
+
+#[derive(Deserialize, Debug)]
+pub enum DatasourceCfg {
+    // -- vector sources --
+    #[serde(rename = "postgis")]
+    Postgis(DsPostgisCfg),
+    #[serde(rename = "gpkg")]
+    Gpkg(DsGpkgCfg),
+    // GdalData(GdalSource),
+    // -- raster sources --
+    WmsFcgi,
+    #[serde(rename = "wms_proxy")]
+    WmsHttp(WmsHttpSourceProviderCfg),
+    // GdalData(GdalSource),
+    // RasterData(GeorasterSource),
+    // -- direct tile sources --
+    #[serde(rename = "mbtiles")]
+    Mbtiles,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct DsGpkgCfg {
+    pub path: PathBuf,
+    // pub pool_min_connections(0)
+    // pub pool_max_connections(8)
+}
+
+/*
+// t-rex Datasource (top-level Array)
+#[derive(Deserialize, Clone, Debug)]
+pub struct DatasourceCfg {
+    pub name: Option<String>,
+    pub default: Option<bool>,
+    // Postgis
+    pub dbconn: Option<String>,
+    pub pool: Option<u16>,
+    pub connection_timeout: Option<u64>,
+    // GDAL
+    pub path: Option<String>,
+}
+*/
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct WmsHttpSourceProviderCfg {
+    pub baseurl: String,
+    pub format: String,
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use crate::config::{CollectionSourceCfg, DatasourceCfg, PostgisCollectionCfg};
+use crate::config::{CollectionSourceCfg, PostgisCollectionCfg};
 use crate::datasource::CollectionDatasource;
 use crate::datasource::{
     AutoscanCollectionDatasource, CollectionSource, ConfiguredCollectionCfg, ItemsResult,
@@ -8,6 +8,7 @@ use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
+use bbox_core::config::DatasourceCfg;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
