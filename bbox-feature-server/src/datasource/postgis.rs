@@ -27,6 +27,8 @@ pub struct PgCollectionSource {
 
 pub struct DsPostgisHandler {
     datasources: HashMap<String, PgDatasource>,
+    /// Default datasource
+    default: Option<String>,
 }
 
 #[async_trait]
@@ -34,6 +36,7 @@ impl CollectionDatasource for DsPostgisHandler {
     fn new() -> Self {
         DsPostgisHandler {
             datasources: HashMap::new(),
+            default: None,
         }
     }
     async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
@@ -42,6 +45,7 @@ impl CollectionDatasource for DsPostgisHandler {
         };
         let ds = PgDatasource::from_config(cfg).await.unwrap();
         self.datasources.insert(ds_config.name.clone(), ds);
+        self.default.get_or_insert(ds_config.name.clone());
     }
     async fn setup_collection(
         &mut self,
@@ -50,10 +54,12 @@ impl CollectionDatasource for DsPostgisHandler {
         let CollectionSourceCfg::Postgis(ref srccfg) = collection.source else {
             panic!();
         };
-        let ds = match &srccfg.datasource {
-            None => self.datasources.values().next().unwrap(), //TODO: first entry from configuration
-            Some(name) => self.datasources.get(name).unwrap(),
-        };
+        let no_default = "".to_string();
+        let name = srccfg
+            .datasource
+            .as_ref()
+            .unwrap_or(&self.default.as_ref().unwrap_or(&no_default));
+        let ds = self.datasources.get(name).unwrap();
         collection_info(&ds, srccfg).await
     }
 }

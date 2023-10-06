@@ -33,6 +33,8 @@ pub struct GpkgCollectionSource {
 
 pub struct DsGpkgHandler {
     datasources: HashMap<String, GpkgDatasource>,
+    /// Default datasource
+    default: Option<String>,
 }
 
 #[async_trait]
@@ -40,6 +42,7 @@ impl CollectionDatasource for DsGpkgHandler {
     fn new() -> Self {
         DsGpkgHandler {
             datasources: HashMap::new(),
+            default: None,
         }
     }
     async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
@@ -48,6 +51,7 @@ impl CollectionDatasource for DsGpkgHandler {
         };
         let ds = GpkgDatasource::from_config(cfg).await.unwrap();
         self.datasources.insert(ds_config.name.clone(), ds);
+        self.default.get_or_insert(ds_config.name.clone());
     }
     async fn setup_collection(
         &mut self,
@@ -56,10 +60,12 @@ impl CollectionDatasource for DsGpkgHandler {
         let CollectionSourceCfg::Gpkg(ref srccfg) = collection.source else {
             panic!();
         };
-        let ds = match &srccfg.datasource {
-            None => self.datasources.values().next().unwrap(), //TODO: first entry from configuration
-            Some(name) => self.datasources.get(name).unwrap(),
-        };
+        let no_default = "".to_string();
+        let name = srccfg
+            .datasource
+            .as_ref()
+            .unwrap_or(&self.default.as_ref().unwrap_or(&no_default));
+        let ds = self.datasources.get(name).unwrap();
         collection_info(&ds, srccfg, collection, None).await
     }
 }
