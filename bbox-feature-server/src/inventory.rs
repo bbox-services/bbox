@@ -51,9 +51,13 @@ impl Inventory {
             for path in files {
                 let pathstr = path.as_os_str().to_string_lossy();
                 match SqliteDatasource::new_pool(&pathstr).await {
-                    Ok(ds) => {
-                        if let Ok(collections) = ds.collections().await {
-                            inventory.add_collections(collections);
+                    Ok(mut ds) => {
+                        info!("Scanning '{pathstr}' for feature collections");
+                        match ds.collections().await {
+                            Ok(collections) => inventory.add_collections(collections),
+                            Err(e) => {
+                                warn!("Failed to scan feature collections for '{pathstr}': {e}")
+                            }
                         }
                     }
                     Err(e) => {
@@ -65,9 +69,13 @@ impl Inventory {
         }
         for cfg in &config.postgis {
             match PgDatasource::from_config(&cfg).await {
-                Ok(ds) => {
-                    if let Ok(collections) = ds.collections().await {
-                        inventory.add_collections(collections);
+                Ok(mut ds) => {
+                    info!("Scanning '{}' for feature collections", cfg.url);
+                    match ds.collections().await {
+                        Ok(collections) => inventory.add_collections(collections),
+                        Err(e) => {
+                            warn!("Failed to scan feature collections for '{}': {e}", &cfg.url)
+                        }
                     }
                 }
                 Err(e) => {

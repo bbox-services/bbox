@@ -158,7 +158,7 @@ pub struct NamedDatasourceCfg {
     pub datasource: DatasourceCfg,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 pub enum DatasourceCfg {
     // -- vector sources --
     #[serde(rename = "postgis")]

@@ -10,9 +10,11 @@ pub mod metrics;
 pub mod ogcapi;
 pub mod pg_ds;
 pub mod service;
+mod service_utils;
 pub mod static_assets;
 pub mod static_files;
 pub mod templates;
 pub mod tls;
 
 pub use dir::*;
+pub use service_utils::*;

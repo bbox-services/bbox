@@ -1,57 +1,98 @@
-use crate::config::{CollectionSourceCfg, PostgisCollectionCfg};
-use crate::datasource::CollectionDatasource;
+use crate::config::PostgisCollectionCfg;
 use crate::datasource::{
-    AutoscanCollectionDatasource, CollectionSource, ConfiguredCollectionCfg, ItemsResult,
-    NamedDatasourceCfg,
+    AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
+    ConfiguredCollectionCfg, ItemsResult,
 };
 use crate::error::Result;
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
-use bbox_core::config::DatasourceCfg;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
-use log::warn;
+use log::{info, warn};
 use sqlx::{postgres::PgRow, Row};
-use std::collections::HashMap;
 
-pub struct DsPostgisHandler {
-    datasources: HashMap<String, PgDatasource>,
-    /// Default datasource
-    default: Option<String>,
+pub type Datasource = PgDatasource;
+
+#[async_trait]
+impl CollectionDatasource for PgDatasource {
+    async fn setup_collection(
+        &mut self,
+        cfg: &ConfiguredCollectionCfg,
+        _extent: Option<CoreExtent>,
+    ) -> Result<FeatureCollection> {
+        info!("Setup Postgis Collection `{}`", &cfg.name);
+        let CollectionSourceCfg::Postgis(ref srccfg) = cfg.source else {
+            panic!();
+        };
+        let public = "public".to_string();
+        let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
+        let Some(table_name) = srccfg.table_name.as_ref() else {
+            panic!()
+        };
+        let source = table_info(self, &table_schema, &table_name).await?;
+        let id = &cfg.name;
+        let bbox = query_bbox(&source)
+            .await
+            .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
+        let collection = CoreCollection {
+            id: id.clone(),
+            title: Some(id.clone()),
+            description: None,
+            extent: Some(CoreExtent {
+                spatial: Some(CoreExtentSpatial {
+                    bbox: vec![bbox],
+                    crs: None,
+                }),
+                temporal: None,
+            }),
+            item_type: None,
+            crs: vec![],
+            links: vec![ApiLink {
+                href: format!("/collections/{id}/items"),
+                rel: Some("items".to_string()),
+                type_: Some("application/geo+json".to_string()),
+                title: Some(id.clone()),
+                hreflang: None,
+                length: None,
+            }],
+        };
+        let fc = FeatureCollection {
+            collection,
+            source: Box::new(source),
+        };
+        Ok(fc)
+    }
 }
 
 #[async_trait]
-impl CollectionDatasource for DsPostgisHandler {
-    fn new() -> Self {
-        DsPostgisHandler {
-            datasources: HashMap::new(),
-            default: None,
+impl AutoscanCollectionDatasource for PgDatasource {
+    async fn collections(&mut self) -> Result<Vec<FeatureCollection>> {
+        let mut collections = Vec::new();
+        let sql = r#"
+            SELECT contents.*
+            FROM geometry_columns contents
+              JOIN spatial_ref_sys refsys ON refsys.srid = contents.srid
+        "#;
+        let mut rows = sqlx::query(sql).fetch(&self.pool);
+        while let Some(row) = rows.try_next().await? {
+            let table_schema: String = row.try_get("f_table_schema")?;
+            let table_name: String = row.try_get("f_table_name")?;
+            let coll_cfg = ConfiguredCollectionCfg {
+                source: CollectionSourceCfg::Postgis(PostgisCollectionCfg {
+                    datasource: None,
+                    table_schema: Some(table_schema),
+                    table_name: Some(table_name.clone()),
+                }),
+                name: table_name.clone(),
+                title: Some(table_name),
+                description: None,
+            };
+            let fc = self.setup_collection(&coll_cfg, None).await?;
+            collections.push(fc);
         }
-    }
-    async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
-        let DatasourceCfg::Postgis(ref cfg) = ds_config.datasource else {
-            panic!();
-        };
-        let ds = PgDatasource::from_config(cfg).await.unwrap();
-        self.datasources.insert(ds_config.name.clone(), ds);
-        self.default.get_or_insert(ds_config.name.clone());
-    }
-    async fn setup_collection(
-        &mut self,
-        collection: &ConfiguredCollectionCfg,
-    ) -> Result<FeatureCollection> {
-        let CollectionSourceCfg::Postgis(ref srccfg) = collection.source else {
-            panic!();
-        };
-        let no_default = "".to_string();
-        let name = srccfg
-            .datasource
-            .as_ref()
-            .unwrap_or(&self.default.as_ref().unwrap_or(&no_default));
-        let ds = self.datasources.get(name).unwrap();
-        collection_info(&ds, srccfg).await
+        Ok(collections)
     }
 }
 
@@ -63,31 +104,6 @@ pub struct PgCollectionSource {
     geometry_column: String,
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
-}
-
-#[async_trait]
-impl AutoscanCollectionDatasource for PgDatasource {
-    async fn collections(&self) -> Result<Vec<FeatureCollection>> {
-        let mut collections = Vec::new();
-        let sql = r#"
-            SELECT contents.*
-            FROM geometry_columns contents
-              JOIN spatial_ref_sys refsys ON refsys.srid = contents.srid
-        "#;
-        let mut rows = sqlx::query(sql).fetch(&self.pool);
-        while let Some(row) = rows.try_next().await? {
-            let table_schema: String = row.try_get("f_table_schema")?;
-            let table_name: String = row.try_get("f_table_name")?;
-            let ds = PostgisCollectionCfg {
-                datasource: None,
-                table_schema: Some(table_schema),
-                table_name: Some(table_name),
-            };
-            let fc = collection_info(self, &ds).await?;
-            collections.push(fc);
-        }
-        Ok(collections)
-    }
 }
 
 #[async_trait]
@@ -199,49 +215,6 @@ impl CollectionSource for PgCollectionSource {
     }
 }
 
-async fn collection_info(
-    ds: &PgDatasource,
-    cfg: &PostgisCollectionCfg,
-) -> Result<FeatureCollection> {
-    let public = "public".to_string();
-    let table_schema = cfg.table_schema.as_ref().unwrap_or(&public);
-    let Some(table_name) = cfg.table_name.as_ref() else {
-        panic!()
-    };
-    let source = table_info(ds, &table_schema, &table_name).await?;
-    let id = &table_name.clone();
-    let bbox = query_bbox(&source)
-        .await
-        .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
-    let collection = CoreCollection {
-        id: id.clone(),
-        title: Some(id.clone()),
-        description: None,
-        extent: Some(CoreExtent {
-            spatial: Some(CoreExtentSpatial {
-                bbox: vec![bbox],
-                crs: None,
-            }),
-            temporal: None,
-        }),
-        item_type: None,
-        crs: vec![],
-        links: vec![ApiLink {
-            href: format!("/collections/{id}/items"),
-            rel: Some("items".to_string()),
-            type_: Some("application/geo+json".to_string()),
-            title: Some(id.clone()),
-            hreflang: None,
-            length: None,
-        }],
-    };
-    let fc = FeatureCollection {
-        collection,
-        source: Box::new(source),
-    };
-    Ok(fc)
-}
-
 async fn query_bbox(source: &PgCollectionSource) -> Result<Vec<f64>> {
     // TODO: Transform to WGS84, if necessary
     let sql = &format!(
@@ -342,9 +315,10 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn pg_content() {
-        let pool = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
-            .await
-            .unwrap();
+        let mut pool =
+            PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+                .await
+                .unwrap();
         let collections = pool.collections().await.unwrap();
         assert!(collections.len() >= 3);
         assert!(collections

@@ -1,10 +1,11 @@
+use log::info;
 use serde::Deserialize;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Database error")]
+    #[error(transparent)]
     DbError(#[from] sqlx::Error),
 }
 
@@ -20,6 +21,7 @@ impl PgDatasource {
         Self::new_pool(&ds.url).await
     }
     pub async fn new_pool(url: &str) -> Result<Self> {
+        info!("Connecting to {url}");
         let pool = PgPoolOptions::new()
             .min_connections(0)
             .max_connections(8)

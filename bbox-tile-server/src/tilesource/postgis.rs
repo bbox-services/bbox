@@ -1,5 +1,5 @@
 use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
-use crate::service::{TileService, TileSourceProviderConfigs};
+use crate::service::TileService;
 use crate::tilesource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
@@ -7,7 +7,6 @@ use crate::tilesource::{
     LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use async_trait::async_trait;
-use bbox_core::config::{error_exit, DatasourceCfg};
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use geozero::{mvt, wkb, ToMvt};
@@ -61,22 +60,10 @@ struct QueryInfo {
     params: Vec<QueryParam>,
 }
 
+pub type Datasource = PgDatasource;
+
 impl PgSource {
-    pub async fn from_config(
-        cfg: &PostgisSourceParamsCfg,
-        sources: &TileSourceProviderConfigs,
-        tms: &Tms,
-    ) -> PgSource {
-        let source_name = cfg.datasource.clone().unwrap_or("TODO".to_string());
-        let DatasourceCfg::Postgis(source) = sources.get(&source_name).unwrap_or_else(|| {
-            error_exit(TileSourceError::TileSourceNotFound(source_name.to_string()))
-        }) else {
-            error_exit(TileSourceError::TileSourceTypeError("postgis".to_string()))
-        };
-        debug!("Connecting to PostGIS DB {}", &source.url);
-        let ds = PgDatasource::new_pool(&source.url)
-            .await
-            .unwrap_or_else(error_exit); // TODO: better message
+    pub async fn create(ds: &PgDatasource, cfg: &PostgisSourceParamsCfg, tms: &Tms) -> PgSource {
         let grid_srid = tms.crs().as_srid();
 
         let mut layers = HashMap::new();
@@ -85,7 +72,10 @@ impl PgSource {
                 layers.insert(layer.name.clone(), mvt_layer);
             }
         }
-        PgSource { ds, layers }
+        PgSource {
+            ds: ds.clone(),
+            layers,
+        }
     }
     async fn setup_layer(
         ds: &PgDatasource,

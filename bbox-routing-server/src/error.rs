@@ -12,11 +12,11 @@ pub enum Error {
     #[error("Argument error `{0}`")]
     ArgumentError(String),
     // General
-    #[error("I/O error")]
+    #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error("Bincode error")]
     BincodeError(#[from] bincode::Error),
-    #[error("Database error")]
+    #[error(transparent)]
     DbError(#[from] sqlx::Error),
 }
 

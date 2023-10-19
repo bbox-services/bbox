@@ -31,11 +31,11 @@ name = "ne_extracts"
 [datasource.gpkg]
 path = "../assets/ne_extracts.gpkg"
 
-[[datasource]]
-name = "t_rex_tests"
-#default = true
-[datasource.postgis]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+#[[datasource]]
+#name = "t_rex_tests"
+##default = true
+#[datasource.postgis]
+#url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[datasource]]
 name = "gebco"

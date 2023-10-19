@@ -5,8 +5,12 @@ use thiserror::Error;
 pub enum Error {
     #[error("Geometry format error")]
     GeometryFormatError,
-    // General
-    #[error("Database error")]
+    #[error("datasource setup error - {0}")]
+    DatasourceSetupError(String),
+    #[error("datasource `{0}` not found")]
+    DatasourceNotFound(String),
+    // Database errors
+    #[error(transparent)]
     DbError(#[from] sqlx::Error),
 }
 

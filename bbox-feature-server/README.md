@@ -12,7 +12,7 @@ Features:
 
 ## Usage
 
-    cargo run
+    cargo run serve
 
     x-www-browser http://127.0.0.1:8080/
 

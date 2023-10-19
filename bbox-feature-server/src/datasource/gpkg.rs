@@ -1,74 +1,24 @@
 use crate::config::GpkgCollectionCfg;
 use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
-    ConfiguredCollectionCfg, ItemsResult, NamedDatasourceCfg,
+    ConfiguredCollectionCfg, ItemsResult,
 };
 use crate::error::{self, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
-use bbox_core::config::{DatasourceCfg, DsGpkgCfg};
+use bbox_core::config::DsGpkgCfg;
 use bbox_core::ogcapi::*;
 use futures::TryStreamExt;
 use geozero::{geojson, wkb};
-use log::warn;
+use log::{info, warn};
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Row, TypeInfo};
-use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct SqliteDatasource {
     pool: SqlitePool,
-}
-
-#[derive(Clone, Debug)]
-pub struct GpkgCollectionSource {
-    ds: SqliteDatasource,
-    table: String,
-    geometry_column: String,
-    // geometry_type_name: String,
-    /// Primary key column, None if multi column key.
-    pk_column: Option<String>,
-}
-
-pub struct DsGpkgHandler {
-    datasources: HashMap<String, SqliteDatasource>,
-    /// Default datasource
-    default: Option<String>,
-}
-
-#[async_trait]
-impl CollectionDatasource for DsGpkgHandler {
-    fn new() -> Self {
-        DsGpkgHandler {
-            datasources: HashMap::new(),
-            default: None,
-        }
-    }
-    async fn add_ds(&mut self, ds_config: &NamedDatasourceCfg) {
-        let DatasourceCfg::Gpkg(ref cfg) = ds_config.datasource else {
-            panic!("Unexpected datasource type");
-        };
-        let ds = SqliteDatasource::from_config(cfg).await.unwrap();
-        self.datasources.insert(ds_config.name.clone(), ds);
-        self.default.get_or_insert(ds_config.name.clone());
-    }
-    async fn setup_collection(
-        &mut self,
-        collection: &ConfiguredCollectionCfg,
-    ) -> Result<FeatureCollection> {
-        let CollectionSourceCfg::Gpkg(ref srccfg) = collection.source else {
-            panic!();
-        };
-        let no_default = "".to_string();
-        let name = srccfg
-            .datasource
-            .as_ref()
-            .unwrap_or(&self.default.as_ref().unwrap_or(&no_default));
-        let ds = self.datasources.get(name).unwrap();
-        collection_info(&ds, srccfg, collection, None).await
-    }
 }
 
 impl SqliteDatasource {
@@ -86,9 +36,50 @@ impl SqliteDatasource {
     }
 }
 
+pub type Datasource = SqliteDatasource;
+
+#[async_trait]
+impl CollectionDatasource for SqliteDatasource {
+    async fn setup_collection(
+        &mut self,
+        cfg: &ConfiguredCollectionCfg,
+        extent: Option<CoreExtent>,
+    ) -> Result<FeatureCollection> {
+        info!("Setup Gpkg Collection `{}`", &cfg.name);
+        let CollectionSourceCfg::Gpkg(ref srccfg) = cfg.source else {
+            panic!();
+        };
+        let table_name = srccfg.table.clone().unwrap();
+        let id = &cfg.name;
+
+        let collection = CoreCollection {
+            id: id.clone(),
+            title: cfg.title.clone(),
+            description: cfg.description.clone(),
+            extent,
+            item_type: None,
+            crs: vec![],
+            links: vec![ApiLink {
+                href: format!("/collections/{id}/items"),
+                rel: Some("items".to_string()),
+                type_: Some("application/geo+json".to_string()),
+                title: cfg.title.clone(),
+                hreflang: None,
+                length: None,
+            }],
+        };
+        let source = table_info(self, &table_name).await?;
+        let fc = FeatureCollection {
+            collection,
+            source: Box::new(source),
+        };
+        Ok(fc)
+    }
+}
+
 #[async_trait]
 impl AutoscanCollectionDatasource for SqliteDatasource {
-    async fn collections(&self) -> Result<Vec<FeatureCollection>> {
+    async fn collections(&mut self) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"
             SELECT contents.*
@@ -114,10 +105,6 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
                 }),
                 temporal: None,
             };
-            let ds = GpkgCollectionCfg {
-                datasource: None,
-                table: Some(table_name.to_string()),
-            };
             let coll_cfg = ConfiguredCollectionCfg {
                 source: CollectionSourceCfg::Gpkg(GpkgCollectionCfg {
                     datasource: None,
@@ -127,11 +114,21 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
                 title: Some(title),
                 description: row.try_get("description")?,
             };
-            let fc = collection_info(self, &ds, &coll_cfg, Some(extent)).await?;
+            let fc = self.setup_collection(&coll_cfg, Some(extent)).await?;
             collections.push(fc);
         }
         Ok(collections)
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct GpkgCollectionSource {
+    ds: SqliteDatasource,
+    table: String,
+    geometry_column: String,
+    // geometry_type_name: String,
+    /// Primary key column, None if multi column key.
+    pk_column: Option<String>,
 }
 
 #[async_trait]
@@ -205,39 +202,6 @@ impl CollectionSource for GpkgCollectionSource {
             Ok(None)
         }
     }
-}
-
-async fn collection_info(
-    ds: &SqliteDatasource,
-    cfg: &GpkgCollectionCfg,
-    collection: &ConfiguredCollectionCfg,
-    extent: Option<CoreExtent>,
-) -> Result<FeatureCollection> {
-    let table_name = cfg.table.clone().unwrap();
-    let id = &collection.name;
-
-    let collection = CoreCollection {
-        id: id.clone(),
-        title: collection.title.clone(),
-        description: collection.description.clone(),
-        extent,
-        item_type: None,
-        crs: vec![],
-        links: vec![ApiLink {
-            href: format!("/collections/{id}/items"),
-            rel: Some("items".to_string()),
-            type_: Some("application/geo+json".to_string()),
-            title: collection.title.clone(),
-            hreflang: None,
-            length: None,
-        }],
-    };
-    let source = table_info(ds, &table_name).await?;
-    let fc = FeatureCollection {
-        collection,
-        source: Box::new(source),
-    };
-    Ok(fc)
 }
 
 async fn table_info(ds: &SqliteDatasource, table: &str) -> Result<GpkgCollectionSource> {
@@ -318,7 +282,7 @@ mod tests {
 
     #[tokio::test]
     async fn gpkg_content() {
-        let pool = SqliteDatasource::new_pool("../assets/ne_extracts.gpkg")
+        let mut pool = SqliteDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
         let collections = pool.collections().await.unwrap();

@@ -7,8 +7,7 @@ use rust_embed::RustEmbed;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::io;
-use std::path::Path;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(RustEmbed)]
 #[folder = "src/empty/"]

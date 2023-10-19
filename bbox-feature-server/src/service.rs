@@ -4,6 +4,7 @@ use crate::inventory::Inventory;
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::config::error_exit;
 use bbox_core::ogcapi::{ApiLink, CoreCollection};
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
@@ -19,11 +20,16 @@ impl OgcApiService for FeatureService {
 
     async fn read_config(&mut self, cli: &ArgMatches) {
         let config = FeatureServiceCfg::from_config(cli);
-        let mut sources = Datasources::create(&config.datasources).await;
+        let mut sources = Datasources::create(&config.datasources)
+            .await
+            .unwrap_or_else(error_exit);
 
         self.inventory = Inventory::scan(&config.auto_collections).await;
         for cfg in config.collections {
-            let collection = sources.setup_collection(&cfg).await.unwrap();
+            let collection = sources
+                .setup_collection(&cfg)
+                .await
+                .unwrap_or_else(error_exit);
             self.inventory.add_collection(collection);
         }
     }
