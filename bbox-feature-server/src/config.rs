@@ -49,7 +49,7 @@ pub enum CollectionSourceCfg {
     Gpkg(GpkgCollectionCfg),
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Default, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PostgisCollectionCfg {
     /// Name of datasource.postgis config (Default: first with matching type)
@@ -58,20 +58,24 @@ pub struct PostgisCollectionCfg {
     // pub url: Option<String>,
     pub table_schema: Option<String>,
     pub table_name: Option<String>,
-    // pub geometry_column: Option<String>,
-    // pub pk_column: Option<String>,
-    // pub sql: Option<String>,
+    /// Custom SQL query
+    pub sql: Option<String>,
+    pub fid_field: Option<String>,
+    pub geometry_field: Option<String>,
+    //pub field_list: Option<Vec<String>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct GpkgCollectionCfg {
     /// Name of datasource.gpkg config (Default: first with matching type)
     pub datasource: Option<String>,
-    pub table: Option<String>,
-    // pub sql: Option<String>,
-    // pub geometry_column: Option<String>,
-    // pub pk_column: Option<String>,
+    pub table_name: Option<String>,
+    /// Custom SQL query
+    pub sql: Option<String>,
+    pub fid_field: Option<String>,
+    pub geometry_field: Option<String>,
+    //pub field_list: Option<Vec<String>>,
 }
 
 impl FeatureServiceCfg {

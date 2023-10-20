@@ -3,14 +3,14 @@ use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
     ConfiguredCollectionCfg, ItemsResult,
 };
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
-use log::{info, warn};
+use log::{debug, error, info, warn};
 use sqlx::{postgres::PgRow, Row};
 
 pub type Datasource = PgDatasource;
@@ -26,14 +26,55 @@ impl CollectionDatasource for PgDatasource {
         let CollectionSourceCfg::Postgis(ref srccfg) = cfg.source else {
             panic!();
         };
-        let public = "public".to_string();
-        let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
-        let Some(table_name) = srccfg.table_name.as_ref() else {
-            panic!()
-        };
-        let source = table_info(self, &table_schema, &table_name).await?;
+
         let id = &cfg.name;
-        let bbox = query_bbox(&source)
+        if srccfg.table_name.is_none() && srccfg.sql.is_none() {
+            return Err(Error::DatasourceSetupError(format!(
+                "Datasource `{id}`: configuration `table_name` or `sql` missing"
+            )));
+        } else if srccfg.table_name.is_some() && srccfg.sql.is_some() {
+            warn!("Datasource`{id}`: configuration `table_name` ignored, using `sql` instead");
+        }
+        let (pk_column, geometry_column, sql) = if let Some(table_name) = &srccfg.table_name {
+            let public = "public".to_string();
+            let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
+            let pk_column =
+                srccfg
+                    .fid_field
+                    .clone()
+                    .or(detect_pk(self, &table_schema, &table_name).await?);
+            let geometry_column = detect_geometry(self, &table_schema, &table_name).await?;
+            let sql = check_query(
+                self,
+                format!(r#"SELECT * FROM "{table_schema}"."{table_name}""#),
+            )
+            .await?;
+            (pk_column, geometry_column, sql)
+        } else {
+            let pk_column = srccfg.fid_field.clone();
+            // TODO: We should also allow user queries without geometry
+            let geometry_column =
+                srccfg
+                    .geometry_field
+                    .clone()
+                    .ok_or(Error::DatasourceSetupError(format!(
+                        "Datasource `{id}`: configuration `geometry_field` missing"
+                    )))?;
+            let sql = check_query(self, srccfg.sql.clone().expect("config checked")).await?;
+            (pk_column, geometry_column, sql)
+        };
+        if pk_column.is_none() {
+            warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
+        }
+        let source = PgCollectionSource {
+            ds: self.clone(),
+            sql,
+            geometry_column,
+            pk_column,
+        };
+
+        let bbox = source
+            .query_bbox()
             .await
             .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
         let collection = CoreCollection {
@@ -81,9 +122,9 @@ impl AutoscanCollectionDatasource for PgDatasource {
             let table_name: String = row.try_get("f_table_name")?;
             let coll_cfg = ConfiguredCollectionCfg {
                 source: CollectionSourceCfg::Postgis(PostgisCollectionCfg {
-                    datasource: None,
                     table_schema: Some(table_schema),
                     table_name: Some(table_name.clone()),
+                    ..Default::default()
                 }),
                 name: table_name.clone(),
                 title: Some(table_name),
@@ -99,8 +140,7 @@ impl AutoscanCollectionDatasource for PgDatasource {
 #[derive(Clone, Debug)]
 pub struct PgCollectionSource {
     ds: PgDatasource,
-    table_schema: String,
-    table_name: String,
+    sql: String,
     geometry_column: String,
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
@@ -110,14 +150,13 @@ pub struct PgCollectionSource {
 impl CollectionSource for PgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let geometry_column = &self.geometry_column;
-        let schema = &self.table_schema;
-        let table = &self.table_name;
-        let mut sql = if let Some(pk) = &self.pk_column {
+        let mut sql = format!("WITH query AS ({sql})\n", sql = &self.sql);
+        let select_sql = if let Some(pk) = &self.pk_column {
             format!(
                 r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
                       "{pk}"::varchar AS pk,
                       count(*) OVER () AS __total_cnt 
-                   FROM "{schema}"."{table}" t"#,
+                   FROM query t"#,
             )
         } else {
             format!(
@@ -125,9 +164,10 @@ impl CollectionSource for PgCollectionSource {
                       NULL AS pk,
                       --row_number() OVER () ::varchar AS pk,
                       count(*) OVER () AS __total_cnt 
-               FROM "{schema}"."{table}" t"#,
+               FROM query t"#,
             )
         };
+        sql.push_str(&select_sql);
         match filter.bbox() {
             Ok(Some(bbox)) => {
                 sql.push_str(&format!(
@@ -175,14 +215,14 @@ impl CollectionSource for PgCollectionSource {
             return Ok(None);
         };
         let sql = format!(
-            r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
+            r#"
+            WITH query AS ({sql})
+            SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
                 "{pk}"::varchar AS pk
-               FROM "{schema}"."{table}" t
-               WHERE {pk}::varchar = '{feature_id}'
-            "#,
+               FROM query t
+               WHERE {pk}::varchar = '{feature_id}'"#,
+            sql = &self.sql,
             geometry_column = &self.geometry_column,
-            schema = &self.table_schema,
-            table = &self.table_name
         );
         if let Some(row) = sqlx::query(&sql)
             // .bind(feature_id)
@@ -215,72 +255,6 @@ impl CollectionSource for PgCollectionSource {
     }
 }
 
-async fn query_bbox(source: &PgCollectionSource) -> Result<Vec<f64>> {
-    // TODO: Transform to WGS84, if necessary
-    let sql = &format!(
-        r#"
-        WITH extent AS (
-          SELECT ST_Extent("{geometry_column}") AS bbox
-          FROM "{schema}"."{table}"
-        )
-        SELECT ST_XMin(bbox), ST_YMin(bbox), ST_XMax(bbox), ST_YMax(bbox)
-        FROM extent
-    "#,
-        geometry_column = &source.geometry_column,
-        schema = &source.table_schema,
-        table = &source.table_name
-    );
-    let row = sqlx::query(sql).fetch_one(&source.ds.pool).await?;
-    let extent: Vec<f64> = vec![
-        row.try_get(0)?,
-        row.try_get(1)?,
-        row.try_get(2)?,
-        row.try_get(3)?,
-    ];
-    Ok(extent)
-}
-
-async fn table_info(ds: &PgDatasource, schema: &str, table: &str) -> Result<PgCollectionSource> {
-    let sql = &format!(
-        r#"
-        WITH pkeys AS (
-            SELECT a.attname
-            FROM   pg_index i
-            JOIN   pg_attribute a ON a.attrelid = i.indrelid
-                                 AND a.attnum = ANY(i.indkey)
-            WHERE  i.indrelid = '{schema}.{table}'::regclass
-            AND    i.indisprimary
-        )
-        SELECT f_geometry_column,
-          (SELECT COUNT(*) FROM pkeys) AS pksize,
-          (SELECT attname FROM pkeys LIMIT 1) AS pk
-        FROM geometry_columns
-          JOIN spatial_ref_sys refsys ON refsys.srid = geometry_columns.srid
-        WHERE f_table_schema = '{schema}' AND f_table_name = '{table}'
-        "#
-    );
-
-    let row = sqlx::query(sql)
-        // .bind(schema)
-        // .bind(table)
-        .fetch_one(&ds.pool)
-        .await?;
-    let geometry_column: String = row.try_get("f_geometry_column")?;
-    let pksize: i64 = row.try_get("pksize")?;
-    let pk_column: Option<String> = if pksize == 1 {
-        row.try_get("pk")?
-    } else {
-        None
-    };
-    Ok(PgCollectionSource {
-        ds: ds.clone(),
-        table_schema: schema.to_string(),
-        table_name: table.to_string(),
-        geometry_column,
-        pk_column,
-    })
-}
-
 fn row_to_feature(row: &PgRow, _table_info: &PgCollectionSource) -> Result<CoreFeature> {
     let properties: serde_json::Value = row.try_get("properties")?;
     // properties[col.name()] = match col.type_info().name() {
@@ -304,6 +278,88 @@ fn row_to_feature(row: &PgRow, _table_info: &PgCollectionSource) -> Result<CoreF
     };
 
     Ok(item)
+}
+
+impl PgCollectionSource {
+    async fn query_bbox(&self) -> Result<Vec<f64>> {
+        // TODO: Transform to WGS84, if necessary
+        let sql = &format!(
+            r#"
+        WITH query AS ({sql})
+        WITH extent AS (
+          SELECT ST_Extent("{geometry_column}") AS bbox
+          FROM query
+        )
+        SELECT ST_XMin(bbox), ST_YMin(bbox), ST_XMax(bbox), ST_YMax(bbox)
+        FROM extent
+    "#,
+            sql = &self.sql,
+            geometry_column = &self.geometry_column,
+        );
+        let row = sqlx::query(sql).fetch_one(&self.ds.pool).await?;
+        let extent: Vec<f64> = vec![
+            row.try_get(0)?,
+            row.try_get(1)?,
+            row.try_get(2)?,
+            row.try_get(3)?,
+        ];
+        Ok(extent)
+    }
+}
+
+async fn detect_pk(ds: &PgDatasource, schema: &str, table: &str) -> Result<Option<String>> {
+    let sql = &format!(
+        r#"
+        WITH pkeys AS (
+            SELECT a.attname
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                                 AND a.attnum = ANY(i.indkey)
+            WHERE  i.indrelid = '{schema}.{table}'::regclass
+            AND    i.indisprimary
+        )
+        SELECT
+          (SELECT COUNT(*) FROM pkeys) AS pksize,
+          (SELECT attname FROM pkeys LIMIT 1) AS pk
+        "#
+    );
+    let row = sqlx::query(sql).fetch_one(&ds.pool).await?;
+    let pksize: i64 = row.try_get("pksize")?;
+    let pk_column: Option<String> = if pksize == 1 {
+        row.try_get("pk")?
+    } else {
+        None
+    };
+    Ok(pk_column)
+}
+
+async fn detect_geometry(ds: &PgDatasource, schema: &str, table: &str) -> Result<String> {
+    let sql = &format!(
+        r#"
+        SELECT f_geometry_column
+        FROM geometry_columns
+          JOIN spatial_ref_sys refsys ON refsys.srid = geometry_columns.srid
+        WHERE f_table_schema = '{schema}' AND f_table_name = '{table}'
+        "#
+    );
+    let row = sqlx::query(sql)
+        // .bind(schema)
+        // .bind(table)
+        // We take the first result only
+        .fetch_one(&ds.pool)
+        .await?;
+    let geometry_column: String = row.try_get("f_geometry_column")?;
+    Ok(geometry_column)
+}
+
+async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
+    debug!("Collection query: {sql}");
+    // TODO: prepare only
+    if let Err(e) = sqlx::query(&sql).fetch_one(&ds.pool).await {
+        error!("Error in collection query `{sql}`: {e}");
+        return Err(e.into());
+    }
+    Ok(sql)
 }
 
 #[cfg(test)]
@@ -335,8 +391,7 @@ mod tests {
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            table_schema: "ne".to_string(),
-            table_name: "ne_10m_rivers_lake_centerlines".to_string(),
+            sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
         };
@@ -358,8 +413,7 @@ mod tests {
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            table_schema: "ne".to_string(),
-            table_name: "ne_10m_rivers_lake_centerlines".to_string(),
+            sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
         };

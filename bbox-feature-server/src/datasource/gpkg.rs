@@ -3,7 +3,7 @@ use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,
     ConfiguredCollectionCfg, ItemsResult,
 };
-use crate::error::{self, Result};
+use crate::error::{self, Error, Result};
 use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
@@ -11,7 +11,7 @@ use bbox_core::config::DsGpkgCfg;
 use bbox_core::ogcapi::*;
 use futures::TryStreamExt;
 use geozero::{geojson, wkb};
-use log::{info, warn};
+use log::{debug, error, info, warn};
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
 use sqlx::{Column, Row, TypeInfo};
@@ -49,8 +49,45 @@ impl CollectionDatasource for SqliteDatasource {
         let CollectionSourceCfg::Gpkg(ref srccfg) = cfg.source else {
             panic!();
         };
-        let table_name = srccfg.table.clone().unwrap();
+
         let id = &cfg.name;
+        if srccfg.table_name.is_none() && srccfg.sql.is_none() {
+            return Err(Error::DatasourceSetupError(format!(
+                "Datasource `{id}`: configuration `table_name` or `sql` missing"
+            )));
+        } else if srccfg.table_name.is_some() && srccfg.sql.is_some() {
+            warn!("Datasource`{id}`: configuration `table_name` ignored, using `sql` instead");
+        }
+        let (pk_column, geometry_column, sql) = if let Some(table_name) = &srccfg.table_name {
+            let pk_column = srccfg
+                .fid_field
+                .clone()
+                .or(detect_pk(self, &table_name).await?);
+            let geometry_column = detect_geometry(self, &table_name).await?;
+            let sql = check_query(self, format!("SELECT * FROM {table_name}")).await?;
+            (pk_column, geometry_column, sql)
+        } else {
+            let pk_column = srccfg.fid_field.clone();
+            // TODO: We should also allow user queries without geometry
+            let geometry_column =
+                srccfg
+                    .geometry_field
+                    .clone()
+                    .ok_or(Error::DatasourceSetupError(format!(
+                        "Datasource `{id}`: configuration `geometry_field` missing"
+                    )))?;
+            let sql = check_query(self, srccfg.sql.clone().expect("config checked")).await?;
+            (pk_column, geometry_column, sql)
+        };
+        if pk_column.is_none() {
+            warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
+        }
+        let source = GpkgCollectionSource {
+            ds: self.clone(),
+            sql,
+            geometry_column,
+            pk_column,
+        };
 
         let collection = CoreCollection {
             id: id.clone(),
@@ -68,7 +105,6 @@ impl CollectionDatasource for SqliteDatasource {
                 length: None,
             }],
         };
-        let source = table_info(self, &table_name).await?;
         let fc = FeatureCollection {
             collection,
             source: Box::new(source),
@@ -107,8 +143,8 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
             };
             let coll_cfg = ConfiguredCollectionCfg {
                 source: CollectionSourceCfg::Gpkg(GpkgCollectionCfg {
-                    datasource: None,
-                    table: Some(table_name.to_string()),
+                    table_name: Some(table_name.to_string()),
+                    ..Default::default()
                 }),
                 name: id.clone(),
                 title: Some(title),
@@ -124,7 +160,7 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
 #[derive(Clone, Debug)]
 pub struct GpkgCollectionSource {
     ds: SqliteDatasource,
-    table: String,
+    sql: String,
     geometry_column: String,
     // geometry_type_name: String,
     /// Primary key column, None if multi column key.
@@ -135,8 +171,10 @@ pub struct GpkgCollectionSource {
 impl CollectionSource for GpkgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let mut sql = format!(
-            "SELECT *, count(*) OVER() AS __total_cnt FROM {table}",
-            table = &self.table
+            "
+            WITH query AS ({sql})
+            SELECT *, count(*) OVER() AS __total_cnt FROM query",
+            sql = &self.sql
         );
         if let Some(_bboxstr) = &filter.bbox {
             warn!("Ignoring bbox filter (not supported for this datasource)");
@@ -172,7 +210,12 @@ impl CollectionSource for GpkgCollectionSource {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
             return Ok(None);
         };
-        let sql = format!("SELECT * FROM {table} WHERE {pk} = ?", table = &self.table,);
+        let sql = format!(
+            "
+            WITH query AS ({sql})
+            SELECT * FROM query WHERE {pk} = ?",
+            sql = &self.sql
+        );
         if let Some(row) = sqlx::query(&sql)
             .bind(feature_id)
             .fetch_optional(&self.ds.pool)
@@ -202,37 +245,6 @@ impl CollectionSource for GpkgCollectionSource {
             Ok(None)
         }
     }
-}
-
-async fn table_info(ds: &SqliteDatasource, table: &str) -> Result<GpkgCollectionSource> {
-    // TODO: support multiple geometry columns
-    let sql = r#"
-        SELECT column_name, geometry_type_name,
-          (SELECT COUNT(*) FROM pragma_table_info(?) ti WHERE ti.pk > 0) as pksize,
-          (SELECT ti.name FROM pragma_table_info(?) ti WHERE ti.pk = 1) as pk
-        FROM gpkg_geometry_columns
-        WHERE table_name = ?
-    "#;
-    let row = sqlx::query(sql)
-        .bind(table)
-        .bind(table)
-        .bind(table)
-        .fetch_one(&ds.pool)
-        .await?;
-    let geometry_column: String = row.try_get("column_name")?;
-    let _geometry_type_name: String = row.try_get("geometry_type_name")?;
-    let pksize: u16 = row.try_get("pksize")?;
-    let pk_column: Option<String> = if pksize == 1 {
-        row.try_get("pk")?
-    } else {
-        None
-    };
-    Ok(GpkgCollectionSource {
-        ds: ds.clone(),
-        table: table.to_string(),
-        geometry_column,
-        pk_column,
-    })
 }
 
 fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionSource) -> Result<CoreFeature> {
@@ -276,6 +288,52 @@ fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionSource) -> Result<
     Ok(item)
 }
 
+async fn detect_pk(ds: &SqliteDatasource, table: &str) -> Result<Option<String>> {
+    let sql = r#"
+        SELECT
+          (SELECT COUNT(*) FROM pragma_table_info(?) ti WHERE ti.pk > 0) as pksize,
+          (SELECT ti.name FROM pragma_table_info(?) ti WHERE ti.pk = 1) as pk
+    "#;
+    let row = sqlx::query(sql)
+        .bind(table)
+        .bind(table)
+        .fetch_one(&ds.pool)
+        .await?;
+    let pksize: u16 = row.try_get("pksize")?;
+    let pk_column: Option<String> = if pksize == 1 {
+        row.try_get("pk")?
+    } else {
+        None
+    };
+    Ok(pk_column)
+}
+
+async fn detect_geometry(ds: &SqliteDatasource, table: &str) -> Result<String> {
+    let sql = r#"
+        SELECT column_name, geometry_type_name
+        FROM gpkg_geometry_columns
+        WHERE table_name = ?
+    "#;
+    let row = sqlx::query(sql)
+        .bind(table)
+        // We take the first result only
+        .fetch_one(&ds.pool)
+        .await?;
+    let geometry_column: String = row.try_get("column_name")?;
+    let _geometry_type_name: String = row.try_get("geometry_type_name")?;
+    Ok(geometry_column)
+}
+
+async fn check_query(ds: &SqliteDatasource, sql: String) -> Result<String> {
+    debug!("Collection query: {sql}");
+    // TODO: prepare only
+    if let Err(e) = sqlx::query(&sql).fetch_one(&ds.pool).await {
+        error!("Error in collection query `{sql}`: {e}");
+        return Err(e.into());
+    }
+    Ok(sql)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,7 +366,7 @@ mod tests {
             .unwrap();
         let source = GpkgCollectionSource {
             ds,
-            table: "ne_10m_lakes".to_string(),
+            sql: "SELECT * FROM ne_10m_lakes".to_string(),
             geometry_column: "geom".to_string(),
             pk_column: Some("fid".to_string()),
         };

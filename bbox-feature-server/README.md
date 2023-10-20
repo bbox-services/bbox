@@ -45,13 +45,35 @@ datasource = "ne_extracts"
 table = "ne_10m_populated_places"
 ```
 
+With custom SQL query:
+```toml
+[[collection]]
+name = "populated_places_names"
+title = "populated places names"
+description = "Natural Earth populated places"
+[collection.gpkg]
+datasource = "ne_extracts"
+sql = "SELECT fid, name, geom FROM ne_10m_populated_places"
+geometry_field = "geom"
+fid_field = "fid"
+```
+
 ## Usage
 
 Run feature server with bbox.toml configuration:
 
     cargo run serve
 
+or with a custom configuration:
+
+    cargo run -- --config=bbox-pg.toml serve
 
 Inspect collections:
 
     x-www-browser http://127.0.0.1:8080/collections
+
+Feature requests:
+
+    curl -s http://127.0.0.1:8080/collections/populated_places/items | jq .
+
+    curl -s http://127.0.0.1:8080/collections/populated_places_names/items/2 | jq .

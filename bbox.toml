@@ -59,7 +59,36 @@ title = "populated places"
 description = "Natural Earth populated places"
 [collection.gpkg]
 datasource = "ne_extracts"
-table = "ne_10m_populated_places"
+table_name = "ne_10m_populated_places"
+
+[[collection]]
+name = "populated_places_names"
+title = "populated places names"
+description = "Natural Earth populated places"
+[collection.gpkg]
+datasource = "ne_extracts"
+sql = "SELECT fid, name, geom FROM ne_10m_populated_places"
+geometry_field = "geom"
+fid_field = "fid"
+
+#[[collection]]
+#name = "rivers_lakes"
+#title = "rivers lakes"
+#description = "Natural Earth rivers lake centerlines"
+#[collection.postgis]
+#datasource = "t_rex_tests"
+#table_schema = "ne"
+#table_name = "ne_10m_rivers_lake_centerlines"
+
+#[[collection]]
+#name = "rivers_lakes_names"
+#title = "rivers lakes names"
+#description = "Natural Earth rivers lake centerlines"
+#[collection.postgis]
+#datasource = "t_rex_tests"
+#sql = "SELECT fid, name, wkb_geometry FROM ne.ne_10m_rivers_lake_centerlines"
+#geometry_field = "wkb_geometry"
+#fid_field = "fid"
 
 [[assets.static]]
 # Static file serving
