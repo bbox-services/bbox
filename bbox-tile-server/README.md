@@ -19,6 +19,26 @@ Tile seeder features:
 
 ## Configuration
 
+Datasources:
+```toml
+[[datasource]]
+name = "t_rex_tests"
+#default = true
+[datasource.postgis]
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+
+[[datasource]]
+name = "ne_extracts"
+[datasource.gpkg]
+path = "../assets/ne_extracts.gpkg"
+
+[[datasource]]
+name = "gebco"
+[datasource.wms_proxy]
+baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
+format = "image/jpeg"
+```
+
 Vector tiles from PostGIS table:
 ```toml
 [[tileset]]

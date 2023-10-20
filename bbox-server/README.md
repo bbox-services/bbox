@@ -1,20 +1,26 @@
-BBOX server
-===========
+# BBOX server
 
 BBOX spatial services with QWC2 map viewer.
 
 
-Usage
------
+## Usage
 
     cargo run
 
     x-www-browser http://127.0.0.1:8080/
 
-Configuration
--------------
+Built-in Swagger UI:
 
-Configuraton is read from `bbox.toml` and environment variables.
+http://localhost:8080/openapi/
+
+View API in external Swagger editor:
+
+https://editor.swagger.io/?url=http://localhost:8080/api
+
+
+## Configuration
+
+Configuration is read from `bbox.toml` and environment variables.
 
 ## Webserver
 
@@ -73,8 +79,7 @@ agent_endpoint = "localhost:6831"
 ```
 
 
-Instrumentation
----------------
+## Instrumentation
 
 ### Prometheus
 
