@@ -930,6 +930,7 @@ dependencies = [
  "log",
  "martin-mbtiles",
  "num_cpus",
+ "once_cell",
  "prometheus",
  "reqwest",
  "rusoto_core",

@@ -1,7 +1,7 @@
 use crate::config::MapServerCfg;
 use crate::fcgi_process::FcgiDispatcher;
 use crate::inventory::Inventory;
-use crate::metrics::init_metrics;
+use crate::metrics::{init_metrics, wms_metrics, WmsMetrics};
 use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
@@ -46,6 +46,8 @@ async fn init_wms_backend(config: &MapServerCfg) -> MapService {
             });
         }
     }
+    // FIXME: Wait until FCGI services are started
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
     MapService {
         fcgi_clients,
@@ -130,5 +132,9 @@ impl MapService {
         self.suffix_fcgi
             .get(suffix)
             .map(|no| self.fcgi_clients[*no].get_ref())
+    }
+
+    pub fn metrics(&self) -> &'static WmsMetrics {
+        wms_metrics(self.num_fcgi_processes)
     }
 }

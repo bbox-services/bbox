@@ -34,6 +34,7 @@ indicatif = "0.16.2"
 log = { workspace = true }
 martin-mbtiles = { version = "0.4.0", default-features = false, features = ["rustls"] }
 num_cpus = { workspace = true }
+once_cell = { workspace = true }
 prometheus = { workspace = true }
 reqwest = { workspace = true }
 rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }

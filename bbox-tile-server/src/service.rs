@@ -13,6 +13,7 @@ use bbox_core::endpoints::TileResponse;
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::{ArgMatches, FromArgMatches};
+use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
@@ -158,6 +159,7 @@ impl OgcApiService for TileService {
             _ => false,
         }
     }
+
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         vec![
             ApiLink {
@@ -267,7 +269,7 @@ impl TileService {
         tile: &Xyz,
         format: &str,
     ) -> Result<TileResponse, ServiceError> {
-        let metrics = WmsMetrics::default(); // TODO: get from self.map_service
+        let metrics = self.wms_metrics();
         let ts = self
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
@@ -282,7 +284,7 @@ impl TileService {
                 "http",
                 "localhost",
                 "/",
-                &metrics,
+                metrics,
             )
             .await?)
     }
@@ -446,5 +448,14 @@ impl TileService {
             "layers": layer_styles
         });
         Ok(stylejson)
+    }
+
+    fn wms_metrics(&self) -> &'static WmsMetrics {
+        static DUMMY_METRICS: OnceCell<WmsMetrics> = OnceCell::new();
+        if let Some(map_service) = &self.map_service {
+            map_service.metrics()
+        } else {
+            DUMMY_METRICS.get_or_init(|| WmsMetrics::default())
+        }
     }
 }

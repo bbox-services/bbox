@@ -199,11 +199,12 @@ pub mod wms_fcgi {
     // Replacements for bbox_map_server types
     #[derive(Default)]
     pub struct WmsMetrics;
-    pub type MapService = ();
-    pub type FcgiError = std::io::Error;
-    impl WmsMetrics {
-        pub fn new() -> Self {
-            Self
+    #[derive(Clone)]
+    pub struct MapService;
+    impl MapService {
+        pub fn metrics(&self) -> &'static WmsMetrics {
+            unimplemented!()
         }
     }
+    pub type FcgiError = std::io::Error;
 }

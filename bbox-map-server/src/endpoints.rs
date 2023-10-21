@@ -1,5 +1,5 @@
 use crate::fcgi_process::*;
-use crate::metrics::{wms_metrics, WmsMetrics};
+use crate::metrics::WmsMetrics;
 use crate::service::MapService;
 use actix_web::{guard, web, HttpRequest, HttpResponse};
 use bbox_core::endpoints::TileResponse;
@@ -272,9 +272,7 @@ pub async fn wms_fcgi_req(
 
 impl MapService {
     pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
-        let metrics = wms_metrics(self.num_fcgi_processes);
-
-        cfg.app_data(web::Data::new((*metrics).clone()));
+        cfg.app_data(web::Data::new(self.metrics().clone()));
 
         cfg.app_data(web::Data::new(self.inventory.clone()));
 

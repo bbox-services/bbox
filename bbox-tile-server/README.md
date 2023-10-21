@@ -170,9 +170,19 @@ Relase Build:
 
     cargo build --release
 
-Local file seeding test:
+Seed with proxy WMS:
 
-    ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles/gebco --maxzoom=2
+
+Seed with embedded map service:
+
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --base-dir=/tmp/tiles/ne_extracts --maxzoom=2
+
+Seed PostGIS MVT tiles:
+
+    ../target/release/bbox-tile-server seed --tileset=ne_10m_populated_places --base-dir=/tmp/tiles/ne_10m_populated_places --maxzoom=2
+
+#### Seed to S3 storage
 
 See [performance.md](./performance.md) for a local S3 test setup.
 
@@ -182,7 +192,7 @@ Set S3 env vars:
     export AWS_ACCESS_KEY_ID=miniostorage
     export AWS_SECRET_ACCESS_KEY=miniostorage
 
-Run:
+Seed raster tiles:
 
     ../target/release/bbox-tile-server seed --tileset=ne_extracts --s3-path=s3://tiles --maxzoom=5
 
