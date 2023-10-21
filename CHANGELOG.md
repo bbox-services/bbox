@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 alpha3 (2023-10-21)
+
+* Unify collection and tileserver datasource configuration
+* Add configurable collections with optional custom SQL
+* Support tile cache seeding with embedded map servers
+
 ## 0.5.0 alpha2 (2023-09-11)
 
 * Add PostGIS tile source
