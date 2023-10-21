@@ -1,7 +1,7 @@
 use crate::config::MapServerCfg;
 use crate::fcgi_process::FcgiDispatcher;
 use crate::inventory::Inventory;
-use crate::metrics::{init_metrics, wms_metrics, WmsMetrics};
+use crate::metrics::{register_metrics, wms_metrics, WmsMetrics};
 use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
@@ -62,6 +62,7 @@ async fn init_wms_backend(config: &MapServerCfg) -> MapService {
 impl OgcApiService for MapService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
+    type Metrics = WmsMetrics;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
         let config = MapServerCfg::from_config(cli);
@@ -119,10 +120,13 @@ impl OgcApiService for MapService {
         Some(include_str!("openapi.yaml"))
     }
     fn add_metrics(&self, prometheus: &Registry) {
-        init_metrics(self.num_fcgi_processes, prometheus);
+        register_metrics(prometheus, self.metrics());
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+    fn metrics(&self) -> &'static Self::Metrics {
+        wms_metrics(self.num_fcgi_processes)
     }
 }
 
@@ -132,9 +136,5 @@ impl MapService {
         self.suffix_fcgi
             .get(suffix)
             .map(|no| self.fcgi_clients[*no].get_ref())
-    }
-
-    pub fn metrics(&self) -> &'static WmsMetrics {
-        wms_metrics(self.num_fcgi_processes)
     }
 }

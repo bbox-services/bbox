@@ -213,7 +213,7 @@ impl CoreService {
         }
 
         if let Some(metrics) = &self.metrics {
-            let metrics_handler = PrometheusMetricsHandler::new(metrics.exporter.clone());
+            let metrics_handler = PrometheusMetricsHandler::new(metrics.clone());
             //TODO: path from MetricsCfg
             cfg.route("/metrics", web::get().to(metrics_handler));
         }

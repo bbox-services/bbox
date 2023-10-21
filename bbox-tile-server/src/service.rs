@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use bbox_core::cli::NoArgs;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
+use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::{ArgMatches, FromArgMatches};
@@ -101,6 +102,7 @@ type TileCacheConfigs = HashMap<String, TileCacheCfg>;
 impl OgcApiService for TileService {
     type CliCommands = Commands;
     type CliArgs = NoArgs;
+    type Metrics = NoMetrics;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
         let config = TileserverCfg::from_config(cli);
@@ -219,6 +221,9 @@ impl OgcApiService for TileService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+    fn metrics(&self) -> &'static Self::Metrics {
+        no_metrics()
     }
 }
 

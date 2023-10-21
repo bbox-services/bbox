@@ -1,5 +1,5 @@
 use crate::config::MetricsCfg;
-use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder};
+use once_cell::sync::OnceCell;
 use opentelemetry::{
     global,
     sdk::{
@@ -9,12 +9,6 @@ use opentelemetry::{
     },
 };
 use opentelemetry_prometheus::PrometheusExporter;
-
-#[derive(Clone)]
-pub struct Metrics {
-    pub exporter: PrometheusExporter,
-    pub request_metrics: RequestMetrics,
-}
 
 fn init_tracer(config: &MetricsCfg) {
     if let Some(cfg) = &config.jaeger {
@@ -27,7 +21,7 @@ fn init_tracer(config: &MetricsCfg) {
     }
 }
 
-pub(crate) fn init_metrics() -> Option<Metrics> {
+pub(crate) fn init_metrics_exporter() -> Option<PrometheusExporter> {
     let Some(metrics_cfg) = MetricsCfg::from_config() else {
         return None;
     };
@@ -35,10 +29,6 @@ pub(crate) fn init_metrics() -> Option<Metrics> {
     init_tracer(&metrics_cfg);
 
     metrics_cfg.prometheus.as_ref()?;
-
-    // Request metrics middleware
-    let meter = global::meter("bbox");
-    let request_metrics = RequestMetricsBuilder::new().build(meter);
 
     // Prometheus request metrics handler
     let controller = controllers::basic(
@@ -60,8 +50,13 @@ pub(crate) fn init_metrics() -> Option<Metrics> {
     //         .route("/metrics", web::get().to(metrics_handler.clone()))
     // })
 
-    Some(Metrics {
-        exporter,
-        request_metrics,
-    })
+    Some(exporter)
+}
+
+#[derive(Default)]
+pub struct NoMetrics;
+
+pub fn no_metrics() -> &'static NoMetrics {
+    static METRICS: OnceCell<NoMetrics> = OnceCell::new();
+    METRICS.get_or_init(|| NoMetrics::default())
 }

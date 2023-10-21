@@ -4,6 +4,7 @@ use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::app_dir;
 use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
 use log::{info, warn};
@@ -21,6 +22,7 @@ pub struct AssetService {
 impl OgcApiService for AssetService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
+    type Metrics = NoMetrics;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
         let service_cfg = AssetserverCfg::from_config();
@@ -42,5 +44,8 @@ impl OgcApiService for AssetService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+    fn metrics(&self) -> &'static Self::Metrics {
+        no_metrics()
     }
 }

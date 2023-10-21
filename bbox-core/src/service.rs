@@ -3,7 +3,7 @@ use crate::auth::oidc::OidcClient;
 use crate::cli::{CommonCommands, GlobalArgs, NoArgs, NoCommands};
 use crate::config::{AuthCfg, WebserverCfg};
 use crate::logger;
-use crate::metrics::{init_metrics, Metrics};
+use crate::metrics::{init_metrics_exporter, no_metrics, NoMetrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use crate::tls::load_rustls_config;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
@@ -15,6 +15,8 @@ use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTrac
 use async_trait::async_trait;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
 use log::{info, warn};
+use once_cell::sync::OnceCell;
+use opentelemetry_prometheus::PrometheusExporter;
 use prometheus::Registry;
 use std::env;
 
@@ -22,6 +24,7 @@ use std::env;
 pub trait OgcApiService: Default + Clone + Send {
     type CliCommands: Subcommand + Parser + core::fmt::Debug;
     type CliArgs: Args + core::fmt::Debug;
+    type Metrics;
 
     async fn read_config(&mut self, cli: &ArgMatches);
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
@@ -36,6 +39,9 @@ pub trait OgcApiService: Default + Clone + Send {
     fn openapi_yaml(&self) -> Option<&str> {
         None
     }
+    /// Service metrics
+    fn metrics(&self) -> &'static Self::Metrics;
+    /// Add metrics to Prometheus registry
     fn add_metrics(&self, _prometheus: &Registry) {}
     async fn cli_run(&self, _cli: &ArgMatches) -> bool {
         false
@@ -52,9 +58,13 @@ pub struct DummyService {
 impl OgcApiService for DummyService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
+    type Metrics = NoMetrics;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {}
     fn register_endpoints(&self, _cfg: &mut web::ServiceConfig, _core: &CoreService) {}
+    fn metrics(&self) -> &'static Self::Metrics {
+        no_metrics()
+    }
 }
 
 #[derive(Clone)]
@@ -63,7 +73,7 @@ pub struct CoreService {
     pub web_config: WebserverCfg,
     pub(crate) ogcapi: OgcApiInventory,
     pub(crate) openapi: OpenApiDoc,
-    pub(crate) metrics: Option<Metrics>,
+    pub(crate) metrics: Option<PrometheusExporter>,
     pub(crate) oidc: Option<OidcClient>,
 }
 
@@ -114,7 +124,7 @@ impl CoreService {
         }
 
         if let Some(metrics) = &self.metrics {
-            svc.add_metrics(metrics.exporter.registry())
+            svc.add_metrics(metrics.registry())
         }
     }
     pub fn cli_matches(&self) -> ArgMatches {
@@ -127,13 +137,6 @@ impl CoreService {
     /// Request tracing middleware
     pub fn middleware(&self) -> RequestTracing {
         RequestTracing::new()
-    }
-    pub fn req_metrics(&self) -> RequestMetrics {
-        if let Some(metrics) = &self.metrics {
-            metrics.request_metrics.clone()
-        } else {
-            RequestMetricsBuilder::new().build(opentelemetry::global::meter("bbox"))
-        }
     }
     pub fn workers(&self) -> usize {
         self.web_config.worker_threads()
@@ -155,6 +158,7 @@ impl CoreService {
 impl OgcApiService for CoreService {
     type CliCommands = CommonCommands;
     type CliArgs = GlobalArgs;
+    type Metrics = RequestMetrics;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
         let Ok(args) = GlobalArgs::from_arg_matches(cli) else {
@@ -168,7 +172,7 @@ impl OgcApiService for CoreService {
 
         self.web_config = WebserverCfg::from_config();
         let auth_cfg = AuthCfg::from_config();
-        self.metrics = init_metrics();
+        self.metrics = init_metrics_exporter();
         if let Some(cfg) = &auth_cfg.oidc {
             self.oidc = Some(OidcClient::from_config(cfg).await);
         }
@@ -220,6 +224,12 @@ impl OgcApiService for CoreService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+    fn metrics(&self) -> &'static Self::Metrics {
+        static METRICS: OnceCell<RequestMetrics> = OnceCell::new();
+        METRICS.get_or_init(|| {
+            RequestMetricsBuilder::new().build(opentelemetry::global::meter("bbox"))
+        })
     }
 }
 

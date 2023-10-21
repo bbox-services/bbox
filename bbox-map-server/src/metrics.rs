@@ -83,8 +83,7 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
     })
 }
 
-pub fn init_metrics(num_fcgi_processes: usize, prometheus: &Registry) {
-    let metrics = wms_metrics(num_fcgi_processes);
+pub fn register_metrics(prometheus: &Registry, metrics: &WmsMetrics) {
     // We use the Prometheus API, using
     // https://docs.rs/opentelemetry-prometheus/
     // would be more portable

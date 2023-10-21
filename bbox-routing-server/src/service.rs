@@ -4,6 +4,7 @@ use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::config::config_error_exit;
+use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
@@ -18,6 +19,7 @@ pub struct RoutingService {
 impl OgcApiService for RoutingService {
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
+    type Metrics = NoMetrics;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {
         let Some(config) = RoutingServerCfg::from_config() else {
@@ -81,5 +83,8 @@ impl OgcApiService for RoutingService {
     }
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
         self.register(cfg, core)
+    }
+    fn metrics(&self) -> &'static Self::Metrics {
+        no_metrics()
     }
 }

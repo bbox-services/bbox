@@ -100,7 +100,7 @@ async fn run_service() -> std::io::Result<()> {
     let mut server = HttpServer::new(move || {
         let mut app = App::new()
             .wrap(Condition::new(core.has_metrics(), core.middleware()))
-            .wrap(Condition::new(core.has_metrics(), core.req_metrics()))
+            .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .configure(|cfg| core.register_endpoints(cfg, &core))
