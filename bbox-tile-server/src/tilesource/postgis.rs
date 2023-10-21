@@ -68,7 +68,7 @@ impl PgSource {
 
         let mut layers = HashMap::new();
         for layer in &cfg.layers {
-            if let Ok(mvt_layer) = Self::setup_layer(&ds, layer, grid_srid).await {
+            if let Ok(mvt_layer) = Self::setup_layer(ds, layer, grid_srid).await {
                 layers.insert(layer.name.clone(), mvt_layer);
             }
         }

@@ -38,7 +38,7 @@ impl<T> NamedObjectStore<T> {
     pub fn get_default(&self) -> Option<&T> {
         let no_default = "".to_string();
         let name = self.default.as_ref().unwrap_or(&no_default);
-        self.get(&name)
+        self.get(name)
     }
 
     pub fn get_default_mut(&mut self) -> Option<&mut T> {

@@ -296,7 +296,7 @@ impl Theme {
                 .get_map
                 .as_ref()
                 .map(|r| r.format.clone())
-                .unwrap_or(vec![]),
+                .unwrap_or_default(),
             // tiled: configItem.tiled;
             version: "1.3.0".to_string(), // configItem.version ? configItem.version : config.defaultWMSVersion
             info_formats: caps
@@ -305,7 +305,7 @@ impl Theme {
                 .get_feature_info
                 .as_ref()
                 .map(|r| r.format.clone())
-                .unwrap_or(vec![]),
+                .unwrap_or_default(),
             bbox: bbox.clone(),
             initial_bbox: bbox,
             // scales:  configItem.scales;

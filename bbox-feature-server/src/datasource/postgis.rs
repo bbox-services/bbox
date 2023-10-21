@@ -38,12 +38,11 @@ impl CollectionDatasource for PgDatasource {
         let (pk_column, geometry_column, sql) = if let Some(table_name) = &srccfg.table_name {
             let public = "public".to_string();
             let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
-            let pk_column =
-                srccfg
-                    .fid_field
-                    .clone()
-                    .or(detect_pk(self, &table_schema, &table_name).await?);
-            let geometry_column = detect_geometry(self, &table_schema, &table_name).await?;
+            let pk_column = srccfg
+                .fid_field
+                .clone()
+                .or(detect_pk(self, table_schema, table_name).await?);
+            let geometry_column = detect_geometry(self, table_schema, table_name).await?;
             let sql = check_query(
                 self,
                 format!(r#"SELECT * FROM "{table_schema}"."{table_name}""#),

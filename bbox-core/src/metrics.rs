@@ -58,5 +58,5 @@ pub struct NoMetrics;
 
 pub fn no_metrics() -> &'static NoMetrics {
     static METRICS: OnceCell<NoMetrics> = OnceCell::new();
-    METRICS.get_or_init(|| NoMetrics::default())
+    METRICS.get_or_init(NoMetrics::default)
 }

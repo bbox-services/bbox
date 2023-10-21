@@ -142,7 +142,7 @@ impl Datasources {
                     ))
                 };
                 TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
-                    &provider,
+                    provider,
                     cfg,
                     tms.crs().as_srid(),
                 ))

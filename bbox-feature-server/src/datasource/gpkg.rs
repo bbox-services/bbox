@@ -62,8 +62,8 @@ impl CollectionDatasource for SqliteDatasource {
             let pk_column = srccfg
                 .fid_field
                 .clone()
-                .or(detect_pk(self, &table_name).await?);
-            let geometry_column = detect_geometry(self, &table_name).await?;
+                .or(detect_pk(self, table_name).await?);
+            let geometry_column = detect_geometry(self, table_name).await?;
             let sql = check_query(self, format!("SELECT * FROM {table_name}")).await?;
             (pk_column, geometry_column, sql)
         } else {

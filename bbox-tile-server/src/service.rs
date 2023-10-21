@@ -460,7 +460,7 @@ impl TileService {
         if let Some(map_service) = &self.map_service {
             map_service.metrics()
         } else {
-            DUMMY_METRICS.get_or_init(|| WmsMetrics::default())
+            DUMMY_METRICS.get_or_init(WmsMetrics::default)
         }
     }
 }
