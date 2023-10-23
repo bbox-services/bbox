@@ -12,7 +12,7 @@ Features:
 
 
 Tile seeder features:
-- [ ] Parallelized seeding of raster and vector tiles
+- [x] Parallelized seeding of raster and vector tiles
 - [x] Storage Backend: S3 - optimized for tile transfer
 - [x] Storage Backend: Local files
 

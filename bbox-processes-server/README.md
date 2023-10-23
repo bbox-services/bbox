@@ -1,5 +1,4 @@
-BBOX Processes Service
-======================
+# BBOX Processes Service
 
 The OGC API - Processes standard specifies an interface for executing computational tasks.
 
@@ -9,11 +8,22 @@ Features:
 - [ ] OGC API - Processes - Part 1: Core
 - [x] Support synchronous and asynchronous process execution
 - [x] OpenAPI endpoint
-- [x] [dagster](https://dagster.io/) backend
+- [x] Multiple backend engines
+  - [x] [Dagster](https://dagster.io/)
+  - [ ] [Windmill](https://www.windmill.dev/)
 
 
-Usage
------
+## Configuration
+
+Dagster Backend:
+```toml
+[processes.dagster_backend]
+graphql_url = "http://localhost:3000/graphql"
+repository_name = "the_repository"
+repository_location_name = "the.repos"
+```
+
+## Usage
 
 ### Request examples
 

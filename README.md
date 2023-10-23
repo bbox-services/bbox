@@ -18,6 +18,7 @@ Components:
 * [BBOX Tile server](bbox-tile-server): OGC API Tile service
 * [BBOX Asset server](bbox-asset-server): Serving static and templated files
 * [BBOX Processes server](bbox-processes-server): OGC API Processes service
+* [BBOX Routing server](bbox-routing-server): OGC API Routing service (experimental)
 
 Features:
 * Built-in high performance HTTP server

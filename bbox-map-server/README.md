@@ -1,17 +1,43 @@
-BBOX map server
-===============
+# BBOX map server
 
 Asynchronous map server with FCGI backend.
 
 Features:
 - [x] OGC WMS 1.3 Server
 - [ ] OGC Map API Server
-- [X] Map rendering backends: QGIS Server + UNN Mapserver
+- [x] FCGI backends:
+  - [X] QGIS Server
+  - [X] UNN Mapserver
 - [ ] Instrumentation data for WMS backends
 - [ ] Intelligent process dispatching (slow query detection)
 
-Usage
------
+
+## Configuration
+
+Map server settings:
+```toml
+[mapserver]
+# num_fcgi_processes = 4     # Default: number of CPU cores
+# wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s
+# search_projects = false    # Scan directories and build inventory
+```
+
+QGIS Server settings:
+```toml
+[mapserver.qgis_backend]
+project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"             # WMS URL base path
+qgz.path = "/qgz"              # WMS URL base path
+```
+
+UMN MapServer settings:
+```toml
+[mapserver.umn_backend]
+project_basedir = "../assets"  # Base dir for project files (.map)
+path = "/wms/map"              # WMS URL base path
+```
+
+## Usage
 
     cd ..
     cargo run
@@ -42,13 +68,12 @@ UMN Mapserver:
     curl -o /tmp/map.png 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=40.83354209954528358,0.542981257600549938,49.84069885574058389,15.5221558872974672&CRS=epsg:4326&WIDTH=1372&HEIGHT=825&LAYERS=country&STYLES=&FORMAT=image%2Fpng%3B%20mode%3D8bit'
 
 
-Development
------------
+## Development
 
 Documentation of main libriaries:
 * Actix: https://actix.rs/
 * Async Process: https://docs.rs/async-process/
-* QGIS Server plugins: https://docs.qgis.org/3.10/en/docs/user_manual/working_with_ogc/server/plugins.html
+* QGIS Server plugins: https://docs.qgis.org/3.28/en/docs/server_manual/plugins.html
 
 Fast CGI:
 * Fast CGI: https://fastcgi-archives.github.io/FastCGI_Specification.html

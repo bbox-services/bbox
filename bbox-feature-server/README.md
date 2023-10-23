@@ -6,7 +6,7 @@ Features:
 - [x] OGC API - Features - Part 1: Core 1.0
 - [ ] OGC API - Features - Part 2: Coordinate Reference Systems by Reference 1.0
 - [x] OpenAPI endpoint
-- [x] Native backends: PostGIS, GeoPackage
+- [x] Builtin storage backends: PostGIS, GeoPackage
 - [x] Output formats: GeoJSON
 
 
