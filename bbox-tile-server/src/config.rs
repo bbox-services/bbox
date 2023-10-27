@@ -49,7 +49,7 @@ pub struct GridCfg {
 pub enum SourceParamCfg {
     #[serde(rename = "wms_proxy")]
     WmsHttp(WmsHttpSourceParamsCfg),
-    #[serde(rename = "wms_project")]
+    #[serde(rename = "map_service")]
     WmsFcgi(WmsFcgiSourceParamsCfg),
     #[serde(rename = "postgis")]
     Postgis(PostgisSourceParamsCfg),

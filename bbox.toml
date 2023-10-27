@@ -170,12 +170,12 @@ base_dir = "/tmp/tilecache"
 
 [[tileset]]
 name = "ne_extracts"
-wms_project = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
+map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
 cache = "tilecache"
 
 [[tileset]]
 name = "ne_umn"
-wms_project = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
+map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 
 [[tileset]]
 name = "gebco"
@@ -184,7 +184,7 @@ wms_proxy = { source = "gebco", layers = "gebco_latest" }
 [[tileset]]
 name = "rivers_lakes"
 tms = "LV95"
-[tileset.wms_project]
+[tileset.map_service]
 project = "ne_extracts"
 suffix = "qgz"
 layers = "ne_10m_lakes,ne_10m_rivers_lake_centerlines"

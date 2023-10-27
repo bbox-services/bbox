@@ -64,7 +64,7 @@ Raster tiles with QGIS Server backend:
 ```toml
 [[tileset]]
 name = "ne_extracts"
-wms_project = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
+map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
 cache = "tilecache"
 ```
 
@@ -72,7 +72,7 @@ Raster tiles with UMN Mapserver backend:
 ```toml
 [[tileset]]
 name = "ne_umn"
-wms_project = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
+map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 ```
 
 Raster tiles from external WMS:

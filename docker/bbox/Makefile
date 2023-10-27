@@ -17,7 +17,7 @@ down:
 
 loaddb:
 	#docker compose --profile processes run windmill_worker ogr2ogr -f PostgreSQL PG:'host=postgresql user=geodb password=$$PG_PASS dbname=geodb' /assets/ne_extracts.gpkg
-	docker compose --profile processes run windmill_worker ogr2ogr -f PostgreSQL PG:"host=postgresql user=geodb dbname=geodb" /assets/ne_extracts.gpkg
+	docker run --rm --user $$(id -u):$$(id -g) --network bbox --env-file .env -v $$PWD/../../assets:/assets osgeo/gdal:alpine-normal-latest ogr2ogr -f PostgreSQL PG:"host=postgresql user=geodb dbname=geodb" /assets/ne_extracts.gpkg
 
 resetdb:
 	docker stop bbox_postgresql_1
