@@ -14,13 +14,12 @@ impl MvtBuilder {
         }
     }
     pub fn new_layer(name: &str, tile_size: u32) -> mvt::tile::Layer {
-        let mut mvt_layer = mvt::tile::Layer {
+        mvt::tile::Layer {
             version: 2,
+            name: String::from(name),
             extent: Some(tile_size),
             ..Default::default()
-        };
-        mvt_layer.name = String::from(name);
-        mvt_layer
+        }
     }
     pub fn add_feature_attribute(
         &mut self,

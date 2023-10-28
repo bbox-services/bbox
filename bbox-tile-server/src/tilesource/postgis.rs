@@ -265,8 +265,7 @@ impl TileRead for PgSource {
                         extent.right,
                         extent.top,
                     )?
-                }
-                .clone();
+                };
                 for field in &layer.fields {
                     if field.name == layer.geometry_field {
                         continue;
