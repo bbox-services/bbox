@@ -101,12 +101,16 @@ impl PgSource {
                     for col in stmt.columns() {
                         let info = column_info(col);
                         if let Some(geom_col) = &layer.geometry_field {
-                            if col.name() == geom_col && info != FieldTypeInfo::Geometry {
-                                error!(
-                                    "Unsupported geometry type in layer {} at zoom level {zoom}",
-                                    layer.name
-                                );
-                                continue;
+                            if col.name() == geom_col {
+                                if info == FieldTypeInfo::Geometry {
+                                    geometry_field = Some(geom_col.to_string());
+                                } else {
+                                    error!(
+                                        "Unsupported geometry type in layer {} at zoom level {zoom}",
+                                        layer.name
+                                    );
+                                    continue;
+                                }
                             }
                         } else if info == FieldTypeInfo::Geometry && geometry_field.is_none() {
                             // Default: use first geometry column
@@ -132,6 +136,7 @@ impl PgSource {
             };
         }
         let Some(geometry_field) = geometry_field else {
+            // TODO: check for valid geometry_field in *all* zoom levels
             error!("No geometry column found in layer {}", layer.name);
             return Err(TileSourceError::TypeDetectionError);
         };
