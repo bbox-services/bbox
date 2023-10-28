@@ -22,10 +22,9 @@ Tile seeder features:
 Datasources:
 ```toml
 [[datasource]]
-name = "t_rex_tests"
-#default = true
+name = "mvtbenchdb"
 [datasource.postgis]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
 name = "ne_extracts"
@@ -42,22 +41,20 @@ format = "image/jpeg"
 Vector tiles from PostGIS table:
 ```toml
 [[tileset]]
-name = "ne_10m_populated_places"
+name = "ne_countries"
 [tileset.postgis]
-datasource = "t_rex_tests"
-extent = [-179.58998, -90.00000, 179.38330, 82.48332]
+datasource = "mvtbenchdb"
+extent = [-179.97277, -83.05457, 179.99366, 83.23559]
+attribution = "Natural Earth v4"
+
 [[tileset.postgis.layer]]
-name = "ne_10m_populated_places"
-table_name = "ne.ne_10m_populated_places"
-#geometry_field = "wkb_geometry"
-fid_field = "fid"
+name = "country-name"
+table_name = "ne_10m_admin_0_country_points"
 geometry_type = "POINT"
 srid = 3857
 buffer_size = 0
-#make_valid = true
-query_limit = 1000
-#[[tileset.postgis.layer.query]]
-#sql = """SELECT wkb_geometry,fid,scalerank,name,pop_max FROM ne.ne_10m_populated_places"""
+[[tileset.postgis.layer.query]]
+sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
 ```
 
 Raster tiles with QGIS Server backend:
@@ -158,10 +155,12 @@ Map viewer template examples:
 
     x-www-browser http://localhost:8080/html/maplibre-asset-style/mbtiles_mvt_fl
 
-With PG Service:
+With PostGIS Service:
 
-    curl -s http://localhost:8080/xyz/ne_10m_populated_places.style.json | jq .
-    x-www-browser http://localhost:8080/html/maplibre/ne_10m_populated_places
+    docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb
+
+    curl -s http://localhost:8080/xyz/ne_countries.style.json | jq .
+    x-www-browser http://localhost:8080/html/maplibre/ne_countries
 
 
 ### Seeding
@@ -180,7 +179,7 @@ Seed with embedded map service:
 
 Seed PostGIS MVT tiles:
 
-    ../target/release/bbox-tile-server seed --tileset=ne_10m_populated_places --base-dir=/tmp/tiles/ne_10m_populated_places --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=ne_countries --base-dir=/tmp/tiles/ne_countries --maxzoom=2
 
 #### Seed to S3 storage
 

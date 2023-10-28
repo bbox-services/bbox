@@ -97,6 +97,9 @@ pub struct PostgisSourceParamsCfg {
     pub center: Option<(f64, f64)>,
     pub start_zoom: Option<u8>,
     pub attribution: Option<String>,
+    /// PostGIS 2 compatible query (without ST_AsMVT)
+    #[serde(default)]
+    pub postgis2: bool,
     #[serde(rename = "layer")]
     pub layers: Vec<VectorLayerCfg>,
 }

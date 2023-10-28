@@ -31,6 +31,8 @@ pub struct PgMvtLayer {
     fields: Vec<FieldInfo>,
     geometry_field: String,
     geometry_type: Option<String>,
+    /// ST_AsMvt returns geometries in tile coordinate system
+    tile_coord_sys: bool,
     fid_field: Option<String>,
     query_limit: Option<u32>,
     // TileJSON metadata
@@ -68,7 +70,7 @@ impl PgSource {
 
         let mut layers = HashMap::new();
         for layer in &cfg.layers {
-            if let Ok(mvt_layer) = Self::setup_layer(ds, layer, grid_srid).await {
+            if let Ok(mvt_layer) = Self::setup_layer(ds, layer, grid_srid, cfg.postgis2).await {
                 layers.insert(layer.name.clone(), mvt_layer);
             }
         }
@@ -81,6 +83,7 @@ impl PgSource {
         ds: &PgDatasource,
         layer: &VectorLayerCfg,
         grid_srid: i32,
+        postgis2: bool,
     ) -> Result<PgMvtLayer, TileSourceError> {
         // Configuration checks (TODO: add config_check to trait)
         if layer.query.is_empty() && layer.table_name.is_none() {
@@ -145,8 +148,15 @@ impl PgSource {
         let mut layer_queries = HashMap::new();
         for zoom in layer.minzoom()..=layer.maxzoom(22) {
             let layer_query = layer.query(zoom);
-            let query =
-                SqlQuery::build_tile_query(layer, geom_name, &fields, grid_srid, zoom, layer_query);
+            let query = SqlQuery::build_tile_query(
+                layer,
+                geom_name,
+                &fields,
+                grid_srid,
+                zoom,
+                layer_query,
+                postgis2,
+            );
             let stmt = match ds.pool.prepare(&query.sql).await {
                 Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
                 Err(e) => {
@@ -172,6 +182,7 @@ impl PgSource {
             fields,
             geometry_field: geom_name.to_string(),
             geometry_type: layer.geometry_type.clone(),
+            tile_coord_sys: !postgis2,
             fid_field: layer.fid_field.clone(),
             query_limit: layer.query_limit,
             queries: layer_queries,
@@ -234,15 +245,18 @@ impl TileRead for PgSource {
             let query_limit = layer.query_limit.unwrap_or(0);
             while let Some(row) = rows.try_next().await? {
                 let wkb: wkb::Ewkb = row.try_get(layer.geometry_field.as_str())?;
-                let mut feat = wkb
-                    .to_mvt(
+                let mut feat = if layer.tile_coord_sys {
+                    wkb.to_mvt_unscaled()?
+                } else {
+                    wkb.to_mvt(
                         tile_size,
                         extent.left,
                         extent.bottom,
                         extent.right,
                         extent.top,
                     )?
-                    .clone();
+                }
+                .clone();
                 for field in &layer.fields {
                     if field.name == layer.geometry_field {
                         continue;

@@ -31,12 +31,6 @@ name = "ne_extracts"
 [datasource.gpkg]
 path = "../assets/ne_extracts.gpkg"
 
-#[[datasource]]
-#name = "t_rex_tests"
-##default = true
-#[datasource.postgis]
-#url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
-
 [[datasource]]
 name = "gebco"
 [datasource.wms_proxy]
@@ -47,9 +41,6 @@ format = "image/jpeg"
 
 [[collections.directory]]
 dir = "../assets"
-
-#[[collections.postgis]]
-#url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 # -- collections --
 
@@ -193,21 +184,3 @@ params = "transparent=true"
 [[tileset]]
 name = "mbtiles_mvt_fl"
 mbtiles = { path = "../assets/liechtenstein.mbtiles" }
-
-#[[tileset]]
-#name = "ne_10m_populated_places"
-#[tileset.postgis]
-#datasource = "t_rex_tests"
-#extent = [-179.58998, -90.00000, 179.38330, 82.48332]
-#[[tileset.postgis.layer]]
-#name = "ne_10m_populated_places"
-#table_name = "ne.ne_10m_populated_places"
-##geometry_field = "wkb_geometry"
-#fid_field = "fid"
-#geometry_type = "POINT"
-#srid = 3857
-#buffer_size = 0
-##make_valid = true
-#query_limit = 1000
-##[[tileset.postgis.layer.query]]
-##sql = """SELECT wkb_geometry,fid,scalerank,name,pop_max FROM ne.ne_10m_populated_places"""
