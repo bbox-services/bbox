@@ -249,7 +249,12 @@ impl TileRead for PgSource {
             let mut cnt = 0;
             let query_limit = layer.query_limit.unwrap_or(0);
             while let Some(row) = rows.try_next().await? {
-                let wkb: wkb::Ewkb = row.try_get(layer.geometry_field.as_str())?;
+                let Some(wkb) =
+                    row.try_get::<Option<wkb::Ewkb>, _>(layer.geometry_field.as_str())?
+                else {
+                    // Skip NULL geometries
+                    continue;
+                };
                 let mut feat = if layer.tile_coord_sys {
                     wkb.to_mvt_unscaled()?
                 } else {
