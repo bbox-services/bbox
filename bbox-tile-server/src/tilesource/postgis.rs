@@ -242,16 +242,17 @@ impl TileRead for PgSource {
                     if field.name == layer.geometry_field {
                         continue;
                     }
-                    let val = column_value(&row, field)?;
-                    if let Some(fid_field) = &layer.fid_field {
-                        if &field.name == fid_field {
-                            if let Some(val) = val.int_value {
-                                feat.id = Some(u64::try_from(val)?);
-                                continue;
+                    if let Some(val) = column_value(&row, field)? {
+                        if let Some(fid_field) = &layer.fid_field {
+                            if &field.name == fid_field {
+                                if let Some(val) = val.int_value {
+                                    feat.id = Some(u64::try_from(val)?);
+                                    continue;
+                                }
                             }
                         }
-                    }
-                    mvt.add_feature_attribute(&field.name, val, &mut feat)?;
+                        mvt.add_feature_attribute(&field.name, val, &mut feat)?;
+                    } // skip null values
                 }
                 mvt_layer.features.push(feat);
                 cnt += 1;
@@ -368,36 +369,41 @@ fn column_info(col: &PgColumn) -> FieldTypeInfo {
 }
 
 /// Convert PG column value to MVT value
-fn column_value(row: &PgRow, field: &FieldInfo) -> Result<mvt::tile::Value, sqlx::Error> {
-    let mut mvt_val = mvt::tile::Value::default();
+fn column_value(row: &PgRow, field: &FieldInfo) -> Result<Option<mvt::tile::Value>, sqlx::Error> {
     let FieldTypeInfo::Property(pg_type) = &field.info else {
-        return Ok(mvt_val); // Warning or error?
+        return Ok(None); // Warning or error?
     };
     let col = field.name.as_str();
+    let mut mvt_val = mvt::tile::Value::default();
     match pg_type.name() {
         "VARCHAR" | "TEXT" | "CHAR_ARRAY" => {
-            mvt_val.string_value = Some(row.try_get::<String, _>(col)?);
+            mvt_val.string_value = row.try_get::<Option<String>, _>(col)?;
             // or: mvt::tile::Value { string_value: Some(col_val), ..Default::default() }
         }
         "FLOAT4" => {
-            mvt_val.float_value = Some(row.try_get::<f32, _>(col)?);
+            mvt_val.float_value = row.try_get::<Option<f32>, _>(col)?;
         }
         "FLOAT8" => {
-            mvt_val.double_value = Some(row.try_get::<f64, _>(col)?);
+            mvt_val.double_value = row.try_get::<Option<f64>, _>(col)?;
         }
         "INT2" => {
-            mvt_val.int_value = Some(row.try_get::<i16, _>(col)?.into());
+            mvt_val.int_value = row.try_get::<Option<i16>, _>(col)?.map(i16::into);
         }
         "INT4" => {
-            mvt_val.int_value = Some(row.try_get::<i32, _>(col)?.into());
+            mvt_val.int_value = row.try_get::<Option<i32>, _>(col)?.map(i32::into);
         }
         "INT8" => {
-            mvt_val.int_value = Some(row.try_get::<i64, _>(col)?);
+            mvt_val.int_value = row.try_get::<Option<i64>, _>(col)?;
         }
         "BOOL" => {
-            mvt_val.bool_value = Some(row.try_get::<bool, _>(col)?);
+            mvt_val.bool_value = row.try_get::<Option<bool>, _>(col)?;
         }
         _ => {}
     }
-    Ok(mvt_val)
+    if mvt_val == mvt::tile::Value::default() {
+        // TODO: check optimization (compare with static?)
+        Ok(None)
+    } else {
+        Ok(Some(mvt_val))
+    }
 }
