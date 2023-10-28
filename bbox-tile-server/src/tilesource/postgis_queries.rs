@@ -317,15 +317,13 @@ fn build_bbox_expr(layer: &VectorLayerCfg, grid_srid: i32, buffer_size: Option<u
     let mut expr = format!("ST_MakeEnvelope($1,$2,$3,$4,{env_srid})");
     if let Some(pixels) = buffer_size {
         if pixels != 0 {
-            // TODO: tile_size ?
-            let pfact = pixels as f64 * 256.0 / layer.tile_size as f64;
             expr = format!("ST_MakeEnvelope($1-{p}*!pixel_width!,$2-{p}*!pixel_width!,$3+{p}*!pixel_width!,$4+{p}*!pixel_width!,{srid})",
-                srid=env_srid, p=pfact);
+                srid=env_srid, p=pixels);
         }
     }
     if layer_srid > 0 && layer_srid != env_srid && !layer.no_transform {
-        // TODO: tile_size/x ?
-        expr = format!("ST_Transform(ST_Segmentize({expr}, ($3-$1)/512), {layer_srid})",);
+        // Note: In t-rex max_segment_length is ($3-$1)/512 instead of pixel_width
+        expr = format!("ST_Transform(ST_Segmentize({expr}, !pixel_width!), {layer_srid})",);
     }
     // Clip bbox to maximal extent of SRID
     if layer.shift_longitude {
@@ -398,7 +396,7 @@ mod test {
         let postgis2 = false;
         layer.srid = Some(2056);
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 2056), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 2056)");
+               "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 2056), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 2056)");
         layer.no_transform = true;
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
                "SELECT ST_AsMvtGeom(ST_SetSRID(geometry,3857), ST_MakeEnvelope($1,$2,$3,$4,2056), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,2056)");
@@ -406,12 +404,12 @@ mod test {
         layer.srid = Some(4326);
         assert_eq!(
             SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-            "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326)"
+            "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326)"
         );
         layer.shift_longitude = true;
         assert_eq!(
         SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-            "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326)), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326))"
+            "SELECT ST_AsMvtGeom(ST_Transform(geometry,3857), ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326)), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326))"
         );
         layer.shift_longitude = false;
         layer.srid = Some(-1);
@@ -425,7 +423,7 @@ mod test {
         let postgis2 = true;
         layer.srid = Some(2056);
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 2056)");
+               "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 2056)");
         layer.no_transform = true;
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
                "SELECT ST_SetSRID(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,2056)");
@@ -433,12 +431,12 @@ mod test {
         layer.srid = Some(4326);
         assert_eq!(
             SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-            "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326)"
+            "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326)"
         );
         layer.shift_longitude = true;
         assert_eq!(
         SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-            "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), ($3-$1)/512), 4326))"
+            "SELECT ST_Transform(geometry,3857) AS geometry FROM osm_place_point WHERE geometry && ST_Shift_Longitude(ST_Transform(ST_Segmentize(ST_MakeEnvelope($1,$2,$3,$4,3857), $5::FLOAT8), 4326))"
         );
         layer.shift_longitude = false;
         layer.srid = Some(-1);

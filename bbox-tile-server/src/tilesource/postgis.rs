@@ -33,6 +33,7 @@ pub struct PgMvtLayer {
     geometry_type: Option<String>,
     /// ST_AsMvt returns geometries in tile coordinate system
     tile_coord_sys: bool,
+    tile_size: u32,
     fid_field: Option<String>,
     query_limit: Option<u32>,
     // TileJSON metadata
@@ -183,6 +184,7 @@ impl PgSource {
             geometry_field: geom_name.to_string(),
             geometry_type: layer.geometry_type.clone(),
             tile_coord_sys: !postgis2,
+            tile_size: layer.tile_size,
             fid_field: layer.fid_field.clone(),
             query_limit: layer.query_limit,
             queries: layer_queries,
@@ -222,8 +224,12 @@ impl TileRead for PgSource {
                     QueryParam::Zoom => query.bind(tile.z as i32),
                     QueryParam::PixelWidth => {
                         if let Some(pixel_width) = grid.resolution_z(tile.z) {
-                            // correct: * 256.0 / layer.tile_size as f64
-                            query.bind(pixel_width)
+                            // TODO: grid_width = grid.tile_width_z(tile.z)
+                            let grid_width: u16 =
+                                grid.tms.tile_matrices[tile.z as usize].tile_width.into();
+                            let mvt_pixel_width =
+                                pixel_width * grid_width as f64 / layer.tile_size as f64;
+                            query.bind(mvt_pixel_width)
                         } else {
                             query
                         }
@@ -239,8 +245,7 @@ impl TileRead for PgSource {
             }
             debug!("Query tile with {extent:?}");
             let mut rows = query.fetch(&self.ds.pool);
-            let mut mvt_layer = MvtBuilder::new_layer(id);
-            let tile_size = mvt_layer.extent.unwrap_or(4096);
+            let mut mvt_layer = MvtBuilder::new_layer(id, layer.tile_size);
             let mut cnt = 0;
             let query_limit = layer.query_limit.unwrap_or(0);
             while let Some(row) = rows.try_next().await? {
@@ -249,7 +254,7 @@ impl TileRead for PgSource {
                     wkb.to_mvt_unscaled()?
                 } else {
                     wkb.to_mvt(
-                        tile_size,
+                        layer.tile_size,
                         extent.left,
                         extent.bottom,
                         extent.right,

@@ -13,9 +13,10 @@ impl MvtBuilder {
             tags: mvt::TagsBuilder::new(),
         }
     }
-    pub fn new_layer(name: &str) -> mvt::tile::Layer {
+    pub fn new_layer(name: &str, tile_size: u32) -> mvt::tile::Layer {
         let mut mvt_layer = mvt::tile::Layer {
             version: 2,
+            extent: Some(tile_size),
             ..Default::default()
         };
         mvt_layer.name = String::from(name);
