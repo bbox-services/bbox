@@ -284,8 +284,8 @@ impl PgCollectionSource {
         // TODO: Transform to WGS84, if necessary
         let sql = &format!(
             r#"
-        WITH query AS ({sql})
-        WITH extent AS (
+        WITH query AS ({sql}),
+        extent AS (
           SELECT ST_Extent("{geometry_column}") AS bbox
           FROM query
         )
