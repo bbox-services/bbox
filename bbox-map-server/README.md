@@ -46,7 +46,7 @@ Configuration:
 * `BBOX_MAPSERVER__NUM_FCGI_PROCESSES`: Number of FCGI processes (default: number of CPU cores)
 
 
-Request examples:
+WMS request examples:
 
     curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&REQUEST=GetCapabilities'
 
@@ -67,6 +67,14 @@ UMN Mapserver:
 
     curl -o /tmp/map.png 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=40.83354209954528358,0.542981257600549938,49.84069885574058389,15.5221558872974672&CRS=epsg:4326&WIDTH=1372&HEIGHT=825&LAYERS=country&STYLES=&FORMAT=image%2Fpng%3B%20mode%3D8bit'
 
+
+WFS request examples:
+
+    curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&REQUEST=GetCapabilities'
+
+    curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&REQUEST=GetFeature&VERSION=1.1.0&TYPENAME=country&SRSNAME=EPSG:3857&BBOX=1059483.34824404888786376,5959680.16110791172832251,1061700.73825845750980079,5962445.67000228632241488,EPSG:3857'
+
+    curl -s --data @wfsadd.xml 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&REQUEST=Transaction'
 
 ## Development
 
