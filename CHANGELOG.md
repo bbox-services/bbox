@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 alpha4 (2023-10-30)
+
+* Use ST_AsMvtGeom for PostGIS tilesets
+* Tileset configuration: Rename wms_project to map_service
+* Various tile server and feature server fixes and improvements
+* Update embedded Maplibre & OL
+
 ## 0.5.0 alpha3 (2023-10-21)
 
 * Unify collection and tileserver datasource configuration
