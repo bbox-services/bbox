@@ -2,8 +2,8 @@
 
 redoc_version = 2.0.0
 swagger_version = 3.24.2
-ol_version = 7.4.0
-maplibre_version = 3.1.0
+ol_version = 8.1.0
+maplibre_version = 3.5.2
 proj_version = 2.8.1
 
 all: static/redoc/redoc.standalone.js \
