@@ -36,6 +36,8 @@ jobs:
           cargo --version
       - name: Install protoc
         uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         shell: bash
@@ -97,6 +99,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Install protoc
         uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       # - name: Start postgres
       #   if: matrix.target != 'aarch64-apple-darwin'
       #   uses: nyurik/action-setup-postgis@v1
