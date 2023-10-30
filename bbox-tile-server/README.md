@@ -153,7 +153,7 @@ Map viewer examples:
 
 Map viewer template examples:
 
-    x-www-browser http://localhost:8080/html/maplibre-asset-style/mbtiles_mvt_fl
+    x-www-browser http://localhost:8080/html/maplibre/mbtiles_mvt_fl?style=/assets/mbtiles_mvt_fl-style.json
 
 With PostGIS Service:
 

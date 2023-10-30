@@ -10,10 +10,13 @@
 <body>
   <div id='map' style='width: 100%; height: 600px;'></div>
   <script>
-  var map = new maplibregl.Map({
-    container: 'map',
-    style: location.origin + '/xyz/{{ param }}.style.json'
-  });
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const style = urlParams.get('style') || '/xyz/{{ param }}.style.json';
+    var map = new maplibregl.Map({
+      container: 'map',
+      style: location.origin + style
+    });
   </script>
 </body>
 
