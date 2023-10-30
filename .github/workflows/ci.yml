@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-    # Don't change this name - it is used by the merge protection rules
     name: Build ${{ matrix.target }}
     strategy:
       fail-fast: false
@@ -29,11 +28,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Rust Versions
+
+      - name: rustup
         shell: bash
         run: |
-          rustc --version
-          cargo --version
+          rustup toolchain install stable --profile minimal
+          if [[ "${{ matrix.target }}" == "x86_64-unknown-linux-gnu" ]]; then
+            rustup component add clippy
+          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
+            rustup target add aarch64-apple-darwin
+          fi
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install protoc
         uses: arduino/setup-protoc@v2
         with:
@@ -51,7 +58,6 @@ jobs:
             # Skip bbox-map-server on Windows (uses Unix sockets)
             cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,frontend
           elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
-            rustup target add aarch64-apple-darwin
             # compile without debug symbols
             RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-server
           else
@@ -70,33 +76,17 @@ jobs:
           path: target_releases/*
 
   test:
-    # Don't change this name - it is used by the merge protection rules
-    name: Test & package ${{ matrix.target }}
+    name: Test
     needs: [build]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            ext: ''
-            target: x86_64-unknown-linux-gnu
-            name: bbox-server-Linux-x86_64.tar.gz
-          - os: windows-latest
-            ext: '.exe'
-            target: x86_64-pc-windows-msvc
-            name: bbox-server-Windows-x86_64.zip
-          - os: macOS-latest
-            ext: ''
-            target: x86_64-apple-darwin
-            name: bbox-server-Darwin-x86_64.tar.gz
-          - os: ubuntu-latest
-            ext: ''
-            target: aarch64-apple-darwin
-            name: bbox-server-Darwin-aarch64.tar.gz
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
+
+      - run: rustup toolchain install stable --profile minimal
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install protoc
         uses: arduino/setup-protoc@v2
         with:
@@ -125,13 +115,37 @@ jobs:
       #   env:
       #     DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
       - name: Unit Tests (Linux)
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        shell: bash
         run: |
           cargo test --all
-          rm -rf target
         # env:
         #   DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
+
+  package:
+    name: Package ${{ matrix.target }}
+    needs: [test]
+    if: startsWith(github.ref, 'refs/tags/')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            ext: ''
+            target: x86_64-unknown-linux-gnu
+            name: bbox-server-Linux-x86_64.tar.gz
+          - os: windows-latest
+            ext: '.exe'
+            target: x86_64-pc-windows-msvc
+            name: bbox-server-Windows-x86_64.zip
+          - os: macOS-latest
+            ext: ''
+            target: x86_64-apple-darwin
+            name: bbox-server-Darwin-x86_64.tar.gz
+          - os: ubuntu-latest
+            ext: ''
+            target: aarch64-apple-darwin
+            name: bbox-server-Darwin-aarch64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
       - uses: actions/download-artifact@v3
         with:
           name: build-${{ matrix.target }}
@@ -155,7 +169,6 @@ jobs:
         if: matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin'
         run: shasum -a 256 ${{ matrix.name }}
       - name: Publish
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           draft: true
