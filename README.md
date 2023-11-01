@@ -30,7 +30,7 @@ Features:
 
     cd bbox-server
     cargo install --path .
-    ~/.cargo/bin/bbox-server
+    bbox-server --help
 
 ## Binaries
 
