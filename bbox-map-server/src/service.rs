@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::service::{CoreService, OgcApiService};
 use clap::ArgMatches;
+use log::error;
 use prometheus::Registry;
 use std::collections::HashMap;
 
@@ -40,10 +41,15 @@ async fn init_wms_backend(config: &MapServerCfg) -> MapService {
     }
 
     for mut process_pool in process_pools {
-        if process_pool.spawn_processes().await.is_ok() {
-            actix_web::rt::spawn(async move {
-                process_pool.watchdog_loop().await;
-            });
+        match process_pool.spawn_processes().await {
+            Ok(_) => {
+                actix_web::rt::spawn(async move {
+                    process_pool.watchdog_loop().await;
+                });
+            }
+            Err(e) => {
+                error!("Spawn error: {e}");
+            }
         }
     }
     // FIXME: Wait until FCGI services are started

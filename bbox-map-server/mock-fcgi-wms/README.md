@@ -1,9 +1,7 @@
-FCGI WMS test server
-====================
+# FCGI WMS test server
 
 
-Standalone usage
-----------------
+## Standalone usage
 
     cargo build
 
@@ -14,17 +12,14 @@ Standalone usage
     QUERY_STRING='' cgi-fcgi -bind -connect 127.0.0.1:8099
 
 
-Use with BBOX server
---------------------
+## Use with BBOX server
 
-    cargo build --release
+    cargo install --path .
 
-    cd ../..
-    docker-compose up -d
+Run map server:
 
-Run server with bbox-map-server/bench/bbox-bench.toml:
-
-    RUST_LOG=info cargo run --release
+    cd ..
+    RUST_LOG=info cargo run --release -- --config=./bench/bbox-bench.toml serve
 
 Test request (50ms):
 
@@ -38,10 +33,19 @@ Crash request:
 
     curl 'http://localhost:8080/wms/mock/crash?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=-67.593,-176.248,83.621,182.893&CRS=EPSG:4326&WIDTH=515&HEIGHT=217&LAYERS=Country,Hello&STYLES=,&FORMAT=image/png;%20mode=8bit&DPI=96&TRANSPARENT=TRUE'
 
+Request with sleep time parameter:
+
+    curl 'http://localhost:8080/wms/mock/helloworld?t=500'
+
+Start instrumentation services:
+
+    cd ../../docker/bbox
+    docker compose up -d jaeger prometheus grafana
+
 Jaeger tracing:
 
-    x-www-browser http://localhost:16686/
+    open http://localhost:16686/
 
 Prometheus metrics:
 
-    x-www-browser http://localhost:9090/
+    open http://localhost:9090/

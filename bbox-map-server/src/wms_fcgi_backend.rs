@@ -2,14 +2,14 @@ use crate::config::*;
 use crate::fcgi_process::FcgiProcessPool;
 use crate::inventory::*;
 use bbox_core::{app_dir, file_search};
-use log::info;
+use log::{info, warn};
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::path::{Path, PathBuf};
 
 pub trait FcgiBackendType {
     fn name(&self) -> &'static str;
-    fn exe_locations(&self) -> Vec<&'static str>;
+    fn exe_locations(&self) -> Vec<String>;
     fn project_files(&self) -> Vec<&'static str>;
     fn project_basedir(&self) -> &str;
     fn url_base(&self, suffix: &str) -> Option<&str>;
@@ -42,8 +42,8 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn name(&self) -> &'static str {
         "qgis"
     }
-    fn exe_locations(&self) -> Vec<&'static str> {
-        vec!["/usr/lib/cgi-bin/qgis_mapserv.fcgi"]
+    fn exe_locations(&self) -> Vec<String> {
+        vec!["/usr/lib/cgi-bin/qgis_mapserv.fcgi".to_string()]
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
@@ -90,8 +90,8 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn name(&self) -> &'static str {
         "mapserver"
     }
-    fn exe_locations(&self) -> Vec<&'static str> {
-        vec!["/usr/lib/cgi-bin/mapserv"]
+    fn exe_locations(&self) -> Vec<String> {
+        vec!["/usr/lib/cgi-bin/mapserv".to_string()]
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
@@ -123,14 +123,19 @@ impl FcgiBackendType for MockFcgiBackend {
     fn name(&self) -> &'static str {
         "mock"
     }
-    fn exe_locations(&self) -> Vec<&'static str> {
-        vec!["target/release/mock-fcgi-wms"]
+    fn exe_locations(&self) -> Vec<String> {
+        let cargo_bin_path = Path::new(&env::var("HOME").unwrap_or(".".to_string()))
+            .join(".cargo/bin/mock-fcgi-wms");
+        vec![
+            cargo_bin_path.to_string_lossy().to_string(),
+            "target/debug/mock-fcgi-wms".to_string(),
+        ]
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["mock"]
     }
     fn project_basedir(&self) -> &str {
-        ""
+        "."
     }
     fn url_base(&self, _suffix: &str) -> Option<&str> {
         Some(&self.config.path)
@@ -141,11 +146,8 @@ fn detect_fcgi(backend: &dyn FcgiBackendType) -> Option<String> {
     find_exe(backend.exe_locations())
 }
 
-fn find_exe(locations: Vec<&str>) -> Option<String> {
-    locations
-        .iter()
-        .find(|&&c| Path::new(c).is_file())
-        .map(|&c| c.to_string())
+fn find_exe(locations: Vec<String>) -> Option<String> {
+    locations.iter().find(|&c| Path::new(&c).is_file()).cloned()
 }
 
 pub fn detect_backends(
@@ -236,14 +238,26 @@ pub fn detect_backends(
                 }
                 basedir
             } else {
-                info!("Searching project files disabled");
+                info!(
+                    "Backend {}: Searching project files disabled",
+                    backend.name()
+                );
                 PathBuf::from(&base)
             };
-            info!("Setting FCGI base path to {basedir:?}");
+            info!(
+                "Backend {}: Setting FCGI base path to {basedir:?}",
+                backend.name()
+            );
 
             let process_pool =
                 FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_fcgi_processes);
             pools.push(process_pool);
+        } else {
+            warn!(
+                "Backend {} not found in {}",
+                backend.name(),
+                backend.exe_locations().join(",")
+            );
         }
     }
     let inventory = Inventory {

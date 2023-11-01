@@ -122,11 +122,6 @@ qgz.path = "/qgz"              # WMS URL base path
 project_basedir = "../assets"  # Base dir for project files (.map)
 path = "/wms/map"              # WMS URL base path
 
-#[mapserver.mock_backend]
-# Enable FCGI mockup backend (for testing)
-# Environment variable prefix: BBOX_MAPSERVER__MOCK_BACKEND__
-# path = "/wms/mock"
-
 #[processes.dagster_backend]
 # Dagster backend settings
 # Environment variable prefix: BBOX_PROCESSES__DAGSTER_BACKEND__

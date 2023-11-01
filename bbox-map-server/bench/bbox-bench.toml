@@ -3,12 +3,13 @@ server_addr = "0.0.0.0:8080"
 worker_threads = 32
 
 [mapserver]
-path = "/wms"
 num_fcgi_processes = 32
 search_projects = false
 
 [mapserver.mock_backend]
 # Enable FCGI mockup backend (for testing)
+# Environment variable prefix: BBOX_MAPSERVER__MOCK_BACKEND__
+path = "/wms/mock"
 
 [metrics.prometheus]
 path = "/metrics"
