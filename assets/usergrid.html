@@ -43,7 +43,7 @@
     /* Convenience methods for trying new layers */
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const layername = urlParams.get('layer') || 'g1k18'
+    const layername = urlParams.get('layer')
     const debug = urlParams.get('debug') || false;
     const servername = urlParams.get('server') || location.origin;
 
@@ -82,37 +82,16 @@
       }),
     });
 
-    /* MVT layer */
-
-    var style = new ol.style.Style({
-      stroke: new ol.style.Stroke({
-        color: '#FFFF33',
-        width: 3
-      })
-    });
-
-    var vtLayer = new ol.layer.VectorTile({
-      source: new ol.source.VectorTile({
-        format: new ol.format.MVT(),
-        tileGrid: tileGrid,
-        tilePixelRatio: 16,
-        url: servername + '/xyz/' + layername + '/{z}/{x}/{y}.pbf',
-        projection: projection
-      }),
-      style: style
-    });
-
     /* Displaying the tiles names, for debugging */
     const tileDebug = new ol.layer.Tile({
       source: new ol.source.TileDebug({
-        projection: vtLayer.getSource().getProjection(),
-        tileGrid: vtLayer.getSource().getTileGrid(),
+        projection: rasterTileLayer.getSource().getProjection(),
+        tileGrid: rasterTileLayer.getSource().getTileGrid(),
       })
     });
 
-    /* View and vector projection have to match, no reprojection like for raster layers */
     var map = new ol.Map({
-      layers: [wmtsLayer, rasterTileLayer], // vtLayer
+      layers: [wmtsLayer, rasterTileLayer],
       target: 'map',
       view: new ol.View({
         center: [2660000, 1190000],
@@ -120,6 +99,29 @@
         resolution: 500
       })
     });
+
+    /* MVT layer */
+    if (layername) {
+
+      var style = new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: '#FFFF33',
+          width: 3
+        })
+      });
+
+      var vtLayer = new ol.layer.VectorTile({
+        source: new ol.source.VectorTile({
+          format: new ol.format.MVT(),
+          tileGrid: tileGrid,
+          tilePixelRatio: 16,
+          url: servername + '/xyz/' + layername + '/{z}/{x}/{y}.pbf',
+          projection: projection
+        }),
+        style: style
+      });
+      map.addLayer(vtLayer);
+    }
 
     if (debug) {
       map.addLayer(tileDebug);
