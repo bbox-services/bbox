@@ -36,7 +36,7 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
         let fcgi_cache_count = (0..num_fcgi_processes)
             .map(|fcgino| {
                 let opts = prometheus::opts!(
-                    format!("fcgi_cache_count_{}", fcgino),
+                    format!("fcgi_cache_count_{fcgino}"),
                     "FCGI project cache size"
                 )
                 .namespace("bbox_wms");
@@ -46,7 +46,7 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
         let fcgi_client_pool_available = (0..num_fcgi_processes)
             .map(|fcgino| {
                 let opts = prometheus::opts!(
-                    format!("fcgi_client_pool_available_{}", fcgino),
+                    format!("fcgi_client_pool_available_{fcgino}"),
                     "FCGI clients available in pool"
                 )
                 .namespace("bbox_wms");
@@ -56,7 +56,7 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
         let fcgi_client_wait_seconds = (0..num_fcgi_processes)
             .map(|fcgino| {
                 let opts = prometheus::opts!(
-                    format!("fcgi_client_wait_seconds_{}", fcgino),
+                    format!("fcgi_client_wait_seconds_{fcgino}"),
                     "FCGI client wait time"
                 )
                 .namespace("bbox_wms");
@@ -65,11 +65,9 @@ pub fn wms_metrics(num_fcgi_processes: usize) -> &'static WmsMetrics {
             .collect();
         let fcgi_cache_hit = (0..num_fcgi_processes)
             .map(|fcgino| {
-                let opts = prometheus::opts!(
-                    format!("fcgi_cache_hit_{}", fcgino),
-                    "FCGI project cache hit"
-                )
-                .namespace("bbox_wms");
+                let opts =
+                    prometheus::opts!(format!("fcgi_cache_hit_{fcgino}"), "FCGI project cache hit")
+                        .namespace("bbox_wms");
                 IntGaugeVec::new(opts, &["backend"]).unwrap()
             })
             .collect();

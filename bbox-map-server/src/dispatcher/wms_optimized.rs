@@ -59,7 +59,7 @@ impl RequestDispatcher for Dispatcher {
         let query = match Query::<WmsQuery>::from_query(&query_str.to_lowercase()) {
             Ok(query) => query,
             Err(err) => {
-                warn!("Invalid query params `{}`: {}", &query_str, &err);
+                warn!("Invalid query params `{query_str}`: {err}");
                 Query::<WmsQuery>::from_query("map=__params_error").expect("Empty query")
             }
         };

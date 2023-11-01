@@ -21,9 +21,7 @@ impl WmsFcgiSource {
         let project = cfg.project.clone();
         let suffix = cfg.suffix.clone();
         let query = format!(
-            "map={}.{}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&LAYERS={}&STYLES=&{}",
-            &project,
-            &suffix,
+            "map={project}.{suffix}&SERVICE=WMS&REQUEST=GetMap&VERSION=1.3&LAYERS={}&STYLES=&{}",
             cfg.layers,
             cfg.params.as_ref().unwrap_or(&"".to_string()),
         );
@@ -43,16 +41,8 @@ impl WmsFcgiSource {
         };
         let extent = &extent_info.extent;
         format!(
-            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&WIDTH={}&HEIGHT={}&FORMAT={}",
-            self.query,
-            extent_info.srid,
-            extent.left,
-            extent.bottom,
-            extent.right,
-            extent.top,
-            width,
-            height,
-            format
+            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&WIDTH={width}&HEIGHT={height}&FORMAT={format}",
+            self.query, extent_info.srid, extent.left, extent.bottom, extent.right, extent.top
         )
     }
 

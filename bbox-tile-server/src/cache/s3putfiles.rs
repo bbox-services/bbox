@@ -227,7 +227,7 @@ pub async fn put_files_channels(args: &UploadArgs) -> anyhow::Result<()> {
                         if retry_count > max_retries {
                             break Err(e);
                         }
-                        eprintln!("Upload failed: {}, retrying", e);
+                        eprintln!("Upload failed: {e}, retrying");
                         tokio::time::sleep(Duration::from_secs(2_u64.pow(retry_count))).await;
                     }
                 }

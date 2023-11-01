@@ -62,8 +62,7 @@ pub fn render_plugin_xml(plugins: &Plugins, url: &str) -> String {
 
 fn read_metadata(fname: &PathBuf) -> ZipResult<Plugin> {
     fn get_entry(ini: &Ini, key: &str) -> String {
-        ini.get("general", key)
-            .unwrap_or(format!("{} missing", key))
+        ini.get("general", key).unwrap_or(format!("{key} missing"))
     }
     let zipfile = std::fs::File::open(fname)?;
     let mut archive = zip::ZipArchive::new(zipfile)?;

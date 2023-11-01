@@ -320,9 +320,9 @@ impl Theme {
             additional_mouse_crs: vec![],                      // make configurable
             map_crs: map_crs.unwrap_or("EPSG:3857".to_string()),
             drawing_order: vec![], // (capabilities.Capability.LayerDrawingOrder || "").split(",").map(title => title in titleNameMap ? titleNameMap[title] : title);
-            legend_url: format!("{}?", url),
-            feature_info_url: format!("{}?", url),
-            print_url: format!("{}?", url),
+            legend_url: format!("{url}?"),
+            feature_info_url: format!("{url}?"),
+            print_url: format!("{url}?"),
             skip_empty_feature_attributes: true,
             edit_config: None,
             thumbnail: "img/mapthumbs/default.jpg".to_string(),

@@ -48,17 +48,14 @@ fn main() {
         let response = match project.as_str() {
             "helloworld" => {
                 thread::sleep(time::Duration::from_millis(t.unwrap_or(50)));
-                format!("Hello, world! (pid={})", pid)
+                format!("Hello, world! (pid={pid})")
             }
             "slow" => {
                 thread::sleep(time::Duration::from_millis(t.unwrap_or(1000)));
-                format!("Good morning! (pid={})", pid)
+                format!("Good morning! (pid={pid})")
             }
             "crash" => std::process::exit(0),
-            _ => format!(
-                "Unknown project. Use e.g. 'helloworld', 'slow', 'crash'. (pid={})",
-                pid
-            ),
+            _ => format!("Unknown project. Use e.g. 'helloworld', 'slow', 'crash'. (pid={pid})",),
         };
         write!(
             &mut req.stdout(),

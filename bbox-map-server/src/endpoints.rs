@@ -166,10 +166,7 @@ pub async fn wms_fcgi_req(
     // ---
 
     let host_port: Vec<&str> = host.split(':').collect();
-    debug!(
-        "Forwarding query to FCGI process {}: {}",
-        fcgino, fcgi_query
-    );
+    debug!("Forwarding query to FCGI process {fcgino}: {fcgi_query}");
     let len = format!("{}", body.len());
     let mut params = fastcgi_client::Params::new()
         .set_request_method(req_method)

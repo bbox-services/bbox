@@ -87,8 +87,7 @@ impl std::str::FromStr for AdditionalParameter {
             if let Some(key) = key_result {
                 match key {
                     "name" => intermediate_rep.name.push(
-                        <String as std::str::FromStr>::from_str(val)
-                            .map_err(|x| format!("{}", x))?,
+                        <String as std::str::FromStr>::from_str(val).map_err(|x| format!("{x}"))?,
                     ),
                     "value" => return std::result::Result::Err(
                         "Parsing a container in this style is not supported in AdditionalParameter"

@@ -34,7 +34,7 @@ impl FromGridCfg for Grid {
             match gridname.as_str() {
                 "wgs84" => Ok(Grid::wgs84()),
                 "web_mercator" => Ok(Grid::web_mercator()),
-                _ => Err(format!("Unkown grid '{}'", gridname)),
+                _ => Err(format!("Unkown grid '{gridname}'")),
             }
         } else if let Some(ref usergrid) = grid_cfg.user {
             let units = match &usergrid.units.to_lowercase() as &str {

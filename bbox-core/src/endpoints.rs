@@ -85,7 +85,7 @@ pub fn absurl(req: &HttpRequest, path: &str) -> String {
             if p.is_empty() || p == pathbase {
                 "".to_string()
             } else {
-                format!("/{}", p)
+                format!("/{p}")
             }
         })
         .unwrap_or("".to_string());

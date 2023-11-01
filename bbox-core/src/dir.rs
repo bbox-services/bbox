@@ -18,5 +18,5 @@ pub fn base_dir() -> String {
 }
 
 pub fn app_dir(subdir: &str) -> String {
-    format!("{}/{}", &base_dir(), subdir)
+    format!("{}/{subdir}", &base_dir())
 }
