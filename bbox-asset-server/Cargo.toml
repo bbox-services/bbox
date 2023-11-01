@@ -19,7 +19,7 @@ minijinja = { workspace = true }
 once_cell = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true }
-tempfile = "3.2.0"
+tempfile = { workspace = true }
 zip = { version = "0.5.13", default-features = false, features = ["deflate"] }
 
 [[bin]]

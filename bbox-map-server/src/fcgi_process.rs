@@ -26,6 +26,7 @@ use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tempfile::TempDir;
 
 // --- FCGI Process ---
 
@@ -37,12 +38,12 @@ struct FcgiProcess {
 
 impl FcgiProcess {
     pub async fn spawn(
-        fcgi_path: &str,
+        fcgi_bin: &str,
         base_dir: Option<&PathBuf>,
         envs: &[(&str, &str)],
         socket_path: &str,
     ) -> std::io::Result<Self> {
-        let child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, socket_path)?;
+        let child = FcgiProcess::spawn_process(fcgi_bin, base_dir, envs, socket_path)?;
         Ok(FcgiProcess {
             child,
             socket_path: socket_path.to_string(),
@@ -51,21 +52,21 @@ impl FcgiProcess {
 
     pub async fn respawn(
         &mut self,
-        fcgi_path: &str,
+        fcgi_bin: &str,
         base_dir: Option<&PathBuf>,
         envs: &[(&str, &str)],
     ) -> std::io::Result<()> {
-        self.child = FcgiProcess::spawn_process(fcgi_path, base_dir, envs, &self.socket_path)?;
+        self.child = FcgiProcess::spawn_process(fcgi_bin, base_dir, envs, &self.socket_path)?;
         Ok(())
     }
 
     fn spawn_process(
-        fcgi_path: &str,
+        fcgi_bin: &str,
         base_dir: Option<&PathBuf>,
         envs: &[(&str, &str)],
         socket_path: &str,
     ) -> std::io::Result<ChildProcess> {
-        debug!("Spawning {} on {}", fcgi_path, socket_path);
+        debug!("Spawning {fcgi_bin} on {socket_path}");
         let socket = Path::new(socket_path);
         if socket.exists() {
             std::fs::remove_file(socket)?;
@@ -74,7 +75,7 @@ impl FcgiProcess {
         let fd = listener.as_raw_fd();
         let fcgi_io = unsafe { Stdio::from_raw_fd(fd) };
 
-        let mut cmd = Command::new(fcgi_path);
+        let mut cmd = Command::new(fcgi_bin);
         cmd.stdin(fcgi_io);
         cmd.kill_on_drop(true);
         if let Some(dir) = base_dir {
@@ -105,12 +106,13 @@ impl Drop for FcgiProcess {
 
 /// Collection of processes for one FCGI application
 pub struct FcgiProcessPool {
-    fcgi_path: String,
+    fcgi_bin: String,
     base_dir: Option<PathBuf>,
     envs: Vec<(String, String)>,
     backend_name: String,
     pub(crate) suffixes: Vec<FcgiSuffixUrl>,
     num_processes: usize,
+    socket_dir: TempDir,
     processes: Vec<FcgiProcess>,
 }
 
@@ -122,13 +124,15 @@ pub struct FcgiSuffixUrl {
 
 impl FcgiProcessPool {
     pub fn new(
-        fcgi_path: String,
+        fcgi_bin: String,
         base_dir: Option<PathBuf>,
         backend: &dyn FcgiBackendType,
         num_processes: usize,
     ) -> Self {
+        // We use the system temp path, but according to FHS /run would be correct
+        let socket_dir = TempDir::with_prefix("bbox-").expect("TempDir creation");
         FcgiProcessPool {
-            fcgi_path,
+            fcgi_bin,
             base_dir,
             envs: backend.envs(),
             backend_name: backend.name().to_string(),
@@ -142,14 +146,18 @@ impl FcgiProcessPool {
                     })
                 })
                 .collect(),
+            socket_dir,
             num_processes,
             processes: Vec::new(),
         }
     }
     /// Constant socket path over application lifetime
-    fn socket_path(name: &str, process_no: usize) -> String {
-        // TODO: Use tempfile::tempdir
-        format!("/tmp/fcgi_{}_{}", name, process_no)
+    fn socket_path(&self, process_no: usize) -> String {
+        self.socket_dir
+            .path()
+            .join(format!("fcgi_{}_{process_no}.sock", self.backend_name))
+            .to_string_lossy()
+            .to_string()
     }
     pub async fn spawn_processes(&mut self) -> std::io::Result<()> {
         let envs: Vec<_> = self
@@ -158,16 +166,16 @@ impl FcgiProcessPool {
             .map(|(k, v)| (k.as_str(), v.as_str()))
             .collect();
         for no in 0..self.num_processes {
-            let socket_path = Self::socket_path(&self.backend_name, no);
+            let socket_path = self.socket_path(no);
             let process =
-                FcgiProcess::spawn(&self.fcgi_path, self.base_dir.as_ref(), &envs, &socket_path)
+                FcgiProcess::spawn(&self.fcgi_bin, self.base_dir.as_ref(), &envs, &socket_path)
                     .await?;
             self.processes.push(process)
         }
         info!(
             "Spawned {} FCGI processes '{}'",
             self.processes.len(),
-            &self.fcgi_path
+            &self.fcgi_bin
         );
         Ok(())
     }
@@ -178,7 +186,7 @@ impl FcgiProcessPool {
         let config = DispatchConfig::new();
         let pools = (0..self.num_processes)
             .map(|no| {
-                let socket_path = Self::socket_path(&self.backend_name, no);
+                let socket_path = self.socket_path(no);
                 let handler = FcgiClientHandler { socket_path };
                 FcgiClientPool::builder(handler)
                     .max_size(wms_config.fcgi_client_pool_size)
@@ -204,23 +212,23 @@ impl FcgiProcessPool {
             match p.is_running() {
                 Ok(true) => {} // ok
                 Ok(false) => {
-                    warn!("process[{}] not running - restarting...", no);
+                    warn!("process[{no}] not running - restarting...");
                     let envs: Vec<_> = self
                         .envs
                         .iter()
                         .map(|(k, v)| (k.as_str(), v.as_str()))
                         .collect();
                     if let Err(e) = p
-                        .respawn(&self.fcgi_path, self.base_dir.as_ref(), &envs)
+                        .respawn(&self.fcgi_bin, self.base_dir.as_ref(), &envs)
                         .await
                     {
-                        warn!("process[{}] restarting error: {}", no, e);
+                        warn!("process[{no}] restarting error: {e}");
                     }
                 }
-                Err(e) => debug!("process[{}].is_running(): {}", no, e),
+                Err(e) => debug!("process[{no}].is_running(): {e}"),
             }
         } else {
-            error!("process[{}] does not exist", no);
+            error!("process[{no}] does not exist");
         }
         Ok(())
     }
@@ -266,7 +274,7 @@ impl deadpool::managed::Manager for FcgiClientHandler {
         debug!("deadpool::managed::Manager::create {}", &self.socket_path);
         let client = self.fcgi_client();
         if let Err(ref e) = client {
-            debug!("Failed to create client {}: {}", &self.socket_path, e);
+            debug!("Failed to create client {}: {e}", &self.socket_path);
         }
         client
     }
@@ -306,7 +314,7 @@ impl FcgiDispatcher {
     pub fn select(&self, query_str: &str) -> (usize, &FcgiClientPool) {
         let poolno = self.dispatcher.select(query_str);
         let pool = &self.pools[poolno];
-        debug!("selected pool {}: client {:?}", poolno, pool.status());
+        debug!("selected pool {poolno}: client {:?}", pool.status());
         (poolno, pool)
     }
     /// Remove possibly broken client

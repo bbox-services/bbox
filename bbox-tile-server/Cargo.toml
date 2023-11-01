@@ -42,7 +42,7 @@ rusoto_s3 = { version = "0.48.0", default-features = false, features = ["rustls"
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }
-tempfile = "3.3.0"
+tempfile = { workspace = true }
 thiserror = { workspace = true }
 #tile-grid = "0.5.2"
 tile-grid = { git = "https://github.com/pka/tile-grid" }
