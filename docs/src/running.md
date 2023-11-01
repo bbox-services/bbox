@@ -32,3 +32,16 @@ Service components are included in `bbox-server`, but can also be run as standal
 - `bbox-asset-server`: [Asset server](asset-server/)
 - `bbox-processes-server`: [Processes server](processes-server/)
 - `bbox-routing-server`: [Routing server](routing-server/)
+
+
+## Docker
+
+    docker run -p 8080:8080 sourcepole/bbox-server-qgis
+
+Serve tiles from file:
+
+    docker run -p 8080:8080 -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis bbox-server serve /assets/liechtenstein.mbtiles
+
+Run with configuration file:
+
+    docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
