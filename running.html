@@ -205,6 +205,15 @@ Options:
 <li><code>bbox-processes-server</code>: <a href="processes-server/">Processes server</a></li>
 <li><code>bbox-routing-server</code>: <a href="routing-server/">Routing server</a></li>
 </ul>
+<h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
+<pre><code>docker run -p 8080:8080 sourcepole/bbox-server-qgis
+</code></pre>
+<p>Serve tiles from file:</p>
+<pre><code>docker run -p 8080:8080 -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis bbox-server serve /assets/liechtenstein.mbtiles
+</code></pre>
+<p>Run with configuration file:</p>
+<pre><code>docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
+</code></pre>
 
                     </main>
 

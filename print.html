@@ -253,6 +253,15 @@ Options:
 <li><code>bbox-processes-server</code>: <a href="processes-server/">Processes server</a></li>
 <li><code>bbox-routing-server</code>: <a href="routing-server/">Routing server</a></li>
 </ul>
+<h2 id="docker-1"><a class="header" href="#docker-1">Docker</a></h2>
+<pre><code>docker run -p 8080:8080 sourcepole/bbox-server-qgis
+</code></pre>
+<p>Serve tiles from file:</p>
+<pre><code>docker run -p 8080:8080 -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis bbox-server serve /assets/liechtenstein.mbtiles
+</code></pre>
+<p>Run with configuration file:</p>
+<pre><code>docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="api-endpoints"><a class="header" href="#api-endpoints">API Endpoints</a></h1>
 <h2 id="ogc-api-endpoints"><a class="header" href="#ogc-api-endpoints">OGC API Endpoints</a></h2>
 <p>Services are available via the HTTP <code>GET</code> endpoints:</p>
