@@ -97,12 +97,12 @@ struct ProjStatics;
 #[cfg(not(feature = "proj"))]
 type ProjStatics = bbox_core::static_files::EmptyDir;
 
-#[cfg(feature = "swagger")]
+#[cfg(feature = "swaggerui")]
 #[derive(RustEmbed)]
 #[folder = "static/swagger/"]
 struct SwaggerStatics;
 
-#[cfg(not(feature = "swagger"))]
+#[cfg(not(feature = "swaggerui"))]
 type SwaggerStatics = bbox_core::static_files::EmptyDir;
 
 async fn swaggerui_html() -> Result<HttpResponse, Error> {
