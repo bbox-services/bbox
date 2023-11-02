@@ -121,6 +121,10 @@ async fn redoc_html() -> Result<HttpResponse, Error> {
     render_endpoint(&TEMPLATES, "redoc.html", context!(cur_menu=>"API")).await
 }
 
+async fn scalar_html() -> Result<HttpResponse, Error> {
+    render_endpoint(&TEMPLATES, "scalar.html", context!(cur_menu=>"API")).await
+}
+
 pub fn register(cfg: &mut web::ServiceConfig) {
     cfg.service(resource("/").route(get().to(index)))
         .service(
@@ -134,7 +138,8 @@ pub fn register(cfg: &mut web::ServiceConfig) {
         .service(resource(r#"/swagger/{filename:.*}"#).route(get().to(embedded::<SwaggerStatics>)))
         .service(resource("/swaggerui.html").route(get().to(swaggerui_html)))
         .service(resource(r#"/redoc/{filename:.*}"#).route(get().to(embedded::<RedocStatics>)))
-        .service(resource("/redoc.html").route(get().to(redoc_html)));
+        .service(resource("/redoc.html").route(get().to(redoc_html)))
+        .service(resource("/scalar.html").route(get().to(scalar_html)));
     if cfg!(feature = "qwc2") {
         cfg.service(resource("/qwc2/themes.json").route(get().to(qwc2_themes)))
             .service(resource(r#"/qwc2/{filename:.*}"#).route(get().to(embedded::<Qwc2Statics>)))
