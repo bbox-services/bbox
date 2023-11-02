@@ -8,7 +8,7 @@
     <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" />
     {% block head %} {% endblock %}
 </head>
-<body>
+<body onload="{% block onload %}{% endblock %}">
     <div>
         <div class="drawer md:drawer-open">
             <input id="main-sidebar" type="checkbox" class="drawer-toggle" />
