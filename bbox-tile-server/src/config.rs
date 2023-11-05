@@ -190,26 +190,26 @@ pub struct TileCacheProviderCfg {
     pub name: String,
     // pub layout: CacheLayout,
     #[serde(flatten)]
-    pub cache: TileCacheCfg,
+    pub cache: TileStoreCfg,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase", deny_unknown_fields)]
-pub enum TileCacheCfg {
-    Files(FileCacheCfg),
-    S3(S3CacheCfg),
+pub enum TileStoreCfg {
+    Files(FileStoreCfg),
+    S3(S3StoreCfg),
     // MbTiles(MbTilesCache),
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct FileCacheCfg {
+pub struct FileStoreCfg {
     pub base_dir: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct S3CacheCfg {
+pub struct S3StoreCfg {
     pub path: String,
     // pub s3_endpoint_url: Option<String>,
     // pub aws_access_key_id: Option<String>,

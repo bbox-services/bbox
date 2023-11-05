@@ -4,7 +4,7 @@ use crate::datasource::{
     wms_fcgi::MapService, wms_fcgi::WmsMetrics, Datasources, SourceType, TileRead, TileSourceError,
 };
 use crate::store::{
-    store_reader_from_config, store_writer_from_config, CacheLayout, TileCacheError, TileReader,
+    store_reader_from_config, store_writer_from_config, CacheLayout, TileReader, TileStoreError,
     TileWriter,
 };
 use actix_web::web;
@@ -42,7 +42,7 @@ pub struct TileSet {
     pub source: Box<dyn TileRead>,
     pub store_reader: Option<Box<dyn TileReader>>,
     pub store_writer: Option<Box<dyn TileWriter>>,
-    cache_cfg: Option<TileCacheCfg>,
+    cache_cfg: Option<TileStoreCfg>,
     cache_limits: Option<CacheLimitCfg>,
 }
 
@@ -70,7 +70,7 @@ impl TileSet {
             None => true,
         }
     }
-    pub fn cache_config(&self) -> Option<&TileCacheCfg> {
+    pub fn cache_config(&self) -> Option<&TileStoreCfg> {
         self.cache_cfg.as_ref()
     }
 }
@@ -86,7 +86,7 @@ pub enum ServiceError {
     #[error(transparent)]
     TileSourceError(#[from] TileSourceError),
     #[error(transparent)]
-    TileCacheError(#[from] TileCacheError),
+    TileStoreError(#[from] TileStoreError),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 }
@@ -103,7 +103,7 @@ impl SourceLookup for Tilesets {
     }
 }
 
-type TileStoreConfigs = HashMap<String, TileCacheCfg>;
+type TileStoreConfigs = HashMap<String, TileStoreCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {

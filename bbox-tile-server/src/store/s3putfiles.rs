@@ -1,5 +1,5 @@
 use crate::cli::UploadArgs;
-use crate::store::{s3::S3Cache, BoxRead, TileWriter};
+use crate::store::{s3::S3Store, BoxRead, TileWriter};
 use bbox_core::file_search;
 use crossbeam::channel;
 use indicatif::ProgressIterator;
@@ -132,7 +132,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     let task_queue_size = args.tasks.unwrap_or(256);
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let s3 = S3Cache::from_s3_path(&args.s3_path)?;
+    let s3 = S3Store::from_s3_path(&args.s3_path)?;
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));

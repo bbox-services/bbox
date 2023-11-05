@@ -1,6 +1,6 @@
 use crate::cli::SeedArgs;
-use crate::config::S3CacheCfg;
-use crate::store::{BoxRead, TileCacheError, TileCacheType, TileReader, TileWriter};
+use crate::config::S3StoreCfg;
+use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use log::debug;
@@ -12,13 +12,13 @@ use std::path::Path;
 use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
-pub struct S3Cache {
+pub struct S3Store {
     bucket: String,
     region: rusoto_core::Region,
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum S3CacheError {
+pub enum S3StoreError {
     #[error("S3 path should be 's3://bucket'")]
     InvalidS3Path,
     #[error("Reading input failed: {0}")]
@@ -27,13 +27,13 @@ pub enum S3CacheError {
     UploadFailed(#[source] rusoto_core::RusotoError<PutObjectError>),
 }
 
-impl S3Cache {
-    pub fn from_s3_path(s3_path: &str) -> Result<Self, S3CacheError> {
+impl S3Store {
+    pub fn from_s3_path(s3_path: &str) -> Result<Self, S3StoreError> {
         let bucket = match s3_path.strip_prefix("s3://") {
-            None => return Err(S3CacheError::InvalidS3Path),
+            None => return Err(S3StoreError::InvalidS3Path),
             Some(bucket) => {
                 if bucket.contains('/') {
-                    return Err(S3CacheError::InvalidS3Path);
+                    return Err(S3StoreError::InvalidS3Path);
                 } else {
                     bucket.to_string()
                 }
@@ -47,28 +47,28 @@ impl S3Cache {
             Err(_) => rusoto_core::Region::default(),
         };
 
-        Ok(S3Cache { bucket, region })
+        Ok(S3Store { bucket, region })
     }
-    pub fn from_config(cfg: &S3CacheCfg) -> Result<Self, TileCacheError> {
+    pub fn from_config(cfg: &S3StoreCfg) -> Result<Self, TileStoreError> {
         Self::from_s3_path(&cfg.path).map_err(Into::into)
     }
 }
 
-impl TileCacheType for S3Cache {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileCacheError> {
+impl TileStoreType for S3Store {
+    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError> {
         Self::from_s3_path(args.s3_path.as_ref().unwrap()).map_err(Into::into)
     }
 }
 
 #[async_trait]
-impl TileWriter for S3Cache {
-    async fn put_tile(&self, key: String, mut input: BoxRead) -> Result<(), TileCacheError> {
+impl TileWriter for S3Store {
+    async fn put_tile(&self, key: String, mut input: BoxRead) -> Result<(), TileStoreError> {
         let bucket = self.bucket.clone();
         let client = S3Client::new(self.region.clone());
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {
             Ok(len) => len as i64,
-            Err(e) => return Err(S3CacheError::ReadInputError(e).into()),
+            Err(e) => return Err(S3StoreError::ReadInputError(e).into()),
         };
         debug!("cp {key} ({content_length} bytes)");
 
@@ -83,29 +83,29 @@ impl TileWriter for S3Cache {
             client.put_object(request).await
         } {
             eprintln!("Upload failed: {e}");
-            return Err(S3CacheError::UploadFailed(e).into());
+            return Err(S3StoreError::UploadFailed(e).into());
         }
         Ok(())
     }
 }
 
-impl S3Cache {
+impl S3Store {
     /// Put tile from temporary file
-    pub async fn put_file(&self, base_dir: &Path, path: String) -> Result<(), TileCacheError> {
+    pub async fn put_file(&self, base_dir: &Path, path: String) -> Result<(), TileStoreError> {
         let mut fullpath = base_dir.to_path_buf();
         fullpath.push(&path);
         let p = fullpath.as_path();
         let reader = Box::new(BufReader::new(
-            File::open(p).map_err(|e| TileCacheError::FileError(fullpath.clone(), e))?,
+            File::open(p).map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?,
         ));
         self.put_tile(path, reader).await?;
-        fs::remove_file(p).map_err(|e| TileCacheError::FileError(fullpath.clone(), e))?;
+        fs::remove_file(p).map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?;
 
         Ok(())
     }
 }
 
-impl TileReader for S3Cache {
+impl TileReader for S3Store {
     fn exists(&self, _path: &str) -> bool {
         // 2nd level cache lookup is not supported
         false

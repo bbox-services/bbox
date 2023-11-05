@@ -1,7 +1,7 @@
-use crate::config::TileCacheCfg;
+use crate::config::TileStoreCfg;
 use crate::service::{ServiceError, TileService};
 use crate::store::{
-    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileReader,
+    files::FileStore, s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileReader, TileStoreType,
     TileWriter,
 };
 use bbox_core::config::error_exit;
@@ -187,10 +187,10 @@ impl TileService {
         let s3_writer = args
             .s3_path
             .as_ref()
-            .map(|_| S3Cache::from_args(args).unwrap_or_else(error_exit))
+            .map(|_| S3Store::from_args(args).unwrap_or_else(error_exit))
             .or_else(|| {
-                if let TileCacheCfg::S3(s3) = &cache_cfg {
-                    Some(S3Cache::from_config(s3).unwrap_or_else(error_exit))
+                if let TileStoreCfg::S3(s3) = &cache_cfg {
+                    Some(S3Store::from_config(s3).unwrap_or_else(error_exit))
                 } else {
                     None
                 }
@@ -211,14 +211,14 @@ impl TileService {
             .as_ref()
             .map(|d| PathBuf::from(&d))
             .or_else(|| {
-                if let TileCacheCfg::Files(fc) = &cache_cfg {
+                if let TileStoreCfg::Files(fc) = &cache_cfg {
                     Some(fc.base_dir.clone())
                 } else {
                     None
                 }
             })
             .unwrap_or_else(|| TempDir::new().unwrap().into_path());
-        let file_writer = FileCache::new(file_dir.clone());
+        let file_writer = FileStore::new(file_dir.clone());
 
         let (tx_s3, rx_s3) = async_channel::bounded(task_queue_size);
 

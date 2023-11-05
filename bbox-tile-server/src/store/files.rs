@@ -1,6 +1,6 @@
 use crate::cli::SeedArgs;
-use crate::config::FileCacheCfg;
-use crate::store::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileReader, TileWriter};
+use crate::config::FileStoreCfg;
+use crate::store::{BoxRead, CacheLayout, TileReader, TileStoreError, TileStoreType, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use log::debug;
@@ -10,15 +10,15 @@ use std::path::PathBuf;
 use tile_grid::Xyz;
 
 #[derive(Clone, Debug)]
-pub struct FileCache {
+pub struct FileStore {
     pub(crate) base_dir: PathBuf,
 }
 
-impl FileCache {
+impl FileStore {
     pub fn new(base_dir: PathBuf) -> Self {
-        FileCache { base_dir }
+        FileStore { base_dir }
     }
-    pub fn from_config(cfg: &FileCacheCfg, tileset_name: &str) -> Self {
+    pub fn from_config(cfg: &FileStoreCfg, tileset_name: &str) -> Self {
         Self::new(PathBuf::from_iter(
             [cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter(),
         ))
@@ -28,33 +28,33 @@ impl FileCache {
     }
 }
 
-impl TileCacheType for FileCache {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileCacheError> {
+impl TileStoreType for FileStore {
+    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError> {
         let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
 
-        Ok(FileCache { base_dir })
+        Ok(FileStore { base_dir })
     }
 }
 
 #[async_trait]
-impl TileWriter for FileCache {
-    async fn put_tile(&self, path: String, mut input: BoxRead) -> Result<(), TileCacheError> {
+impl TileWriter for FileStore {
+    async fn put_tile(&self, path: String, mut input: BoxRead) -> Result<(), TileStoreError> {
         let mut fullpath = self.base_dir.clone();
         fullpath.push(&path);
         let p = fullpath.as_path();
         fs::create_dir_all(p.parent().unwrap())
-            .map_err(|e| TileCacheError::FileError(p.parent().unwrap().into(), e))?;
+            .map_err(|e| TileStoreError::FileError(p.parent().unwrap().into(), e))?;
         debug!("Writing {}", fullpath.display());
         let mut writer = BufWriter::new(
-            File::create(&fullpath).map_err(|e| TileCacheError::FileError(fullpath.clone(), e))?,
+            File::create(&fullpath).map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?,
         );
         io::copy(&mut input, &mut writer)
-            .map_err(|e| TileCacheError::FileError(fullpath.clone(), e))?;
+            .map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?;
         Ok(())
     }
 }
 
-impl TileReader for FileCache {
+impl TileReader for FileStore {
     fn exists(&self, path: &str) -> bool {
         let mut fullpath = self.base_dir.clone();
         fullpath.push(path);

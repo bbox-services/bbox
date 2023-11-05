@@ -3,9 +3,9 @@ pub mod s3;
 pub mod s3putfiles;
 
 use crate::cli::SeedArgs;
-use crate::config::TileCacheCfg;
-use crate::store::files::FileCache;
-use crate::store::s3::{S3Cache, S3CacheError};
+use crate::config::TileStoreCfg;
+use crate::store::files::FileStore;
+use crate::store::s3::{S3Store, S3StoreError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
@@ -17,22 +17,22 @@ use tile_grid::Xyz;
 pub type BoxRead = Box<dyn Read + Send + Sync>;
 
 #[derive(thiserror::Error, Debug)]
-pub enum TileCacheError {
+pub enum TileStoreError {
     #[error("{0}: {1}")]
     FileError(PathBuf, #[source] std::io::Error),
     #[error(transparent)]
-    S3CacheError(#[from] S3CacheError),
+    S3StoreError(#[from] S3StoreError),
 }
 
-pub trait TileCacheType {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileCacheError>
+pub trait TileStoreType {
+    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError>
     where
         Self: Clone + Sized;
 }
 
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
-    async fn put_tile(&self, path: String, input: BoxRead) -> Result<(), TileCacheError>;
+    async fn put_tile(&self, path: String, input: BoxRead) -> Result<(), TileStoreError>;
 }
 
 clone_trait_object!(TileWriter);
@@ -74,16 +74,16 @@ impl CacheLayout {
 }
 
 #[derive(Clone)]
-pub struct NoCache;
+pub struct NoStore;
 
 #[async_trait]
-impl TileWriter for NoCache {
-    async fn put_tile(&self, _path: String, mut _input: BoxRead) -> Result<(), TileCacheError> {
+impl TileWriter for NoStore {
+    async fn put_tile(&self, _path: String, mut _input: BoxRead) -> Result<(), TileStoreError> {
         Ok(())
     }
 }
 
-impl TileReader for NoCache {
+impl TileReader for NoStore {
     fn exists(&self, _path: &str) -> bool {
         false
     }
@@ -92,16 +92,16 @@ impl TileReader for NoCache {
     }
 }
 
-pub fn store_reader_from_config(config: &TileCacheCfg, tileset_name: &str) -> Box<dyn TileReader> {
+pub fn store_reader_from_config(config: &TileStoreCfg, tileset_name: &str) -> Box<dyn TileReader> {
     match &config {
-        TileCacheCfg::Files(cfg) => Box::new(FileCache::from_config(cfg, tileset_name)),
-        TileCacheCfg::S3(cfg) => Box::new(S3Cache::from_config(cfg).unwrap_or_else(error_exit)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name)),
+        TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
     }
 }
 
-pub fn store_writer_from_config(config: &TileCacheCfg, tileset_name: &str) -> Box<dyn TileWriter> {
+pub fn store_writer_from_config(config: &TileStoreCfg, tileset_name: &str) -> Box<dyn TileWriter> {
     match &config {
-        TileCacheCfg::Files(cfg) => Box::new(FileCache::from_config(cfg, tileset_name)),
-        TileCacheCfg::S3(cfg) => Box::new(S3Cache::from_config(cfg).unwrap_or_else(error_exit)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name)),
+        TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
     }
 }
