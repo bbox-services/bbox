@@ -31,26 +31,20 @@ pub trait TileCacheType {
 }
 
 #[async_trait]
-pub trait TileWriter: DynClone {
+pub trait TileWriter: DynClone + Send + Sync {
     async fn put_tile(&self, path: String, input: BoxRead) -> Result<(), TileCacheError>;
 }
 
 clone_trait_object!(TileWriter);
 
-pub trait TileReader {
+pub trait TileReader: DynClone + Send + Sync {
     /// Lookup tile in cache
     fn exists(&self, path: &str) -> bool;
     /// Lookup tile in cache and return Read stream, if found
     fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse>;
 }
 
-#[derive(Clone, Debug)]
-pub enum TileCache {
-    NoCache,
-    Files(FileCache),
-    S3(S3Cache),
-    // MbTiles(MbTilesCache),
-}
+clone_trait_object!(TileReader);
 
 #[derive(Clone, Debug)]
 pub enum CacheLayout {
@@ -98,27 +92,16 @@ impl TileReader for NoCache {
     }
 }
 
-impl TileCache {
-    pub fn from_config(config: &TileCacheCfg, tileset_name: &str) -> Self {
-        match &config {
-            TileCacheCfg::Files(cfg) => TileCache::Files(FileCache::from_config(cfg, tileset_name)),
-            TileCacheCfg::S3(cfg) => {
-                TileCache::S3(S3Cache::from_config(cfg).unwrap_or_else(error_exit))
-            }
-        }
+pub fn store_reader_from_config(config: &TileCacheCfg, tileset_name: &str) -> Box<dyn TileReader> {
+    match &config {
+        TileCacheCfg::Files(cfg) => Box::new(FileCache::from_config(cfg, tileset_name)),
+        TileCacheCfg::S3(cfg) => Box::new(S3Cache::from_config(cfg).unwrap_or_else(error_exit)),
     }
-    pub fn write(&self) -> &dyn TileWriter {
-        match self {
-            TileCache::NoCache => &NoCache,
-            TileCache::Files(cache) => cache,
-            TileCache::S3(cache) => cache,
-        }
-    }
-    pub fn read(&self) -> &dyn TileReader {
-        match self {
-            TileCache::NoCache => &NoCache,
-            TileCache::Files(cache) => cache,
-            TileCache::S3(cache) => cache,
-        }
+}
+
+pub fn store_writer_from_config(config: &TileCacheCfg, tileset_name: &str) -> Box<dyn TileWriter> {
+    match &config {
+        TileCacheCfg::Files(cfg) => Box::new(FileCache::from_config(cfg, tileset_name)),
+        TileCacheCfg::S3(cfg) => Box::new(S3Cache::from_config(cfg).unwrap_or_else(error_exit)),
     }
 }

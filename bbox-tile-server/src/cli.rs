@@ -1,7 +1,8 @@
+use crate::config::TileCacheCfg;
 use crate::service::{ServiceError, TileService};
 use crate::store::{
-    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCache, TileCacheType,
-    TileReader, TileWriter,
+    files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCacheType, TileReader,
+    TileWriter,
 };
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
@@ -160,9 +161,13 @@ impl TileService {
         let tileset = self
             .tileset(&args.tileset)
             .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
-        let source = &tileset.source;
         let suffix = tileset.tile_suffix().to_string();
         let tms = self.grid(&tileset.tms)?;
+        let Some(cache_cfg) = &tileset.cache_config() else {
+            return Err(
+                ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
+            );
+        };
         let bbox = if let Some(numlist) = &args.extent {
             let arr: Vec<f64> = numlist
                 .split(',')
@@ -184,8 +189,8 @@ impl TileService {
             .as_ref()
             .map(|_| S3Cache::from_args(args).unwrap_or_else(error_exit))
             .or_else(|| {
-                if let TileCache::S3(s3) = &tileset.cache {
-                    Some(s3.clone())
+                if let TileCacheCfg::S3(s3) = &cache_cfg {
+                    Some(S3Cache::from_config(s3).unwrap_or_else(error_exit))
                 } else {
                     None
                 }
@@ -201,13 +206,12 @@ impl TileService {
         let task_queue_size = writer_task_count + threads * 2;
         let mut tasks = Vec::with_capacity(task_queue_size);
 
-        debug!("Tile source {source:?}");
         let file_dir = args
             .base_dir
             .as_ref()
             .map(|d| PathBuf::from(&d))
             .or_else(|| {
-                if let TileCache::Files(fc) = &tileset.cache {
+                if let TileCacheCfg::Files(fc) = &cache_cfg {
                     Some(fc.base_dir.clone())
                 } else {
                     None

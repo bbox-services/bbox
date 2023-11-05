@@ -1,4 +1,4 @@
-use crate::datasource::TileSource;
+use crate::datasource::source_config_from_cli_arg;
 use bbox_core::cli::CommonCommands;
 use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
 use clap::{ArgMatches, FromArgMatches};
@@ -16,8 +16,8 @@ pub struct TileserverCfg {
     pub datasources: Vec<NamedDatasourceCfg>,
     #[serde(rename = "tileset")]
     pub tilesets: Vec<TileSetCfg>,
-    #[serde(rename = "tilecache")]
-    pub tilecaches: Vec<TileCacheProviderCfg>,
+    #[serde(rename = "tilestore")]
+    pub tilestores: Vec<TileCacheProviderCfg>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -30,7 +30,7 @@ pub struct TileSetCfg {
     pub tms: Option<String>,
     /// Source parameters
     #[serde(flatten)]
-    pub params: SourceParamCfg,
+    pub source: SourceParamCfg,
     /// Tile cache name (Default: no cache)
     pub cache: Option<String>,
     pub cache_limits: Option<CacheLimitCfg>,
@@ -223,7 +223,7 @@ impl TileserverCfg {
         // Get config from CLI
         if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
             if let Some(file_or_url) = args.file_or_url {
-                if let Some(source_cfg) = TileSource::config_from_cli_arg(&file_or_url) {
+                if let Some(source_cfg) = source_config_from_cli_arg(&file_or_url) {
                     let name = if let Some(name) = Path::new(&file_or_url).file_stem() {
                         name.to_string_lossy().to_string()
                     } else {
@@ -233,7 +233,7 @@ impl TileserverCfg {
                     let ts = TileSetCfg {
                         name,
                         tms: None,
-                        params: source_cfg,
+                        source: source_cfg,
                         cache: None,
                         cache_limits: None,
                     };

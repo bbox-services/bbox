@@ -1,10 +1,12 @@
 use crate::cli::Commands;
 use crate::config::*;
-use crate::datasource::Datasources;
 use crate::datasource::{
-    wms_fcgi::MapService, wms_fcgi::WmsMetrics, SourceType, TileSource, TileSourceError,
+    wms_fcgi::MapService, wms_fcgi::WmsMetrics, Datasources, SourceType, TileRead, TileSourceError,
 };
-use crate::store::{CacheLayout, TileCache, TileCacheError};
+use crate::store::{
+    store_reader_from_config, store_writer_from_config, CacheLayout, TileCacheError, TileReader,
+    TileWriter,
+};
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::NoArgs;
@@ -33,38 +35,43 @@ pub struct TileService {
 
 pub type Tilesets = HashMap<String, TileSet>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TileSet {
     /// Tile matrix set identifier
     pub tms: String,
-    pub source: TileSource,
-    pub cache: TileCache,
+    pub source: Box<dyn TileRead>,
+    pub store_reader: Option<Box<dyn TileReader>>,
+    pub store_writer: Option<Box<dyn TileWriter>>,
+    cache_cfg: Option<TileCacheCfg>,
     cache_limits: Option<CacheLimitCfg>,
 }
 
 impl TileSet {
     pub fn tile_suffix(&self) -> &str {
-        let source_type = self.source.read().source_type();
+        let source_type = self.source.source_type();
         match source_type {
             SourceType::Vector => "pbf",
             SourceType::Raster => "png",
         }
     }
     pub fn default_format(&self) -> &str {
-        let source_type = self.source.read().source_type();
+        let source_type = self.source.source_type();
         match source_type {
             SourceType::Vector => "application/x-protobuf",
             SourceType::Raster => "image/png; mode=8bit",
         }
     }
     pub fn is_cachable_at(&self, zoom: u8) -> bool {
-        if let TileCache::NoCache = self.cache {
+        if self.store_reader.is_none() {
             return false;
         }
         match self.cache_limits {
             Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(99) >= zoom,
             None => true,
         }
+    }
+    pub fn cache_config(&self) -> Option<&TileCacheCfg> {
+        self.cache_cfg.as_ref()
     }
 }
 
@@ -87,16 +94,16 @@ pub enum ServiceError {
 impl actix_web::error::ResponseError for ServiceError {}
 
 pub trait SourceLookup {
-    fn source(&self, tileset: &str) -> Option<&TileSource>;
+    fn source(&self, tileset: &str) -> Option<&dyn TileRead>;
 }
 
 impl SourceLookup for Tilesets {
-    fn source(&self, tileset: &str) -> Option<&TileSource> {
-        self.get(tileset).map(|ts| &ts.source)
+    fn source(&self, tileset: &str) -> Option<&dyn TileRead> {
+        self.get(tileset).map(|ts| ts.source.as_ref())
     }
 }
 
-type TileCacheConfigs = HashMap<String, TileCacheCfg>;
+type TileStoreConfigs = HashMap<String, TileCacheCfg>;
 
 #[async_trait]
 impl OgcApiService for TileService {
@@ -117,8 +124,8 @@ impl OgcApiService for TileService {
 
         let datasources = Datasources::create(&config.datasources).await;
 
-        let caches: TileCacheConfigs = config
-            .tilecaches
+        let stores: TileStoreConfigs = config
+            .tilestores
             .into_iter()
             .map(|cfg| (cfg.name.clone(), cfg.cache))
             .collect();
@@ -126,19 +133,20 @@ impl OgcApiService for TileService {
         for ts in config.tilesets {
             let tms_id = ts.tms.unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
-            let source = datasources.add_tile_source(&ts.params, &tms).await;
-            let cache = if let Some(name) = ts.cache {
-                let config = caches
+            let source = datasources.setup_tile_source(&ts.source, &tms).await;
+            let cache_cfg = ts.cache.map(|name| {
+                stores
                     .get(&name)
-                    .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)));
-                TileCache::from_config(config, &ts.name)
-            } else {
-                TileCache::NoCache
-            };
+                    .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)))
+            });
+            let store_reader = cache_cfg.map(|config| store_reader_from_config(config, &ts.name));
+            let store_writer = cache_cfg.map(|config| store_writer_from_config(config, &ts.name));
             let tileset = TileSet {
                 tms: tms_id.clone(),
                 source,
-                cache,
+                store_reader,
+                store_writer,
+                cache_cfg: cache_cfg.cloned(),
                 cache_limits: ts.cache_limits,
             };
             self.tilesets.insert(ts.name, tileset);
@@ -242,7 +250,7 @@ impl TileService {
         self.tilesets.get(tileset)
     }
     #[allow(dead_code)]
-    pub fn source(&self, tileset: &str) -> Option<&TileSource> {
+    pub fn source(&self, tileset: &str) -> Option<&dyn TileRead> {
         self.tilesets.source(tileset)
     }
     pub fn grid(&self, tms: &str) -> Result<&Tms, tile_grid::Error> {
@@ -280,7 +288,6 @@ impl TileService {
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         Ok(ts
             .source
-            .read()
             .xyz_request(
                 self,
                 &ts.tms,
@@ -310,16 +317,17 @@ impl TileService {
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         // FIXME: format is passed as file ending or mime type!
-        if tileset.is_cachable_at(tile.z) {
-            if let Some(tile) = tileset.cache.read().get_tile(tile, format) {
-                //TODO: handle compression
-                return Ok(Some(tile));
+        if let Some(cache) = &tileset.store_reader {
+            if tileset.is_cachable_at(tile.z) {
+                if let Some(tile) = cache.get_tile(tile, format) {
+                    //TODO: handle compression
+                    return Ok(Some(tile));
+                }
             }
         }
         // Request tile and write into cache
         let mut tiledata = tileset
             .source
-            .read()
             .xyz_request(
                 self,
                 &tileset.tms,
@@ -337,11 +345,11 @@ impl TileService {
             let mut body = Vec::new();
             tiledata.body.read_to_end(&mut body)?;
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, format);
-            tileset
-                .cache
-                .write()
-                .put_tile(path, Box::new(Cursor::new(body.clone())))
-                .await?;
+            if let Some(cache) = &tileset.store_writer {
+                cache
+                    .put_tile(path, Box::new(Cursor::new(body.clone())))
+                    .await?;
+            }
             Ok(Some(TileResponse {
                 content_type: tiledata.content_type,
                 headers: tiledata.headers,
@@ -356,7 +364,7 @@ impl TileService {
         let ts = self
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
-        let mut tilejson = ts.source.read().tilejson().await?;
+        let mut tilejson = ts.source.tilejson().await?;
         let format = tilejson
             .other
             .get("format")
@@ -378,7 +386,7 @@ impl TileService {
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         let suffix = ts.tile_suffix();
-        let source_type = ts.source.read().source_type();
+        let source_type = ts.source.source_type();
         let ts_source = match source_type {
             SourceType::Vector => json!({
                 "type": "vector",
@@ -392,7 +400,7 @@ impl TileService {
             }),
         };
 
-        let layers = ts.source.read().layers().await?;
+        let layers = ts.source.layers().await?;
         let mut layer_styles: Vec<serde_json::Value> = layers
             .iter()
             .map(|layer| {

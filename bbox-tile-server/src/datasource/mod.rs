@@ -12,31 +12,10 @@ use async_trait::async_trait;
 use bbox_core::config::{error_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::endpoints::TileResponse;
 use bbox_core::NamedObjectStore;
+use dyn_clone::{clone_trait_object, DynClone};
 use geozero::error::GeozeroError;
 use tile_grid::{RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
-
-#[derive(Clone, Debug)]
-pub enum TileSource {
-    // -- raster sources --
-    #[cfg(feature = "map-server")]
-    WmsFcgi(wms_fcgi::WmsFcgiSource),
-    WmsHttp(wms_http::WmsHttpSource),
-    // GdalData(GdalSource),
-    // RasterData(GeorasterSource),
-    // -- vector sources --
-    Postgis(postgis::PgSource),
-    // OgrData(OgrQueries),
-    // VectorData(GeozeroSource),
-    // OsmData(OsmSource),
-    // -- direct tile sources --
-    Mbtiles(mbtiles::MbtilesSource),
-    // Pmtiles(PmtilesSource),
-    // PgTile(PgTileQueries),
-    /// dummy source for disabled features
-    #[allow(dead_code)]
-    Empty,
-}
 
 #[derive(thiserror::Error, Debug)]
 pub enum TileSourceError {
@@ -80,7 +59,7 @@ pub struct LayerInfo {
 }
 
 #[async_trait]
-pub trait TileRead: Sync {
+pub trait TileRead: DynClone + Send + Sync {
     /// Request tile from source
     #[allow(clippy::too_many_arguments)]
     async fn xyz_request(
@@ -102,6 +81,8 @@ pub trait TileRead: Sync {
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError>;
 }
 
+clone_trait_object!(TileRead);
+
 /// Datasource connection pools
 #[derive(Default)]
 pub struct Datasources {
@@ -111,6 +92,7 @@ pub struct Datasources {
 }
 
 impl Datasources {
+    /// Setup datasource connection pools
     pub async fn create(datasources: &Vec<NamedDatasourceCfg>) -> Self {
         // TODO: setup referenced datasources only (?)
         let mut ds_handler = Datasources::default();
@@ -129,7 +111,24 @@ impl Datasources {
         }
         ds_handler
     }
-    pub async fn add_tile_source(&self, cfg: &SourceParamCfg, tms: &Tms) -> TileSource {
+    /// Setup tile source instance
+    pub async fn setup_tile_source(&self, cfg: &SourceParamCfg, tms: &Tms) -> Box<dyn TileRead> {
+        // -- raster sources --
+        // wms_fcgi::WmsFcgiSource,
+        // wms_http::WmsHttpSource,
+        // // GdalData(GdalSource),
+        // // RasterData(GeorasterSource),
+        // -- vector sources --
+        // postgis::PgSource,
+        // // OgrData(OgrQueries),
+        // // VectorData(GeozeroSource),
+        // // OsmData(OsmSource),
+        // -- direct tile sources --
+        // mbtiles::MbtilesSource,
+        // // Pmtiles(PmtilesSource),
+        // // PgTile(PgTileQueries),
+        // /// dummy source for disabled features
+        // Empty,
         match cfg {
             SourceParamCfg::WmsHttp(cfg) => {
                 let DatasourceCfg::WmsHttp(provider) =
@@ -141,20 +140,18 @@ impl Datasources {
                         "wms_proxy".to_string(),
                     ))
                 };
-                TileSource::WmsHttp(wms_http::WmsHttpSource::from_config(
+                Box::new(wms_http::WmsHttpSource::from_config(
                     provider,
                     cfg,
                     tms.crs().as_srid(),
                 ))
             }
             #[cfg(feature = "map-server")]
-            SourceParamCfg::WmsFcgi(cfg) => {
-                TileSource::WmsFcgi(wms_fcgi::WmsFcgiSource::from_config(cfg))
-            }
+            SourceParamCfg::WmsFcgi(cfg) => Box::new(wms_fcgi::WmsFcgiSource::from_config(cfg)),
             #[cfg(not(feature = "map-server"))]
             SourceParamCfg::WmsFcgi(_cfg) => {
                 // TODO: Emit warning
-                TileSource::Empty
+                unimplemented!()
             }
             SourceParamCfg::Postgis(pg_cfg) => {
                 let ds = self
@@ -169,29 +166,17 @@ impl Datasources {
                                 .clone(),
                         ))
                     });
-                TileSource::Postgis(postgis::PgSource::create(ds, pg_cfg, tms).await)
+                Box::new(postgis::PgSource::create(ds, pg_cfg, tms).await)
             }
             SourceParamCfg::Mbtiles(cfg) => {
-                TileSource::Mbtiles(mbtiles::MbtilesSource::from_config(cfg).await)
+                Box::new(mbtiles::MbtilesSource::from_config(cfg).await)
             }
         }
     }
 }
 
-impl TileSource {
-    pub fn config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
-        mbtiles::MbtilesSource::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
-    }
-    pub fn read(&self) -> &dyn TileRead {
-        match self {
-            #[cfg(feature = "map-server")]
-            TileSource::WmsFcgi(source) => source,
-            TileSource::WmsHttp(source) => source,
-            TileSource::Postgis(source) => source,
-            TileSource::Mbtiles(source) => source,
-            TileSource::Empty => unimplemented!(),
-        }
-    }
+pub fn source_config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
+    mbtiles::MbtilesSource::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
 }
 
 #[cfg(not(feature = "map-server"))]
