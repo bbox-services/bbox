@@ -1,10 +1,10 @@
-use crate::cache::{CacheLayout, TileCache, TileCacheError};
 use crate::cli::Commands;
 use crate::config::*;
-use crate::tilesource::Datasources;
-use crate::tilesource::{
+use crate::datasource::Datasources;
+use crate::datasource::{
     wms_fcgi::MapService, wms_fcgi::WmsMetrics, SourceType, TileSource, TileSourceError,
 };
+use crate::store::{CacheLayout, TileCache, TileCacheError};
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::NoArgs;

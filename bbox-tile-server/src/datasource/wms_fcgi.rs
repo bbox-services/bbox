@@ -1,6 +1,6 @@
 use crate::config::WmsFcgiSourceParamsCfg;
+use crate::datasource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use crate::service::{QueryExtent, TileService};
-use crate::tilesource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use async_trait::async_trait;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};

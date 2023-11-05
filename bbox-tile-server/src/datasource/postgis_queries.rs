@@ -1,5 +1,5 @@
 use crate::config::VectorLayerCfg;
-use crate::tilesource::postgis::{FieldInfo, FieldTypeInfo};
+use crate::datasource::postgis::{FieldInfo, FieldTypeInfo};
 use log::{info, warn};
 use sqlx::TypeInfo;
 

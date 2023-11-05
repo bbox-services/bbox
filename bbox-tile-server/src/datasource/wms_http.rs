@@ -1,8 +1,8 @@
 use crate::config::*;
-use crate::service::TileService;
-use crate::tilesource::{
+use crate::datasource::{
     wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
+use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::config::WmsHttpSourceProviderCfg;
 use log::debug;

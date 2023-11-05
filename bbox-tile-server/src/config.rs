@@ -1,4 +1,4 @@
-use crate::tilesource::TileSource;
+use crate::datasource::TileSource;
 use bbox_core::cli::CommonCommands;
 use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
 use clap::{ArgMatches, FromArgMatches};

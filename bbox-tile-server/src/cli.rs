@@ -1,8 +1,8 @@
-use crate::cache::{
+use crate::service::{ServiceError, TileService};
+use crate::store::{
     files::FileCache, s3::S3Cache, s3putfiles, BoxRead, CacheLayout, TileCache, TileCacheType,
     TileReader, TileWriter,
 };
-use crate::service::{ServiceError, TileService};
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
 use indicatif::{ProgressBar, ProgressStyle};

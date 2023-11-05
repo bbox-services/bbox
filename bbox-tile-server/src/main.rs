@@ -1,9 +1,9 @@
-mod cache;
 mod cli;
 mod config;
+mod datasource;
 mod endpoints;
 mod service;
-mod tilesource;
+mod store;
 
 use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};

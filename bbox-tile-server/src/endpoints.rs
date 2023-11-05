@@ -1,5 +1,5 @@
+use crate::datasource::wms_fcgi::WmsMetrics;
 use crate::service::{ServiceError, TileService};
-use crate::tilesource::wms_fcgi::WmsMetrics;
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::CoreService;

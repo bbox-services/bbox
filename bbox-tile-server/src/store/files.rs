@@ -1,6 +1,6 @@
-use crate::cache::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileReader, TileWriter};
 use crate::cli::SeedArgs;
 use crate::config::FileCacheCfg;
+use crate::store::{BoxRead, CacheLayout, TileCacheError, TileCacheType, TileReader, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use log::debug;

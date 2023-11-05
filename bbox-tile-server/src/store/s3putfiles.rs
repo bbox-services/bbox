@@ -1,5 +1,5 @@
-use crate::cache::{s3::S3Cache, BoxRead, TileWriter};
 use crate::cli::UploadArgs;
+use crate::store::{s3::S3Cache, BoxRead, TileWriter};
 use bbox_core::file_search;
 use crossbeam::channel;
 use indicatif::ProgressIterator;

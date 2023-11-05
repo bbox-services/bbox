@@ -2,10 +2,10 @@ pub mod files;
 pub mod s3;
 pub mod s3putfiles;
 
-use crate::cache::files::FileCache;
-use crate::cache::s3::{S3Cache, S3CacheError};
 use crate::cli::SeedArgs;
 use crate::config::TileCacheCfg;
+use crate::store::files::FileCache;
+use crate::store::s3::{S3Cache, S3CacheError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;

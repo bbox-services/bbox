@@ -1,4 +1,4 @@
-use crate::tilesource::TileSourceError;
+use crate::datasource::TileSourceError;
 use geozero::{mvt, mvt::Message};
 
 pub struct MvtBuilder {

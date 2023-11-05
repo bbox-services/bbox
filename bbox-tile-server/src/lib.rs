@@ -1,9 +1,9 @@
-pub mod cache;
 pub mod cli;
 mod config;
+mod datasource;
 mod endpoints;
 mod service;
+pub mod store;
 mod t_rex;
-mod tilesource;
 
 pub use service::*;
