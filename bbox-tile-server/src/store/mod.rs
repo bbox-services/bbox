@@ -37,11 +37,12 @@ pub trait TileWriter: DynClone + Send + Sync {
 
 clone_trait_object!(TileWriter);
 
+#[async_trait]
 pub trait TileReader: DynClone + Send + Sync {
-    /// Lookup tile in cache
-    fn exists(&self, path: &str) -> bool;
-    /// Lookup tile in cache and return Read stream, if found
-    fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse>;
+    /// Check for tile in cache
+    async fn exists(&self, path: &str) -> bool;
+    /// Lookup tile and return Read stream, if found
+    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError>;
 }
 
 clone_trait_object!(TileReader);
@@ -83,25 +84,34 @@ impl TileWriter for NoStore {
     }
 }
 
+#[async_trait]
 impl TileReader for NoStore {
-    fn exists(&self, _path: &str) -> bool {
+    async fn exists(&self, _path: &str) -> bool {
         false
     }
-    fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
-        None
+    async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+        Ok(None)
     }
 }
 
-pub fn store_reader_from_config(config: &TileStoreCfg, tileset_name: &str) -> Box<dyn TileReader> {
+pub fn store_reader_from_config(
+    config: &TileStoreCfg,
+    tileset_name: &str,
+    format: &str,
+) -> Box<dyn TileReader> {
     match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
         TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
     }
 }
 
-pub fn store_writer_from_config(config: &TileStoreCfg, tileset_name: &str) -> Box<dyn TileWriter> {
+pub fn store_writer_from_config(
+    config: &TileStoreCfg,
+    tileset_name: &str,
+    format: &str,
+) -> Box<dyn TileWriter> {
     match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
         TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
     }
 }

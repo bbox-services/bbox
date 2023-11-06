@@ -75,6 +75,13 @@ pub trait TileRead: DynClone + Send + Sync {
     ) -> Result<TileResponse, TileSourceError>;
     /// Type information
     fn source_type(&self) -> SourceType;
+    /// Tile format suffix
+    fn default_suffix(&self) -> &str {
+        match self.source_type() {
+            SourceType::Vector => "pbf",
+            SourceType::Raster => "png",
+        }
+    }
     /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
     async fn tilejson(&self) -> Result<TileJSON, TileSourceError>;
     /// Layer metadata

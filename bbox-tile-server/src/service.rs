@@ -48,11 +48,7 @@ pub struct TileSet {
 
 impl TileSet {
     pub fn tile_suffix(&self) -> &str {
-        let source_type = self.source.source_type();
-        match source_type {
-            SourceType::Vector => "pbf",
-            SourceType::Raster => "png",
-        }
+        self.source.default_suffix()
     }
     pub fn default_format(&self) -> &str {
         let source_type = self.source.source_type();
@@ -139,8 +135,10 @@ impl OgcApiService for TileService {
                     .get(&name)
                     .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)))
             });
-            let store_reader = cache_cfg.map(|config| store_reader_from_config(config, &ts.name));
-            let store_writer = cache_cfg.map(|config| store_writer_from_config(config, &ts.name));
+            let store_reader = cache_cfg
+                .map(|config| store_reader_from_config(config, &ts.name, source.default_suffix()));
+            let store_writer = cache_cfg
+                .map(|config| store_writer_from_config(config, &ts.name, source.default_suffix()));
             let tileset = TileSet {
                 tms: tms_id.clone(),
                 source,
@@ -319,8 +317,9 @@ impl TileService {
         // FIXME: format is passed as file ending or mime type!
         if let Some(cache) = &tileset.store_reader {
             if tileset.is_cachable_at(tile.z) {
-                if let Some(tile) = cache.get_tile(tile, format) {
+                if let Some(tile) = cache.get_tile(tile).await? {
                     //TODO: handle compression
+                    //TODO: check returned format
                     return Ok(Some(tile));
                 }
             }

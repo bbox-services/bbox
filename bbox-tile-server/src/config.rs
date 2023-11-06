@@ -33,6 +33,8 @@ pub struct TileSetCfg {
     pub source: SourceParamCfg,
     /// Tile cache name (Default: no cache)
     pub cache: Option<String>,
+    /// tile format in store. Defaults to `png` for raster and `pbf` for vector tiles
+    pub cache_format: Option<String>,
     pub cache_limits: Option<CacheLimitCfg>,
 }
 
@@ -204,6 +206,7 @@ pub enum TileStoreCfg {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FileStoreCfg {
+    /// Base directory, tileset name will be appended
     pub base_dir: PathBuf,
 }
 
@@ -235,6 +238,7 @@ impl TileserverCfg {
                         tms: None,
                         source: source_cfg,
                         cache: None,
+                        cache_format: None,
                         cache_limits: None,
                     };
                     cfg.tilesets.push(ts);

@@ -218,7 +218,7 @@ impl TileService {
                 }
             })
             .unwrap_or_else(|| TempDir::new().unwrap().into_path());
-        let file_writer = FileStore::new(file_dir.clone());
+        let file_writer = FileStore::new(file_dir.clone(), &suffix);
 
         let (tx_s3, rx_s3) = async_channel::bounded(task_queue_size);
 
@@ -276,7 +276,7 @@ impl TileService {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &suffix);
             progress.set_message(path.clone());
             progress.inc(1);
-            let cache_exists = file_writer.exists(&path);
+            let cache_exists = file_writer.exists(&path).await;
             if cache_exists && !overwrite {
                 continue;
             }

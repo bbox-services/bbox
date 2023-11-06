@@ -12,16 +12,20 @@ use tile_grid::Xyz;
 #[derive(Clone, Debug)]
 pub struct FileStore {
     pub(crate) base_dir: PathBuf,
+    format: String,
 }
 
 impl FileStore {
-    pub fn new(base_dir: PathBuf) -> Self {
-        FileStore { base_dir }
+    pub fn new(base_dir: PathBuf, format: &str) -> Self {
+        FileStore {
+            base_dir,
+            format: format.to_string(),
+        }
     }
-    pub fn from_config(cfg: &FileStoreCfg, tileset_name: &str) -> Self {
-        Self::new(PathBuf::from_iter(
-            [cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter(),
-        ))
+    pub fn from_config(cfg: &FileStoreCfg, tileset_name: &str, format: &str) -> Self {
+        let base_dir =
+            PathBuf::from_iter([cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter());
+        Self::new(base_dir, format)
     }
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())
@@ -31,8 +35,9 @@ impl FileStore {
 impl TileStoreType for FileStore {
     fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError> {
         let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
+        let format = "png".to_string(); //FIXME
 
-        Ok(FileStore { base_dir })
+        Ok(FileStore { base_dir, format })
     }
 }
 
@@ -54,22 +59,22 @@ impl TileWriter for FileStore {
     }
 }
 
+#[async_trait]
 impl TileReader for FileStore {
-    fn exists(&self, path: &str) -> bool {
-        let mut fullpath = self.base_dir.clone();
-        fullpath.push(path);
+    async fn exists(&self, path: &str) -> bool {
+        let fullpath = PathBuf::from_iter([&self.base_dir, &PathBuf::from(path)].iter());
         fullpath.exists()
     }
-    fn get_tile(&self, tile: &Xyz, format: &str) -> Option<TileResponse> {
-        let p = CacheLayout::Zxy.path(&self.base_dir, tile, format);
+    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
         if let Ok(f) = File::open(p) {
-            Some(TileResponse {
+            Ok(Some(TileResponse {
                 content_type: None, // TODO: from `format`
                 headers: TileResponse::new_headers(),
                 body: Box::new(BufReader::new(f)),
-            })
+            }))
         } else {
-            None
+            Ok(None)
         }
     }
 }

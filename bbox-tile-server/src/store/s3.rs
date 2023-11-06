@@ -105,13 +105,14 @@ impl S3Store {
     }
 }
 
+#[async_trait]
 impl TileReader for S3Store {
-    fn exists(&self, _path: &str) -> bool {
+    async fn exists(&self, _path: &str) -> bool {
         // 2nd level cache lookup is not supported
         false
     }
-    fn get_tile(&self, _tile: &Xyz, _format: &str) -> Option<TileResponse> {
+    async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         // 2nd level cache lookup is not supported
-        None
+        Ok(None)
     }
 }
