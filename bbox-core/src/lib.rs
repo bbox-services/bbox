@@ -5,6 +5,7 @@ pub mod config;
 mod dir;
 pub mod endpoints;
 pub mod file_search;
+mod formats;
 pub mod logger;
 pub mod metrics;
 pub mod ogcapi;
@@ -17,4 +18,5 @@ pub mod templates;
 pub mod tls;
 
 pub use dir::*;
+pub use formats::*;
 pub use service_utils::*;
