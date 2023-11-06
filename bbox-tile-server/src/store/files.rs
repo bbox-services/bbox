@@ -30,18 +30,22 @@ impl FileStore {
     }
 }
 
+#[async_trait]
 impl TileStoreType for FileStore {
-    fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
-        let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
+    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
+        let base_dir = PathBuf::from(
+            args.base_dir
+                .as_ref()
+                .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?,
+        );
         Ok(FileStore::new(base_dir, *format))
     }
 }
 
 #[async_trait]
 impl TileWriter for FileStore {
-    async fn put_tile(&self, path: String, mut input: BoxRead) -> Result<(), TileStoreError> {
-        let mut fullpath = self.base_dir.clone();
-        fullpath.push(&path);
+    async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
+        let fullpath = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
         let p = fullpath.as_path();
         fs::create_dir_all(p.parent().unwrap())
             .map_err(|e| TileStoreError::FileError(p.parent().unwrap().into(), e))?;
@@ -57,9 +61,9 @@ impl TileWriter for FileStore {
 
 #[async_trait]
 impl TileReader for FileStore {
-    async fn exists(&self, path: &str) -> bool {
-        let fullpath = PathBuf::from_iter([&self.base_dir, &PathBuf::from(path)].iter());
-        fullpath.exists()
+    async fn exists(&self, tile: &Xyz) -> bool {
+        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
+        p.exists()
     }
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);

@@ -1,6 +1,6 @@
 use crate::cli::UploadArgs;
-use crate::store::{s3::S3Store, BoxRead, TileWriter};
-use bbox_core::file_search;
+use crate::store::{s3::S3Store, BoxRead};
+use bbox_core::{file_search, Format};
 use crossbeam::channel;
 use indicatif::ProgressIterator;
 use log::debug;
@@ -132,7 +132,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     let task_queue_size = args.tasks.unwrap_or(256);
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let s3 = S3Store::from_s3_path(&args.s3_path)?;
+    let s3 = S3Store::from_s3_path(&args.s3_path, Format::Mvt)?; // Format will be ignored
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));
@@ -145,7 +145,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
             Ok(x) => x,
         });
         let s3 = s3.clone();
-        tasks.push(task::spawn(async move { s3.put_tile(key, input).await }));
+        tasks.push(task::spawn(async move { s3.put_data(key, input).await }));
         if tasks.len() >= task_queue_size {
             tasks = await_one_task(tasks).await;
         }

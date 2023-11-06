@@ -4,8 +4,7 @@ use crate::datasource::{
     wms_fcgi::MapService, wms_fcgi::WmsMetrics, Datasources, SourceType, TileRead, TileSourceError,
 };
 use crate::store::{
-    store_reader_from_config, store_writer_from_config, CacheLayout, TileReader, TileStoreError,
-    TileWriter,
+    store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
 };
 use actix_web::web;
 use async_trait::async_trait;
@@ -22,7 +21,6 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::num::NonZeroU16;
-use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
 use tilejson::TileJSON;
 
@@ -345,10 +343,9 @@ impl TileService {
             // Read tile into memory
             let mut body = Vec::new();
             tiledata.body.read_to_end(&mut body)?;
-            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, format);
             if let Some(cache) = &tileset.store_writer {
                 cache
-                    .put_tile(path, Box::new(Cursor::new(body.clone())))
+                    .put_tile(tile, Box::new(Cursor::new(body.clone())))
                     .await?;
             }
             Ok(Some(TileResponse {

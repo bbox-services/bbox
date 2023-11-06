@@ -184,17 +184,19 @@ impl TileService {
             tms.xy_bbox()
         };
 
-        let s3_writer = args
-            .s3_path
-            .as_ref()
-            .map(|_| S3Store::from_args(args, &format).unwrap_or_else(error_exit))
-            .or_else(|| {
-                if let TileStoreCfg::S3(s3) = &cache_cfg {
-                    Some(S3Store::from_config(s3).unwrap_or_else(error_exit))
-                } else {
-                    None
-                }
-            });
+        let s3_writer = if args.s3_path.is_some() {
+            Some(
+                S3Store::from_args(args, &format)
+                    .await
+                    .unwrap_or_else(error_exit),
+            )
+        } else {
+            if let TileStoreCfg::S3(s3) = &cache_cfg {
+                Some(S3Store::from_config(s3, &format).unwrap_or_else(error_exit))
+            } else {
+                None
+            }
+        };
 
         // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -237,8 +239,8 @@ impl TileService {
                 let base_dir = file_dir.clone();
                 let rx_s3 = rx_s3.clone();
                 tasks.push(task::spawn(async move {
-                    while let Ok(path) = rx_s3.recv().await {
-                        let _ = s3_writer.put_file(&base_dir, path).await;
+                    while let Ok(tile) = rx_s3.recv().await {
+                        let _ = s3_writer.copy_tile(&base_dir, &tile).await;
                     }
                 }));
             }
@@ -276,7 +278,7 @@ impl TileService {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
             progress.set_message(path.clone());
             progress.inc(1);
-            let cache_exists = file_writer.exists(&path).await;
+            let cache_exists = file_writer.exists(&xyz).await;
             if cache_exists && !overwrite {
                 continue;
             }
@@ -290,9 +292,9 @@ impl TileService {
                 let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
                 let input: BoxRead = Box::new(tile.body);
 
-                file_writer.put_tile(path.clone(), input).await.unwrap();
+                file_writer.put_tile(&xyz, input).await.unwrap();
                 if writer_task_count > 0 {
-                    tx_s3.send(path.clone()).await.unwrap();
+                    tx_s3.send(xyz).await.unwrap();
                 }
             }));
             if tasks.len() >= task_queue_size {

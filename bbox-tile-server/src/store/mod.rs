@@ -21,19 +21,22 @@ pub type BoxRead = Box<dyn Read + Send + Sync>;
 pub enum TileStoreError {
     #[error("{0}: {1}")]
     FileError(PathBuf, #[source] std::io::Error),
+    #[error("Missing argument: {0}")]
+    ArgMissing(String),
     #[error(transparent)]
     S3StoreError(#[from] S3StoreError),
 }
 
+#[async_trait]
 pub trait TileStoreType {
-    fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError>
+    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError>
     where
         Self: Clone + Sized;
 }
 
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
-    async fn put_tile(&self, path: String, input: BoxRead) -> Result<(), TileStoreError>;
+    async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError>;
 }
 
 clone_trait_object!(TileWriter);
@@ -41,7 +44,7 @@ clone_trait_object!(TileWriter);
 #[async_trait]
 pub trait TileReader: DynClone + Send + Sync {
     /// Check for tile in cache
-    async fn exists(&self, path: &str) -> bool;
+    async fn exists(&self, tile: &Xyz) -> bool;
     /// Lookup tile and return Read stream, if found
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError>;
 }
@@ -80,14 +83,14 @@ pub struct NoStore;
 
 #[async_trait]
 impl TileWriter for NoStore {
-    async fn put_tile(&self, _path: String, mut _input: BoxRead) -> Result<(), TileStoreError> {
+    async fn put_tile(&self, _tile: &Xyz, mut _input: BoxRead) -> Result<(), TileStoreError> {
         Ok(())
     }
 }
 
 #[async_trait]
 impl TileReader for NoStore {
-    async fn exists(&self, _path: &str) -> bool {
+    async fn exists(&self, _tile: &Xyz) -> bool {
         false
     }
     async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
@@ -102,7 +105,9 @@ pub fn store_reader_from_config(
 ) -> Box<dyn TileReader> {
     match &config {
         TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
-        TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
+        TileStoreCfg::S3(cfg) => {
+            Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
+        }
     }
 }
 
@@ -113,6 +118,8 @@ pub fn store_writer_from_config(
 ) -> Box<dyn TileWriter> {
     match &config {
         TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
-        TileStoreCfg::S3(cfg) => Box::new(S3Store::from_config(cfg).unwrap_or_else(error_exit)),
+        TileStoreCfg::S3(cfg) => {
+            Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
+        }
     }
 }
