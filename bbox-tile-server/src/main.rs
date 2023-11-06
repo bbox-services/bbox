@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod datasource;
 mod endpoints;
+mod mbtiles_ds;
 mod service;
 mod store;
 

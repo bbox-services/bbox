@@ -135,10 +135,16 @@ impl OgcApiService for TileService {
                     .get(&name)
                     .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)))
             });
-            let store_reader =
-                cache_cfg.map(|config| store_reader_from_config(config, &ts.name, &format));
-            let store_writer =
-                cache_cfg.map(|config| store_writer_from_config(config, &ts.name, &format));
+            let store_reader = if let Some(config) = cache_cfg {
+                Some(store_reader_from_config(config, &ts.name, &format).await)
+            } else {
+                None
+            };
+            let store_writer = if let Some(config) = cache_cfg {
+                Some(store_writer_from_config(config, &ts.name, &format).await)
+            } else {
+                None
+            };
             let tileset = TileSet {
                 tms: tms_id.clone(),
                 source,

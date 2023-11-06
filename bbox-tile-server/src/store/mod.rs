@@ -1,16 +1,20 @@
 pub mod files;
+pub mod mbtiles;
 pub mod s3;
 pub mod s3putfiles;
 
 use crate::cli::SeedArgs;
 use crate::config::TileStoreCfg;
+use crate::mbtiles_ds::Error as MbtilesDsError;
 use crate::store::files::FileStore;
+use crate::store::mbtiles::MbtilesStore;
 use crate::store::s3::{S3Store, S3StoreError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
+use martin_mbtiles::MbtError;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
@@ -25,6 +29,10 @@ pub enum TileStoreError {
     ArgMissing(String),
     #[error(transparent)]
     S3StoreError(#[from] S3StoreError),
+    #[error(transparent)]
+    MbtilesDsError(#[from] MbtilesDsError),
+    #[error(transparent)]
+    MbtError(#[from] MbtError),
 }
 
 #[async_trait]
@@ -98,7 +106,7 @@ impl TileReader for NoStore {
     }
 }
 
-pub fn store_reader_from_config(
+pub async fn store_reader_from_config(
     config: &TileStoreCfg,
     tileset_name: &str,
     format: &Format,
@@ -108,10 +116,15 @@ pub fn store_reader_from_config(
         TileStoreCfg::S3(cfg) => {
             Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
         }
+        TileStoreCfg::Mbtiles(cfg) => Box::new(
+            MbtilesStore::from_config(cfg)
+                .await
+                .unwrap_or_else(error_exit),
+        ),
     }
 }
 
-pub fn store_writer_from_config(
+pub async fn store_writer_from_config(
     config: &TileStoreCfg,
     tileset_name: &str,
     format: &Format,
@@ -121,5 +134,10 @@ pub fn store_writer_from_config(
         TileStoreCfg::S3(cfg) => {
             Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
         }
+        TileStoreCfg::Mbtiles(cfg) => Box::new(
+            MbtilesStore::from_config(cfg)
+                .await
+                .unwrap_or_else(error_exit),
+        ),
     }
 }

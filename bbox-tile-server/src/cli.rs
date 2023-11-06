@@ -190,12 +190,10 @@ impl TileService {
                     .await
                     .unwrap_or_else(error_exit),
             )
+        } else if let TileStoreCfg::S3(s3) = &cache_cfg {
+            Some(S3Store::from_config(s3, &format).unwrap_or_else(error_exit))
         } else {
-            if let TileStoreCfg::S3(s3) = &cache_cfg {
-                Some(S3Store::from_config(s3, &format).unwrap_or_else(error_exit))
-            } else {
-                None
-            }
+            None
         };
 
         // Keep a queue of tasks waiting for parallel async execution (size >= #cores).

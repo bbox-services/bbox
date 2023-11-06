@@ -76,7 +76,7 @@ impl TileStoreType for S3Store {
 #[async_trait]
 impl TileWriter for S3Store {
     async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError> {
-        let key = CacheLayout::Zxy.path_string(&PathBuf::new(), &tile, &self.format);
+        let key = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, &self.format);
         self.put_data(key, input).await
     }
 }
@@ -109,7 +109,7 @@ impl S3Store {
     }
     /// Put tile from temporary file
     pub async fn copy_tile(&self, base_dir: &Path, tile: &Xyz) -> Result<(), TileStoreError> {
-        let fullpath = CacheLayout::Zxy.path(&base_dir.to_path_buf(), &tile, &self.format);
+        let fullpath = CacheLayout::Zxy.path(base_dir, tile, &self.format);
         let p = fullpath.as_path();
         let reader = Box::new(BufReader::new(
             File::open(p).map_err(|e| TileStoreError::FileError(p.into(), e))?,

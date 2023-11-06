@@ -8,6 +8,7 @@ pub mod wms_http;
 
 use crate::config::SourceParamCfg;
 use crate::service::TileService;
+use crate::store::mbtiles::MbtilesStore;
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::endpoints::TileResponse;
@@ -175,15 +176,17 @@ impl Datasources {
                     });
                 Box::new(postgis::PgSource::create(ds, pg_cfg, tms).await)
             }
-            SourceParamCfg::Mbtiles(cfg) => {
-                Box::new(mbtiles::MbtilesSource::from_config(cfg).await)
-            }
+            SourceParamCfg::Mbtiles(cfg) => Box::new(
+                MbtilesStore::from_config(cfg)
+                    .await
+                    .unwrap_or_else(error_exit),
+            ),
         }
     }
 }
 
 pub fn source_config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
-    mbtiles::MbtilesSource::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
+    MbtilesStore::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
 }
 
 #[cfg(not(feature = "map-server"))]

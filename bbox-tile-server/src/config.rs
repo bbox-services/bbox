@@ -56,7 +56,7 @@ pub enum SourceParamCfg {
     #[serde(rename = "postgis")]
     Postgis(PostgisSourceParamsCfg),
     #[serde(rename = "mbtiles")]
-    Mbtiles(MbtilesSourceParamsCfg),
+    Mbtiles(MbtilesStoreCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -78,12 +78,6 @@ pub struct WmsFcgiSourceParamsCfg {
     /// Width and height of tile. Defaults to grid tile size (usually 256x256)
     // TODO: per layer for MVT, investigate for OGC Tiles
     pub tile_size: Option<NonZeroU16>,
-}
-
-#[derive(Deserialize, Clone, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct MbtilesSourceParamsCfg {
-    pub path: PathBuf,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -200,7 +194,7 @@ pub struct TileCacheProviderCfg {
 pub enum TileStoreCfg {
     Files(FileStoreCfg),
     S3(S3StoreCfg),
-    // MbTiles(MbTilesCache),
+    Mbtiles(MbtilesStoreCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -217,6 +211,12 @@ pub struct S3StoreCfg {
     // pub s3_endpoint_url: Option<String>,
     // pub aws_access_key_id: Option<String>,
     // pub aws_secret_access_key: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct MbtilesStoreCfg {
+    pub path: PathBuf,
 }
 
 impl TileserverCfg {

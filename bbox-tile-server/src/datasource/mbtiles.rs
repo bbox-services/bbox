@@ -1,48 +1,16 @@
-use crate::config::*;
 use crate::datasource::{
     wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use crate::service::TileService;
+use crate::store::mbtiles::MbtilesStore;
+use crate::store::TileReader;
 use async_trait::async_trait;
-use bbox_core::config::error_exit;
 use bbox_core::Format;
-use log::info;
-use martin_mbtiles::MbtilesPool;
-use std::ffi::OsStr;
-use std::io::Cursor;
-use std::path::Path;
 use tile_grid::Xyz;
 use tilejson::TileJSON;
 
-#[derive(Clone, Debug)]
-pub struct MbtilesSource {
-    mbt: MbtilesPool,
-}
-
-impl MbtilesSource {
-    pub async fn from_config(cfg: &MbtilesSourceParamsCfg) -> Self {
-        info!("Creating connection pool for {}", &cfg.path.display());
-        let mbt = MbtilesPool::new(cfg.path.clone())
-            .await
-            .unwrap_or_else(error_exit);
-        //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
-        MbtilesSource { mbt }
-    }
-    pub fn config_from_cli_arg(file_or_url: &str) -> Option<MbtilesSourceParamsCfg> {
-        match Path::new(file_or_url).extension().and_then(OsStr::to_str) {
-            Some("mbtiles") => {
-                let cfg = MbtilesSourceParamsCfg {
-                    path: file_or_url.into(),
-                };
-                Some(cfg)
-            }
-            _ => None,
-        }
-    }
-}
-
 #[async_trait]
-impl TileRead for MbtilesSource {
+impl TileRead for MbtilesStore {
     async fn xyz_request(
         &self,
         _service: &TileService,
@@ -54,18 +22,12 @@ impl TileRead for MbtilesSource {
         _req_path: &str,
         _metrics: &WmsMetrics,
     ) -> Result<TileResponse, TileSourceError> {
-        if let Some(content) = self
-            .mbt
-            .get_tile(tile.z, tile.x as u32, tile.y as u32)
-            .await?
+        if let Some(tile) = self
+            .get_tile(tile)
+            .await
+            .map_err(|_| TileSourceError::TileXyzError)?
         {
-            let content_type = Some("application/x-protobuf".to_string());
-            let body = Box::new(Cursor::new(content));
-            Ok(TileResponse {
-                content_type,
-                headers: TileResponse::new_headers(),
-                body,
-            })
+            Ok(tile)
         } else {
             Err(TileSourceError::TileXyzError) // TODO: check for empty tile?
         }
