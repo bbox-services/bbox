@@ -161,7 +161,7 @@ impl TileService {
         let tileset = self
             .tileset(&args.tileset)
             .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
-        let suffix = tileset.tile_suffix().to_string();
+        let format = *tileset.tile_format();
         let tms = self.grid(&tileset.tms)?;
         let Some(cache_cfg) = &tileset.cache_config() else {
             return Err(
@@ -187,7 +187,7 @@ impl TileService {
         let s3_writer = args
             .s3_path
             .as_ref()
-            .map(|_| S3Store::from_args(args).unwrap_or_else(error_exit))
+            .map(|_| S3Store::from_args(args, &format).unwrap_or_else(error_exit))
             .or_else(|| {
                 if let TileStoreCfg::S3(s3) = &cache_cfg {
                     Some(S3Store::from_config(s3).unwrap_or_else(error_exit))
@@ -218,7 +218,7 @@ impl TileService {
                 }
             })
             .unwrap_or_else(|| TempDir::new().unwrap().into_path());
-        let file_writer = FileStore::new(file_dir.clone(), &suffix);
+        let file_writer = FileStore::new(file_dir.clone(), format);
 
         let (tx_s3, rx_s3) = async_channel::bounded(task_queue_size);
 
@@ -273,7 +273,7 @@ impl TileService {
         let mut cnt = 0;
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
         for xyz in griditer {
-            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &suffix);
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
             progress.set_message(path.clone());
             progress.inc(1);
             let cache_exists = file_writer.exists(&path).await;
@@ -285,10 +285,9 @@ impl TileService {
             let service = self.clone();
             let tileset = args.tileset.clone();
             let file_writer = file_writer.clone();
-            let suffix = suffix.clone();
             let tx_s3 = tx_s3.clone();
             tasks.push(task::spawn(async move {
-                let tile = service.read_tile(&tileset, &xyz, &suffix).await.unwrap();
+                let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
                 let input: BoxRead = Box::new(tile.body);
 
                 file_writer.put_tile(path.clone(), input).await.unwrap();

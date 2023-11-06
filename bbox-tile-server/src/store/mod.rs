@@ -9,6 +9,7 @@ use crate::store::s3::{S3Store, S3StoreError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
+use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -25,7 +26,7 @@ pub enum TileStoreError {
 }
 
 pub trait TileStoreType {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError>
+    fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError>
     where
         Self: Clone + Sized;
 }
@@ -53,7 +54,7 @@ pub enum CacheLayout {
 }
 
 impl CacheLayout {
-    pub fn path(&self, base_dir: &Path, tile: &Xyz, format: &str) -> PathBuf {
+    pub fn path(&self, base_dir: &Path, tile: &Xyz, format: &Format) -> PathBuf {
         let mut path = base_dir.to_path_buf();
         match self {
             CacheLayout::Zxy => {
@@ -61,12 +62,12 @@ impl CacheLayout {
                 path.push(&tile.z.to_string());
                 path.push(&tile.x.to_string());
                 path.push(&tile.y.to_string());
-                path.set_extension(format);
+                path.set_extension(format.file_suffix());
             }
         }
         path
     }
-    pub fn path_string(&self, base_dir: &Path, tile: &Xyz, format: &str) -> String {
+    pub fn path_string(&self, base_dir: &Path, tile: &Xyz, format: &Format) -> String {
         self.path(base_dir, tile, format)
             .into_os_string()
             .to_string_lossy()
@@ -97,7 +98,7 @@ impl TileReader for NoStore {
 pub fn store_reader_from_config(
     config: &TileStoreCfg,
     tileset_name: &str,
-    format: &str,
+    format: &Format,
 ) -> Box<dyn TileReader> {
     match &config {
         TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
@@ -108,7 +109,7 @@ pub fn store_reader_from_config(
 pub fn store_writer_from_config(
     config: &TileStoreCfg,
     tileset_name: &str,
-    format: &str,
+    format: &Format,
 ) -> Box<dyn TileWriter> {
     match &config {
         TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),

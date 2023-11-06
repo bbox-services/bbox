@@ -8,6 +8,7 @@ use crate::datasource::{
 use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::pg_ds::PgDatasource;
+use bbox_core::Format;
 use futures::TryStreamExt;
 use geozero::{mvt, wkb, ToMvt};
 use log::{debug, error, info, warn};
@@ -199,7 +200,7 @@ impl TileRead for PgSource {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
-        _format: &str,
+        _format: &Format,
         _scheme: &str,
         _host: &str,
         _req_path: &str,

@@ -3,6 +3,7 @@ use crate::config::FileStoreCfg;
 use crate::store::{BoxRead, CacheLayout, TileReader, TileStoreError, TileStoreType, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
+use bbox_core::Format;
 use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
@@ -12,20 +13,17 @@ use tile_grid::Xyz;
 #[derive(Clone, Debug)]
 pub struct FileStore {
     pub(crate) base_dir: PathBuf,
-    format: String,
+    format: Format,
 }
 
 impl FileStore {
-    pub fn new(base_dir: PathBuf, format: &str) -> Self {
-        FileStore {
-            base_dir,
-            format: format.to_string(),
-        }
+    pub fn new(base_dir: PathBuf, format: Format) -> Self {
+        FileStore { base_dir, format }
     }
-    pub fn from_config(cfg: &FileStoreCfg, tileset_name: &str, format: &str) -> Self {
+    pub fn from_config(cfg: &FileStoreCfg, tileset_name: &str, format: &Format) -> Self {
         let base_dir =
             PathBuf::from_iter([cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter());
-        Self::new(base_dir, format)
+        Self::new(base_dir, *format)
     }
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())
@@ -33,11 +31,9 @@ impl FileStore {
 }
 
 impl TileStoreType for FileStore {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError> {
+    fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
         let base_dir = PathBuf::from(args.base_dir.as_ref().unwrap());
-        let format = "png".to_string(); //FIXME
-
-        Ok(FileStore { base_dir, format })
+        Ok(FileStore::new(base_dir, *format))
     }
 }
 

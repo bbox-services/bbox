@@ -3,6 +3,7 @@ use crate::service::{ServiceError, TileService};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::CoreService;
+use bbox_core::Format;
 use log::error;
 use tile_grid::{
     Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
@@ -17,6 +18,10 @@ async fn xyz(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y, format) = params.into_inner();
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    let format = Format::from_suffix(&format).unwrap_or(*ts.tile_format());
     tile_request(service, &tileset, x, y, z, &format, metrics, req).await
 }
 
@@ -60,19 +65,27 @@ async fn map_tile(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let (tileset, z, x, y) = params.into_inner();
-    let ts = service
-        .tileset(&tileset)
+    let source = service
+        .source(&tileset)
         .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
-    let default_format = ts.default_format().to_string();
-    let mut format = &web::Header::<header::Accept>::extract(&req)
+    let format = format_accept_header(&req, source.default_format()).await;
+    tile_request(service, &tileset, x, y, z, &format, metrics, req).await
+}
+
+async fn format_accept_header(req: &HttpRequest, default: &Format) -> Format {
+    let mut format_mime = web::Header::<header::Accept>::extract(req)
         .await
         .map(|accept| accept.preference().to_string())
-        .unwrap_or(default_format.clone());
+        .ok();
     // override invalid request formats (TODO: check against available formats)
-    if format == "image/avif" {
-        format = &default_format;
+    if let Some("image/avif") = format_mime.as_deref() {
+        format_mime = None;
     }
-    tile_request(service, &tileset, x, y, z, format, metrics, req).await
+    let format = format_mime
+        .as_deref()
+        .and_then(Format::from_content_type)
+        .unwrap_or(*default);
+    format
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -82,7 +95,7 @@ async fn tile_request(
     x: u64,
     y: u64,
     z: u8,
-    format: &str,
+    format: &Format,
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {

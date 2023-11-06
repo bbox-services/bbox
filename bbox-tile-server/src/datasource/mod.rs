@@ -11,7 +11,7 @@ use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::endpoints::TileResponse;
-use bbox_core::NamedObjectStore;
+use bbox_core::{Format, NamedObjectStore};
 use dyn_clone::{clone_trait_object, DynClone};
 use geozero::error::GeozeroError;
 use tile_grid::{RegistryError, Tms, Xyz};
@@ -67,7 +67,7 @@ pub trait TileRead: DynClone + Send + Sync {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
-        format: &str,
+        format: &Format,
         scheme: &str,
         host: &str,
         req_path: &str,
@@ -75,11 +75,11 @@ pub trait TileRead: DynClone + Send + Sync {
     ) -> Result<TileResponse, TileSourceError>;
     /// Type information
     fn source_type(&self) -> SourceType;
-    /// Tile format suffix
-    fn default_suffix(&self) -> &str {
+    /// Default tile format
+    fn default_format(&self) -> &Format {
         match self.source_type() {
-            SourceType::Vector => "pbf",
-            SourceType::Raster => "png",
+            SourceType::Vector => &Format::Mvt,
+            SourceType::Raster => &Format::Png, // TODO: support for "image/png; mode=8bit"
         }
     }
     /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)

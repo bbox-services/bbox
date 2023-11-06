@@ -16,7 +16,7 @@ pub enum Format {
 
 impl Format {
     #[must_use]
-    pub fn parse(value: &str) -> Option<Self> {
+    pub fn from_suffix(value: &str) -> Option<Self> {
         Some(match value.to_ascii_lowercase().as_str() {
             "gif" => Self::Gif,
             "jpg" | "jpeg" => Self::Jpeg,
@@ -28,6 +28,29 @@ impl Format {
         })
     }
 
+    pub fn from_content_type(mime: &str) -> Option<Self> {
+        Some(match mime {
+            "image/gif" => Self::Gif,
+            "image/jpeg" => Self::Jpeg,
+            "application/json" => Self::Json,
+            "application/x-protobuf" => Self::Mvt,
+            "image/png" => Self::Png,
+            "image/webp" => Self::Webp,
+            _ => None?,
+        })
+    }
+
+    pub fn file_suffix(&self) -> &str {
+        match *self {
+            Self::Gif => "gif",
+            Self::Jpeg => "jpg",
+            Self::Json => "json",
+            Self::Mvt => "pbf",
+            Self::Png => "png",
+            Self::Webp => "webp",
+        }
+    }
+
     #[must_use]
     pub fn content_type(&self) -> &str {
         match *self {
@@ -35,7 +58,7 @@ impl Format {
             Self::Jpeg => "image/jpeg",
             Self::Json => "application/json",
             Self::Mvt => "application/x-protobuf",
-            Self::Png => "image/png",
+            Self::Png => "image/png", // TODO: support for "image/png; mode=8bit"!
             Self::Webp => "image/webp",
         }
     }

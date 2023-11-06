@@ -3,6 +3,7 @@ use crate::config::S3StoreCfg;
 use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
+use bbox_core::Format;
 use log::debug;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;
@@ -55,7 +56,7 @@ impl S3Store {
 }
 
 impl TileStoreType for S3Store {
-    fn from_args(args: &SeedArgs) -> Result<Self, TileStoreError> {
+    fn from_args(args: &SeedArgs, _format: &Format) -> Result<Self, TileStoreError> {
         Self::from_s3_path(args.s3_path.as_ref().unwrap()).map_err(Into::into)
     }
 }

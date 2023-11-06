@@ -2,6 +2,7 @@ use crate::config::WmsFcgiSourceParamsCfg;
 use crate::datasource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use crate::service::{QueryExtent, TileService};
 use async_trait::async_trait;
+use bbox_core::Format;
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
 use std::num::NonZeroU16;
@@ -33,7 +34,7 @@ impl WmsFcgiSource {
         }
     }
 
-    pub fn get_map_request(&self, extent_info: &QueryExtent, format: &str) -> String {
+    pub fn get_map_request(&self, extent_info: &QueryExtent, format: &Format) -> String {
         let (width, height) = if let Some(size) = self.tile_size {
             (size, size)
         } else {
@@ -41,8 +42,14 @@ impl WmsFcgiSource {
         };
         let extent = &extent_info.extent;
         format!(
-            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&WIDTH={width}&HEIGHT={height}&FORMAT={format}",
-            self.query, extent_info.srid, extent.left, extent.bottom, extent.right, extent.top
+            "{}&CRS=EPSG:{}&BBOX={},{},{},{}&WIDTH={width}&HEIGHT={height}&FORMAT={}",
+            self.query,
+            extent_info.srid,
+            extent.left,
+            extent.bottom,
+            extent.right,
+            extent.top,
+            format.content_type()
         )
     }
 
@@ -51,7 +58,7 @@ impl WmsFcgiSource {
         &self,
         service: &TileService,
         extent_info: &QueryExtent,
-        format: &str,
+        format: &Format,
         scheme: &str,
         host: &str,
         req_path: &str,
@@ -89,7 +96,7 @@ impl TileRead for WmsFcgiSource {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
-        format: &str,
+        format: &Format,
         scheme: &str,
         host: &str,
         req_path: &str,
