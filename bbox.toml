@@ -152,6 +152,11 @@ base_dir = "/tmp/tilecache"
 #[tilestore.s3]
 #path = "s3://tiles"
 
+[[tilestore]]
+name = "mbtiles"
+[tilestore.mbtiles]
+path = "/tmp/tilecache.mbtiles"
+
 # -- tile sets --
 
 [[tileset]]
@@ -162,6 +167,7 @@ cache = "filesystem"
 [[tileset]]
 name = "ne_umn"
 map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
+cache = "mbtiles"
 
 [[tileset]]
 name = "gebco"

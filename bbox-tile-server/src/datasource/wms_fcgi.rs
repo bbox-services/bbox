@@ -101,9 +101,10 @@ impl TileRead for WmsFcgiSource {
     fn source_type(&self) -> SourceType {
         SourceType::Raster
     }
-    async fn tilejson(&self) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
-        tj.other.insert("format".to_string(), "png".into());
+        tj.other
+            .insert("format".to_string(), format.file_suffix().into());
         Ok(tj)
     }
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {

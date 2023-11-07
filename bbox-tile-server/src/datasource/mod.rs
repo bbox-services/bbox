@@ -6,7 +6,7 @@ mod postgis_queries;
 pub mod wms_fcgi;
 pub mod wms_http;
 
-use crate::config::SourceParamCfg;
+use crate::config::{SourceParamCfg, TileSetCfg};
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
 use async_trait::async_trait;
@@ -15,6 +15,7 @@ use bbox_core::endpoints::TileResponse;
 use bbox_core::{Format, NamedObjectStore};
 use dyn_clone::{clone_trait_object, DynClone};
 use geozero::error::GeozeroError;
+use martin_mbtiles::Metadata;
 use tile_grid::{RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
 
@@ -80,9 +81,99 @@ pub trait TileRead: DynClone + Send + Sync {
         }
     }
     /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
-    async fn tilejson(&self) -> Result<TileJSON, TileSourceError>;
+    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError>;
     /// Layer metadata
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError>;
+    /// MBTiles metadata.json (https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md)
+    async fn mbtiles_metadata(
+        &self,
+        tileset: &TileSetCfg,
+        format: &Format,
+    ) -> Result<Metadata, TileSourceError> {
+        // t_rex:
+        // fn get_tilejson_metadata(&self, tileset: &str, grid: &Grid) -> JsonResult {
+        //     let ts = self
+        //         .get_tileset(tileset)
+        //         .expect(&format!("Tileset '{}' not found", tileset));
+        //     let ext = ts.get_extent();
+        //     let center = ts.get_center();
+        //     let zoom = ts.get_start_zoom();
+        //     let mut meta = json!({
+        //         "id": tileset,
+        //         "name": tileset,
+        //         "description": tileset,
+        //         "attribution": ts.attribution(),
+        //         "format": "pbf",
+        //         "version": "2.0.0", //edition of the software, keep 2.0 for backwards compat
+        //         "tilejson": "2.2.0", //edition of the tilejson standard adopted
+        //         "scheme": "xyz",
+        //         "bounds": [ext.minx,
+        //                    ext.miny,
+        //                    ext.maxx,
+        //                    ext.maxy],
+        //         // Minimum zoom level for which tiles are available.
+        //         // Optional. Default: 0. >= 0, <= 30.
+        //         "minzoom": ts.minzoom(),
+        //         // Maximum zoom level for which tiles are available.
+        //         // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
+        //         // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
+        //         "maxzoom": ts.maxzoom(),
+        //         "center": [center.0, center.1, zoom],
+        //         "basename": tileset
+        //     });
+        //     if grid.srid != 3857 {
+        //         // TODO: add full grid information according to GDAL extension
+        //         // https://github.com/OSGeo/gdal/blob/release/3.4/gdal/ogr/ogrsf_frmts/mvt/ogrmvtdataset.cpp#L5497
+        //         meta["srs"] = json!(format!("EPSG:{}", grid.srid));
+        //     }
+        //     Ok(meta)
+        // }
+        // fn get_mbtiles_metadata(&self, tileset: &str, grid: &Grid) -> JsonResult {
+        //     let mut metadata = self.get_tilejson_metadata(tileset, grid)?;
+        //     metadata["bounds"] = json!(metadata["bounds"].to_string());
+        //     metadata["center"] = json!(metadata["center"].to_string());
+        //     let layers = self.get_tilejson_layers(tileset)?;
+        //     let vector_layers = self.get_tilejson_vector_layers(tileset)?;
+        //     let metadata_vector_layers = json!({
+        //         "Layer": layers,
+        //         "vector_layers": vector_layers
+        //     });
+        //     let obj = metadata.as_object_mut().unwrap();
+        //     obj.insert(
+        //         "json".to_string(),
+        //         json!(metadata_vector_layers.to_string()),
+        //     );
+        //     Ok(json!(obj))
+        // }
+        // let expected = r#"{
+        //   "attribution": "",
+        //   "basename": "osm",
+        //   "bounds": "[-180.0,-90.0,180.0,90.0]",
+        //   "center": "[0.0,0.0,2]",
+        //   "description": "osm",
+        //   "format": "pbf",
+        //   "id": "osm",
+        //   "json": "{\"Layer\":[{\"description\":\"\",\"fields\":{},\"id\":\"points\",\"name\":\"points\",\"properties\":{\"buffer-size\":0,\"maxzoom\":22,\"minzoom\":0}},{\"description\":\"\",\"fields\":{},\"id\":\"buildings\",\"name\":\"buildings\",\"properties\":{\"buffer-size\":10,\"maxzoom\":22,\"minzoom\":0}},{\"description\":\"\",\"fields\":{},\"id\":\"admin_0_countries\",\"name\":\"admin_0_countries\",\"properties\":{\"buffer-size\":1,\"maxzoom\":22,\"minzoom\":0}}],\"vector_layers\":[{\"description\":\"\",\"fields\":{},\"id\":\"points\",\"maxzoom\":22,\"minzoom\":0},{\"description\":\"\",\"fields\":{},\"id\":\"buildings\",\"maxzoom\":22,\"minzoom\":0},{\"description\":\"\",\"fields\":{},\"id\":\"admin_0_countries\",\"maxzoom\":22,\"minzoom\":0}]}",
+        //   "maxzoom": 22,
+        //   "minzoom": 0,
+        //   "name": "osm",
+        //   "scheme": "xyz",
+        //   "srs": "EPSG:4326",
+        //   "tilejson": "2.2.0",
+        //   "version": "2.0.0"
+        // }"#;
+        Ok(Metadata {
+            id: tileset.name.clone(),
+            tile_info: martin_tile_utils::TileInfo {
+                format: martin_tile_utils::Format::parse(format.file_suffix())
+                    .unwrap_or(martin_tile_utils::Format::Mvt),
+                encoding: martin_tile_utils::Encoding::Uncompressed,
+            },
+            tilejson: self.tilejson(format).await?,
+            layer_type: None,
+            json: None,
+        })
+    }
 }
 
 clone_trait_object!(TileRead);

@@ -121,7 +121,7 @@ impl OgcApiService for TileService {
             .collect();
 
         for ts in config.tilesets {
-            let tms_id = ts.tms.unwrap_or("WebMercatorQuad".to_string());
+            let tms_id = ts.tms.clone().unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
             let source = datasources.setup_tile_source(&ts.source, &tms).await;
             let format = ts
@@ -129,18 +129,22 @@ impl OgcApiService for TileService {
                 .as_ref()
                 .and_then(|suffix| Format::from_suffix(suffix))
                 .unwrap_or(*source.default_format()); // TODO: emit warning or error
+            let metadata = source
+                .mbtiles_metadata(&ts, &format)
+                .await
+                .unwrap_or_else(error_exit);
             let cache_cfg = ts.cache.map(|name| {
                 stores
                     .get(&name)
                     .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name)))
             });
-            let store_reader = if let Some(config) = cache_cfg {
-                Some(store_reader_from_config(config, &ts.name, &format).await)
+            let store_writer = if let Some(config) = cache_cfg {
+                Some(store_writer_from_config(config, &ts.name, &format, metadata).await)
             } else {
                 None
             };
-            let store_writer = if let Some(config) = cache_cfg {
-                Some(store_writer_from_config(config, &ts.name, &format).await)
+            let store_reader = if let Some(config) = cache_cfg {
+                Some(store_reader_from_config(config, &ts.name, &format).await)
             } else {
                 None
             };
@@ -351,7 +355,7 @@ impl TileService {
         let ts = self
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
-        let mut tilejson = ts.source.tilejson().await?;
+        let mut tilejson = ts.source.tilejson(&ts.format).await?;
         let suffix = tilejson
             .other
             .get("format")

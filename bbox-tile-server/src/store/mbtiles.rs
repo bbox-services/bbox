@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use log::info;
+use martin_mbtiles::Metadata;
 use std::ffi::OsStr;
 use std::io::Cursor;
 use std::path::Path;
@@ -19,8 +20,16 @@ pub struct MbtilesStore {
 impl MbtilesStore {
     pub async fn from_config(cfg: &MbtilesStoreCfg) -> Result<Self, MbtilesDsError> {
         info!("Creating connection pool for {}", &cfg.path.display());
-        let mbt = MbtilesDatasource::from_config(cfg).await?;
+        let mbt = MbtilesDatasource::from_config(cfg, None).await?;
         //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
+        Ok(MbtilesStore { mbt })
+    }
+    pub async fn from_config_writable(
+        cfg: &MbtilesStoreCfg,
+        metadata: Metadata,
+    ) -> Result<Self, MbtilesDsError> {
+        info!("Creating connection pool for {}", &cfg.path.display());
+        let mbt = MbtilesDatasource::from_config(cfg, Some(metadata)).await?;
         Ok(MbtilesStore { mbt })
     }
     pub fn config_from_cli_arg(file_or_url: &str) -> Option<MbtilesStoreCfg> {

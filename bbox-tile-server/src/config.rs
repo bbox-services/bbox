@@ -361,8 +361,7 @@ impl VectorLayerCfg {
     }
     // Layer properties needed e.g. for metadata.json
     // pub fn metadata(&self) -> HashMap<&str, String> {
-    //     //TODO: return Zoom-Level Array
-    //     let mut metadata: HashMap<&str, String> = HashMap::new();
+    //     let mut metadata = HashMap::new();
     //     metadata.insert("id", self.name.clone());
     //     metadata.insert("name", self.name.clone());
     //     metadata.insert("description", "".to_string());

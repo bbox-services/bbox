@@ -15,6 +15,7 @@ use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
 use martin_mbtiles::MbtError;
+use martin_mbtiles::Metadata;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
@@ -128,6 +129,7 @@ pub async fn store_writer_from_config(
     config: &TileStoreCfg,
     tileset_name: &str,
     format: &Format,
+    metadata: Metadata,
 ) -> Box<dyn TileWriter> {
     match &config {
         TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
@@ -135,7 +137,7 @@ pub async fn store_writer_from_config(
             Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
         }
         TileStoreCfg::Mbtiles(cfg) => Box::new(
-            MbtilesStore::from_config(cfg)
+            MbtilesStore::from_config_writable(cfg, metadata)
                 .await
                 .unwrap_or_else(error_exit),
         ),

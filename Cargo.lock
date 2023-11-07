@@ -950,6 +950,7 @@ dependencies = [
  "geozero",
  "indicatif",
  "log",
+ "martin-tile-utils",
  "mbtiles",
  "num_cpus",
  "once_cell",
