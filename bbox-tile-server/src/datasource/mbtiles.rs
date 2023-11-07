@@ -1,5 +1,5 @@
 use crate::datasource::{
-    wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
@@ -17,10 +17,7 @@ impl TileRead for MbtilesStore {
         _tms_id: &str,
         tile: &Xyz,
         _format: &Format,
-        _scheme: &str,
-        _host: &str,
-        _req_path: &str,
-        _metrics: &WmsMetrics,
+        _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
         if let Some(tile) = self
             .get_tile(tile)

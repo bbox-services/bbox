@@ -1,4 +1,4 @@
-use crate::datasource::wms_fcgi::WmsMetrics;
+use crate::datasource::wms_fcgi::{HttpRequestParams, WmsMetrics};
 use crate::service::{ServiceError, TileService};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
@@ -111,17 +111,14 @@ async fn tile_request(
         })
         .unwrap_or(false);
     let conn_info = req.connection_info().clone();
+    let request_params = HttpRequestParams {
+        scheme: conn_info.scheme(),
+        host: conn_info.host(),
+        req_path: req.path(),
+        metrics: &metrics,
+    };
     match service
-        .tile_cached(
-            tileset,
-            &tile,
-            format,
-            gzip,
-            conn_info.scheme(),
-            conn_info.host(),
-            req.path(),
-            &metrics,
-        )
+        .tile_cached(tileset, &tile, format, gzip, request_params)
         .await
     {
         Ok(Some(tile_resp)) => {

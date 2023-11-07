@@ -44,42 +44,45 @@ async fn wms_fcgi(
 ) -> Result<HttpResponse, actix_web::Error> {
     let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
     let conn_info = req.connection_info().clone();
+    let request_params = HttpRequestParams {
+        scheme: conn_info.scheme(),
+        host: conn_info.host(),
+        req_path: req.path(),
+        metrics: &metrics,
+    };
     wms_fcgi_request(
         &fcgi_dispatcher,
-        conn_info.scheme(),
-        conn_info.host(),
-        req.path(),
         &fcgi_query,
+        request_params,
         req.method().as_str(),
         body,
         &project,
-        &metrics,
     )
     .await
 }
 
-#[allow(clippy::too_many_arguments)]
+pub struct HttpRequestParams<'a> {
+    pub scheme: &'a str,
+    pub host: &'a str,
+    pub req_path: &'a str,
+    pub metrics: &'a WmsMetrics,
+}
+
 pub async fn wms_fcgi_request(
     fcgi_dispatcher: &FcgiDispatcher,
-    scheme: &str,
-    host: &str,
-    req_path: &str,
     fcgi_query: &str,
+    request_params: HttpRequestParams<'_>,
     req_method: &str,
     body: String,
     project: &str,
-    metrics: &WmsMetrics,
 ) -> Result<HttpResponse, actix_web::Error> {
     let wms_resp = wms_fcgi_req(
         fcgi_dispatcher,
-        scheme,
-        host,
-        req_path,
         fcgi_query,
+        request_params,
         req_method,
         body,
         project,
-        metrics,
     )
     .await?;
     let mut response = HttpResponse::Ok();
@@ -90,18 +93,16 @@ pub async fn wms_fcgi_request(
     Ok(response.streaming(wms_resp.into_stream()))
 }
 
-#[allow(clippy::too_many_arguments)]
 pub async fn wms_fcgi_req(
     fcgi_dispatcher: &FcgiDispatcher,
-    scheme: &str,
-    host: &str,
-    req_path: &str,
     fcgi_query: &str,
+    request_params: HttpRequestParams<'_>,
     req_method: &str,
     body: String,
     project: &str,
-    metrics: &WmsMetrics,
 ) -> Result<TileResponse, FcgiError> {
+    let req_path = request_params.req_path;
+    let metrics = request_params.metrics;
     // --- > tracing/metrics
     let tracer = global::tracer("request");
     let ctx = Context::current();
@@ -165,7 +166,7 @@ pub async fn wms_fcgi_req(
     let ctx = Context::current_with_span(span);
     // ---
 
-    let host_port: Vec<&str> = host.split(':').collect();
+    let host_port: Vec<&str> = request_params.host.split(':').collect();
     debug!("Forwarding query to FCGI process {fcgino}: {fcgi_query}");
     let len = format!("{}", body.len());
     let mut params = fastcgi_client::Params::new()
@@ -177,7 +178,7 @@ pub async fn wms_fcgi_req(
     if let Some(port) = host_port.get(1) {
         params = params.set_server_port(port);
     }
-    if scheme == "https" {
+    if request_params.scheme == "https" {
         params.insert("HTTPS", "ON");
     }
     // UMN uses env variables (https://github.com/MapServer/MapServer/blob/172f5cf092/maputil.c#L2534):

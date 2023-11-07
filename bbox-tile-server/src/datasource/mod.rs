@@ -62,17 +62,13 @@ pub struct LayerInfo {
 #[async_trait]
 pub trait TileRead: DynClone + Send + Sync {
     /// Request tile from source
-    #[allow(clippy::too_many_arguments)]
     async fn xyz_request(
         &self,
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
         format: &Format,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &wms_fcgi::WmsMetrics,
+        request_params: wms_fcgi::HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError>;
     /// Type information
     fn source_type(&self) -> SourceType;
@@ -202,4 +198,11 @@ pub mod wms_fcgi {
         }
     }
     pub type FcgiError = std::io::Error;
+
+    pub struct HttpRequestParams<'a> {
+        pub scheme: &'a str,
+        pub host: &'a str,
+        pub req_path: &'a str,
+        pub metrics: &'a WmsMetrics,
+    }
 }

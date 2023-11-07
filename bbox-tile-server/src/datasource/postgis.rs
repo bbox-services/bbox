@@ -2,7 +2,7 @@ use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
-    wms_fcgi::WmsMetrics,
+    wms_fcgi::HttpRequestParams,
     LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use crate::service::TileService;
@@ -201,10 +201,7 @@ impl TileRead for PgSource {
         tms_id: &str,
         tile: &Xyz,
         _format: &Format,
-        _scheme: &str,
-        _host: &str,
-        _req_path: &str,
-        _metrics: &WmsMetrics,
+        _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
         let grid = service.grid(tms_id)?;
         let extent_info = service.xyz_extent(tms_id, tile)?;

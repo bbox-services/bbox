@@ -1,8 +1,7 @@
 use crate::cli::Commands;
 use crate::config::*;
-use crate::datasource::{
-    wms_fcgi::MapService, wms_fcgi::WmsMetrics, Datasources, SourceType, TileRead, TileSourceError,
-};
+use crate::datasource::wms_fcgi::{HttpRequestParams, MapService, WmsMetrics};
+use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
 use crate::store::{
     store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
 };
@@ -291,32 +290,25 @@ impl TileService {
         let ts = self
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        let request_params = HttpRequestParams {
+            scheme: "http",
+            host: "localhost",
+            req_path: "/",
+            metrics,
+        };
         Ok(ts
             .source
-            .xyz_request(
-                self,
-                &ts.tms,
-                tile,
-                format,
-                "http",
-                "localhost",
-                "/",
-                metrics,
-            )
+            .xyz_request(self, &ts.tms, tile, format, request_params)
             .await?)
     }
     /// Get tile with cache lookup
-    #[allow(clippy::too_many_arguments)]
     pub async fn tile_cached(
         &self,
         tileset: &str,
         tile: &Xyz,
         format: &Format,
         _gzip: bool,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &WmsMetrics,
+        request_params: HttpRequestParams<'_>,
     ) -> Result<Option<TileResponse>, ServiceError> {
         let tileset = self
             .tileset(tileset)
@@ -333,16 +325,7 @@ impl TileService {
         // Request tile and write into cache
         let mut tiledata = tileset
             .source
-            .xyz_request(
-                self,
-                &tileset.tms,
-                tile,
-                format,
-                scheme,
-                host,
-                req_path,
-                metrics,
-            )
+            .xyz_request(self, &tileset.tms, tile, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         if tileset.is_cachable_at(tile.z) {

@@ -1,6 +1,6 @@
-use crate::config::*;
+use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
-    wms_fcgi::WmsMetrics, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use crate::service::TileService;
 use async_trait::async_trait;
@@ -74,10 +74,7 @@ impl TileRead for WmsHttpSource {
         tms_id: &str,
         tile: &Xyz,
         _format: &Format,
-        _scheme: &str,
-        _host: &str,
-        _req_path: &str,
-        _metrics: &WmsMetrics,
+        _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
         let extent_info = service.xyz_extent(tms_id, tile)?;
         self.bbox_request(&extent_info.extent).await

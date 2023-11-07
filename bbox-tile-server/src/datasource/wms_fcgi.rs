@@ -4,7 +4,9 @@ use crate::service::{QueryExtent, TileService};
 use async_trait::async_trait;
 use bbox_core::Format;
 use bbox_map_server::endpoints::wms_fcgi_req;
-pub use bbox_map_server::{endpoints::FcgiError, metrics::WmsMetrics, MapService};
+pub use bbox_map_server::{
+    endpoints::FcgiError, endpoints::HttpRequestParams, metrics::WmsMetrics, MapService,
+};
 use std::num::NonZeroU16;
 use tile_grid::Xyz;
 use tilejson::{tilejson, TileJSON};
@@ -53,16 +55,12 @@ impl WmsFcgiSource {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     async fn bbox_request(
         &self,
         service: &TileService,
         extent_info: &QueryExtent,
         format: &Format,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &WmsMetrics,
+        request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
         let fcgi_dispatcher = service
             .map_service
@@ -75,14 +73,11 @@ impl WmsFcgiSource {
         let body = "".to_string();
         wms_fcgi_req(
             fcgi_dispatcher,
-            scheme,
-            host,
-            req_path,
             &fcgi_query,
+            request_params,
             "GET",
             body,
             project,
-            metrics,
         )
         .await
         .map_err(Into::into)
@@ -97,22 +92,11 @@ impl TileRead for WmsFcgiSource {
         tms_id: &str,
         tile: &Xyz,
         format: &Format,
-        scheme: &str,
-        host: &str,
-        req_path: &str,
-        metrics: &WmsMetrics,
+        request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
         let extent_info = service.xyz_extent(tms_id, tile)?;
-        self.bbox_request(
-            service,
-            &extent_info,
-            format,
-            scheme,
-            host,
-            req_path,
-            metrics,
-        )
-        .await
+        self.bbox_request(service, &extent_info, format, request_params)
+            .await
     }
     fn source_type(&self) -> SourceType {
         SourceType::Raster
