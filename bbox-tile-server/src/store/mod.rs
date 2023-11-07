@@ -45,6 +45,8 @@ pub trait TileStoreType {
 
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
+    /// Check for tile in cache
+    async fn exists(&self, tile: &Xyz) -> bool;
     async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError>;
 }
 
@@ -52,8 +54,6 @@ clone_trait_object!(TileWriter);
 
 #[async_trait]
 pub trait TileReader: DynClone + Send + Sync {
-    /// Check for tile in cache
-    async fn exists(&self, tile: &Xyz) -> bool;
     /// Lookup tile and return Read stream, if found
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError>;
 }
@@ -92,6 +92,9 @@ pub struct NoStore;
 
 #[async_trait]
 impl TileWriter for NoStore {
+    async fn exists(&self, _tile: &Xyz) -> bool {
+        false
+    }
     async fn put_tile(&self, _tile: &Xyz, mut _input: BoxRead) -> Result<(), TileStoreError> {
         Ok(())
     }
@@ -99,9 +102,6 @@ impl TileWriter for NoStore {
 
 #[async_trait]
 impl TileReader for NoStore {
-    async fn exists(&self, _tile: &Xyz) -> bool {
-        false
-    }
     async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         Ok(None)
     }

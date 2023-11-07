@@ -44,6 +44,10 @@ impl TileStoreType for FileStore {
 
 #[async_trait]
 impl TileWriter for FileStore {
+    async fn exists(&self, tile: &Xyz) -> bool {
+        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
+        p.exists()
+    }
     async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
         let fullpath = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
         let p = fullpath.as_path();
@@ -61,10 +65,6 @@ impl TileWriter for FileStore {
 
 #[async_trait]
 impl TileReader for FileStore {
-    async fn exists(&self, tile: &Xyz) -> bool {
-        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
-        p.exists()
-    }
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
         if let Ok(f) = File::open(p) {

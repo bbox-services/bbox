@@ -75,6 +75,10 @@ impl TileStoreType for S3Store {
 
 #[async_trait]
 impl TileWriter for S3Store {
+    async fn exists(&self, _tile: &Xyz) -> bool {
+        // 2nd level cache lookup is not supported
+        false
+    }
     async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError> {
         let key = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, &self.format);
         self.put_data(key, input).await
@@ -123,10 +127,6 @@ impl S3Store {
 
 #[async_trait]
 impl TileReader for S3Store {
-    async fn exists(&self, _tile: &Xyz) -> bool {
-        // 2nd level cache lookup is not supported
-        false
-    }
     async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         // 2nd level cache lookup is not supported
         Ok(None)

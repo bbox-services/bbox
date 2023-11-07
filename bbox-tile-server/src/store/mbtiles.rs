@@ -60,6 +60,16 @@ impl TileStoreType for MbtilesStore {
 
 #[async_trait]
 impl TileWriter for MbtilesStore {
+    async fn exists(&self, tile: &Xyz) -> bool {
+        match self
+            .mbt
+            .get_tile(tile.z, tile.x as u32, tile.y as u32)
+            .await
+        {
+            Ok(None) | Err(_) => false,
+            Ok(_) => true,
+        }
+    }
     async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
         let mut bytes: Vec<u8> = Vec::new();
         input.read_to_end(&mut bytes).ok(); // TODO: map_err
@@ -76,20 +86,13 @@ impl TileWriter for MbtilesStore {
         .bind(bytes)
         .execute(&mut *conn)
         .await
-        .unwrap();
+        .unwrap(); // TODO
         Ok(())
     }
 }
 
 #[async_trait]
 impl TileReader for MbtilesStore {
-    async fn exists(&self, tile: &Xyz) -> bool {
-        self.mbt
-            .get_tile(tile.z, tile.x as u32, tile.y as u32)
-            .await
-            .ok()
-            .is_some()
-    }
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let resp = if let Some(content) = self
             .mbt
