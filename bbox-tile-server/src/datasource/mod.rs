@@ -1,5 +1,6 @@
 pub mod mbtiles;
 mod mvt;
+pub mod pmtiles;
 pub mod postgis;
 mod postgis_queries;
 #[cfg(feature = "map-server")]
@@ -9,6 +10,7 @@ pub mod wms_http;
 use crate::config::{SourceParamCfg, TileSetCfg};
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
+use crate::store::pmtiles::PmtilesStoreReader;
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::endpoints::TileResponse;
@@ -47,6 +49,8 @@ pub enum TileSourceError {
     WmsHttpError(#[from] reqwest::Error),
     #[error(transparent)]
     MbtilesError(#[from] martin_mbtiles::MbtError),
+    #[error(transparent)]
+    PmtilesError(#[from] ::pmtiles::error::Error),
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -265,6 +269,11 @@ impl Datasources {
             }
             SourceParamCfg::Mbtiles(cfg) => Box::new(
                 MbtilesStore::from_config(cfg)
+                    .await
+                    .unwrap_or_else(error_exit),
+            ),
+            SourceParamCfg::Pmtiles(cfg) => Box::new(
+                PmtilesStoreReader::from_config(cfg)
                     .await
                     .unwrap_or_else(error_exit),
             ),

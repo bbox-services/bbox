@@ -57,6 +57,8 @@ pub enum SourceParamCfg {
     Postgis(PostgisSourceParamsCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesStoreCfg),
+    #[serde(rename = "pmtiles")]
+    Pmtiles(PmtilesStoreCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -195,6 +197,7 @@ pub enum TileStoreCfg {
     Files(FileStoreCfg),
     S3(S3StoreCfg),
     Mbtiles(MbtilesStoreCfg),
+    Pmtiles(PmtilesStoreCfg),
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -216,6 +219,12 @@ pub struct S3StoreCfg {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MbtilesStoreCfg {
+    pub path: PathBuf,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct PmtilesStoreCfg {
     pub path: PathBuf,
 }
 

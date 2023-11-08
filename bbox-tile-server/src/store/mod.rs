@@ -1,5 +1,6 @@
 pub mod files;
 pub mod mbtiles;
+pub mod pmtiles;
 pub mod s3;
 pub mod s3putfiles;
 
@@ -8,12 +9,14 @@ use crate::config::TileStoreCfg;
 use crate::mbtiles_ds::Error as MbtilesDsError;
 use crate::store::files::FileStore;
 use crate::store::mbtiles::MbtilesStore;
+use crate::store::pmtiles::{PmtilesStoreReader, PmtilesStoreWriter};
 use crate::store::s3::{S3Store, S3StoreError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
+use log::warn;
 use martin_mbtiles::MbtError;
 use martin_mbtiles::Metadata;
 use std::io::Read;
@@ -28,12 +31,16 @@ pub enum TileStoreError {
     FileError(PathBuf, #[source] std::io::Error),
     #[error("Missing argument: {0}")]
     ArgMissing(String),
+    #[error("Operation not supported on readonly data store")]
+    ReadOnly,
     #[error(transparent)]
     S3StoreError(#[from] S3StoreError),
     #[error(transparent)]
     MbtilesDsError(#[from] MbtilesDsError),
     #[error(transparent)]
     MbtError(#[from] MbtError),
+    #[error(transparent)]
+    PmtilesError(#[from] ::pmtiles::error::Error),
 }
 
 #[async_trait]
@@ -45,9 +52,21 @@ pub trait TileStoreType {
 
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
-    /// Check for tile in cache
+    /// Check for existing tile
+    /// Must not be implemented for cases where generating a tile is less expensive than checking
+    // Method should probably return date of last change if known
     async fn exists(&self, tile: &Xyz) -> bool;
+    /// Write tile into store
     async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError>;
+    /// Write tile into store requiring &mut self
+    async fn put_tile_mut(&mut self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError> {
+        // Most implementations support writing without &mut self
+        self.put_tile(tile, input).await
+    }
+    /// Finalize writing
+    fn finalize(&mut self) -> Result<(), TileStoreError> {
+        Ok(())
+    }
 }
 
 clone_trait_object!(TileWriter);
@@ -122,6 +141,15 @@ pub async fn store_reader_from_config(
                 .await
                 .unwrap_or_else(error_exit),
         ),
+        TileStoreCfg::Pmtiles(cfg) => {
+            if let Ok(reader) = PmtilesStoreReader::from_config(cfg).await {
+                Box::new(reader)
+            } else {
+                // We continue, because for seeding into a new file, the reader cannot be created and is not needed
+                warn!("Couldn't open PmtilesStoreReader {}", cfg.path.display());
+                Box::new(NoStore)
+            }
+        }
     }
 }
 
@@ -141,5 +169,6 @@ pub async fn store_writer_from_config(
                 .await
                 .unwrap_or_else(error_exit),
         ),
+        TileStoreCfg::Pmtiles(cfg) => Box::new(PmtilesStoreWriter::from_config(cfg, format)),
     }
 }

@@ -157,6 +157,11 @@ name = "mbtiles"
 [tilestore.mbtiles]
 path = "/tmp/tilecache.mbtiles"
 
+#[[tilestore]]
+#name = "pmtiles"
+#[tilestore.pmtiles]
+#path = "/tmp/tilecache.pmtiles"
+
 # -- tile sets --
 
 [[tileset]]
@@ -168,6 +173,7 @@ cache = "filesystem"
 name = "ne_umn"
 map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 cache = "mbtiles"
+#cache = "pmtiles"
 
 [[tileset]]
 name = "gebco"
@@ -185,3 +191,8 @@ params = "transparent=true"
 [[tileset]]
 name = "mbtiles_mvt_fl"
 mbtiles = { path = "../assets/liechtenstein.mbtiles" }
+
+#[[tileset]]
+#name = "pmtiles_firenze"
+#pmtiles = { path = "../assets/protomaps(vector)ODbL_firenze.pmtiles" }
+# curl -o /tmp/tile.mvt.gz http://localhost:8080/xyz/pmtiles_firenze/14/8621/5759.mvt

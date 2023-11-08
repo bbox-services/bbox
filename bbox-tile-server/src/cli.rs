@@ -210,7 +210,7 @@ impl TileService {
             None
         };
 
-        let tile_writer = tileset.store_writer.clone().unwrap();
+        let mut tile_writer = tileset.store_writer.clone().unwrap();
 
         // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -281,7 +281,7 @@ impl TileService {
             let service = self.clone();
             let tileset = args.tileset.clone();
             let tmp_file_writer = tmp_file_writer.clone();
-            let tile_writer = tile_writer.clone();
+            let mut tile_writer = tile_writer.clone();
             let tx_s3 = tx_s3.clone();
             tasks.push(task::spawn(async move {
                 let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
@@ -293,7 +293,7 @@ impl TileService {
                         tx_s3.send(xyz).await.unwrap();
                     }
                 } else {
-                    tile_writer.put_tile(&xyz, input).await.unwrap();
+                    tile_writer.put_tile_mut(&xyz, input).await.unwrap();
                 }
             }));
             if tasks.len() >= task_queue_size {
@@ -309,6 +309,8 @@ impl TileService {
         // tx_cache.close();
         // Wait for remaining writer tasks
         futures_util::future::join_all(tasks).await;
+
+        tile_writer.finalize()?;
 
         // Remove temporary directories
         if let Some(file_writer) = tmp_file_writer {
