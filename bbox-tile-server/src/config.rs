@@ -20,7 +20,7 @@ pub struct TileserverCfg {
     pub tilestores: Vec<TileCacheProviderCfg>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TileSetCfg {
     pub name: String,

@@ -147,6 +147,10 @@ Style JSON requests:
 
     curl -s http://localhost:8080/xyz/ne_extracts.style.json | jq .
 
+Metadata requests:
+
+    curl -s http://localhost:8080/xyz/mbtiles_mvt_fl/metadata.json | jq .
+
 Map viewer examples:
 
     x-www-browser http://127.0.0.1:8080/assets/usergrid.html?debug=1

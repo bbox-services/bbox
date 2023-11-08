@@ -9,7 +9,7 @@ use tile_grid::{
     Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
 };
 
-/// XYZ endpoint
+/// XYZ tile endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
 async fn xyz(
     service: web::Data<TileService>,
@@ -26,6 +26,7 @@ async fn xyz(
 }
 
 /// XYZ tilejson endpoint
+/// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
 // xyz/{tileset}.json
 async fn tilejson(
     service: web::Data<TileService>,
@@ -51,6 +52,16 @@ async fn stylejson(
     let base_path = req_parent_path(&req);
     if let Ok(stylejson) = service.stylejson(&tileset, &base_url, &base_path).await {
         HttpResponse::Ok().json(stylejson)
+    } else {
+        HttpResponse::InternalServerError().finish()
+    }
+}
+
+/// XYZ MBTiles metadata.json (https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md)
+// xyz/{tileset}/metadata.json
+async fn metadatajson(service: web::Data<TileService>, tileset: web::Path<String>) -> HttpResponse {
+    if let Ok(metadata) = service.mbtiles_metadata(&tileset).await {
+        HttpResponse::Ok().json(metadata)
     } else {
         HttpResponse::InternalServerError().finish()
     }
@@ -280,6 +291,9 @@ impl TileService {
             )
             .service(web::resource("/xyz/{tileset}.style.json").route(web::get().to(stylejson)))
             .service(web::resource("/xyz/{tileset}.json").route(web::get().to(tilejson)))
+            .service(
+                web::resource("/xyz/{tileset}/metadata.json").route(web::get().to(metadatajson)),
+            )
             .service(
                 web::resource("/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}")
                     .route(web::get().to(map_tile)),

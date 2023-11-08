@@ -7,9 +7,10 @@ Services are available via the following HTTP endpoints:
 | `/tiles`                              | List of available tilesets  |
 | `/tiles/{tileset}`                    | Tileset metadata            |
 | `/map/tiles/{tileset}/{z}/{x}/{y}`    | Map tiles endpoint          |
-| `/xyz/{tileset}/{z}/{x}/{y}.{format}` | XYZ endpoint                |
+| `/xyz/{tileset}/{z}/{x}/{y}.{format}` | XYZ tile endpoint           |
 | `/xyz/{tileset}.json`                 | Tilejson endpoint           |
 | `/xyz/{tileset}.style.json`           | Generic Style JSON endpoint |
+| `/xyz/{tileset}/metadata.json`        | MBTiles metadata JSON       |
 
 ## Request examples
 
