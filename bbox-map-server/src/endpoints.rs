@@ -7,8 +7,8 @@ use bbox_core::service::{CoreService, OgcApiService};
 use log::{debug, info, warn};
 use opentelemetry::{
     global,
-    trace::{SpanBuilder, SpanKind, TraceContextExt, Tracer},
-    Context, KeyValue,
+    trace::{SpanKind, TraceContextExt, Tracer},
+    Context, KeyValue, Value,
 };
 use std::io::{BufRead, Cursor};
 use std::str::FromStr;
@@ -105,7 +105,8 @@ pub async fn wms_fcgi_req(
     let metrics = request_params.metrics;
     // --- > tracing/metrics
     let tracer = global::tracer("request");
-    let ctx = Context::current();
+    let span = tracer.start("wms_fcgi_req");
+    let ctx = Context::current_with_span(span);
     // ---
 
     let (fcgino, pool) = fcgi_dispatcher.select(fcgi_query);
@@ -120,15 +121,15 @@ pub async fn wms_fcgi_req(
             &fcgino.to_string(),
         ])
         .inc();
-    ctx.span()
-        .set_attribute(KeyValue::new("project", project.to_string()));
-    ctx.span()
-        .set_attribute(KeyValue::new("fcgino", fcgino.to_string()));
+    ctx.span().set_attributes([
+        KeyValue::new("project", project.to_string()),
+        KeyValue::new("fcgino", Value::I64(fcgino as i64)),
+    ]);
     // ---
 
     // --- >>
-    let span = tracer.start("fcgi_wait");
-    let ctx = Context::current_with_span(span);
+    let span = tracer.start_with_context("fcgi_wait", &ctx);
+    let ctx2 = Context::current_with_span(span);
     // ---
 
     let fcgi_client_start = SystemTime::now();
@@ -136,11 +137,11 @@ pub async fn wms_fcgi_req(
     let fcgi_client_wait_elapsed = fcgi_client_start.elapsed();
 
     // ---
-    ctx.span().set_attribute(KeyValue::new(
+    ctx2.span().set_attribute(KeyValue::new(
         "available_clients",
-        available_clients.to_string(),
+        Value::I64(available_clients as i64),
     ));
-    drop(ctx);
+    drop(ctx2);
     metrics.fcgi_client_pool_available[fcgino]
         .with_label_values(&[fcgi_dispatcher.backend_name()])
         .set(available_clients as i64);
@@ -162,8 +163,8 @@ pub async fn wms_fcgi_req(
     };
 
     // --- >>
-    let span = tracer.start("wms_fcgi");
-    let ctx = Context::current_with_span(span);
+    let span = tracer.start_with_context("wms_fcgi", &ctx);
+    let ctx2 = Context::current_with_span(span);
     // ---
 
     let host_port: Vec<&str> = request_params.host.split(':').collect();
@@ -219,14 +220,14 @@ pub async fn wms_fcgi_req(
             }
             "Content-Length" | "Server" => {} // ignore
             "X-us" => {
+                // requestReady to responseComplete measured by QGIS Server plugin
                 let us: u64 = value.parse().expect("u64 value");
-                let _span = tracer.build(SpanBuilder {
-                    name: "fcgi".into(),
-                    span_kind: Some(SpanKind::Internal),
-                    start_time: Some(fcgi_start),
-                    end_time: Some(fcgi_start + Duration::from_micros(us)),
-                    ..Default::default()
-                });
+                let _span = tracer
+                    .span_builder("fcgi")
+                    .with_kind(SpanKind::Internal)
+                    .with_start_time(fcgi_start)
+                    .with_end_time(fcgi_start + Duration::from_micros(us))
+                    .start_with_context(&tracer, &ctx2);
                 // Return server timing to browser
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
                 // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
@@ -235,7 +236,8 @@ pub async fn wms_fcgi_req(
                     format!("wms-backend;dur={}", us / 1000),
                 );
             }
-            // "X-trace" => {
+            "X-trace" => { /* 'requestReady': 52612.36819832, 'responseComplete': 52612.588838557 */
+            }
             "X-metrics" => {
                 // cache_count:2,cache_hit:13,cache_miss:2
                 for entry in value.split(',') {
@@ -258,7 +260,7 @@ pub async fn wms_fcgi_req(
     }
 
     // ---
-    drop(ctx);
+    drop(ctx2);
     // --- <
 
     Ok(TileResponse {
