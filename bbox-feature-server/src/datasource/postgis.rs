@@ -4,14 +4,15 @@ use crate::datasource::{
     ConfiguredCollectionCfg, ItemsResult,
 };
 use crate::error::{Error, Result};
-use crate::filter_params::FilterParams;
+use crate::filter_params::{FilterParams, TemporalType};
 use crate::inventory::FeatureCollection;
+use std::collections::HashMap;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
-use sqlx::{postgres::PgRow, Row};
+use sqlx::{postgres::PgRow, Row, QueryBuilder, Postgres};
 
 pub type Datasource = PgDatasource;
 
@@ -35,6 +36,7 @@ impl CollectionDatasource for PgDatasource {
         } else if srccfg.table_name.is_some() && srccfg.sql.is_some() {
             warn!("Datasource`{id}`: configuration `table_name` ignored, using `sql` instead");
         }
+        let temporal_column = srccfg.temporal_field.clone();
         let (pk_column, geometry_column, sql) = if let Some(table_name) = &srccfg.table_name {
             let public = "public".to_string();
             let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
@@ -65,11 +67,23 @@ impl CollectionDatasource for PgDatasource {
         if pk_column.is_none() {
             warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
         }
+        let other_columns = if let Some(fields) = srccfg.queryable_fields.clone() {
+            let mut hm = HashMap::new();
+            for field in fields {
+                hm.insert(field,0);
+            }
+            hm
+        } else {
+            HashMap::new()
+        };
+
         let source = PgCollectionSource {
             ds: self.clone(),
             sql,
             geometry_column,
             pk_column,
+            temporal_column,
+            other_columns,
         };
 
         let bbox = source
@@ -79,7 +93,7 @@ impl CollectionDatasource for PgDatasource {
         let collection = CoreCollection {
             id: id.clone(),
             title: Some(id.clone()),
-            description: None,
+            description: cfg.description.clone(),
             extent: Some(CoreExtent {
                 spatial: Some(CoreExtentSpatial {
                     bbox: vec![bbox],
@@ -143,17 +157,20 @@ pub struct PgCollectionSource {
     geometry_column: String,
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
+    temporal_column: Option<String>,
+    other_columns: HashMap<String,u8>,
 }
 
 #[async_trait]
 impl CollectionSource for PgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let geometry_column = &self.geometry_column;
-        let mut sql = format!("WITH query AS ({sql})\n", sql = &self.sql);
+        let temporal_column = &self.temporal_column;
+        let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(format!("WITH query AS ({sql})\n", sql = &self.sql));
         let select_sql = if let Some(pk) = &self.pk_column {
             format!(
                 r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
-                      "{pk}"::varchar AS pk,
+                    "{pk}"::varchar AS pk,
                       count(*) OVER () AS __total_cnt 
                    FROM query t"#,
             )
@@ -166,30 +183,147 @@ impl CollectionSource for PgCollectionSource {
                FROM query t"#,
             )
         };
-        sql.push_str(&select_sql);
+        builder.push(&select_sql);
+        let mut where_term = false;
         match filter.bbox() {
             Ok(Some(bbox)) => {
-                sql.push_str(&format!(
-                    " WHERE {geometry_column} && ST_MakeEnvelope({xmin}, {ymin}, {xmax}, {ymax})",
-                    xmin = bbox[0],
-                    ymin = bbox[1],
-                    xmax = bbox[2],
-                    ymax = bbox[3],
-                ));
+                builder.push(format!(
+                    " WHERE ( {geometry_column} && ST_MakeEnvelope("));
+                let mut separated = builder.separated(",");
+                separated.push_bind(bbox[0]);
+                separated.push_bind(bbox[1]);
+                separated.push_bind(bbox[2]);
+                separated.push_bind(bbox[3]);
+                builder.push(") ) ");
+                where_term = true;
             }
             Ok(None) => {}
             Err(e) => {
-                warn!("Ignoring invalid bbox: {e}");
+                error!("Ignoring invalid bbox: {e}");
+                return Err(Error::QueryParams)
             }
+        }
+        if let Some(temporal_column) = temporal_column {
+            match filter.temporal() {
+                Ok(Some(parts)) => {
+                    if where_term {
+                        builder.push(" AND ");
+                    } else {
+                        builder.push(" WHERE ");
+                        where_term = true;
+                    }
+                    if parts.len() == 1 {
+                        if let TemporalType::DateTime(dt) = parts[0] {
+                            builder.push(format!(
+                                " {temporal_column} = '{}'",
+                                dt,
+                            ));
+                        }
+                    } else {
+                        match parts[0] {
+                            TemporalType::Open => {
+                                match parts[1] {
+                                    TemporalType::Open => {
+                                        error!("Open to Open datetimes doesn't make sense");
+                                        return Err(Error::QueryParams)
+                                    },
+                                    TemporalType::DateTime(dt) => {
+                                        builder.push(format!(
+                                            " {temporal_column} <= '{}'",
+                                            dt,
+                                        ));
+                                    }
+                                }
+                            },
+                            TemporalType::DateTime(dt1) => {
+                                match parts[1] {
+                                    TemporalType::Open => {
+                                        builder.push(format!(
+                                            " {temporal_column} >= '{}'",
+                                            dt1,
+                                        ));
+                                    },
+                                    TemporalType::DateTime(dt2) => {
+                                        builder.push(format!(
+                                            " {temporal_column} >= '{}' and {temporal_column} <= '{}'",
+                                            dt1,dt2
+                                        ));
+                                    }
+                                }
+                            },
+                        }
+                    }
+                }
+                Ok(None) => {}
+                Err(e) => {
+                    error!("Ignoring invalid temporal field: {e}");
+                    return Err(Error::QueryParams)
+                }
+            }
+        }
+
+        match filter.other_params() {
+            Ok(others) => {
+                if others.len() > 0 {
+                    if where_term {
+                        builder.push(" AND ");
+                    } else {
+                        builder.push(" WHERE ");
+                    }
+                }
+                let mut separated = builder.separated(" AND ");
+                for (key,val) in others {
+                    // check if the passed in field matches queryables
+                    // detect if value has wildcards
+                    if let Some(_) = self.other_columns.get(key) {
+                        let val = if val.rfind('*').is_some() {
+                            separated.push(format!("{key} like "));
+                            val.replace('*',"%")
+                        } else {
+                            separated.push(format!("{key}="));
+                            val.to_string()
+                        };
+                        separated.push_bind_unseparated(val);
+                        /*
+                        match key_type.as_str() {
+                            "String" => {
+                                separated.push_bind_unseparated(val);
+                            },
+                            "Numeric" => {
+                                let num = match val.parse::<i64>() {
+                                    Ok(n) => n,
+                                    Err(_) => return Err(Error::QueryParams)
+                                };
+                                separated.push_bind_unseparated(num);
+                            },
+                            &_ => {
+                                return Err(Error::QueryParams)
+                            },
+                        }
+                            */
+                    } else {
+                        error!("Invalid query param {key}");
+                        return Err(Error::QueryParams)
+                    }
+                }
+            },
+            Err(e) => {
+                error!("{e}");
+                return Err(Error::QueryParams)
+            },
         }
         let limit = filter.limit_or_default();
         if limit > 0 {
-            sql.push_str(&format!(" LIMIT {limit}"));
+            builder.push(" LIMIT ");
+            builder.push_bind(limit as i64);
         }
         if let Some(offset) = filter.offset {
-            sql.push_str(&format!(" OFFSET {offset}"));
+            builder.push(" OFFSET ");
+            builder.push_bind(offset as i64);
         }
-        let rows = sqlx::query(&sql).fetch_all(&self.ds.pool).await?;
+        debug!("SQL: {}",builder.sql());
+        let query = builder.build();
+        let rows = query.fetch_all(&self.ds.pool).await?;
         let number_matched = if let Some(row) = rows.first() {
             row.try_get::<i64, _>("__total_cnt")? as u64
         } else {
