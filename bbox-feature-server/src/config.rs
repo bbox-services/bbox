@@ -63,6 +63,8 @@ pub struct PostgisCollectionCfg {
     pub fid_field: Option<String>,
     pub geometry_field: Option<String>,
     //pub field_list: Option<Vec<String>>,
+    pub temporal_field: Option<String>,
+    pub queryable_fields: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Default, Debug)]
