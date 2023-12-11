@@ -109,7 +109,7 @@ async fn features(
 
         let fp = FilterParams { offset, limit, bbox, datetime, filters };
 
-        if let Some(features) = inventory.collection_items(&req, &collection_id, &fp).await {
+        if let Some(features) = inventory.collection_items(&collection_id, &fp).await {
             if html_accepted(&req).await {
                 render_endpoint(
                     &TEMPLATES,
