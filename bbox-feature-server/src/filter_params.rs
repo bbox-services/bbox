@@ -1,14 +1,21 @@
+use std::collections::HashMap;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Clone)]
-#[serde(deny_unknown_fields)] // http://docs.opengeospatial.org/DRAFTS/17-069r5.html#query_parameters
 pub struct FilterParams {
     // Pagination
     pub limit: Option<u32>,
     pub offset: Option<u32>,
-    // Filter
+    // Filters
     pub bbox: Option<String>,
-    // TODO: interval
+    pub datetime: Option<String>,
+    pub filters: HashMap<String,String>,
+}
+
+#[derive(Debug)]
+pub enum TemporalType {
+    DateTime(chrono::DateTime<chrono::FixedOffset>),
+    Open,
 }
 
 impl FilterParams {
@@ -49,6 +56,10 @@ impl FilterParams {
         .flatten()
         .collect::<Vec<String>>()
         .join("&");
+
+        for (key,val) in &self.filters {
+            args.push_str(&format!("&{}={}",key,val))
+        }
         if !args.is_empty() {
             // replace & with ?
             args.replace_range(0..1, "?");
@@ -68,6 +79,27 @@ impl FilterParams {
         }
         Ok(None)
     }
+    pub fn temporal(&self) -> Result<Option<Vec<TemporalType>>,Box <dyn std::error::Error>> {
+        if let Some(dt) = &self.datetime {
+            let parts: Vec<&str> = dt.split('/').collect();
+            let mut parsed_parts = vec![];
+            for part in &parts {
+                match *part {
+                    ".." => {
+                        parsed_parts.push(TemporalType::Open)
+                    },
+                    p => {
+                        parsed_parts.push(TemporalType::DateTime(chrono::DateTime::parse_from_rfc3339(p)?));
+                    }
+                }
+            }
+            return Ok(Some(parsed_parts));
+        }
+        Ok(None)
+    }
+    pub fn other_params(&self) -> Result<&HashMap<String,String>,Box <dyn std::error::Error>> {
+        Ok(&self.filters)
+    }
 }
 
 #[cfg(test)]
@@ -80,6 +112,8 @@ mod tests {
             limit: Some(10),
             offset: Some(20),
             bbox: Some("1.0,2.2,3.33,4.444".to_string()),
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert_eq!(
             filter.as_args(),
@@ -90,6 +124,8 @@ mod tests {
             limit: None,
             offset: Some(20),
             bbox: None,
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert_eq!(filter.as_args(), "?offset=20");
 
@@ -97,6 +133,8 @@ mod tests {
             limit: None,
             offset: None,
             bbox: None,
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert_eq!(filter.as_args(), "");
     }
@@ -107,6 +145,8 @@ mod tests {
             limit: Some(10),
             offset: Some(20),
             bbox: None,
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert_eq!(filter.prev().unwrap().offset, Some(10));
         assert_eq!(filter.next(35).unwrap().offset, Some(30));
@@ -117,6 +157,8 @@ mod tests {
             limit: Some(10),
             offset: Some(10),
             bbox: None,
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert_eq!(filter.prev().unwrap().offset, Some(0));
         assert_eq!(filter.next(35).unwrap().offset, Some(20));
@@ -125,6 +167,8 @@ mod tests {
             limit: Some(10),
             offset: None,
             bbox: None,
+            datetime: None,
+            filters: HashMap::new(),
         };
         assert!(filter.prev().is_none());
         assert_eq!(filter.next(35).unwrap().offset, Some(10));
@@ -137,6 +181,8 @@ mod tests {
                 limit: None,
                 offset: None,
                 bbox: Some("1.0,2.2,3.33,4.444".to_string()),
+                datetime: None,
+                filters: HashMap::new(),
             }
             .bbox()
             .unwrap(),
@@ -148,6 +194,8 @@ mod tests {
                 limit: None,
                 offset: None,
                 bbox: Some("1.0,2.2,3.33,4.444,5,6".to_string()),
+                datetime: None,
+                filters: HashMap::new(),
             }
             .bbox()
             .unwrap(),
@@ -158,6 +206,8 @@ mod tests {
             limit: None,
             offset: None,
             bbox: Some("1.0, 2.2, 3.33, 4.444".to_string()),
+            datetime: None,
+            filters: HashMap::new(),
         }
         .bbox()
         .is_err());
@@ -167,6 +217,8 @@ mod tests {
                 limit: None,
                 offset: None,
                 bbox: Some("1,2,3".to_string()),
+                datetime: None,
+                filters: HashMap::new(),
             }
             .bbox()
             .unwrap(),
