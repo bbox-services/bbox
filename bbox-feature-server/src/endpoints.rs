@@ -1,6 +1,7 @@
 use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use crate::service::FeatureService;
+use std::collections::HashMap;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_core::api::OgcApiInventory;
 use bbox_core::endpoints::absurl;
@@ -67,10 +68,48 @@ async fn features(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
     collection_id: web::Path<String>,
-    filter: web::Query<FilterParams>,
 ) -> Result<HttpResponse, Error> {
     if let Some(collection) = inventory.core_collection(&collection_id) {
-        if let Some(features) = inventory.collection_items(&collection_id, &filter).await {
+        let mut filters = match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
+            Ok(f) => f.iter().map(|k| { (k.0.to_lowercase(),k.1.to_owned()) } ).collect::<HashMap<String,String>>(),
+            Err(_e) => {
+                return Ok(HttpResponse::BadRequest().finish())
+            }
+        };
+
+        let bbox = filters.remove("bbox");
+        let datetime = filters.remove("datetime");
+
+        let offset = if let Some(offset_str) = filters.get("offset") {
+            match offset_str.parse::<u32>() {
+                Ok(o) => {
+                    filters.remove("offset");
+                    Some(o)
+                },
+                Err(_e) => {
+                    return Ok(HttpResponse::BadRequest().finish())
+                }
+            }
+        } else {
+            None
+        };
+        let limit = if let Some(limit_str) = filters.get("limit") {
+            match limit_str.parse::<u32>() {
+                Ok(o) => {
+                    filters.remove("limit");
+                    Some(o)
+                },
+                Err(_e) => {
+                return Ok(HttpResponse::BadRequest().finish())
+                }
+            }
+        } else {
+            None
+        };
+
+        let fp = FilterParams { offset, limit, bbox, datetime, filters };
+
+        if let Some(features) = inventory.collection_items(&req, &collection_id, &fp).await {
             if html_accepted(&req).await {
                 render_endpoint(
                     &TEMPLATES,
