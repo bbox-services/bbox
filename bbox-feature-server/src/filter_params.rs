@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use serde::Deserialize;
 
-#[derive(Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct FilterParams {
     // Pagination
     pub limit: Option<u32>,
@@ -51,6 +51,7 @@ impl FilterParams {
             self.limit.map(|v| format!("limit={v}")),
             self.offset.map(|v| format!("offset={v}")),
             self.bbox.as_ref().map(|v| format!("bbox={v}")),
+            self.datetime.as_ref().map(|v| format!("datetime={v}")),
         ]
         .into_iter()
         .flatten()
@@ -137,6 +138,26 @@ mod tests {
             filters: HashMap::new(),
         };
         assert_eq!(filter.as_args(), "");
+
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: Some("2024-01-01T00:00:00Z".to_string()),
+            filters: HashMap::new(),
+        };
+        assert_eq!(filter.as_args(), "?datetime=2024-01-01T00:00:00Z");
+
+        let mut hm = HashMap::new();
+        hm.insert("ArbitraryField".to_string(),"Something".to_string());
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: None,
+            filters: hm,
+        };
+        assert_eq!(filter.as_args(), "?ArbitraryField=Something");
     }
 
     #[test]
