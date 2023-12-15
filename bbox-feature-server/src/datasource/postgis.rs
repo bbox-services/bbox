@@ -6,13 +6,13 @@ use crate::datasource::{
 use crate::error::{Error, Result};
 use crate::filter_params::{FilterParams, TemporalType};
 use crate::inventory::FeatureCollection;
-use std::collections::HashMap;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
-use sqlx::{postgres::PgRow, Row, QueryBuilder, Postgres};
+use sqlx::{postgres::PgRow, Postgres, QueryBuilder, Row};
+use std::collections::HashMap;
 
 pub type Datasource = PgDatasource;
 
@@ -70,7 +70,7 @@ impl CollectionDatasource for PgDatasource {
         let other_columns = if let Some(fields) = srccfg.queryable_fields.clone() {
             let mut hm = HashMap::new();
             for field in fields {
-                hm.insert(field,0);
+                hm.insert(field, 0);
             }
             hm
         } else {
@@ -158,7 +158,7 @@ pub struct PgCollectionSource {
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
     temporal_column: Option<String>,
-    other_columns: HashMap<String,u8>,
+    other_columns: HashMap<String, u8>,
 }
 
 #[async_trait]
@@ -166,7 +166,8 @@ impl CollectionSource for PgCollectionSource {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult> {
         let geometry_column = &self.geometry_column;
         let temporal_column = &self.temporal_column;
-        let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(format!("WITH query AS ({sql})\n", sql = &self.sql));
+        let mut builder: QueryBuilder<Postgres> =
+            QueryBuilder::new(format!("WITH query AS ({sql})\n", sql = &self.sql));
         let select_sql = if let Some(pk) = &self.pk_column {
             format!(
                 r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
@@ -187,8 +188,7 @@ impl CollectionSource for PgCollectionSource {
         let mut where_term = false;
         match filter.bbox() {
             Ok(Some(bbox)) => {
-                builder.push(format!(
-                    " WHERE ( {geometry_column} && ST_MakeEnvelope("));
+                builder.push(format!(" WHERE ( {geometry_column} && ST_MakeEnvelope("));
                 let mut separated = builder.separated(",");
                 separated.push_bind(bbox[0]);
                 separated.push_bind(bbox[1]);
@@ -200,7 +200,7 @@ impl CollectionSource for PgCollectionSource {
             Ok(None) => {}
             Err(e) => {
                 error!("Ignoring invalid bbox: {e}");
-                return Err(Error::QueryParams)
+                return Err(Error::QueryParams);
             }
         }
         if let Some(temporal_column) = temporal_column {
@@ -214,41 +214,28 @@ impl CollectionSource for PgCollectionSource {
                     }
                     if parts.len() == 1 {
                         if let TemporalType::DateTime(dt) = parts[0] {
-                            builder.push(format!(
-                                " {temporal_column} = '{}'",
-                                dt,
-                            ));
+                            builder.push(format!(" {temporal_column} = '{}'", dt,));
                         }
                     } else {
                         match parts[0] {
-                            TemporalType::Open => {
-                                match parts[1] {
-                                    TemporalType::Open => {
-                                        error!("Open to Open datetimes doesn't make sense");
-                                        return Err(Error::QueryParams)
-                                    },
-                                    TemporalType::DateTime(dt) => {
-                                        builder.push(format!(
-                                            " {temporal_column} <= '{}'",
-                                            dt,
-                                        ));
-                                    }
+                            TemporalType::Open => match parts[1] {
+                                TemporalType::Open => {
+                                    error!("Open to Open datetimes doesn't make sense");
+                                    return Err(Error::QueryParams);
+                                }
+                                TemporalType::DateTime(dt) => {
+                                    builder.push(format!(" {temporal_column} <= '{}'", dt,));
                                 }
                             },
-                            TemporalType::DateTime(dt1) => {
-                                match parts[1] {
-                                    TemporalType::Open => {
-                                        builder.push(format!(
-                                            " {temporal_column} >= '{}'",
-                                            dt1,
-                                        ));
-                                    },
-                                    TemporalType::DateTime(dt2) => {
-                                        builder.push(format!(
-                                            " {temporal_column} >= '{}' and {temporal_column} <= '{}'",
-                                            dt1,dt2
-                                        ));
-                                    }
+                            TemporalType::DateTime(dt1) => match parts[1] {
+                                TemporalType::Open => {
+                                    builder.push(format!(" {temporal_column} >= '{}'", dt1,));
+                                }
+                                TemporalType::DateTime(dt2) => {
+                                    builder.push(format!(
+                                        " {temporal_column} >= '{}' and {temporal_column} <= '{}'",
+                                        dt1, dt2
+                                    ));
                                 }
                             },
                         }
@@ -257,14 +244,14 @@ impl CollectionSource for PgCollectionSource {
                 Ok(None) => {}
                 Err(e) => {
                     error!("Ignoring invalid temporal field: {e}");
-                    return Err(Error::QueryParams)
+                    return Err(Error::QueryParams);
                 }
             }
         }
 
         match filter.other_params() {
             Ok(others) => {
-                if others.len() > 0 {
+                if !others.is_empty() {
                     if where_term {
                         builder.push(" AND ");
                     } else {
@@ -272,13 +259,13 @@ impl CollectionSource for PgCollectionSource {
                     }
                 }
                 let mut separated = builder.separated(" AND ");
-                for (key,val) in others {
+                for (key, val) in others {
                     // check if the passed in field matches queryables
                     // detect if value has wildcards
-                    if let Some(_) = self.other_columns.get(key) {
+                    if self.other_columns.get(key).is_some() {
                         let val = if val.rfind('*').is_some() {
                             separated.push(format!("{key} like "));
-                            val.replace('*',"%")
+                            val.replace('*', "%")
                         } else {
                             separated.push(format!("{key}="));
                             val.to_string()
@@ -303,14 +290,14 @@ impl CollectionSource for PgCollectionSource {
                             */
                     } else {
                         error!("Invalid query param {key}");
-                        return Err(Error::QueryParams)
+                        return Err(Error::QueryParams);
                     }
                 }
-            },
+            }
             Err(e) => {
                 error!("{e}");
-                return Err(Error::QueryParams)
-            },
+                return Err(Error::QueryParams);
+            }
         }
         let limit = filter.limit_or_default();
         if limit > 0 {
@@ -321,7 +308,7 @@ impl CollectionSource for PgCollectionSource {
             builder.push(" OFFSET ");
             builder.push_bind(offset as i64);
         }
-        debug!("SQL: {}",builder.sql());
+        debug!("SQL: {}", builder.sql());
         let query = builder.build();
         let rows = query.fetch_all(&self.ds.pool).await?;
         let number_matched = if let Some(row) = rows.first() {
@@ -527,8 +514,8 @@ mod tests {
             sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
-			temporal_column: None,
-			other_columns: HashMap::new(),
+            temporal_column: None,
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
@@ -542,8 +529,8 @@ mod tests {
             offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             // WGS84: 5.690918,45.890008,10.964355,47.665387
-			datetime: None,
-			filters: HashMap::new(),
+            datetime: None,
+            filters: HashMap::new(),
         };
         let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
             .await
@@ -553,8 +540,8 @@ mod tests {
             sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
-			temporal_column: None,
-			other_columns: HashMap::new(),
+            temporal_column: None,
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
