@@ -1,7 +1,6 @@
 use crate::filter_params::FilterParams;
 use crate::inventory::Inventory;
 use crate::service::FeatureService;
-use std::collections::HashMap;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_core::api::OgcApiInventory;
 use bbox_core::endpoints::absurl;
@@ -10,6 +9,7 @@ use bbox_core::service::CoreService;
 use bbox_core::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
+use std::collections::HashMap;
 
 /// the feature collections in the dataset
 async fn collections(
@@ -70,12 +70,14 @@ async fn features(
     collection_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
     if let Some(collection) = inventory.core_collection(&collection_id) {
-        let mut filters = match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
-            Ok(f) => f.iter().map(|k| { (k.0.to_lowercase(),k.1.to_owned()) } ).collect::<HashMap<String,String>>(),
-            Err(_e) => {
-                return Ok(HttpResponse::BadRequest().finish())
-            }
-        };
+        let mut filters =
+            match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
+                Ok(f) => f
+                    .iter()
+                    .map(|k| (k.0.to_lowercase(), k.1.to_owned()))
+                    .collect::<HashMap<String, String>>(),
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
+            };
 
         let bbox = filters.remove("bbox");
         let datetime = filters.remove("datetime");
@@ -85,10 +87,8 @@ async fn features(
                 Ok(o) => {
                     filters.remove("offset");
                     Some(o)
-                },
-                Err(_e) => {
-                    return Ok(HttpResponse::BadRequest().finish())
                 }
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
             }
         } else {
             None
@@ -98,16 +98,20 @@ async fn features(
                 Ok(o) => {
                     filters.remove("limit");
                     Some(o)
-                },
-                Err(_e) => {
-                return Ok(HttpResponse::BadRequest().finish())
                 }
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
             }
         } else {
             None
         };
 
-        let fp = FilterParams { offset, limit, bbox, datetime, filters };
+        let fp = FilterParams {
+            offset,
+            limit,
+            bbox,
+            datetime,
+            filters,
+        };
 
         if let Some(features) = inventory.collection_items(&collection_id, &fp).await {
             if html_accepted(&req).await {
