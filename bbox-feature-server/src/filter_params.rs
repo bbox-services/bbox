@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct FilterParams {
@@ -9,7 +9,7 @@ pub struct FilterParams {
     // Filters
     pub bbox: Option<String>,
     pub datetime: Option<String>,
-    pub filters: HashMap<String,String>,
+    pub filters: HashMap<String, String>,
 }
 
 #[derive(Debug)]
@@ -58,8 +58,8 @@ impl FilterParams {
         .collect::<Vec<String>>()
         .join("&");
 
-        for (key,val) in &self.filters {
-            args.push_str(&format!("&{}={}",key,val))
+        for (key, val) in &self.filters {
+            args.push_str(&format!("&{}={}", key, val))
         }
         if !args.is_empty() {
             // replace & with ?
@@ -80,17 +80,17 @@ impl FilterParams {
         }
         Ok(None)
     }
-    pub fn temporal(&self) -> Result<Option<Vec<TemporalType>>,Box <dyn std::error::Error>> {
+    pub fn temporal(&self) -> Result<Option<Vec<TemporalType>>, Box<dyn std::error::Error>> {
         if let Some(dt) = &self.datetime {
             let parts: Vec<&str> = dt.split('/').collect();
             let mut parsed_parts = vec![];
             for part in &parts {
                 match *part {
-                    ".." => {
-                        parsed_parts.push(TemporalType::Open)
-                    },
+                    ".." => parsed_parts.push(TemporalType::Open),
                     p => {
-                        parsed_parts.push(TemporalType::DateTime(chrono::DateTime::parse_from_rfc3339(p)?));
+                        parsed_parts.push(TemporalType::DateTime(
+                            chrono::DateTime::parse_from_rfc3339(p)?,
+                        ));
                     }
                 }
             }
@@ -98,7 +98,7 @@ impl FilterParams {
         }
         Ok(None)
     }
-    pub fn other_params(&self) -> Result<&HashMap<String,String>,Box <dyn std::error::Error>> {
+    pub fn other_params(&self) -> Result<&HashMap<String, String>, Box<dyn std::error::Error>> {
         Ok(&self.filters)
     }
 }
@@ -149,7 +149,7 @@ mod tests {
         assert_eq!(filter.as_args(), "?datetime=2024-01-01T00:00:00Z");
 
         let mut hm = HashMap::new();
-        hm.insert("ArbitraryField".to_string(),"Something".to_string());
+        hm.insert("ArbitraryField".to_string(), "Something".to_string());
         let filter = FilterParams {
             limit: None,
             offset: None,
