@@ -23,3 +23,17 @@ ne_extracts.gpkg: download/packages/natural_earth_vector.gpkg
 # 	git checkout 2c96bb5 data/mvtbench.gpkg
 # 	rm data/mvtbench.gpkg-*
 # fi
+
+
+# Setup PostgreSQL database
+
+DBNAME = bbox_tests
+
+createdb:
+	psql postgres -c "DROP DATABASE IF EXISTS $(DBNAME)"
+	psql postgres -c "CREATE DATABASE $(DBNAME)"
+	psql $(DBNAME) -c "CREATE EXTENSION postgis"
+	psql $(DBNAME) -c "CREATE SCHEMA ne"
+
+loaddata:
+	ogr2ogr -f PostgreSQL PG:dbname=$(DBNAME) -lco SCHEMA=ne ne_extracts.gpkg
