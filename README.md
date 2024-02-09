@@ -3,7 +3,7 @@
 Composable spatial services.
 
 [![Documentation](https://img.shields.io/badge/docs-Book-informational)](https://www.bbox.earth/)
-[![CI build](https://github.com/sourcepole/bbox/workflows/CI/badge.svg)](https://github.com/sourcepole/bbox/actions)
+[![CI build](https://github.com/bbox-services/bbox/workflows/CI/badge.svg)](https://github.com/bbox-services/bbox/actions)
 [![Docker](https://img.shields.io/docker/v/sourcepole/bbox-server-qgis?label=Docker%20image&sort=semver)](https://hub.docker.com/r/sourcepole/bbox-server-qgis)
 
 ```
