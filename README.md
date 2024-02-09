@@ -2,7 +2,7 @@
 
 Composable spatial services.
 
-[![Documentation](https://img.shields.io/badge/docs-Book-informational)](https://sourcepole.github.io/bbox/)
+[![Documentation](https://img.shields.io/badge/docs-Book-informational)](https://www.bbox.earth/)
 [![CI build](https://github.com/sourcepole/bbox/workflows/CI/badge.svg)](https://github.com/sourcepole/bbox/actions)
 [![Docker](https://img.shields.io/docker/v/sourcepole/bbox-server-qgis?label=Docker%20image&sort=semver)](https://hub.docker.com/r/sourcepole/bbox-server-qgis)
 
@@ -28,11 +28,11 @@ Features:
 * Healths endpoints for Docker and Kubernetes hosting
 
 
-See [Documentation](https://sourcepole.github.io/bbox/) for detailed information.
+See [Documentation](https://www.bbox.earth/) for detailed information.
 
 ## Installation
 
-See [Documentation](https://sourcepole.github.io/bbox/installation.html) for instructions.
+See [Documentation](https://www.bbox.earth/installation.html) for instructions.
 
 ## Docker
 

@@ -10,5 +10,5 @@ build-dir = "../target/book"
 
 [output.html]
 curly-quotes = true
-git-repository-url = "https://github.com/sourcepole/bbox"
-edit-url-template = "https://github.com/sourcepole/bbox/edit/main/docs/{path}"
+git-repository-url = "https://github.com/bbox-services/bbox"
+edit-url-template = "https://github.com/bbox-services/bbox/edit/main/docs/{path}"
