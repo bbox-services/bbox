@@ -68,7 +68,7 @@ impl MbtilesDatasource {
                 .set_metadata_value(&mut conn, "format", Some(&format))
                 .await?;
         }
-        conn.close();
+        conn.close().await?;
         Ok(())
     }
 

@@ -181,7 +181,7 @@ impl ThemesJson {
             .map(|(wms, c, url)| Theme::from_capabilities(wms.id.to_string(), c, url).unwrap())
             .collect();
         let default_theme = default_theme
-            .or(caps.get(0).map(|(wms, _, _)| wms.id.as_str()))
+            .or(caps.first().map(|(wms, _, _)| wms.id.as_str()))
             .unwrap_or("")
             .to_string();
         ThemesJson {
