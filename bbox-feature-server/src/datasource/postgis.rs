@@ -485,10 +485,11 @@ async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test_log::test;
 
     // docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
 
-    #[tokio::test]
+    #[test(tokio::test)]
     #[ignore]
     async fn pg_content() {
         let mut pool =
@@ -502,7 +503,7 @@ mod tests {
             .any(|col| col.collection.id == "ne_10m_rivers_lake_centerlines"));
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     #[ignore]
     async fn pg_features() {
         let filter = FilterParams::default();
@@ -521,7 +522,7 @@ mod tests {
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
     }
 
-    #[tokio::test]
+    #[test(tokio::test)]
     #[ignore]
     async fn pg_bbox_filter() {
         let filter = FilterParams {
@@ -545,5 +546,30 @@ mod tests {
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
+    }
+
+    #[test(tokio::test)]
+    #[ignore]
+    async fn pg_datetime_filter() {
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: Some("2024-01-01T00:00:00Z".to_string()),
+            filters: HashMap::new(),
+        };
+        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+            .await
+            .unwrap();
+        let source = PgCollectionSource {
+            ds,
+            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
+            geometry_column: "wkb_geometry".to_string(),
+            pk_column: Some("fid".to_string()),
+            temporal_column: Some("ts".to_string()),
+            other_columns: HashMap::new(),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 1);
     }
 }
