@@ -90,7 +90,9 @@
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../configuration.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../running.html"><strong aria-hidden="true">3.</strong> Running</a></li><li class="chapter-item expanded "><a href="../api-endpoints.html"><strong aria-hidden="true">4.</strong> API endpoints</a></li><li class="chapter-item expanded "><a href="../feature-server/index.html"><strong aria-hidden="true">5.</strong> Feature server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../feature-server/configuration.html" class="active"><strong aria-hidden="true">5.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../feature-server/endpoints.html"><strong aria-hidden="true">5.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../map-server/index.html"><strong aria-hidden="true">6.</strong> Map server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../map-server/configuration.html"><strong aria-hidden="true">6.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../map-server/endpoints.html"><strong aria-hidden="true">6.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../tile-server/index.html"><strong aria-hidden="true">7.</strong> Tile Server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../tile-server/configuration.html"><strong aria-hidden="true">7.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../tile-server/endpoints.html"><strong aria-hidden="true">7.2.</strong> Endpoints</a></li><li class="chapter-item expanded "><a href="../tile-server/seeding.html"><strong aria-hidden="true">7.3.</strong> Seeding</a></li></ol></li><li class="chapter-item expanded "><a href="../asset-server/index.html"><strong aria-hidden="true">8.</strong> Asset server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../asset-server/configuration.html"><strong aria-hidden="true">8.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="../processes-server/index.html"><strong aria-hidden="true">9.</strong> Processes server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../processes-server/configuration.html"><strong aria-hidden="true">9.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../processes-server/endpoints.html"><strong aria-hidden="true">9.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../routing-server/index.html"><strong aria-hidden="true">10.</strong> Routing server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../routing-server/configuration.html"><strong aria-hidden="true">10.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../routing-server/endpoints.html"><strong aria-hidden="true">10.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../instrumentation.html"><strong aria-hidden="true">11.</strong> Instrumentation</a></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -180,41 +182,41 @@
                         <h1 id="feature-server-configuration"><a class="header" href="#feature-server-configuration">Feature server configuration</a></h1>
 <h2 id="datasources"><a class="header" href="#datasources">Datasources</a></h2>
 <pre><code class="language-toml">[[datasource]]
-name = &quot;t_rex_tests&quot;
+name = "t_rex_tests"
 [datasource.postgis]
-url = &quot;postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests&quot;
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[datasource]]
-name = &quot;ne_extracts&quot;
+name = "ne_extracts"
 [datasource.gpkg]
-path = &quot;../assets/ne_extracts.gpkg&quot;
+path = "../assets/ne_extracts.gpkg"
 </code></pre>
 <h2 id="collections-with-auto-discovery"><a class="header" href="#collections-with-auto-discovery">Collections with auto discovery</a></h2>
 <pre><code class="language-toml">[[collections.postgis]]
-url = &quot;postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests&quot;
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[collections.directory]]
-dir = &quot;../assets&quot;
+dir = "../assets"
 </code></pre>
 <h2 id="collections"><a class="header" href="#collections">Collections</a></h2>
 <pre><code class="language-toml">[[collection]]
-name = &quot;populated_places&quot;
-title = &quot;populated places&quot;
-description = &quot;Natural Earth populated places&quot;
+name = "populated_places"
+title = "populated places"
+description = "Natural Earth populated places"
 [collection.gpkg]
-datasource = &quot;ne_extracts&quot;
-table = &quot;ne_10m_populated_places&quot;
+datasource = "ne_extracts"
+table = "ne_10m_populated_places"
 </code></pre>
 <p>With custom SQL query:</p>
 <pre><code class="language-toml">[[collection]]
-name = &quot;populated_places_names&quot;
-title = &quot;populated places names&quot;
-description = &quot;Natural Earth populated places&quot;
+name = "populated_places_names"
+title = "populated places names"
+description = "Natural Earth populated places"
 [collection.gpkg]
-datasource = &quot;ne_extracts&quot;
-sql = &quot;SELECT fid, name, geom FROM ne_10m_populated_places&quot;
-geometry_field = &quot;geom&quot;
-fid_field = &quot;fid&quot;
+datasource = "ne_extracts"
+sql = "SELECT fid, name, geom FROM ne_10m_populated_places"
+geometry_field = "geom"
+fid_field = "fid"
 </code></pre>
 
                     </main>

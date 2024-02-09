@@ -91,7 +91,9 @@
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded "><a href="installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="configuration.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="running.html"><strong aria-hidden="true">3.</strong> Running</a></li><li class="chapter-item expanded "><a href="api-endpoints.html"><strong aria-hidden="true">4.</strong> API endpoints</a></li><li class="chapter-item expanded "><a href="feature-server/index.html"><strong aria-hidden="true">5.</strong> Feature server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="feature-server/configuration.html"><strong aria-hidden="true">5.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="feature-server/endpoints.html"><strong aria-hidden="true">5.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="map-server/index.html"><strong aria-hidden="true">6.</strong> Map server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="map-server/configuration.html"><strong aria-hidden="true">6.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="map-server/endpoints.html"><strong aria-hidden="true">6.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="tile-server/index.html"><strong aria-hidden="true">7.</strong> Tile Server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tile-server/configuration.html"><strong aria-hidden="true">7.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="tile-server/endpoints.html"><strong aria-hidden="true">7.2.</strong> Endpoints</a></li><li class="chapter-item expanded "><a href="tile-server/seeding.html"><strong aria-hidden="true">7.3.</strong> Seeding</a></li></ol></li><li class="chapter-item expanded "><a href="asset-server/index.html"><strong aria-hidden="true">8.</strong> Asset server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="asset-server/configuration.html"><strong aria-hidden="true">8.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="processes-server/index.html"><strong aria-hidden="true">9.</strong> Processes server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="processes-server/configuration.html"><strong aria-hidden="true">9.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="processes-server/endpoints.html"><strong aria-hidden="true">9.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="routing-server/index.html"><strong aria-hidden="true">10.</strong> Routing server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="routing-server/configuration.html"><strong aria-hidden="true">10.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="routing-server/endpoints.html"><strong aria-hidden="true">10.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="instrumentation.html"><strong aria-hidden="true">11.</strong> Instrumentation</a></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -222,7 +224,7 @@ bbox-server --help
 <pre><code class="language-toml">[webserver]
 # Web server settings
 # Environment variable prefix: BBOX_WEBSERVER__
-# server_addr = &quot;127.0.0.1:8080&quot;  # Default: 127.0.0.1:8080
+# server_addr = "127.0.0.1:8080"  # Default: 127.0.0.1:8080
 # worker_threads = 4  # Default: number of CPU cores
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="running-bbox"><a class="header" href="#running-bbox">Running BBOX</a></h1>
@@ -314,41 +316,41 @@ Output formats: GeoJSON</li>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="feature-server-configuration"><a class="header" href="#feature-server-configuration">Feature server configuration</a></h1>
 <h2 id="datasources"><a class="header" href="#datasources">Datasources</a></h2>
 <pre><code class="language-toml">[[datasource]]
-name = &quot;t_rex_tests&quot;
+name = "t_rex_tests"
 [datasource.postgis]
-url = &quot;postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests&quot;
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[datasource]]
-name = &quot;ne_extracts&quot;
+name = "ne_extracts"
 [datasource.gpkg]
-path = &quot;../assets/ne_extracts.gpkg&quot;
+path = "../assets/ne_extracts.gpkg"
 </code></pre>
 <h2 id="collections-with-auto-discovery"><a class="header" href="#collections-with-auto-discovery">Collections with auto discovery</a></h2>
 <pre><code class="language-toml">[[collections.postgis]]
-url = &quot;postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests&quot;
+url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[collections.directory]]
-dir = &quot;../assets&quot;
+dir = "../assets"
 </code></pre>
 <h2 id="collections"><a class="header" href="#collections">Collections</a></h2>
 <pre><code class="language-toml">[[collection]]
-name = &quot;populated_places&quot;
-title = &quot;populated places&quot;
-description = &quot;Natural Earth populated places&quot;
+name = "populated_places"
+title = "populated places"
+description = "Natural Earth populated places"
 [collection.gpkg]
-datasource = &quot;ne_extracts&quot;
-table = &quot;ne_10m_populated_places&quot;
+datasource = "ne_extracts"
+table = "ne_10m_populated_places"
 </code></pre>
 <p>With custom SQL query:</p>
 <pre><code class="language-toml">[[collection]]
-name = &quot;populated_places_names&quot;
-title = &quot;populated places names&quot;
-description = &quot;Natural Earth populated places&quot;
+name = "populated_places_names"
+title = "populated places names"
+description = "Natural Earth populated places"
 [collection.gpkg]
-datasource = &quot;ne_extracts&quot;
-sql = &quot;SELECT fid, name, geom FROM ne_10m_populated_places&quot;
-geometry_field = &quot;geom&quot;
-fid_field = &quot;fid&quot;
+datasource = "ne_extracts"
+sql = "SELECT fid, name, geom FROM ne_10m_populated_places"
+geometry_field = "geom"
+fid_field = "fid"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-api-endpoints-1"><a class="header" href="#bbox-api-endpoints-1">BBOX API Endpoints</a></h1>
 <p>Services are available via the HTTP <code>GET</code> endpoints:</p>
@@ -402,14 +404,14 @@ Intelligent process dispatching (slow query detection)</li>
 </code></pre>
 <h2 id="qgis-server-settings"><a class="header" href="#qgis-server-settings">QGIS Server settings</a></h2>
 <pre><code class="language-toml">[mapserver.qgis_backend]
-project_basedir = &quot;../assets&quot;  # Base dir for project files (.qgs, .qgz)
-qgs.path = &quot;/qgis&quot;             # WMS URL base path
-qgz.path = &quot;/qgz&quot;              # WMS URL base path
+project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"             # WMS URL base path
+qgz.path = "/qgz"              # WMS URL base path
 </code></pre>
 <h2 id="umn-mapserver-settings"><a class="header" href="#umn-mapserver-settings">UMN MapServer settings</a></h2>
 <pre><code class="language-toml">[mapserver.umn_backend]
-project_basedir = &quot;../assets&quot;  # Base dir for project files (.map)
-path = &quot;/wms/map&quot;              # WMS URL base path
+project_basedir = "../assets"  # Base dir for project files (.map)
+path = "/wms/map"              # WMS URL base path
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-api-endpoints-2"><a class="header" href="#bbox-api-endpoints-2">BBOX API Endpoints</a></h1>
 <p>Services are available via the following HTTP endpoints:</p>
@@ -486,69 +488,69 @@ Storage Backend: Local files</li>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tile-server-configuration"><a class="header" href="#tile-server-configuration">Tile server configuration</a></h1>
 <h2 id="datasources-1"><a class="header" href="#datasources-1">Datasources</a></h2>
 <pre><code class="language-toml">[[datasource]]
-name = &quot;mvtbenchdb&quot;
+name = "mvtbenchdb"
 [datasource.postgis]
-url = &quot;postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench&quot;
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
-name = &quot;ne_extracts&quot;
+name = "ne_extracts"
 [datasource.gpkg]
-path = &quot;../assets/ne_extracts.gpkg&quot;
+path = "../assets/ne_extracts.gpkg"
 
 [[datasource]]
-name = &quot;gebco&quot;
+name = "gebco"
 [datasource.wms_proxy]
-baseurl = &quot;https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0&quot;
-format = &quot;image/jpeg&quot;
+baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
+format = "image/jpeg"
 </code></pre>
 <h2 id="vector-tiles-from-postgis-table"><a class="header" href="#vector-tiles-from-postgis-table">Vector tiles from PostGIS table</a></h2>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_countries&quot;
+name = "ne_countries"
 [tileset.postgis]
-datasource = &quot;mvtbenchdb&quot;
+datasource = "mvtbenchdb"
 extent = [-179.97277, -83.05457, 179.99366, 83.23559]
-attribution = &quot;Natural Earth v4&quot;
+attribution = "Natural Earth v4"
 
 [[tileset.postgis.layer]]
-name = &quot;country-name&quot;
-table_name = &quot;ne_10m_admin_0_country_points&quot;
-geometry_type = &quot;POINT&quot;
+name = "country-name"
+table_name = "ne_10m_admin_0_country_points"
+geometry_type = "POINT"
 srid = 3857
 buffer_size = 0
 [[tileset.postgis.layer.query]]
-sql = &quot;&quot;&quot;SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points&quot;&quot;&quot;
+sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
 </code></pre>
 <h2 id="raster-tiles-from-map-service"><a class="header" href="#raster-tiles-from-map-service">Raster tiles from map service</a></h2>
 <p>QGIS Server backend:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_extracts&quot;
-map_service = { project = &quot;ne_extracts&quot;, suffix = &quot;qgz&quot;, layers = &quot;ne_extracts&quot; }
-cache = &quot;tilecache&quot;
+name = "ne_extracts"
+map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
+cache = "tilecache"
 </code></pre>
 <p>UMN Mapserver backend:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_umn&quot;
-map_service = { project = &quot;ne&quot;, suffix = &quot;map&quot;, layers = &quot;country&quot;, tile_size = 512 }
+name = "ne_umn"
+map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 </code></pre>
 <p>Raster tiles from external WMS:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;gebco&quot;
-wms_proxy = { source = &quot;gebco&quot;, layers = &quot;gebco_latest&quot; }
+name = "gebco"
+wms_proxy = { source = "gebco", layers = "gebco_latest" }
 </code></pre>
 <h2 id="tile-caches"><a class="header" href="#tile-caches">Tile caches</a></h2>
 <pre><code class="language-toml">[[tilecache]]
-name = &quot;tilecache&quot;
+name = "tilecache"
 [tilecache.files]
-base_dir = &quot;/tmp/tilecache&quot;
+base_dir = "/tmp/tilecache"
 
 [[tilecache]]
-name = &quot;aws&quot;
+name = "aws"
 [tilecache.s3]
-path = &quot;s3://tiles&quot;
+path = "s3://tiles"
 </code></pre>
 <h2 id="custom-tile-grid"><a class="header" href="#custom-tile-grid">Custom tile grid</a></h2>
 <pre><code class="language-toml">[[grid]]
-json = &quot;../assets/custom-grid-lv95.json&quot;
+json = "../assets/custom-grid-lv95.json"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-api-endpoints-3"><a class="header" href="#bbox-api-endpoints-3">BBOX API Endpoints</a></h1>
 <p>Services are available via the following HTTP endpoints:</p>
@@ -613,7 +615,7 @@ x-www-browser http://localhost:8080/html/maplibre/ne_countries
 </code></pre>
 <h2 id="seed-to-s3-storage"><a class="header" href="#seed-to-s3-storage">Seed to S3 storage</a></h2>
 <p>Set S3 env vars:</p>
-<pre><code>export S3_ENDPOINT_URL=&quot;http://localhost:9000&quot;
+<pre><code>export S3_ENDPOINT_URL="http://localhost:9000"
 export AWS_ACCESS_KEY_ID=miniostorage
 export AWS_SECRET_ACCESS_KEY=miniostorage
 </code></pre>
@@ -641,20 +643,20 @@ Templates with inputs from path, arguments and configuration</li>
 <p>Static file serving:</p>
 <pre><code class="language-toml">[[assets.static]]
 # ./assets/* -&gt; http://localhost:8080/assets/
-dir = &quot;./assets&quot;
-path = &quot;/assets&quot;
+dir = "./assets"
+path = "/assets"
 </code></pre>
 <p>Template file serving:</p>
 <pre><code class="language-toml">[[assets.template]]
 # ./templates/name.html -&gt; http://localhost:8080/html/name/param
-dir = &quot;./templates&quot;
-path = &quot;/html&quot;
+dir = "./templates"
+path = "/html"
 </code></pre>
 <p>QGIS plugin repository:</p>
 <pre><code class="language-toml">[[assets.repo]]
 # ./plugins/*.zip -&gt; http://localhost:8080/qgisrepo/plugins.xml
-dir = &quot;./plugins&quot;
-path = &quot;/qgisrepo&quot;
+dir = "./plugins"
+path = "/qgisrepo"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-processes-service"><a class="header" href="#bbox-processes-service">BBOX Processes Service</a></h1>
 <p>The OGC API - Processes standard specifies an interface for executing computational tasks.</p>
@@ -684,9 +686,9 @@ Multiple backend engines
 <div style="break-before: page; page-break-before: always;"></div><h1 id="processes-service-configuration"><a class="header" href="#processes-service-configuration">Processes Service configuration</a></h1>
 <h2 id="dagster-backend"><a class="header" href="#dagster-backend">Dagster Backend</a></h2>
 <pre><code class="language-toml">[processes.dagster_backend]
-graphql_url = &quot;http://localhost:3000/graphql&quot;
-repository_name = &quot;the_repository&quot;
-repository_location_name = &quot;the.repos&quot;
+graphql_url = "http://localhost:3000/graphql"
+repository_name = "the_repository"
+repository_location_name = "the.repos"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-api-endpoints-4"><a class="header" href="#bbox-api-endpoints-4">BBOX API Endpoints</a></h1>
 <p>Services are available via the following HTTP endpoints:</p>
@@ -699,16 +701,16 @@ repository_location_name = &quot;the.repos&quot;
 </div>
 <h2 id="request-examples-3"><a class="header" href="#request-examples-3">Request examples</a></h2>
 <p>Execute process:</p>
-<pre><code>curl --header &quot;Content-Type: application/json&quot; \
+<pre><code>curl --header "Content-Type: application/json" \
      --request POST \
-     --data '{&quot;inputs&quot;: {&quot;ops&quot;: {&quot;pos_info_query&quot;: {&quot;inputs&quot;: {&quot;pos_x&quot;: 2607545, &quot;pos_y&quot;: 1171421}}}}}' \
+     --data '{"inputs": {"ops": {"pos_info_query": {"inputs": {"pos_x": 2607545, "pos_y": 1171421}}}}}' \
   http://localhost:8080/processes/pos_info/execution
 </code></pre>
 <p>Execute process asynchronous:</p>
-<pre><code>curl --header &quot;Content-Type: application/json&quot; \
-     --header &quot;Prefer: respond-async&quot; \
+<pre><code>curl --header "Content-Type: application/json" \
+     --header "Prefer: respond-async" \
      --request POST \
-     --data '{&quot;inputs&quot;: {&quot;ops&quot;: {&quot;export_fpds2&quot;: {&quot;inputs&quot;: {&quot;fixpunkte&quot;: [&quot;12575280&quot;, &quot;12575100&quot;], &quot;in_bearbeitung&quot;: false }}}}}' \
+     --data '{"inputs": {"ops": {"export_fpds2": {"inputs": {"fixpunkte": ["12575280", "12575100"], "in_bearbeitung": false }}}}}' \
   http://localhost:8080/processes/export_fpds2_to_csv/execution
 
 JOBID=386f6c55-d718-4160-b4df-afc5ad5c7a73
@@ -748,28 +750,28 @@ Extract routing graphs from OSM planet files</li>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="routing-service-configuration"><a class="header" href="#routing-service-configuration">Routing Service Configuration</a></h1>
 <h2 id="geopackage-line-geometry-table"><a class="header" href="#geopackage-line-geometry-table">GeoPackage line geometry table</a></h2>
 <pre><code class="language-toml">[[routing.service]]
-profile = &quot;railway&quot;
-gpkg = &quot;../assets/railway-test.gpkg&quot;
-table = &quot;flows&quot;
-geom = &quot;geom&quot;
+profile = "railway"
+gpkg = "../assets/railway-test.gpkg"
+table = "flows"
+geom = "geom"
 </code></pre>
 <h2 id="postgis-edgevertices-tables"><a class="header" href="#postgis-edgevertices-tables">PostGIS Edge/Vertices tables</a></h2>
 <pre><code class="language-toml"># Node search distance
 search_dist = 0.01
 # Edge table
-table = &quot;rail_arcs&quot;
+table = "rail_arcs"
 # Node/Vertices table
-node_table = &quot;rail_arcs_vertices_pgr&quot;
+node_table = "rail_arcs_vertices_pgr"
 # Geometry column
-geom = &quot;geom&quot;
+geom = "geom"
 # Node ID column in node table
-node_id = &quot;id&quot;
+node_id = "id"
 # Cost column
-cost = &quot;cost&quot;
+cost = "cost"
 # Column with source node ID
-node_src = &quot;source&quot;
+node_src = "source"
 # Column with destination (target) node ID
-node_dst = &quot;target&quot;
+node_dst = "target"
 </code></pre>
 <p>This assumes tables created e.g. with PgRouting <code>pgr_createTopology</code>.</p>
 <p>The contraction hierarchy is created on first startup and stored as cache files named <code>.graph.bin</code> and  <code>.nodes.bin</code></p>
@@ -788,16 +790,16 @@ node_dst = &quot;target&quot;
   -H 'accept: application/geo+json' \
   -H 'Content-Type: application/json' \
   -d '{
-  &quot;name&quot;: &quot;Route from A to B&quot;,
-  &quot;waypoints&quot;: {
-    &quot;type&quot;: &quot;MultiPoint&quot;,
-    &quot;coordinates&quot;: [
+  "name": "Route from A to B",
+  "waypoints": {
+    "type": "MultiPoint",
+    "coordinates": [
       [9.35213353, 47.0935012],
       [9.3422712, 47.1011887]
     ]
   },
-  &quot;preference&quot;: &quot;fastest&quot;,
-  &quot;dataset&quot;: &quot;OSM&quot;
+  "preference": "fastest",
+  "dataset": "OSM"
 }'
 </code></pre>
 <h3 id="basic-fromto-request"><a class="header" href="#basic-fromto-request">Basic from/to request:</a></h3>
@@ -848,19 +850,19 @@ node_dst = &quot;target&quot;
 </code></pre>
 <p>https://www.robustperception.io/how-does-a-prometheus-histogram-work</p>
 <p>WMS Endpoint:</p>
-<pre><code>http_requests_duration_sum{endpoint=&quot;/qgis/{project:.+}&quot;}
+<pre><code>http_requests_duration_sum{endpoint="/qgis/{project:.+}"}
 </code></pre>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
 <h3 id="prometheus-metrics"><a class="header" href="#prometheus-metrics">Prometheus metrics</a></h3>
 <pre><code class="language-toml">[metrics.prometheus]
 # Prometheus metrics endpoint
 # Environment variable prefix: BBOX_METRICS__PROMETHEUS__
-path = &quot;/metrics&quot;
+path = "/metrics"
 </code></pre>
 <h3 id="jaeger-tracing-1"><a class="header" href="#jaeger-tracing-1">Jaeger tracing</a></h3>
 <pre><code class="language-toml">[metrics.jaeger] 
 # Environment variable prefix: BBOX_METRICS__JAEGER__
-agent_endpoint = &quot;localhost:6831&quot;
+agent_endpoint = "localhost:6831"
 </code></pre>
 
                     </main>

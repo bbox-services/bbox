@@ -90,7 +90,9 @@
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">Introduction</a></li><li class="chapter-item expanded "><a href="../installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="../configuration.html"><strong aria-hidden="true">2.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../running.html"><strong aria-hidden="true">3.</strong> Running</a></li><li class="chapter-item expanded "><a href="../api-endpoints.html"><strong aria-hidden="true">4.</strong> API endpoints</a></li><li class="chapter-item expanded "><a href="../feature-server/index.html"><strong aria-hidden="true">5.</strong> Feature server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../feature-server/configuration.html"><strong aria-hidden="true">5.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../feature-server/endpoints.html"><strong aria-hidden="true">5.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../map-server/index.html"><strong aria-hidden="true">6.</strong> Map server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../map-server/configuration.html"><strong aria-hidden="true">6.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../map-server/endpoints.html"><strong aria-hidden="true">6.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../tile-server/index.html"><strong aria-hidden="true">7.</strong> Tile Server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../tile-server/configuration.html" class="active"><strong aria-hidden="true">7.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../tile-server/endpoints.html"><strong aria-hidden="true">7.2.</strong> Endpoints</a></li><li class="chapter-item expanded "><a href="../tile-server/seeding.html"><strong aria-hidden="true">7.3.</strong> Seeding</a></li></ol></li><li class="chapter-item expanded "><a href="../asset-server/index.html"><strong aria-hidden="true">8.</strong> Asset server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../asset-server/configuration.html"><strong aria-hidden="true">8.1.</strong> Configuration</a></li></ol></li><li class="chapter-item expanded "><a href="../processes-server/index.html"><strong aria-hidden="true">9.</strong> Processes server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../processes-server/configuration.html"><strong aria-hidden="true">9.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../processes-server/endpoints.html"><strong aria-hidden="true">9.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../routing-server/index.html"><strong aria-hidden="true">10.</strong> Routing server</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../routing-server/configuration.html"><strong aria-hidden="true">10.1.</strong> Configuration</a></li><li class="chapter-item expanded "><a href="../routing-server/endpoints.html"><strong aria-hidden="true">10.2.</strong> Endpoints</a></li></ol></li><li class="chapter-item expanded "><a href="../instrumentation.html"><strong aria-hidden="true">11.</strong> Instrumentation</a></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -180,69 +182,69 @@
                         <h1 id="tile-server-configuration"><a class="header" href="#tile-server-configuration">Tile server configuration</a></h1>
 <h2 id="datasources"><a class="header" href="#datasources">Datasources</a></h2>
 <pre><code class="language-toml">[[datasource]]
-name = &quot;mvtbenchdb&quot;
+name = "mvtbenchdb"
 [datasource.postgis]
-url = &quot;postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench&quot;
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
-name = &quot;ne_extracts&quot;
+name = "ne_extracts"
 [datasource.gpkg]
-path = &quot;../assets/ne_extracts.gpkg&quot;
+path = "../assets/ne_extracts.gpkg"
 
 [[datasource]]
-name = &quot;gebco&quot;
+name = "gebco"
 [datasource.wms_proxy]
-baseurl = &quot;https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0&quot;
-format = &quot;image/jpeg&quot;
+baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
+format = "image/jpeg"
 </code></pre>
 <h2 id="vector-tiles-from-postgis-table"><a class="header" href="#vector-tiles-from-postgis-table">Vector tiles from PostGIS table</a></h2>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_countries&quot;
+name = "ne_countries"
 [tileset.postgis]
-datasource = &quot;mvtbenchdb&quot;
+datasource = "mvtbenchdb"
 extent = [-179.97277, -83.05457, 179.99366, 83.23559]
-attribution = &quot;Natural Earth v4&quot;
+attribution = "Natural Earth v4"
 
 [[tileset.postgis.layer]]
-name = &quot;country-name&quot;
-table_name = &quot;ne_10m_admin_0_country_points&quot;
-geometry_type = &quot;POINT&quot;
+name = "country-name"
+table_name = "ne_10m_admin_0_country_points"
+geometry_type = "POINT"
 srid = 3857
 buffer_size = 0
 [[tileset.postgis.layer.query]]
-sql = &quot;&quot;&quot;SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points&quot;&quot;&quot;
+sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
 </code></pre>
 <h2 id="raster-tiles-from-map-service"><a class="header" href="#raster-tiles-from-map-service">Raster tiles from map service</a></h2>
 <p>QGIS Server backend:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_extracts&quot;
-map_service = { project = &quot;ne_extracts&quot;, suffix = &quot;qgz&quot;, layers = &quot;ne_extracts&quot; }
-cache = &quot;tilecache&quot;
+name = "ne_extracts"
+map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
+cache = "tilecache"
 </code></pre>
 <p>UMN Mapserver backend:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;ne_umn&quot;
-map_service = { project = &quot;ne&quot;, suffix = &quot;map&quot;, layers = &quot;country&quot;, tile_size = 512 }
+name = "ne_umn"
+map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
 </code></pre>
 <p>Raster tiles from external WMS:</p>
 <pre><code class="language-toml">[[tileset]]
-name = &quot;gebco&quot;
-wms_proxy = { source = &quot;gebco&quot;, layers = &quot;gebco_latest&quot; }
+name = "gebco"
+wms_proxy = { source = "gebco", layers = "gebco_latest" }
 </code></pre>
 <h2 id="tile-caches"><a class="header" href="#tile-caches">Tile caches</a></h2>
 <pre><code class="language-toml">[[tilecache]]
-name = &quot;tilecache&quot;
+name = "tilecache"
 [tilecache.files]
-base_dir = &quot;/tmp/tilecache&quot;
+base_dir = "/tmp/tilecache"
 
 [[tilecache]]
-name = &quot;aws&quot;
+name = "aws"
 [tilecache.s3]
-path = &quot;s3://tiles&quot;
+path = "s3://tiles"
 </code></pre>
 <h2 id="custom-tile-grid"><a class="header" href="#custom-tile-grid">Custom tile grid</a></h2>
 <pre><code class="language-toml">[[grid]]
-json = &quot;../assets/custom-grid-lv95.json&quot;
+json = "../assets/custom-grid-lv95.json"
 </code></pre>
 
                     </main>
