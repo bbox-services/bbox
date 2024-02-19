@@ -1,9 +1,13 @@
 use crate::datasource::source_config_from_cli_arg;
+use crate::t_rex::config as t_rex;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
+use bbox_core::config::{from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
+use bbox_core::pg_ds::DsPostgisCfg;
 use clap::{ArgMatches, FromArgMatches};
 use log::info;
+use regex::Regex;
 use serde::Deserialize;
+use std::convert::From;
 use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
 
@@ -128,8 +132,8 @@ pub struct VectorLayerCfg {
     pub table_name: Option<String>,
     pub query_limit: Option<u32>,
     // Custom queries
-    #[serde(default)]
-    pub query: Vec<VectorLayerQueryCfg>,
+    #[serde(default, rename = "query")]
+    pub queries: Vec<VectorLayerQueryCfg>,
     pub minzoom: Option<u8>,
     pub maxzoom: Option<u8>,
     /// Width and height of the tile (Default: 4096. Grid default size is 256)
@@ -232,6 +236,13 @@ impl TileserverCfg {
     pub fn from_config(cli: &ArgMatches) -> Self {
         let mut cfg: TileserverCfg = from_config_root_or_exit();
 
+        // Handle CLI args
+        if let Some(t_rex_config) = cli.get_one::<PathBuf>("t_rex_config") {
+            let t_rex_cfg: t_rex::ApplicationCfg =
+                t_rex::read_config(t_rex_config.to_str().unwrap()).unwrap();
+            cfg = t_rex_cfg.into();
+        }
+
         // Get config from CLI
         if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
             if let Some(file_or_url) = args.file_or_url {
@@ -255,6 +266,117 @@ impl TileserverCfg {
             }
         }
         cfg
+    }
+}
+
+impl From<t_rex::ApplicationCfg> for TileserverCfg {
+    fn from(t_rex_config: t_rex::ApplicationCfg) -> Self {
+        let re = Regex::new(r#"\) AS "\w+"$"#).unwrap();
+        let datasources = t_rex_config
+            .datasource
+            .into_iter()
+            .filter(|ds| ds.dbconn.is_some()) // Skip GDAL sources
+            .map(|ds| {
+                let datasource = DatasourceCfg::Postgis(DsPostgisCfg {
+                    url: ds.dbconn.expect("dbconn"),
+                });
+                NamedDatasourceCfg {
+                    name: ds.name.unwrap(),
+                    datasource,
+                }
+            })
+            .collect();
+        let tilesets = t_rex_config
+            .tilesets
+            .into_iter()
+            .map(|ts| {
+                let datasource = ts.layers.first().unwrap().datasource.clone(); // TODO: handle multiple & default datasources
+                let layers = ts
+                    .layers
+                    .into_iter()
+                    .map(|l| {
+                        let mut queries = l
+                            .query
+                            .into_iter()
+                            .map(|q| VectorLayerQueryCfg {
+                                minzoom: q.minzoom,
+                                maxzoom: q.maxzoom,
+                                simplify: q.simplify,
+                                tolerance: q.tolerance,
+                                sql: q.sql,
+                            })
+                            .collect::<Vec<_>>();
+                        // Handle table name query hack
+                        let mut table_name = l.table_name.clone();
+                        if let Some(table) = &l.table_name {
+                            if table.starts_with("(SELECT ") {
+                                let sql = Some(re.replace_all(table, ")").to_string());
+                                queries.insert(
+                                    0,
+                                    VectorLayerQueryCfg {
+                                        minzoom: l.minzoom.unwrap_or(0),
+                                        maxzoom: None,
+                                        simplify: Some(l.simplify),
+                                        tolerance: Some(l.tolerance.clone()),
+                                        sql,
+                                    },
+                                );
+                                table_name = None;
+                            }
+                        }
+                        VectorLayerCfg {
+                            name: l.name,
+                            geometry_field: l.geometry_field,
+                            geometry_type: l.geometry_type,
+                            srid: l.srid,
+                            no_transform: l.no_transform,
+                            fid_field: l.fid_field,
+                            table_name,
+                            query_limit: l.query_limit,
+                            queries,
+                            minzoom: l.minzoom,
+                            maxzoom: l.maxzoom,
+                            tile_size: l.tile_size,
+                            simplify: l.simplify,
+                            tolerance: l.tolerance,
+                            buffer_size: l.buffer_size,
+                            make_valid: l.make_valid,
+                            shift_longitude: l.shift_longitude,
+                        }
+                    })
+                    .collect();
+                let pgcfg = PostgisSourceParamsCfg {
+                    datasource,
+                    extent: ts.extent.map(|ext| ExtentCfg {
+                        maxx: ext.maxx,
+                        maxy: ext.maxy,
+                        minx: ext.minx,
+                        miny: ext.miny,
+                    }),
+                    minzoom: ts.minzoom,
+                    maxzoom: ts.maxzoom,
+                    center: ts.center,
+                    start_zoom: ts.start_zoom,
+                    attribution: ts.attribution,
+                    postgis2: false,
+                    layers,
+                };
+                TileSetCfg {
+                    name: ts.name,
+                    tms: None,
+                    source: SourceParamCfg::Postgis(pgcfg),
+                    cache: None,
+                    cache_format: None,
+                    cache_limits: None,
+                }
+            })
+            .collect();
+        TileserverCfg {
+            grids: Vec::new(), //TODO
+            datasources,
+            tilesets,
+            tilestores: Vec::new(), //TODO
+        }
     }
 }
 
@@ -306,11 +428,11 @@ impl PostgisSourceParamsCfg {
 impl VectorLayerCfg {
     pub fn minzoom(&self) -> u8 {
         self.minzoom
-            .unwrap_or(self.query.iter().map(|q| q.minzoom).min().unwrap_or(0))
+            .unwrap_or(self.queries.iter().map(|q| q.minzoom).min().unwrap_or(0))
     }
     pub fn maxzoom(&self, default: u8) -> u8 {
         self.maxzoom.unwrap_or(
-            self.query
+            self.queries
                 .iter()
                 .map(|q| q.maxzoom.unwrap_or(default))
                 .max()
@@ -320,7 +442,7 @@ impl VectorLayerCfg {
     /// Collect min zoom levels with configuration
     pub fn zoom_steps(&self) -> Vec<u8> {
         let mut zoom_steps = self
-            .query
+            .queries
             .iter()
             .filter(|q| q.sql.is_some())
             .map(|q| q.minzoom)
@@ -339,7 +461,7 @@ impl VectorLayerCfg {
         F: Fn(&VectorLayerQueryCfg) -> bool,
     {
         let mut queries = self
-            .query
+            .queries
             .iter()
             .map(|q| (q.minzoom, q.maxzoom.unwrap_or(22), q))
             .collect::<Vec<_>>();

@@ -1,5 +1,8 @@
 use serde::Deserialize;
+use std::fs::File;
+use std::io::Read;
 use tile_grid::{Extent, Grid, Origin, Unit};
+use toml::Value;
 
 // from t-rex core gridcfg.rs
 
@@ -260,4 +263,50 @@ pub struct WebserverCfg {
 pub struct WebserverStaticCfg {
     pub path: String,
     pub dir: String,
+}
+
+/// Load and parse the config file into an config struct.
+pub fn read_config<'a, T: Deserialize<'a>>(path: &str) -> Result<T, String> {
+    let mut file = match File::open(path) {
+        Ok(file) => file,
+        Err(_) => {
+            return Err("Could not find config file!".to_string());
+        }
+    };
+    let mut config_toml = String::new();
+    if let Err(err) = file.read_to_string(&mut config_toml) {
+        return Err(format!("Error while reading config: [{}]", err));
+    };
+
+    parse_config(config_toml, path)
+}
+
+/// Parse the configuration into an config struct.
+pub fn parse_config<'a, T: Deserialize<'a>>(config_toml: String, path: &str) -> Result<T, String> {
+    // Check for old ${var} expressions
+    // let re = Regex::new(r"\$\{([[:alnum:]]+)\}").unwrap();
+    // if re.is_match(&config_toml) {
+    //     return Err(
+    //         "Replace old environment variable syntax ${VARNAME} with `{{env.VARNAME}}`".to_string(),
+    //     );
+    // }
+
+    // Parse template
+    // let mut tera = Tera::default();
+    // tera.add_raw_template(path, &config_toml)
+    //     .map_err(|e| format!("Template error: {}", e))?;
+    // let mut context = Context::new();
+    // let mut env = HashMap::new();
+    // for (key, value) in env::vars() {
+    //     env.insert(key, value);
+    // }
+    // context.insert("env", &env);
+    // let toml = tera
+    //     .render(path, &context)
+    //     .map_err(|e| format!("Template error: {}", e.source().unwrap()))?;
+    let toml = config_toml; // TODO: resolve at least env vars
+
+    toml.parse::<Value>()
+        .and_then(|cfg| cfg.try_into::<T>())
+        .map_err(|err| format!("{} - {}", path, err))
 }

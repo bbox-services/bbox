@@ -88,7 +88,7 @@ impl PgSource {
         postgis2: bool,
     ) -> Result<PgMvtLayer, TileSourceError> {
         // Configuration checks (TODO: add config_check to trait)
-        if layer.query.is_empty() && layer.table_name.is_none() {
+        if layer.queries.is_empty() && layer.table_name.is_none() {
             error!("Layer '{}': table_name undefined", layer.name);
             return Err(TileSourceError::TypeDetectionError);
         }

@@ -347,7 +347,7 @@ mod test {
             fid_field: None,
             table_name: Some("osm_place_point".to_string()),
             query_limit: None,
-            query: Vec::new(),
+            queries: Vec::new(),
             minzoom: None,
             maxzoom: None,
             tile_size: 256,
@@ -494,7 +494,7 @@ mod test {
     #[test]
     fn test_user_queries() {
         let (mut layer, fields) = layer_cfg();
-        layer.query = vec![VectorLayerQueryCfg {
+        layer.queries = vec![VectorLayerQueryCfg {
             minzoom: 0,
             maxzoom: Some(22),
             simplify: None,
@@ -502,11 +502,11 @@ mod test {
             sql: Some(String::from("SELECT geometry AS geom FROM osm_place_point")),
         }];
         let postgis2 = false;
-        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.query[0].sql.as_ref(), postgis2)
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry AS geom FROM osm_place_point) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
 
-        layer.query = vec![VectorLayerQueryCfg {
+        layer.queries = vec![VectorLayerQueryCfg {
             minzoom: 0,
             maxzoom: Some(22),
             simplify: None,
@@ -515,7 +515,7 @@ mod test {
                 "SELECT * FROM osm_place_point WHERE name='Bern'",
             )),
         }];
-        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.query[0].sql.as_ref(), postgis2)
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT * FROM osm_place_point WHERE name='Bern') AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
     }

@@ -7,20 +7,20 @@ use crate::store::{
 };
 use actix_web::web;
 use async_trait::async_trait;
-use bbox_core::cli::NoArgs;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use bbox_core::Format;
-use clap::{ArgMatches, FromArgMatches};
+use clap::{ArgMatches, Args, FromArgMatches};
 use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::num::NonZeroU16;
+use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
 use tilejson::TileJSON;
 
@@ -97,10 +97,17 @@ impl SourceLookup for Tilesets {
 
 type TileStoreConfigs = HashMap<String, TileStoreCfg>;
 
+#[derive(Args, Debug)]
+pub struct ServiceArgs {
+    /// T-Rex config file
+    #[arg(short, long, value_name = "FILE")]
+    pub t_rex_config: Option<PathBuf>,
+}
+
 #[async_trait]
 impl OgcApiService for TileService {
     type CliCommands = Commands;
-    type CliArgs = NoArgs;
+    type CliArgs = ServiceArgs;
     type Metrics = NoMetrics;
 
     async fn read_config(&mut self, cli: &ArgMatches) {
