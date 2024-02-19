@@ -143,22 +143,22 @@ json = "../assets/custom-grid-lv95.json"
 # -- tile caches --
 
 [[tilestore]]
-name = "filesystem"
+name = "filecache"
 [tilestore.files]
 base_dir = "/tmp/tilecache"
 
 #[[tilestore]]
-#name = "aws"
+#name = "s3cache"
 #[tilestore.s3]
 #path = "s3://tiles"
 
 [[tilestore]]
-name = "mbtiles"
+name = "mbtilecache"
 [tilestore.mbtiles]
 path = "/tmp/tilecache.mbtiles"
 
 #[[tilestore]]
-#name = "pmtiles"
+#name = "pmtilecache"
 #[tilestore.pmtiles]
 #path = "/tmp/tilecache.pmtiles"
 
@@ -167,13 +167,13 @@ path = "/tmp/tilecache.mbtiles"
 [[tileset]]
 name = "ne_extracts"
 map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
-cache = "filesystem"
+cache = "filecache"
 
 [[tileset]]
 name = "ne_umn"
 map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
-cache = "mbtiles"
-#cache = "pmtiles"
+cache = "mbtilecache"
+#cache = "pmtilecache"
 
 [[tileset]]
 name = "gebco"
