@@ -45,7 +45,7 @@ impl FcgiBackendType for QgisFcgiBackend {
     fn exe_locations(&self) -> Vec<String> {
         vec![
             "/usr/lib/cgi-bin/qgis_mapserv.fcgi".to_string(),
-            "/usr/bin/qgis_mapserver".to_string(),
+            "/usr/libexec/qgis/qgis_mapserv.fcgi".to_string(),
         ]
     }
     fn project_files(&self) -> Vec<&'static str> {
