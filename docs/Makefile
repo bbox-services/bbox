@@ -7,3 +7,104 @@ build:
 
 serve:
 	mdbook serve --open --port 8321
+
+srcdoc:
+	cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --no-defaults --output-format json
+
+# Example output:
+#     "0:994:2121": {
+#       "id": "0:994:2121",
+#       "crate_id": 0,
+#       "name": "TileSetCfg",
+#       "span": {
+#         "filename": "bbox-tile-server/src/config.rs",
+#         "begin": [
+#           25,
+#           0
+#         ],
+#         "end": [
+#           39,
+#           1
+#         ]
+#       },
+#       "visibility": "public",
+#       "docs": null,
+#       "links": {},
+#       "attrs": [
+#         "#[serde(deny_unknown_fields)]"
+#       ],
+#       "deprecation": null,
+#       "inner": {
+#         "struct": {
+#           "kind": {
+#             "plain": {
+#               "fields": [
+#                 "0:995:1025",
+#                 "0:996:2025",
+#                 "0:1000:2130",
+#                 "0:997:2133",
+#                 "0:998:2135",
+#                 "0:999:2136"
+#               ],
+#               "fields_stripped": false
+#             }
+#           },
+#           "generics": {
+#             "params": [],
+#             "where_predicates": []
+#           },
+#           "impls": []
+#         }
+#       }
+#     },
+#     "0:998:2135": {
+#       "id": "0:998:2135",
+#       "crate_id": 0,
+#       "name": "cache_format",
+#       "span": {
+#         "filename": "bbox-tile-server/src/config.rs",
+#         "begin": [
+#           37,
+#           4
+#         ],
+#         "end": [
+#           37,
+#           36
+#         ]
+#       },
+#       "visibility": "public",
+#       "docs": "tile format in store. Defaults to `png` for raster and `pbf` for vector tiles",
+#       "attrs": [
+#         "#[serde(rename = \"format\")]"
+#       ],
+#       "deprecation": null,
+#       "inner": {
+#         "struct_field": {
+#           "resolved_path": {
+#             "name": "Option",
+#             "id": "2:42344:194",
+#             "args": {
+#               "angle_bracketed": {
+#                 "args": [
+#                   {
+#                     "type": {
+#                       "resolved_path": {
+#                         "name": "String",
+#                         "id": "5:7632:243",
+#                         "args": {
+#                           "angle_bracketed": {
+#                             "args": [],
+#                             "bindings": []
+#                           }
+#                         }
+#                       }
+#                     }
+#                   }
+#                 ],
+#                 "bindings": []
+#               }
+#             }
+#           }
+#         }
+#       }
+#     },
