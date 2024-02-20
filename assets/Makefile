@@ -37,3 +37,18 @@ createdb:
 
 loaddata:
 	ogr2ogr -f PostgreSQL PG:dbname=$(DBNAME) -lco SCHEMA=ne ne_extracts.gpkg
+
+
+# Misc targets
+
+mvtbench:
+	# docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb
+	cd ../bbox-tile-server && cargo run -- --t-rex-config=../assets/mvtbench_t_rex.toml serve
+	# curl -o /tmp/tile.mvt http://localhost:8080/xyz/ne_countries/0/0/0.pbf
+
+t_rex_multi:
+	# docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
+	cd ../bbox-tile-server && cargo run -- --t-rex-config=../../t-rex/examples/multiple-ds.toml serve
+
+t_rex_grid:
+	cd ../bbox-tile-server && cargo run -- --t-rex-config=../../t-rex/examples/utmgrid.toml serve

@@ -1,12 +1,13 @@
 use crate::datasource::source_config_from_cli_arg;
 use crate::t_rex::config as t_rex;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::{from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
+use bbox_core::config::{error_exit, from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::pg_ds::DsPostgisCfg;
 use clap::{ArgMatches, FromArgMatches};
-use log::info;
+use log::{info, warn};
 use regex::Regex;
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::convert::From;
 use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
@@ -239,7 +240,8 @@ impl TileserverCfg {
         // Handle CLI args
         if let Some(t_rex_config) = cli.get_one::<PathBuf>("t_rex_config") {
             let t_rex_cfg: t_rex::ApplicationCfg =
-                t_rex::read_config(t_rex_config.to_str().unwrap()).unwrap();
+                t_rex::read_config(t_rex_config.to_str().expect("invalid string"))
+                    .unwrap_or_else(error_exit);
             cfg = t_rex_cfg.into();
         }
 
@@ -271,26 +273,81 @@ impl TileserverCfg {
 
 impl From<t_rex::ApplicationCfg> for TileserverCfg {
     fn from(t_rex_config: t_rex::ApplicationCfg) -> Self {
-        let re = Regex::new(r#"\) AS "\w+"$"#).unwrap();
+        let re = Regex::new(r#"\) AS "\w+"$"#).expect("re");
         let datasources = t_rex_config
             .datasource
             .into_iter()
-            .filter(|ds| ds.dbconn.is_some()) // Skip GDAL sources
+            .filter(|ds| {
+                if ds.path.is_some() {
+                    warn!("Skipping GDAL datasource");
+                }
+                ds.dbconn.is_some()
+            })
             .map(|ds| {
                 let datasource = DatasourceCfg::Postgis(DsPostgisCfg {
                     url: ds.dbconn.expect("dbconn"),
                 });
                 NamedDatasourceCfg {
-                    name: ds.name.unwrap(),
+                    name: ds.name.unwrap_or("default".to_string()),
                     datasource,
                 }
             })
             .collect();
+        let grids = if let Some(g) = &t_rex_config.grid.user {
+            warn!("User defined grid has to be configured manually");
+            vec![GridCfg {
+                json: format!("{}.json", g.srid),
+            }]
+        } else {
+            Vec::new()
+        };
+        let tms = if let Some(g) = &t_rex_config.grid.user {
+            Some(format!("{}", g.srid))
+        } else {
+            match &t_rex_config.grid.predefined.as_deref() {
+                Some("wgs84") => Some("WorldCRS84Quad".to_string()),
+                Some("web_mercator") => Some("WebMercatorQuad".to_string()),
+                _ => None,
+            }
+        };
+        let tilestore = t_rex_config
+            .cache
+            .and_then(|cache| {
+                if let Some(fcache) = cache.file {
+                    Some(TileStoreCfg::Files(FileStoreCfg {
+                        base_dir: fcache.base.into(),
+                    }))
+                } else {
+                    None
+                }
+            })
+            .map(|cache| TileCacheProviderCfg {
+                name: "tilecache".to_string(),
+                cache,
+            });
+        let cache_name = tilestore.as_ref().map(|ts| ts.name.clone());
+        let tilestores = if let Some(ts) = tilestore {
+            vec![ts]
+        } else {
+            Vec::new()
+        };
         let tilesets = t_rex_config
             .tilesets
             .into_iter()
             .map(|ts| {
-                let datasource = ts.layers.first().unwrap().datasource.clone(); // TODO: handle multiple & default datasources
+                let dsnames = ts
+                    .layers
+                    .iter()
+                    .map(|l| l.datasource.clone())
+                    .collect::<HashSet<_>>()
+                    .into_iter()
+                    .collect::<Vec<_>>();
+                if dsnames.len() > 1 {
+                    warn!(
+                        "Please group layers with datasources ({dsnames:?}) into separate tilesets"
+                    )
+                }
+                let datasource = dsnames.first().expect("no datasource").clone();
                 let layers = ts
                     .layers
                     .into_iter()
@@ -363,19 +420,22 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
                 };
                 TileSetCfg {
                     name: ts.name,
-                    tms: None,
+                    tms: tms.clone(),
                     source: SourceParamCfg::Postgis(pgcfg),
-                    cache: None,
+                    cache: cache_name.clone(),
                     cache_format: None,
-                    cache_limits: None,
+                    cache_limits: ts.cache_limits.map(|l| CacheLimitCfg {
+                        minzoom: l.minzoom,
+                        maxzoom: l.maxzoom,
+                    }),
                 }
             })
             .collect();
         TileserverCfg {
-            grids: Vec::new(), //TODO
+            grids,
             datasources,
             tilesets,
-            tilestores: Vec::new(), //TODO
+            tilestores,
         }
     }
 }

@@ -1,0 +1,91 @@
+# t-rex configuration for mvtbench
+
+[service.mvt]
+viewer = true
+
+[[datasource]]
+dbconn = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
+name = "pg"
+default = true
+
+[grid]
+predefined = "web_mercator"
+
+[[tileset]]
+name = "ne_countries"
+attribution = "Natural Earth v4"
+extent = [-179.97277, -83.05457, 179.99366, 83.23559]
+minzoom = 0
+maxzoom = 6
+
+[[tileset.layer]]
+name = "country"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTIPOLYGON"
+srid = 3857
+buffer_size = 3
+simplify = true
+[[tileset.layer.query]]
+sql = """SELECT wkb_geometry, adm0_a3, mapcolor7 FROM ne_10m_admin_0_countries WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"""
+
+[[tileset.layer]]
+name = "country-name"
+geometry_field = "wkb_geometry"
+geometry_type = "POINT"
+srid = 3857
+buffer_size = 0
+[[tileset.layer.query]]
+sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
+
+[[tileset.layer]]
+name = "geo-lines"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+srid = 3857
+buffer_size = 0
+simplify = false
+[[tileset.layer.query]]
+# ne_50m_geographic_lines
+minzoom = 1
+maxzoom = 4
+sql = """SELECT wkb_geometry, name FROM ne_50m_geographic_lines"""
+[[tileset.layer.query]]
+# ne_10m_geographic_lines
+minzoom = 5
+sql = """SELECT wkb_geometry, name FROM ne_10m_geographic_lines"""
+
+[[tileset.layer]]
+name = "land-border-country"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+fid_field = "ogc_fid"
+srid = 3857
+buffer_size = 0
+simplify = true
+[[tileset.layer.query]]
+# ne_10m_admin_0_boundary_lines_land
+sql = """SELECT wkb_geometry FROM ne_10m_admin_0_boundary_lines_land WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"""
+
+[[tileset.layer]]
+name = "state"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+srid = 3857
+buffer_size = 0
+simplify = true
+[[tileset.layer.query]]
+sql = """SELECT wkb_geometry, adm0_a3 FROM ne_10m_admin_1_states_provinces_lines WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"""
+
+[cache.file]
+base = "/tmp/tiles"
+baseurl = "http://example.com/tiles"
+
+[webserver]
+bind = "0.0.0.0"
+port = 6767
+threads = 4
+#cache_control_max_age = 43200
+
+[[webserver.static]]
+path = "/map"
+dir = "../maps/"
