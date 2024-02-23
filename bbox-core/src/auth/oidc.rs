@@ -7,7 +7,7 @@ use openidconnect::{
     CsrfToken, IssuerUrl, Nonce, OAuth2TokenResponse, RedirectUrl, RequestTokenError, Scope,
     StandardErrorResponse,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(thiserror::Error, Debug)]
@@ -26,7 +26,7 @@ pub enum AuthError {
     OpenidIdTokenError,
 }
 
-#[derive(Deserialize, Default, Clone, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct OidcAuthCfg {
     pub client_id: String,
@@ -94,7 +94,7 @@ impl OidcClient {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct AuthRequest {
     pub code: String,
     // pub state: String,

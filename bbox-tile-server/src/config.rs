@@ -6,13 +6,13 @@ use bbox_core::pg_ds::DsPostgisCfg;
 use clap::{ArgMatches, FromArgMatches};
 use log::{info, warn};
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::convert::From;
 use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Serialize, Default, Debug)]
 #[serde(default)]
 pub struct TileserverCfg {
     #[serde(rename = "grid")]
@@ -25,7 +25,7 @@ pub struct TileserverCfg {
     pub tilestores: Vec<TileCacheProviderCfg>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TileSetCfg {
     pub name: String,
@@ -44,14 +44,14 @@ pub struct TileSetCfg {
 }
 
 /// Custom grid definition
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct GridCfg {
     /// JSON file path
     pub json: String,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub enum SourceParamCfg {
     #[serde(rename = "wms_proxy")]
@@ -66,7 +66,7 @@ pub enum SourceParamCfg {
     Pmtiles(PmtilesStoreCfg),
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct WmsHttpSourceParamsCfg {
     /// name of WmsHttpSourceProviderCfg
@@ -74,7 +74,7 @@ pub struct WmsHttpSourceParamsCfg {
     pub layers: String,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct WmsFcgiSourceParamsCfg {
     pub project: String,
@@ -87,7 +87,7 @@ pub struct WmsFcgiSourceParamsCfg {
     pub tile_size: Option<NonZeroU16>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PostgisSourceParamsCfg {
     /// Name of tileserver.source config (Default: first with matching type)
@@ -107,7 +107,7 @@ pub struct PostgisSourceParamsCfg {
     pub layers: Vec<VectorLayerCfg>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct ExtentCfg {
     pub minx: f64,
@@ -116,7 +116,7 @@ pub struct ExtentCfg {
     pub maxy: f64,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct VectorLayerCfg {
     pub name: String,
@@ -166,7 +166,7 @@ fn default_tolerance() -> String {
     DEFAULT_TOLERANCE.to_string()
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct VectorLayerQueryCfg {
     #[serde(default)]
@@ -179,7 +179,7 @@ pub struct VectorLayerQueryCfg {
     pub sql: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct CacheLimitCfg {
     #[serde(default)]
@@ -187,7 +187,7 @@ pub struct CacheLimitCfg {
     pub maxzoom: Option<u8>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TileCacheProviderCfg {
     pub name: String,
@@ -196,7 +196,7 @@ pub struct TileCacheProviderCfg {
     pub cache: TileStoreCfg,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "lowercase", deny_unknown_fields)]
 pub enum TileStoreCfg {
     Files(FileStoreCfg),
@@ -205,14 +205,14 @@ pub enum TileStoreCfg {
     Pmtiles(PmtilesStoreCfg),
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FileStoreCfg {
     /// Base directory, tileset name will be appended
     pub base_dir: PathBuf,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct S3StoreCfg {
     pub path: String,
@@ -221,13 +221,13 @@ pub struct S3StoreCfg {
     // pub aws_secret_access_key: Option<String>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MbtilesStoreCfg {
     pub path: PathBuf,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PmtilesStoreCfg {
     pub path: PathBuf,
@@ -243,6 +243,7 @@ impl TileserverCfg {
                 t_rex::read_config(t_rex_config.to_str().expect("invalid string"))
                     .unwrap_or_else(error_exit);
             cfg = t_rex_cfg.into();
+            info!("Imported t-rex config: \n{}", cfg.as_toml());
         }
 
         // Get config from CLI
@@ -268,6 +269,9 @@ impl TileserverCfg {
             }
         }
         cfg
+    }
+    pub fn as_toml(&self) -> String {
+        toml::to_string(&self).unwrap()
     }
 }
 

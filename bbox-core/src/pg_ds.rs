@@ -1,5 +1,5 @@
 use log::info;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use thiserror::Error;
 
@@ -31,7 +31,7 @@ impl PgDatasource {
     }
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct DsPostgisCfg {
     pub url: String,
@@ -39,7 +39,7 @@ pub struct DsPostgisCfg {
 
 /*
 // t-rex Datasource (top-level Array)
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DatasourceCfg {
     pub name: Option<String>,
     pub default: Option<bool>,

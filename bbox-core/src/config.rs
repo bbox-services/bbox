@@ -6,7 +6,7 @@ use figment::providers::{Env, Format, Toml};
 use figment::Figment;
 use log::info;
 use once_cell::sync::OnceCell;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::PathBuf;
 
@@ -70,7 +70,7 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 
 // -- Common configuration --
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {
     pub server_addr: String,
@@ -109,7 +109,7 @@ impl WebserverCfg {
     }
 }
 
-#[derive(Deserialize, Default, Clone, Debug)]
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct AuthCfg {
     pub oidc: Option<OidcAuthCfg>,
@@ -123,20 +123,20 @@ impl AuthCfg {
 
 // -- Metrics --
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Serialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MetricsCfg {
     pub prometheus: Option<PrometheusCfg>,
     pub jaeger: Option<JaegerCfg>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PrometheusCfg {
     pub path: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct JaegerCfg {
     pub agent_endpoint: String,
@@ -150,7 +150,7 @@ impl MetricsCfg {
 
 // -- Datasources --
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct NamedDatasourceCfg {
     pub name: String,
@@ -158,7 +158,7 @@ pub struct NamedDatasourceCfg {
     pub datasource: DatasourceCfg,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum DatasourceCfg {
     // -- vector sources --
     #[serde(rename = "postgis")]
@@ -177,7 +177,7 @@ pub enum DatasourceCfg {
     Mbtiles,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct DsGpkgCfg {
     pub path: PathBuf,
@@ -187,7 +187,7 @@ pub struct DsGpkgCfg {
 
 /*
 // t-rex Datasource (top-level Array)
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct DatasourceCfg {
     pub name: Option<String>,
     pub default: Option<bool>,
@@ -200,7 +200,7 @@ pub struct DatasourceCfg {
 }
 */
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct WmsHttpSourceProviderCfg {
     pub baseurl: String,
@@ -213,7 +213,7 @@ mod tests {
     use figment::providers::Env;
     use serde::Deserialize;
 
-    #[derive(Deserialize, Debug)]
+    #[derive(Deserialize, Serialize, Debug)]
     struct Package {
         name: String,
         edition: Option<String>,

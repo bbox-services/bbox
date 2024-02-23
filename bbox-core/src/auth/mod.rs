@@ -9,11 +9,11 @@ pub struct Identity {
 #[cfg(not(feature = "oidc"))]
 pub mod oidc {
     use super::Identity;
-    use serde::Deserialize;
+    use serde::{Deserialize, Serialize};
 
     type AuthError = std::io::Error;
 
-    #[derive(Deserialize, Default, Clone, Debug)]
+    #[derive(Deserialize, Serialize, Default, Clone, Debug)]
     pub struct OidcAuthCfg;
 
     #[derive(Default, Clone)]
@@ -27,7 +27,7 @@ pub mod oidc {
         }
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize)]
     pub struct AuthRequest;
 
     impl AuthRequest {
