@@ -104,14 +104,14 @@ impl PgSource {
             match ds.pool.prepare(&field_query.sql).await {
                 Ok(stmt) => {
                     for col in stmt.columns() {
-                        let info = column_info(col);
+                        let info = column_info(col, &layer.name);
                         if let Some(geom_col) = &layer.geometry_field {
                             if col.name() == geom_col {
                                 if info == FieldTypeInfo::Geometry {
                                     geometry_field = Some(geom_col.to_string());
                                 } else {
                                     error!(
-                                        "Unsupported geometry type in layer {} at zoom level {zoom}",
+                                        "Layer `{}`: Unsupported geometry type at zoom level {zoom}",
                                         layer.name
                                     );
                                     continue;
@@ -132,7 +132,7 @@ impl PgSource {
                 }
                 Err(e) => {
                     error!(
-                        "Field detection failed for layer {} at zoom level {zoom} - {e}",
+                        "Layer `{}`: Field detection failed at zoom level {zoom} - {e}",
                         layer.name
                     );
                     error!("Query: {}", field_query.sql);
@@ -142,7 +142,7 @@ impl PgSource {
         }
         let Some(geometry_field) = geometry_field else {
             // TODO: check for valid geometry_field in *all* zoom levels
-            error!("No geometry column found in layer {}", layer.name);
+            error!("Layer `{}`: No geometry column found", layer.name);
             return Err(TileSourceError::TypeDetectionError);
         };
         let geom_name = layer.geometry_field.as_ref().unwrap_or(&geometry_field);
@@ -163,7 +163,7 @@ impl PgSource {
                 Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
                 Err(e) => {
                     error!(
-                        "Invalid query for layer {} at zoom level {zoom} - {e}",
+                        "Layer `{}`: Invalid query at zoom level {zoom} - {e}",
                         layer.name
                     );
                     error!("Query: {}", query.sql);
@@ -358,7 +358,7 @@ impl TileRead for PgSource {
     }
 }
 
-fn column_info(col: &PgColumn) -> FieldTypeInfo {
+fn column_info(col: &PgColumn, layer_name: &str) -> FieldTypeInfo {
     let pg_type = col.type_info().name();
     // Supported column types
     // https://github.com/launchbadge/sqlx/blob/d0fbe7f/sqlx-postgres/src/type_info.rs#L469
@@ -378,16 +378,16 @@ fn column_info(col: &PgColumn) -> FieldTypeInfo {
         FieldTypeInfo::Property(col.type_info().clone())
     } else if ["NUMERIC"].contains(&pg_type) {
         warn!(
-            "Converting column `{}` with type `{}` to supported type",
-            col.type_info(),
-            col.name()
+            "Layer `{layer_name}`: Converting column `{}` with type `{}` to supported type",
+            col.name(),
+            col.type_info()
         );
         FieldTypeInfo::Property(col.type_info().clone())
     } else if ["geometry", "geography"].contains(&pg_type) {
         FieldTypeInfo::Geometry
     } else {
         warn!(
-            "Type `{}` of column `{}` not supported",
+            "Layer `{layer_name}`: Type `{}` of column `{}` not supported",
             col.type_info(),
             col.name()
         );
