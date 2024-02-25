@@ -7,7 +7,7 @@ use clap::{ArgMatches, FromArgMatches};
 use log::{info, warn};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::From;
 use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
@@ -519,6 +519,13 @@ impl VectorLayerCfg {
         }
         zoom_steps
     }
+    /// Lookup in HashMap with zoom step key
+    pub fn zoom_step_entry<T>(lookup: &HashMap<u8, T>, zoom: u8) -> Option<&T> {
+        let mut zooms = lookup.keys().cloned().collect::<Vec<_>>();
+        zooms.sort(); // sorted min zoom levels
+        let z = zooms.into_iter().rev().find(|z| zoom >= *z);
+        z.as_ref().and_then(|z| lookup.get(z))
+    }
     /// Query config for zoom level
     fn query_cfg<F>(&self, level: u8, check: F) -> Option<&VectorLayerQueryCfg>
     where
@@ -527,7 +534,7 @@ impl VectorLayerCfg {
         let mut queries = self
             .queries
             .iter()
-            .map(|q| (q.minzoom, q.maxzoom.unwrap_or(22), q))
+            .map(|q| (q.minzoom, q.maxzoom.unwrap_or(99), q))
             .collect::<Vec<_>>();
         queries.sort_by_key(|t| t.0);
         // Start at highest zoom level and find first match

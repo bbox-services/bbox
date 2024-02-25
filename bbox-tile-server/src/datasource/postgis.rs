@@ -98,14 +98,14 @@ impl PgSource {
             return Err(TileSourceError::TypeDetectionError);
         }
 
-        let mut fields = Vec::new();
+        let mut all_fields: HashMap<u8, Vec<FieldInfo>> = HashMap::new();
         let mut geometry_field = None;
 
         let zoom_steps = layer.zoom_steps();
         for zoom in &zoom_steps {
             let layer_query = layer.query(*zoom);
             let field_query = SqlQuery::build_field_query(layer, layer_query);
-            fields = Vec::new(); // TODO: check consistency in all zoom levels
+            let mut fields = Vec::new();
             match ds.pool.prepare(&field_query.sql).await {
                 Ok(stmt) => {
                     for col in stmt.columns() {
@@ -144,6 +144,7 @@ impl PgSource {
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
+            all_fields.insert(*zoom, fields);
         }
         let Some(geometry_field) = geometry_field else {
             // TODO: check for valid geometry_field in *all* zoom levels
@@ -155,10 +156,12 @@ impl PgSource {
         let mut layer_queries = HashMap::new();
         for zoom in layer.minzoom()..=layer.maxzoom(22) {
             let layer_query = layer.query(zoom);
+            let fields =
+                VectorLayerCfg::zoom_step_entry(&all_fields, zoom).expect("invalid zoom steps");
             let query = SqlQuery::build_tile_query(
                 layer,
                 geom_name,
-                &fields,
+                fields,
                 grid_srid,
                 zoom,
                 layer_query,
@@ -184,6 +187,15 @@ impl PgSource {
             };
             layer_queries.insert(zoom, query_info);
         }
+
+        // collect fields from all zoom step levels
+        let fields = all_fields
+            .into_values()
+            .flatten()
+            .map(|f| (f.name.clone(), f))
+            .collect::<HashMap<_, _>>()
+            .into_values()
+            .collect::<Vec<_>>();
 
         Ok(PgMvtLayer {
             fields,
