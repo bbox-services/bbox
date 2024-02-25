@@ -95,6 +95,7 @@ impl Datasources {
     }
 }
 
+#[derive(Debug)]
 pub struct ItemsResult {
     pub features: Vec<CoreFeature>,
     pub number_matched: u64,
