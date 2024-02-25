@@ -485,6 +485,7 @@ async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
 
     // docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
 
