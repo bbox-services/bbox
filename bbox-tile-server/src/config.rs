@@ -243,7 +243,7 @@ impl TileserverCfg {
                 t_rex::read_config(t_rex_config.to_str().expect("invalid string"))
                     .unwrap_or_else(error_exit);
             cfg = t_rex_cfg.into();
-            info!("Imported t-rex config: \n{}", cfg.as_toml());
+            info!("Imported t-rex config:\n{}", cfg.as_toml());
         }
 
         // Get config from CLI

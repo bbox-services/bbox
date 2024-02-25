@@ -72,9 +72,14 @@ impl PgSource {
 
         let mut layers = HashMap::new();
         for layer in &cfg.layers {
-            if let Ok(mvt_layer) = Self::setup_layer(ds, layer, grid_srid, cfg.postgis2).await {
-                layers.insert(layer.name.clone(), mvt_layer);
-            }
+            match Self::setup_layer(ds, layer, grid_srid, cfg.postgis2).await {
+                Ok(mvt_layer) => {
+                    layers.insert(layer.name.clone(), mvt_layer);
+                }
+                Err(_) => {
+                    error!("Layer `{}`: skipping", layer.name)
+                }
+            };
         }
         PgSource {
             ds: ds.clone(),
@@ -241,7 +246,10 @@ impl TileRead for PgSource {
                     }
                 }
             }
-            debug!("Query tile with {extent:?}");
+            debug!(
+                "Query tile {}/{}/{} with {extent:?}",
+                tile.z, tile.x, tile.y
+            );
             let mut rows = query.fetch(&self.ds.pool);
             let mut mvt_layer = MvtBuilder::new_layer(id, layer.tile_size);
             let mut cnt = 0;
