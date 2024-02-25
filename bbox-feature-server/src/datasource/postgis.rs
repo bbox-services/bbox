@@ -158,6 +158,7 @@ pub struct PgCollectionSource {
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
     temporal_column: Option<String>,
+    /// Queriable columns.
     other_columns: HashMap<String, u8>,
 }
 
@@ -485,6 +486,7 @@ async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
     use test_log::test;
 
     // docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
@@ -551,13 +553,54 @@ mod tests {
     #[test(tokio::test)]
     #[ignore]
     async fn pg_datetime_filter() {
+        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+            .await
+            .unwrap();
+        let source = PgCollectionSource {
+            ds,
+            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne.ne_10m_rivers_lake_centerlines ORDER BY fid".to_string(),
+            geometry_column: "wkb_geometry".to_string(),
+            pk_column: Some("fid".to_string()),
+            temporal_column: Some("ts".to_string()),
+            other_columns: HashMap::new(),
+        };
+
         let filter = FilterParams {
             limit: None,
             offset: None,
             bbox: None,
+            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            filters: HashMap::new(),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 1);
+
+        // Combined with bbox
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
+            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            filters: HashMap::new(),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 1);
+
+        // Outside of bbox
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             datetime: Some("2024-01-01T00:00:00Z".to_string()),
             filters: HashMap::new(),
         };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 0);
+    }
+
+    #[test(tokio::test)]
+    #[ignore]
+    async fn pg_field_filter() {
         let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
             .await
             .unwrap();
@@ -567,9 +610,82 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
-            other_columns: HashMap::new(),
+            other_columns: HashMap::from([("name".to_string(), 0)]),
+        };
+
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: None,
+            filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 2);
+
+        // Existing filter column, but not queriable
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: None,
+            filters: HashMap::from([("scalerank".to_string(), "4".to_string())]),
+        };
+        assert!(source.items(&filter).await.is_err());
+
+        // Existing filter column, but not queriable
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: None,
+            filters: HashMap::from([("foo".to_string(), "bar".to_string())]),
+        };
+        assert!(source.items(&filter).await.is_err());
+
+        // Combined with bbox
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
+            // WGS84: 5.690918,45.890008,10.964355,47.665387
+            datetime: None,
+            filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 2);
+
+        // outside bbox
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: Some("633510.0904,5762740.4365,633511,5762741".to_string()),
+            datetime: None,
+            filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 0);
+
+        // Combined with datetime
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 1);
+
+        // Other datetime
+        let filter = FilterParams {
+            limit: None,
+            offset: None,
+            bbox: None,
+            datetime: Some("2023-10-01T00:00:00Z".to_string()),
+            filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+        };
+        let items = source.items(&filter).await.unwrap();
+        assert_eq!(items.features.len(), 0);
     }
 }

@@ -59,7 +59,7 @@ impl FilterParams {
         .join("&");
 
         for (key, val) in &self.filters {
-            args.push_str(&format!("&{}={}", key, val))
+            args.push_str(&format!("&{key}={val}"))
         }
         if !args.is_empty() {
             // replace & with ?
