@@ -9,6 +9,7 @@ use bbox_core::service::CoreService;
 use bbox_core::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
+use std::collections::HashMap;
 
 /// the feature collections in the dataset
 async fn collections(
@@ -67,10 +68,52 @@ async fn features(
     inventory: web::Data<Inventory>,
     req: HttpRequest,
     collection_id: web::Path<String>,
-    filter: web::Query<FilterParams>,
 ) -> Result<HttpResponse, Error> {
     if let Some(collection) = inventory.core_collection(&collection_id) {
-        if let Some(features) = inventory.collection_items(&collection_id, &filter).await {
+        let mut filters =
+            match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
+                Ok(f) => f
+                    .iter()
+                    .map(|k| (k.0.to_lowercase(), k.1.to_owned()))
+                    .collect::<HashMap<String, String>>(),
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
+            };
+
+        let bbox = filters.remove("bbox");
+        let datetime = filters.remove("datetime");
+
+        let offset = if let Some(offset_str) = filters.get("offset") {
+            match offset_str.parse::<u32>() {
+                Ok(o) => {
+                    filters.remove("offset");
+                    Some(o)
+                }
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
+            }
+        } else {
+            None
+        };
+        let limit = if let Some(limit_str) = filters.get("limit") {
+            match limit_str.parse::<u32>() {
+                Ok(o) => {
+                    filters.remove("limit");
+                    Some(o)
+                }
+                Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
+            }
+        } else {
+            None
+        };
+
+        let fp = FilterParams {
+            offset,
+            limit,
+            bbox,
+            datetime,
+            filters,
+        };
+
+        if let Some(features) = inventory.collection_items(&collection_id, &fp).await {
             if html_accepted(&req).await {
                 render_endpoint(
                     &TEMPLATES,

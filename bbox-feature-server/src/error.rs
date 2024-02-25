@@ -13,6 +13,8 @@ pub enum Error {
     // Database errors
     #[error(transparent)]
     DbError(#[from] sqlx::Error),
+    #[error("Query parameters error")]
+    QueryParams,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
