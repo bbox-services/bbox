@@ -265,10 +265,10 @@ impl CollectionSource for PgCollectionSource {
                     // detect if value has wildcards
                     if self.other_columns.get(key).is_some() {
                         let val = if val.rfind('*').is_some() {
-                            separated.push(format!("{key} like "));
+                            separated.push(format!("{key}::text like "));
                             val.replace('*', "%")
                         } else {
-                            separated.push(format!("{key}="));
+                            separated.push(format!("{key}::text="));
                             val.to_string()
                         };
                         separated.push_bind_unseparated(val);
