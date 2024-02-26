@@ -1,3 +1,5 @@
+//! Tile source implementations.
+
 pub mod mbtiles;
 mod mvt;
 pub mod pmtiles;
@@ -84,11 +86,11 @@ pub trait TileRead: DynClone + Send + Sync {
             SourceType::Raster => &Format::Png, // TODO: support for "image/png; mode=8bit"
         }
     }
-    /// TileJSON layer metadata (https://github.com/mapbox/tilejson-spec)
+    /// TileJSON layer metadata (<https://github.com/mapbox/tilejson-spec>)
     async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError>;
     /// Layer metadata
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError>;
-    /// MBTiles metadata.json (https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md)
+    /// MBTiles metadata.json (<https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md>)
     async fn mbtiles_metadata(
         &self,
         tileset: &TileSetCfg,

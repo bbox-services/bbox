@@ -1,3 +1,5 @@
+//! PostGIS feature source.
+
 use crate::config::PostgisCollectionCfg;
 use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,

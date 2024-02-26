@@ -1,6 +1,6 @@
 pub mod cli;
 mod config;
-mod datasource;
+pub mod datasource;
 mod endpoints;
 mod mbtiles_ds;
 mod service;

@@ -1,3 +1,5 @@
+//! FCGI tile sources like QGIS Server or UMN Mapsever.
+
 use crate::config::WmsFcgiSourceParamsCfg;
 use crate::datasource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
 use crate::service::{QueryExtent, TileService};

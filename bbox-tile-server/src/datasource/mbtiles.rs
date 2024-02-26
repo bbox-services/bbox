@@ -1,3 +1,5 @@
+//! MBTiles tile source.
+
 use crate::config::TileSetCfg;
 use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,

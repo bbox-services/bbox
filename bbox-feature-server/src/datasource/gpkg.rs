@@ -1,3 +1,5 @@
+//! GeoPackage feature source.
+
 use crate::config::GpkgCollectionCfg;
 use crate::datasource::{
     AutoscanCollectionDatasource, CollectionDatasource, CollectionSource, CollectionSourceCfg,

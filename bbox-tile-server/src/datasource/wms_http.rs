@@ -1,3 +1,5 @@
+//! HTTP tile sources like remote WMS services.
+
 use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,

@@ -1,3 +1,5 @@
+//! PMTiles tile source.
+
 use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };

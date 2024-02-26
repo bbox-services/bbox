@@ -1,3 +1,4 @@
+//! Tile storage implementations.
 pub mod files;
 pub mod mbtiles;
 pub mod pmtiles;
