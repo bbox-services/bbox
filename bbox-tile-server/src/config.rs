@@ -92,7 +92,6 @@ pub struct WmsFcgiSourceParamsCfg {
 pub struct PostgisSourceParamsCfg {
     /// Name of tileserver.source config (Default: first with matching type)
     // maybe we should allow direct DS URLs?
-    // t-rex has datasource on layer level!
     pub datasource: Option<String>,
     pub extent: Option<ExtentCfg>,
     pub minzoom: Option<u8>,
@@ -103,6 +102,9 @@ pub struct PostgisSourceParamsCfg {
     /// PostGIS 2 compatible query (without ST_AsMVT)
     #[serde(default)]
     pub postgis2: bool,
+    /// Add diagnostics layer
+    #[serde(default)]
+    pub diagnostics: bool,
     #[serde(rename = "layer")]
     pub layers: Vec<VectorLayerCfg>,
 }
@@ -339,6 +341,7 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
             .tilesets
             .into_iter()
             .map(|ts| {
+                // t-rex has datasource on layer level, bbox on tileset level
                 let dsnames = ts
                     .layers
                     .iter()
@@ -420,6 +423,7 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
                     start_zoom: ts.start_zoom,
                     attribution: ts.attribution,
                     postgis2: false,
+                    diagnostics: false,
                     layers,
                 };
                 TileSetCfg {

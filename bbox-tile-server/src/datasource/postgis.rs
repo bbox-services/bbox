@@ -2,6 +2,7 @@
 
 use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
 use crate::datasource::{
+    diagnostics::diagnostics_layer,
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::HttpRequestParams,
@@ -27,6 +28,7 @@ use tilejson::{tilejson, TileJSON};
 pub struct PgSource {
     ds: PgDatasource,
     layers: HashMap<String, PgMvtLayer>, // t-rex uses BTreeMap
+    diagnostics: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -86,6 +88,7 @@ impl PgSource {
         PgSource {
             ds: ds.clone(),
             layers,
+            diagnostics: cfg.diagnostics,
         }
     }
     async fn setup_layer(
@@ -224,7 +227,7 @@ impl TileRead for PgSource {
     ) -> Result<TileResponse, TileSourceError> {
         let grid = service.grid(tms_id)?;
         let extent_info = service.xyz_extent(tms_id, tile)?;
-        let extent = extent_info.extent;
+        let extent = &extent_info.extent;
         let mut mvt = MvtBuilder::new();
         for (id, layer) in &self.layers {
             let Some(query_info) = layer.queries.get(&tile.z) else {
@@ -313,6 +316,10 @@ impl TileRead for PgSource {
                 }
             }
             mvt.push_layer(mvt_layer);
+        }
+        if self.diagnostics {
+            let layer = diagnostics_layer(tile, &extent_info)?;
+            mvt.push_layer(layer);
         }
         let blob = mvt.into_blob()?;
         let content_type = Some("application/x-protobuf".to_string());

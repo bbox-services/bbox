@@ -1019,6 +1019,7 @@ dependencies = [
  "dyn-clone",
  "futures",
  "futures-util",
+ "geo-types",
  "geozero",
  "indicatif",
  "log",
