@@ -1,5 +1,6 @@
 //! Tile source implementations.
 
+pub mod diagnostics;
 pub mod mbtiles;
 mod mvt;
 pub mod pmtiles;
