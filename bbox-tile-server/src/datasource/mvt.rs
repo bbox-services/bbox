@@ -1,6 +1,7 @@
 use crate::datasource::TileSourceError;
 use geozero::{mvt, mvt::Message};
 
+/// MVT tile builder helper.
 pub struct MvtBuilder {
     tile: mvt::Tile,
     tags: mvt::TagsBuilder<String>,

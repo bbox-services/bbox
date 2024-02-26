@@ -1,3 +1,5 @@
+//! Feature source implementations.
+
 use crate::config::{CollectionSourceCfg, ConfiguredCollectionCfg};
 use crate::error::{Error, Result};
 use crate::filter_params::FilterParams;

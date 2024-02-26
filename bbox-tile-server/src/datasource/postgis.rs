@@ -1,3 +1,5 @@
+//! PostGIS tile source.
+
 use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
