@@ -12,7 +12,7 @@ use bbox_core::pg_ds::PgDatasource;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
 use sqlx::{postgres::PgRow, Postgres, QueryBuilder, Row};
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 pub type Datasource = PgDatasource;
 
@@ -68,13 +68,13 @@ impl CollectionDatasource for PgDatasource {
             warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
         }
         let other_columns = if let Some(fields) = srccfg.queryable_fields.clone() {
-            let mut hm = HashMap::new();
+            let mut hm = HashSet::new();
             for field in fields {
-                hm.insert(field, 0);
+                hm.insert(field);
             }
             hm
         } else {
-            HashMap::new()
+            HashSet::new()
         };
 
         let source = PgCollectionSource {
@@ -159,7 +159,7 @@ pub struct PgCollectionSource {
     pk_column: Option<String>,
     temporal_column: Option<String>,
     /// Queriable columns.
-    other_columns: HashMap<String, u8>,
+    other_columns: HashSet<String>,
 }
 
 #[async_trait]
@@ -518,7 +518,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
-            other_columns: HashMap::new(),
+            other_columns: HashSet::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
@@ -544,7 +544,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
-            other_columns: HashMap::new(),
+            other_columns: HashSet::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
@@ -562,7 +562,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
-            other_columns: HashMap::new(),
+            other_columns: HashSet::new(),
         };
 
         let filter = FilterParams {
@@ -610,7 +610,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
-            other_columns: HashMap::from([("name".to_string(), 0)]),
+            other_columns: HashSet::from([("name".to_string())]),
         };
 
         let filter = FilterParams {
