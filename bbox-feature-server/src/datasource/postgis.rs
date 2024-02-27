@@ -220,8 +220,10 @@ impl CollectionSource for PgCollectionSource {
                     }
                     if parts.len() == 1 {
                         if let TemporalType::DateTime(dt) = parts[0] {
-                            builder.push(format!(" {temporal_column} = '{}'",
-                                dt.to_rfc3339_opts(SecondsFormat::Millis, true)));
+                            builder.push(format!(
+                                " {temporal_column} = '{}'",
+                                dt.to_rfc3339_opts(SecondsFormat::Millis, true)
+                            ));
                         }
                     } else {
                         match parts[0] {
@@ -231,14 +233,18 @@ impl CollectionSource for PgCollectionSource {
                                     return Err(Error::QueryParams);
                                 }
                                 TemporalType::DateTime(dt) => {
-                                    builder.push(format!(" {temporal_column} <= '{}'",
-                                        dt.to_rfc3339_opts(SecondsFormat::Millis, true)));
+                                    builder.push(format!(
+                                        " {temporal_column} <= '{}'",
+                                        dt.to_rfc3339_opts(SecondsFormat::Millis, true)
+                                    ));
                                 }
                             },
                             TemporalType::DateTime(dt1) => match parts[1] {
                                 TemporalType::Open => {
-                                    builder.push(format!(" {temporal_column} >= '{}'",
-                                        dt1.to_rfc3339_opts(SecondsFormat::Millis,true)));
+                                    builder.push(format!(
+                                        " {temporal_column} >= '{}'",
+                                        dt1.to_rfc3339_opts(SecondsFormat::Millis, true)
+                                    ));
                                 }
                                 TemporalType::DateTime(dt2) => {
                                     builder.push(format!(
