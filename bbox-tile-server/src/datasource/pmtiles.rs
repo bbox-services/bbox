@@ -51,6 +51,7 @@ impl TileRead for PmtilesStoreReader {
         Ok(vec![LayerInfo {
             name: self.path.to_string_lossy().to_string(), // TODO: file name only
             geometry_type: None,
+            style: None,
         }])
     }
 }

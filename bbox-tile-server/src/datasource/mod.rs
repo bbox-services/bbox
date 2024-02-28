@@ -64,6 +64,8 @@ pub enum SourceType {
 pub struct LayerInfo {
     pub name: String,
     pub geometry_type: Option<String>,
+    // MB JSON style
+    pub style: Option<serde_json::Value>,
 }
 
 #[async_trait]
