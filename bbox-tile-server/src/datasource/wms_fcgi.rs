@@ -113,6 +113,7 @@ impl TileRead for WmsFcgiSource {
         Ok(vec![LayerInfo {
             name: self.project.clone(), // TODO: unique name in tileset
             geometry_type: None,
+            style: None,
         }])
     }
 }

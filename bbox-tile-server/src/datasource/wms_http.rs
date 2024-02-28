@@ -94,6 +94,7 @@ impl TileRead for WmsHttpSource {
         Ok(vec![LayerInfo {
             name: "WmsHttpSource".to_string(), // TODO: unique name in tileset
             geometry_type: None,
+            style: None,
         }])
     }
 }

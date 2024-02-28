@@ -50,6 +50,7 @@ impl TileRead for MbtilesStore {
             .map(|l| LayerInfo {
                 name: l.id.clone(),
                 geometry_type: None,
+                style: None,
             })
             .collect();
         Ok(layers)

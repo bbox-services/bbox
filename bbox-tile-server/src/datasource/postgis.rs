@@ -373,14 +373,22 @@ impl TileRead for PgSource {
         Ok(tj)
     }
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {
-        let layers = self
+        let mut layers: Vec<LayerInfo> = self
             .layers
             .iter()
             .map(|(id, layer)| LayerInfo {
                 name: id.clone(),
                 geometry_type: layer.geometry_type.clone(),
+                style: None,
             })
             .collect();
+        if self.diagnostics {
+            layers.push(LayerInfo {
+                name: "diagnostics".to_string(),
+                geometry_type: None,
+                style: None,
+            });
+        }
         Ok(layers)
     }
 }
