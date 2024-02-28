@@ -9,6 +9,7 @@ use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
+use chrono::SecondsFormat;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
 use sqlx::{postgres::PgRow, Postgres, QueryBuilder, Row};
@@ -37,6 +38,7 @@ impl CollectionDatasource for PgDatasource {
             warn!("Datasource`{id}`: configuration `table_name` ignored, using `sql` instead");
         }
         let temporal_column = srccfg.temporal_field.clone();
+        let temporal_end_column = srccfg.temporal_end_field.clone();
         let (pk_column, geometry_column, sql) = if let Some(table_name) = &srccfg.table_name {
             let public = "public".to_string();
             let table_schema = srccfg.table_schema.as_ref().unwrap_or(&public);
@@ -83,6 +85,7 @@ impl CollectionDatasource for PgDatasource {
             geometry_column,
             pk_column,
             temporal_column,
+            temporal_end_column,
             other_columns,
         };
 
@@ -158,6 +161,7 @@ pub struct PgCollectionSource {
     /// Primary key column, None if multi column key.
     pk_column: Option<String>,
     temporal_column: Option<String>,
+    temporal_end_column: Option<String>,
     /// Queriable columns.
     other_columns: HashSet<String>,
 }
@@ -205,6 +209,7 @@ impl CollectionSource for PgCollectionSource {
             }
         }
         if let Some(temporal_column) = temporal_column {
+            let temporal_end_column = self.temporal_end_column.as_ref().unwrap_or(temporal_column);
             match filter.temporal() {
                 Ok(Some(parts)) => {
                     if where_term {
@@ -215,7 +220,10 @@ impl CollectionSource for PgCollectionSource {
                     }
                     if parts.len() == 1 {
                         if let TemporalType::DateTime(dt) = parts[0] {
-                            builder.push(format!(" {temporal_column} = '{}'", dt,));
+                            builder.push(format!(
+                                " {temporal_column} = '{}'",
+                                dt.to_rfc3339_opts(SecondsFormat::Millis, true)
+                            ));
                         }
                     } else {
                         match parts[0] {
@@ -225,17 +233,25 @@ impl CollectionSource for PgCollectionSource {
                                     return Err(Error::QueryParams);
                                 }
                                 TemporalType::DateTime(dt) => {
-                                    builder.push(format!(" {temporal_column} <= '{}'", dt,));
+                                    builder.push(format!(
+                                        " {temporal_column} <= '{}'",
+                                        dt.to_rfc3339_opts(SecondsFormat::Millis, true)
+                                    ));
                                 }
                             },
                             TemporalType::DateTime(dt1) => match parts[1] {
                                 TemporalType::Open => {
-                                    builder.push(format!(" {temporal_column} >= '{}'", dt1,));
+                                    builder.push(format!(
+                                        " {temporal_column} >= '{}'",
+                                        dt1.to_rfc3339_opts(SecondsFormat::Millis, true)
+                                    ));
                                 }
                                 TemporalType::DateTime(dt2) => {
                                     builder.push(format!(
-                                        " {temporal_column} >= '{}' and {temporal_column} <= '{}'",
-                                        dt1, dt2
+                                        " {temporal_column} >= '{}' and {temporal_end_column} <= '{}'",
+                                            dt1.to_rfc3339_opts(SecondsFormat::Millis, true),
+                                            dt2.to_rfc3339_opts(SecondsFormat::Millis, true)
+
                                     ));
                                 }
                             },
@@ -272,23 +288,6 @@ impl CollectionSource for PgCollectionSource {
                             val.to_string()
                         };
                         separated.push_bind_unseparated(val);
-                        /*
-                        match key_type.as_str() {
-                            "String" => {
-                                separated.push_bind_unseparated(val);
-                            },
-                            "Numeric" => {
-                                let num = match val.parse::<i64>() {
-                                    Ok(n) => n,
-                                    Err(_) => return Err(Error::QueryParams)
-                                };
-                                separated.push_bind_unseparated(num);
-                            },
-                            &_ => {
-                                return Err(Error::QueryParams)
-                            },
-                        }
-                            */
                     } else {
                         error!("Invalid query param {key}");
                         return Err(Error::QueryParams);
@@ -518,6 +517,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
+            temporal_end_column: None,
             other_columns: HashSet::new(),
         };
         let items = source.items(&filter).await.unwrap();
@@ -544,6 +544,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
+            temporal_end_column: None,
             other_columns: HashSet::new(),
         };
         let items = source.items(&filter).await.unwrap();
@@ -562,6 +563,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
+            temporal_end_column: None,
             other_columns: HashSet::new(),
         };
 
@@ -610,6 +612,7 @@ mod tests {
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
+            temporal_end_column: None,
             other_columns: HashSet::from([("name".to_string())]),
         };
 
