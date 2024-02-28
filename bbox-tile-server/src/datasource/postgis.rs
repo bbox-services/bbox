@@ -2,7 +2,6 @@
 
 use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
 use crate::datasource::{
-    diagnostics::diagnostics_layer,
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::HttpRequestParams,
@@ -302,10 +301,10 @@ impl TileRead for PgSource {
                                 }
                             }
                         }
-                        mvt.add_feature_attribute(&field.name, val, &mut feat)?;
+                        mvt_layer.add_feature_attribute(&mut feat, &field.name, val)?;
                     } // skip null values
                 }
-                mvt_layer.features.push(feat);
+                mvt_layer.push_feature(feat);
                 cnt += 1;
                 if cnt == query_limit {
                     info!(
@@ -318,8 +317,7 @@ impl TileRead for PgSource {
             mvt.push_layer(mvt_layer);
         }
         if self.diagnostics {
-            let layer = diagnostics_layer(tile, &extent_info)?;
-            mvt.push_layer(layer);
+            mvt.add_diagnostics_layer(tile, &extent_info)?;
         }
         let blob = mvt.into_blob()?;
         let content_type = Some("application/x-protobuf".to_string());
