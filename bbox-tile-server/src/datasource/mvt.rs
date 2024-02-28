@@ -81,7 +81,7 @@ impl MvtBuilder {
         let extent = &extent_info.extent;
         const SIZE: u32 = 4096;
         const SIZE_F: f64 = 4096.0;
-        let mut layer = MvtBuilder::new_layer("diagnostics", SIZE);
+        let mut layer = MvtBuilder::new_layer("diagnostics-tile", SIZE);
         let geom: geo_types::Geometry<f64> = geo_types::Polygon::new(
             geo_types::LineString::from(vec![
                 (0., 0.),
@@ -93,10 +93,18 @@ impl MvtBuilder {
             vec![],
         )
         .into();
+        let feat = geom.to_mvt_unscaled()?;
+        layer.push_feature(feat);
+        self.push_layer(layer);
+
+        let mut layer = MvtBuilder::new_layer("diagnostics-label", SIZE);
+        let geom: geo_types::Geometry<f64> = geo_types::Point::new(SIZE_F / 2., SIZE_F / 2.).into();
         let mut feat = geom.to_mvt_unscaled()?;
-        layer.add_feature_attribute(&mut feat, "x", mvt::TileValue::Uint(tile.x).into())?;
-        layer.add_feature_attribute(&mut feat, "y", mvt::TileValue::Uint(tile.y).into())?;
-        layer.add_feature_attribute(&mut feat, "z", mvt::TileValue::Uint(tile.z as u64).into())?;
+        layer.add_feature_attribute(
+            &mut feat,
+            "zxy",
+            mvt::TileValue::Str(format!("{}/{}/{}", tile.z, tile.x, tile.y)).into(),
+        )?;
         layer.add_feature_attribute(&mut feat, "top", mvt::TileValue::Double(extent.top).into())?;
         layer.add_feature_attribute(
             &mut feat,

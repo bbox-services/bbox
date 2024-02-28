@@ -14,6 +14,7 @@ use bbox_core::Format;
 use futures::TryStreamExt;
 use geozero::{mvt, wkb, ToMvt};
 use log::{debug, error, info, warn};
+use serde_json::json;
 use sqlx::{
     postgres::{PgColumn, PgRow, PgStatement, PgTypeInfo},
     Column, Executor, Row, Statement, TypeInfo,
@@ -384,9 +385,14 @@ impl TileRead for PgSource {
             .collect();
         if self.diagnostics {
             layers.push(LayerInfo {
-                name: "diagnostics".to_string(),
-                geometry_type: None,
+                name: "diagnostics-tile".to_string(),
+                geometry_type: Some("line".to_string()),
                 style: None,
+            });
+            layers.push(LayerInfo {
+                name: "diagnostics-label".to_string(),
+                geometry_type: Some("symbol".to_string()),
+                style: Some(json!({"layout": {"text-field": "{zxy}"}})),
             });
         }
         Ok(layers)
