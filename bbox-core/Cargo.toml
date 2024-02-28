@@ -12,6 +12,7 @@ html = []
 oidc = ["openidconnect", "reqwest"]
 
 [dependencies]
+actix-cors = "0.7.0"
 actix-session = { version = "0.7", features = ["cookie-session"] }
 actix-web = { workspace = true }
 actix-web-opentelemetry = { version = "0.13", features = ["metrics-prometheus"] }

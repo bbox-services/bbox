@@ -78,16 +78,34 @@ pub struct WebserverCfg {
     public_server_url: Option<String>,
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
+    pub cors: Option<CorsCfg>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct CorsCfg {
+    pub allow_all_origins: bool,
+    // #[serde(rename = "allowed_origin")]
+    // pub allowed_origins: Vec<String>,
 }
 
 impl Default for WebserverCfg {
     fn default() -> Self {
+        let cors = if cfg!(debug_assertions) {
+            // Enable CORS for debug build
+            Some(CorsCfg {
+                allow_all_origins: true,
+            })
+        } else {
+            None
+        };
         WebserverCfg {
             server_addr: "127.0.0.1:8080".to_string(),
             worker_threads: None,
             public_server_url: None,
             tls_cert: None,
             tls_key: None,
+            cors,
         }
     }
 }

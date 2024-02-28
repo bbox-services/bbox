@@ -59,6 +59,7 @@ async fn run_service() -> std::io::Result<()> {
     let tls_config = core.tls_config();
     let mut server = HttpServer::new(move || {
         App::new()
+            .wrap(Condition::new(core.has_cors(), core.cors()))
             .wrap(Condition::new(core.has_metrics(), core.middleware()))
             .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
             .wrap(middleware::Logger::default())

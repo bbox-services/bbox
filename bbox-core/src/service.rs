@@ -6,10 +6,13 @@ use crate::logger;
 use crate::metrics::{init_metrics_exporter, no_metrics, NoMetrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use crate::tls::load_rustls_config;
+use actix_cors::Cors;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
     cookie::{time::Duration, Key},
-    middleware, web, App, HttpServer,
+    middleware,
+    middleware::Condition,
+    web, App, HttpServer,
 };
 use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
@@ -130,6 +133,17 @@ impl CoreService {
     pub fn cli_matches(&self) -> ArgMatches {
         // cli.about("BBOX tile server")
         self.cli.clone().get_matches()
+    }
+    pub fn has_cors(&self) -> bool {
+        self.web_config.cors.is_some()
+    }
+    pub fn cors(&self) -> Cors {
+        let cors_cfg = self.web_config.cors.as_ref().expect("has_cors");
+        let mut cors = Cors::default().allowed_methods(vec!["GET"]);
+        if cors_cfg.allow_all_origins {
+            cors = cors.allow_any_origin().send_wildcard();
+        }
+        cors
     }
     pub fn has_metrics(&self) -> bool {
         self.metrics.is_some()
@@ -266,6 +280,7 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
                     .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
                     .build(),
             )
+            .wrap(Condition::new(core.has_cors(), core.cors()))
             .wrap(middleware::Compress::default())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::Logger::default())
