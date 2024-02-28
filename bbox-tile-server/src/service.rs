@@ -420,7 +420,19 @@ impl TileService {
                 // Default paint type
                 let default_type = if let Some(ref geomtype) = layer.geometry_type {
                     match geomtype as &str {
+                        // Geometry types
                         "POINT" => "circle",
+                        // MVT layer rendering types
+                        "fill" => "fill",
+                        "line" => "line",
+                        "symbol" => "symbol",
+                        "circle" => "circle",
+                        "heatmap" => "heatmap",
+                        "fill-extrusion" => "fill-extrusion",
+                        "raster" => "raster",
+                        "hillshade" => "hillshade",
+                        "background" => "background",
+                        // Other geometry types
                         _ => "line",
                     }
                 } else {
@@ -447,6 +459,14 @@ impl TileService {
                 // Note: We could use source data min-/maxzoom as default to prevent overzooming
                 // or we could add style.minzoom, style.maxzoom elements
 
+                // Insert optional style
+                if let Some(style) = &layer.style {
+                    layerjson
+                        .as_object_mut()
+                        .expect("object")
+                        .append(style.clone().as_object_mut().expect("object"));
+                }
+
                 layerjson
             })
             .collect();
@@ -467,7 +487,8 @@ impl TileService {
             "metadata": {
                 "maputnik:renderer": "mbgljs"
             },
-            "glyphs": format!("{base_url}/fonts/{{fontstack}}/{{range}}.pbf"),
+            "glyphs": "https://go-spatial.github.io/carto-assets/fonts/{fontstack}/{range}.pbf",
+            // "glyphs": format!("{base_url}/fonts/{{fontstack}}/{{range}}.pbf"),
             "sources": {
                 tileset: ts_source
             },
