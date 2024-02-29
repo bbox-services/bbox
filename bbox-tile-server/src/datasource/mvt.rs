@@ -93,7 +93,47 @@ impl MvtBuilder {
             vec![],
         )
         .into();
-        let feat = geom.to_mvt_unscaled()?;
+        let mut feat = geom.to_mvt_unscaled()?;
+
+        let mut layer_stats = self
+            .tile
+            .layers
+            .iter()
+            .map(|tl| {
+                (
+                    format!("layer-{}", &tl.name),
+                    tl.encoded_len(),
+                    tl.features.len(),
+                )
+            })
+            .collect::<Vec<_>>();
+        layer_stats.sort_by(|a, b| b.1.cmp(&a.1));
+
+        layer.add_feature_attribute(
+            &mut feat,
+            "layer-total-bytes",
+            mvt::TileValue::Uint(self.tile.encoded_len() as u64).into(),
+        )?;
+        let max_bytes = 80_000; // 100% size: 80kb - TODO: find proper default + make configurable
+        layer.add_feature_attribute(
+            &mut feat,
+            "layer-total-percent",
+            mvt::TileValue::Uint(100 * self.tile.encoded_len() as u64 / max_bytes).into(),
+        )?;
+        // Top 5 layers
+        for tl in layer_stats.iter().take(5) {
+            layer.add_feature_attribute(
+                &mut feat,
+                &format!("{}-bytes", tl.0),
+                mvt::TileValue::Uint(tl.1 as u64).into(),
+            )?;
+            layer.add_feature_attribute(
+                &mut feat,
+                &format!("{}-count", tl.0),
+                mvt::TileValue::Uint(tl.2 as u64).into(),
+            )?;
+        }
+
         layer.push_feature(feat);
         self.push_layer(layer);
 
@@ -105,24 +145,29 @@ impl MvtBuilder {
             "zxy",
             mvt::TileValue::Str(format!("{}/{}/{}", tile.z, tile.x, tile.y)).into(),
         )?;
-        layer.add_feature_attribute(&mut feat, "top", mvt::TileValue::Double(extent.top).into())?;
         layer.add_feature_attribute(
             &mut feat,
-            "left",
+            "tile-top",
+            mvt::TileValue::Double(extent.top).into(),
+        )?;
+        layer.add_feature_attribute(
+            &mut feat,
+            "tile-left",
             mvt::TileValue::Double(extent.left).into(),
         )?;
         layer.add_feature_attribute(
             &mut feat,
-            "bottom",
+            "tile-bottom",
             mvt::TileValue::Double(extent.bottom).into(),
         )?;
         layer.add_feature_attribute(
             &mut feat,
-            "right",
+            "tile-right",
             mvt::TileValue::Double(extent.right).into(),
         )?;
         layer.push_feature(feat);
         self.push_layer(layer);
+
         Ok(())
     }
 }

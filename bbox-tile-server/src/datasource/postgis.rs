@@ -387,12 +387,28 @@ impl TileRead for PgSource {
             layers.push(LayerInfo {
                 name: "diagnostics-tile".to_string(),
                 geometry_type: Some("line".to_string()),
-                style: None,
+                style: Some(json!({"paint": {
+                  "line-color": "rgba(196, 43, 43, 0.81)",
+                  "line-width": [
+                    "interpolate",
+                    ["linear"],
+                    ["get", "layer-total-percent"],
+                    0, 1,
+                    100, 50
+                  ],
+                }})),
             });
             layers.push(LayerInfo {
                 name: "diagnostics-label".to_string(),
                 geometry_type: Some("symbol".to_string()),
-                style: Some(json!({"layout": {"text-field": "{zxy}"}})),
+                style: Some(json!({
+                  "layout": {"text-field": "{zxy}"},
+                  "paint": {
+                    "text-color": "rgba(196, 43, 43, 1)",
+                    "text-halo-width": 2,
+                    "text-halo-color": "rgba(255, 255, 255, 1)"
+                  }
+                })),
             });
         }
         Ok(layers)
