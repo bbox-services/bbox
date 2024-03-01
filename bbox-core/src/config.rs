@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::PathBuf;
 
+pub static URL: OnceCell<String> = OnceCell::new();
+
 /// Application configuration singleton
 pub fn app_config() -> &'static Figment {
     static CONFIG: OnceCell<Figment> = OnceCell::new();
@@ -74,6 +76,7 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 #[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {
     pub server_addr: String,
+    pub url: String,
     worker_threads: Option<usize>,
     public_server_url: Option<String>,
     pub tls_cert: Option<String>,
@@ -101,6 +104,7 @@ impl Default for WebserverCfg {
         };
         WebserverCfg {
             server_addr: "127.0.0.1:8080".to_string(),
+            url: "http://127.0.0.1:8080".to_string(),
             worker_threads: None,
             public_server_url: None,
             tls_cert: None,
@@ -112,7 +116,9 @@ impl Default for WebserverCfg {
 
 impl WebserverCfg {
     pub fn from_config() -> Self {
-        from_config_opt_or_exit("webserver").unwrap_or_default()
+        let webcfg: WebserverCfg = from_config_opt_or_exit("webserver").unwrap_or_default();
+        URL.set(webcfg.url.to_string()).unwrap();
+        webcfg
     }
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())

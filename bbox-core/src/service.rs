@@ -166,6 +166,9 @@ impl CoreService {
     pub fn server_addr(&self) -> &str {
         &self.web_config.server_addr
     }
+    pub fn url(&self) -> &str {
+        &self.web_config.url
+    }
 }
 
 #[async_trait]
