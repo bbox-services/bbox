@@ -339,7 +339,7 @@ impl TileRead for PgSource {
         // tj.minzoom = self.minzoom;
         // tj.maxzoom = self.maxzoom;
         // tj.bounds = self.bounds;
-        let layers = self
+        let mut layers: Vec<tilejson::VectorLayer> = self
             .layers
             .iter()
             .map(|(id, layer)| {
@@ -370,6 +370,39 @@ impl TileRead for PgSource {
                 }
             })
             .collect();
+        if self.diagnostics {
+            layers.push(tilejson::VectorLayer {
+                id: "diagnostics-tile".to_string(),
+                fields: HashMap::from([
+                    (
+                        "layer-total-percent".to_string(),
+                        "Total size in bytes (uncompressed)".to_string(),
+                    ),
+                    (
+                        "layer-total-percent".to_string(),
+                        "Total size relative to reference size".to_string(),
+                    ),
+                ]),
+                description: None,
+                maxzoom: None,
+                minzoom: None,
+                other: HashMap::default(),
+            });
+            layers.push(tilejson::VectorLayer {
+                id: "diagnostics-label".to_string(),
+                fields: HashMap::from([
+                    ("zxy".to_string(), "tile number".to_string()),
+                    ("tile-top".to_string(), "tile extent".to_string()),
+                    ("tile-left".to_string(), "tile extent".to_string()),
+                    ("tile-bottom".to_string(), "tile extent".to_string()),
+                    ("tile-right".to_string(), "tile extent".to_string()),
+                ]),
+                description: None,
+                maxzoom: None,
+                minzoom: None,
+                other: HashMap::default(),
+            });
+        }
         tj.vector_layers = Some(layers);
         Ok(tj)
     }
