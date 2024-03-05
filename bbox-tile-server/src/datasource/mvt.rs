@@ -1,3 +1,4 @@
+use crate::config::TileDiagnosticsCfg;
 use crate::datasource::TileSourceError;
 use crate::service::QueryExtent;
 use geozero::{mvt, mvt::Message, ToMvt};
@@ -75,6 +76,7 @@ impl MvtBuilder {
     /// Diagnostics tile layer.
     pub fn add_diagnostics_layer(
         &mut self,
+        cfg: &TileDiagnosticsCfg,
         tile: &Xyz,
         extent_info: &QueryExtent,
     ) -> Result<(), TileSourceError> {
@@ -114,7 +116,7 @@ impl MvtBuilder {
             "layer-total-bytes",
             mvt::TileValue::Uint(self.tile.encoded_len() as u64).into(),
         )?;
-        let max_bytes = 80_000; // 100% size: 80kb - TODO: find proper default + make configurable
+        let max_bytes = cfg.reference_size.unwrap_or(1_000_000); // 100% size 1MB uncompressed (compressed ~50%)
         layer.add_feature_attribute(
             &mut feat,
             "layer-total-percent",

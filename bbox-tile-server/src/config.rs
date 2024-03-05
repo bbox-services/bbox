@@ -103,8 +103,7 @@ pub struct PostgisSourceParamsCfg {
     #[serde(default)]
     pub postgis2: bool,
     /// Add diagnostics layer
-    #[serde(default)]
-    pub diagnostics: bool,
+    pub diagnostics: Option<TileDiagnosticsCfg>,
     #[serde(rename = "layer")]
     pub layers: Vec<VectorLayerCfg>,
 }
@@ -116,6 +115,13 @@ pub struct ExtentCfg {
     pub miny: f64,
     pub maxx: f64,
     pub maxy: f64,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct TileDiagnosticsCfg {
+    /// Maximal tile size (uncompressed)
+    pub reference_size: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -423,7 +429,7 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
                     start_zoom: ts.start_zoom,
                     attribution: ts.attribution,
                     postgis2: false,
-                    diagnostics: false,
+                    diagnostics: None,
                     layers,
                 };
                 TileSetCfg {
