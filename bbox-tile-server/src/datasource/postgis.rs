@@ -33,7 +33,6 @@ pub struct PgSource {
 
 #[derive(Clone, Debug)]
 pub struct PgMvtLayer {
-    geometry_field: String,
     geometry_type: Option<String>,
     /// ST_AsMvt returns geometries in tile coordinate system
     tile_coord_sys: bool,
@@ -59,6 +58,7 @@ pub enum FieldTypeInfo {
 struct QueryInfo {
     stmt: PgStatement<'static>,
     params: Vec<QueryParam>,
+    geometry_field: String,
     fields: Vec<FieldInfo>,
 }
 
@@ -103,13 +103,13 @@ impl PgSource {
             return Err(TileSourceError::TypeDetectionError);
         }
 
-        let mut all_fields: HashMap<u8, Vec<FieldInfo>> = HashMap::new();
-        let mut geometry_field = None;
+        let mut zoom_step_fields: HashMap<u8, (Vec<FieldInfo>, String)> = HashMap::new();
 
         let zoom_steps = layer.zoom_steps();
         for zoom in &zoom_steps {
             let layer_query = layer.query(*zoom);
             let field_query = SqlQuery::build_field_query(layer, layer_query);
+            let mut geometry_field = None;
             let mut fields = Vec::new();
             match ds.pool.prepare(&field_query.sql).await {
                 Ok(stmt) => {
@@ -145,24 +145,24 @@ impl PgSource {
                         "Layer `{}`: Field detection failed at zoom level {zoom} - {e}",
                         layer.name
                     );
-                    error!("Query: {}", field_query.sql);
+                    error!(" Query: {}", field_query.sql);
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
-            all_fields.insert(*zoom, fields);
+            if let Some(geometry_field) = geometry_field {
+                zoom_step_fields.insert(*zoom, (fields, geometry_field));
+            } else {
+                error!("Layer `{}`: No geometry column found", layer.name);
+                return Err(TileSourceError::TypeDetectionError);
+            };
         }
-        let Some(geometry_field) = geometry_field else {
-            // TODO: check for valid geometry_field in *all* zoom levels
-            error!("Layer `{}`: No geometry column found", layer.name);
-            return Err(TileSourceError::TypeDetectionError);
-        };
-        let geom_name = layer.geometry_field.as_ref().unwrap_or(&geometry_field);
 
         let mut layer_queries = HashMap::new();
         for zoom in layer.minzoom()..=layer.maxzoom(22) {
             let layer_query = layer.query(zoom);
-            let fields =
-                VectorLayerCfg::zoom_step_entry(&all_fields, zoom).expect("invalid zoom steps");
+            let (fields, geometry_field) = VectorLayerCfg::zoom_step_entry(&zoom_step_fields, zoom)
+                .expect("invalid zoom steps");
+            let geom_name = layer.geometry_field.as_ref().unwrap_or(geometry_field);
             let query = SqlQuery::build_tile_query(
                 layer,
                 geom_name,
@@ -193,12 +193,12 @@ impl PgSource {
                 stmt,
                 params: query.params.clone(),
                 fields: fields.clone(),
+                geometry_field: geometry_field.clone(),
             };
             layer_queries.insert(zoom, query_info);
         }
 
         Ok(PgMvtLayer {
-            geometry_field: geom_name.to_string(),
             geometry_type: layer.geometry_type.clone(),
             tile_coord_sys: !postgis2,
             tile_size: layer.tile_size,
@@ -268,7 +268,7 @@ impl TileRead for PgSource {
             let query_limit = layer.query_limit.unwrap_or(0);
             while let Some(row) = rows.try_next().await? {
                 let Some(wkb) =
-                    row.try_get::<Option<wkb::Ewkb>, _>(layer.geometry_field.as_str())?
+                    row.try_get::<Option<wkb::Ewkb>, _>(query_info.geometry_field.as_str())?
                 else {
                     // Skip NULL geometries
                     continue;
@@ -285,7 +285,7 @@ impl TileRead for PgSource {
                     )?
                 };
                 for field in &query_info.fields {
-                    if field.name == layer.geometry_field {
+                    if field.name == query_info.geometry_field {
                         continue;
                     }
                     if let Some(val) = column_value(&row, field)? {
