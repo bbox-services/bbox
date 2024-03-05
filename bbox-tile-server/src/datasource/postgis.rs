@@ -33,7 +33,6 @@ pub struct PgSource {
 
 #[derive(Clone, Debug)]
 pub struct PgMvtLayer {
-    fields: Vec<FieldInfo>,
     geometry_field: String,
     geometry_type: Option<String>,
     /// ST_AsMvt returns geometries in tile coordinate system
@@ -49,12 +48,6 @@ pub struct PgMvtLayer {
     queries: HashMap<u8, QueryInfo>,
 }
 
-#[derive(Clone, Debug)]
-pub struct FieldInfo {
-    pub name: String,
-    pub info: FieldTypeInfo,
-}
-
 #[derive(Clone, PartialEq, Debug)]
 pub enum FieldTypeInfo {
     Property(PgTypeInfo),
@@ -66,6 +59,13 @@ pub enum FieldTypeInfo {
 struct QueryInfo {
     stmt: PgStatement<'static>,
     params: Vec<QueryParam>,
+    fields: Vec<FieldInfo>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FieldInfo {
+    pub name: String,
+    pub info: FieldTypeInfo,
 }
 
 pub type Datasource = PgDatasource;
@@ -179,31 +179,25 @@ impl PgSource {
                         "Layer `{}`: Invalid query at zoom level {zoom} - {e}",
                         layer.name
                     );
-                    error!("Query: {}", query.sql);
+                    error!(" Query: {}", query.sql);
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
             if zoom_steps.contains(&zoom) {
-                debug!("Query for minzoom {zoom}: {}", query.sql);
+                debug!(
+                    "Layer `{}`: Query for minzoom {zoom}: {}",
+                    layer.name, query.sql
+                );
             }
             let query_info = QueryInfo {
                 stmt,
                 params: query.params.clone(),
+                fields: fields.clone(),
             };
             layer_queries.insert(zoom, query_info);
         }
 
-        // collect fields from all zoom step levels
-        let fields = all_fields
-            .into_values()
-            .flatten()
-            .map(|f| (f.name.clone(), f))
-            .collect::<HashMap<_, _>>()
-            .into_values()
-            .collect::<Vec<_>>();
-
         Ok(PgMvtLayer {
-            fields,
             geometry_field: geom_name.to_string(),
             geometry_type: layer.geometry_type.clone(),
             tile_coord_sys: !postgis2,
@@ -228,6 +222,10 @@ impl TileRead for PgSource {
         let grid = service.grid(tms_id)?;
         let extent_info = service.xyz_extent(tms_id, tile)?;
         let extent = &extent_info.extent;
+        debug!(
+            "Query tile {}/{}/{} with {extent:?}",
+            tile.z, tile.x, tile.y
+        );
         let mut mvt = MvtBuilder::new();
         for (id, layer) in &self.layers {
             let Some(query_info) = layer.queries.get(&tile.z) else {
@@ -263,10 +261,7 @@ impl TileRead for PgSource {
                     }
                 }
             }
-            debug!(
-                "Query tile {}/{}/{} with {extent:?}",
-                tile.z, tile.x, tile.y
-            );
+            debug!("Query layer `{id}`");
             let mut rows = query.fetch(&self.ds.pool);
             let mut mvt_layer = MvtBuilder::new_layer(id, layer.tile_size);
             let mut cnt = 0;
@@ -289,7 +284,7 @@ impl TileRead for PgSource {
                         extent.top,
                     )?
                 };
-                for field in &layer.fields {
+                for field in &query_info.fields {
                     if field.name == layer.geometry_field {
                         continue;
                     }
@@ -309,7 +304,7 @@ impl TileRead for PgSource {
                 cnt += 1;
                 if cnt == query_limit {
                     info!(
-                        "Features of layer {id} limited to {cnt} (tile query_limit reached, zoom level {})",
+                        "Layer `{id}`: Features limited to {cnt} (tile query_limit reached, zoom level {})",
                         tile.z
                     );
                     break;
@@ -343,9 +338,15 @@ impl TileRead for PgSource {
             .layers
             .iter()
             .map(|(id, layer)| {
+                // Collected fields from all zoom step levels
                 let fields = layer
-                    .fields
-                    .iter()
+                    .queries
+                    .clone()
+                    .into_values()
+                    .flat_map(|q| q.fields)
+                    .map(|f| (f.name.clone(), f))
+                    .collect::<HashMap<_, _>>()
+                    .values()
                     .filter(|field| {
                         if let FieldTypeInfo::Property(_) = &field.info {
                             if let Some(fid_field) = &layer.fid_field {
