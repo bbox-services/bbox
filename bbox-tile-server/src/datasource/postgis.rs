@@ -43,8 +43,10 @@ pub struct PgMvtLayer {
     // description: Option<String>,
     // maxzoom: Option<u8>,
     // minzoom: Option<u8>,
-    /// Queries for all zoom levels
+    /// Queries for zoom steps
     queries: HashMap<u8, QueryInfo>,
+    /// Query zoom step for all zoom levels
+    query_zoom_steps: HashMap<u8, u8>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -69,6 +71,15 @@ pub struct FieldInfo {
 }
 
 pub type Datasource = PgDatasource;
+
+impl PgMvtLayer {
+    /// Get query for zoom level
+    fn query(&self, zoom: u8) -> Option<&QueryInfo> {
+        self.query_zoom_steps
+            .get(&zoom)
+            .and_then(|minzoom| self.queries.get(minzoom))
+    }
+}
 
 impl PgSource {
     pub async fn create(ds: &PgDatasource, cfg: &PostgisSourceParamsCfg, tms: &Tms) -> PgSource {
@@ -103,11 +114,9 @@ impl PgSource {
             return Err(TileSourceError::TypeDetectionError);
         }
 
-        let mut zoom_step_fields: HashMap<u8, (Vec<FieldInfo>, String)> = HashMap::new();
-
-        let zoom_steps = layer.zoom_steps();
-        for zoom in &zoom_steps {
-            let layer_query = layer.query(*zoom);
+        let mut layer_queries = HashMap::new();
+        for zoom in layer.zoom_steps() {
+            let layer_query = layer.query(zoom);
             let field_query = SqlQuery::build_field_query(layer, layer_query);
             let mut geometry_field = None;
             let mut fields = Vec::new();
@@ -149,24 +158,15 @@ impl PgSource {
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
-            if let Some(geometry_field) = geometry_field {
-                zoom_step_fields.insert(*zoom, (fields, geometry_field));
-            } else {
+            let Some(geometry_field) = geometry_field else {
                 error!("Layer `{}`: No geometry column found", layer.name);
                 return Err(TileSourceError::TypeDetectionError);
             };
-        }
-
-        let mut layer_queries = HashMap::new();
-        for zoom in layer.minzoom()..=layer.maxzoom(22) {
-            let layer_query = layer.query(zoom);
-            let (fields, geometry_field) = VectorLayerCfg::zoom_step_entry(&zoom_step_fields, zoom)
-                .expect("invalid zoom steps");
-            let geom_name = layer.geometry_field.as_ref().unwrap_or(geometry_field);
+            let geom_name = layer.geometry_field.as_ref().unwrap_or(&geometry_field);
             let query = SqlQuery::build_tile_query(
                 layer,
                 geom_name,
-                fields,
+                &fields,
                 grid_srid,
                 zoom,
                 layer_query,
@@ -183,12 +183,10 @@ impl PgSource {
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
-            if zoom_steps.contains(&zoom) {
-                debug!(
-                    "Layer `{}`: Query for minzoom {zoom}: {}",
-                    layer.name, query.sql
-                );
-            }
+            debug!(
+                "Layer `{}`: Query for minzoom {zoom}: {}",
+                layer.name, query.sql
+            );
             let query_info = QueryInfo {
                 stmt,
                 params: query.params.clone(),
@@ -198,6 +196,18 @@ impl PgSource {
             layer_queries.insert(zoom, query_info);
         }
 
+        // Lookup table for all zoom levels
+        let zoom_steps = layer.zoom_steps();
+        let mut query_zoom_steps = HashMap::new();
+        for zoom in layer.minzoom()..=layer.maxzoom(22) {
+            let z = zoom_steps
+                .iter()
+                .rev()
+                .find(|z| zoom >= **z)
+                .expect("invalid zoom steps");
+            query_zoom_steps.insert(zoom, *z);
+        }
+
         Ok(PgMvtLayer {
             geometry_type: layer.geometry_type.clone(),
             tile_coord_sys: !postgis2,
@@ -205,6 +215,7 @@ impl PgSource {
             fid_field: layer.fid_field.clone(),
             query_limit: layer.query_limit,
             queries: layer_queries,
+            query_zoom_steps,
         })
     }
 }
@@ -228,7 +239,7 @@ impl TileRead for PgSource {
         );
         let mut mvt = MvtBuilder::new();
         for (id, layer) in &self.layers {
-            let Some(query_info) = layer.queries.get(&tile.z) else {
+            let Some(query_info) = layer.query(tile.z) else {
                 continue;
             };
             let mut query = query_info.stmt.query();
