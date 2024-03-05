@@ -1,6 +1,6 @@
 //! PostGIS tile source.
 
-use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
+use crate::config::{PostgisSourceParamsCfg, TileDiagnosticsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
@@ -28,7 +28,7 @@ use tilejson::{tilejson, TileJSON};
 pub struct PgSource {
     ds: PgDatasource,
     layers: HashMap<String, PgMvtLayer>, // t-rex uses BTreeMap
-    diagnostics: bool,
+    diagnostics: Option<TileDiagnosticsCfg>,
 }
 
 #[derive(Clone, Debug)]
@@ -88,7 +88,7 @@ impl PgSource {
         PgSource {
             ds: ds.clone(),
             layers,
-            diagnostics: cfg.diagnostics,
+            diagnostics: cfg.diagnostics.clone(),
         }
     }
     async fn setup_layer(
@@ -317,8 +317,8 @@ impl TileRead for PgSource {
             }
             mvt.push_layer(mvt_layer);
         }
-        if self.diagnostics {
-            mvt.add_diagnostics_layer(tile, &extent_info)?;
+        if let Some(diaganostics_cfg) = &self.diagnostics {
+            mvt.add_diagnostics_layer(diaganostics_cfg, tile, &extent_info)?;
         }
         let blob = mvt.into_blob()?;
         let content_type = Some("application/x-protobuf".to_string());
@@ -370,7 +370,7 @@ impl TileRead for PgSource {
                 }
             })
             .collect();
-        if self.diagnostics {
+        if self.diagnostics.is_some() {
             layers.push(tilejson::VectorLayer {
                 id: "diagnostics-tile".to_string(),
                 fields: HashMap::from([
@@ -416,7 +416,7 @@ impl TileRead for PgSource {
                 style: None,
             })
             .collect();
-        if self.diagnostics {
+        if self.diagnostics.is_some() {
             layers.push(LayerInfo {
                 name: "diagnostics-tile".to_string(),
                 geometry_type: Some("line".to_string()),
