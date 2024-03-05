@@ -1,0 +1,117 @@
+[[datasource]]
+name = "pg"   
+[datasource.postgis]
+#url = "postgresql://mvtbench:mvtbench@mvtbenchdb/mvtbench"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
+
+[[tilestore]]
+name = "tilecache"    
+[tilestore.files]
+#base_dir = "../tiles"
+base_dir = "/tmp/mvtbench"
+
+[[tileset]]
+name = "ne_countries"
+tms = "WebMercatorQuad"
+cache = "tilecache"
+[tileset.postgis]
+minzoom = 0
+maxzoom = 6
+attribution = "Natural Earth v4"
+postgis2 = false
+[tileset.postgis.extent]
+minx = -179.97277
+miny = -83.05457
+maxx = 179.99366
+maxy = 83.23559
+
+[[tileset.postgis.layer]]
+name = "country"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTIPOLYGON"
+srid = 3857
+no_transform = false
+tile_size = 4096
+simplify = true
+tolerance = "!pixel_width!/2"
+buffer_size = 3
+make_valid = false
+shift_longitude = false
+
+[[tileset.postgis.layer.query]]
+minzoom = 0
+sql = "SELECT wkb_geometry, adm0_a3, mapcolor7 FROM ne_10m_admin_0_countries WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"
+
+[[tileset.postgis.layer]]
+name = "country-name"
+geometry_field = "wkb_geometry"
+geometry_type = "POINT"
+srid = 3857
+no_transform = false
+tile_size = 4096
+simplify = false
+tolerance = "!pixel_width!/2"
+buffer_size = 0
+make_valid = false
+shift_longitude = false
+
+[[tileset.postgis.layer.query]]
+minzoom = 0
+sql = "SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"
+
+[[tileset.postgis.layer]]
+name = "geo-lines"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+srid = 3857
+no_transform = false
+tile_size = 4096
+simplify = false
+tolerance = "!pixel_width!/2"
+buffer_size = 0
+make_valid = false
+shift_longitude = false
+
+[[tileset.postgis.layer.query]]
+minzoom = 1
+maxzoom = 4
+sql = "SELECT wkb_geometry, name FROM ne_50m_geographic_lines"
+
+[[tileset.postgis.layer.query]]
+minzoom = 5
+sql = "SELECT wkb_geometry, name FROM ne_10m_geographic_lines"
+
+[[tileset.postgis.layer]]
+name = "land-border-country"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+srid = 3857
+no_transform = false
+fid_field = "ogc_fid"
+tile_size = 4096
+simplify = true
+tolerance = "!pixel_width!/2"
+buffer_size = 0
+make_valid = false
+shift_longitude = false
+
+[[tileset.postgis.layer.query]]
+minzoom = 0
+sql = "SELECT wkb_geometry FROM ne_10m_admin_0_boundary_lines_land WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"
+
+[[tileset.postgis.layer]]
+name = "state"
+geometry_field = "wkb_geometry"
+geometry_type = "MULTILINESTRING"
+srid = 3857
+no_transform = false
+tile_size = 4096
+simplify = true
+tolerance = "!pixel_width!/2"
+buffer_size = 0
+make_valid = false
+shift_longitude = false
+
+[[tileset.postgis.layer.query]]
+minzoom = 0
+sql = "SELECT wkb_geometry, adm0_a3 FROM ne_10m_admin_1_states_provinces_lines WHERE min_zoom::integer <= !zoom! AND wkb_geometry && !bbox!"

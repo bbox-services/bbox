@@ -54,6 +54,23 @@ Run:
     ../target/release/bbox-tile-server seed --tileset=ne_extracts --s3-path=s3://tiles --maxzoom=5
 
 
+## MVT benchmark
+
+https://github.com/pka/mvt-benchmark
+
+Start DB:
+
+    just start
+
+Local file seeding benchmark:
+
+    just seed-files
+
+Results:
+
+* bbox-tile-server v0.5.0-alpha4: 6.5s
+
+
 ## S3 upload benchmarks
 
 ### s3cmd

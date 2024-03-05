@@ -1,0 +1,29 @@
+#!/usr/bin/env just --justfile
+
+set shell := ["bash", "-c"]
+
+# Start test database
+start: start-db docker-is-ready
+
+# Start test database
+[private]
+start-db:
+    docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb
+
+# Stop test database
+stop-db:
+    docker stop mvtbenchdb
+
+# Wait for the test database to be ready
+[private]
+docker-is-ready:
+    docker exec mvtbenchdb sh -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
+
+
+# Seed to dir (Equal Earth)
+seed-files: cleanup docker-is-ready
+    cargo build --release
+    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6 
+
+cleanup:
+    rm -rf /tmp/mvtbench
