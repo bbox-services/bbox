@@ -10,6 +10,16 @@ name = "tilecache"
 #base_dir = "../tiles"
 base_dir = "/tmp/mvtbench"
 
+[[tilestore]]
+name = "mbtilecache"
+[tilestore.mbtiles]
+path = "/tmp/tilecache.mbtiles"
+
+[[tilestore]]
+name = "pmtilecache"
+[tilestore.pmtiles]
+path = "/tmp/tilecache.pmtiles"
+
 [[tileset]]
 name = "ne_countries"
 tms = "WebMercatorQuad"

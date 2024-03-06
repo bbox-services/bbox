@@ -10,6 +10,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
 use par_stream::prelude::*;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tempfile::TempDir;
 use tile_grid::BoundingBox;
 use tokio::task;
@@ -335,16 +336,15 @@ impl TileService {
         let progress = progress_bar();
         let progress_main = progress.clone();
 
-        let tileset_name = Box::new(args.tileset.clone());
+        let tileset_name = Arc::new(args.tileset.clone());
         let tileset = self
             .tileset(&args.tileset)
             .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
-        let format = tileset.tile_format().clone();
-        let service = Box::new(self.clone());
+        let format = *tileset.tile_format();
+        let service = Arc::new(self.clone());
         let tms = self.grid(&tileset.tms)?;
 
         let tile_writer = tileset.store_writer.clone().unwrap();
-        let mut tile_writer_main = tile_writer.clone();
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -360,25 +360,45 @@ impl TileService {
             xyz
         });
         stream::iter(iter)
+            // .with_state((tileset_name, service))
+            // .par_then(threads, move |(xyz, state)| async move {
+            //     let (tileset, service) = state.deref();
             .par_then(threads, move |xyz| {
                 let tileset = tileset_name.clone();
                 let service = service.clone();
                 async move {
                     let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
+                    // let _ = state.send();
                     let input: BoxRead = Box::new(tile.body);
                     (xyz, input)
                 }
             })
-            .par_then(threads, move |(xyz, tile)| {
-                let mut tile_writer = tile_writer.clone();
+            .batching(|mut stream| async move {
+                let mut buffer = Vec::with_capacity(10);
+                while let Some(value) = stream.next().await {
+                    buffer.push(value);
+                    if buffer.len() >= buffer.capacity() {
+                        break;
+                    }
+                }
+                (!buffer.is_empty()).then_some((buffer, stream))
+            })
+            .with_state(tile_writer)
+            .par_then(None, |(batch, mut tile_writer)| {
+                // FIXME: multiple threads for directory writer
                 async move {
-                    tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
+                    let last_batch = batch.len() < 10; // FIXME
+                    for (xyz, tile) in batch {
+                        tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
+                    }
+                    if last_batch {
+                        tile_writer.finalize().unwrap();
+                    }
+                    let _ = tile_writer.send();
                 }
             })
-            .collect::<Vec<_>>()
+            .count()
             .await;
-
-        tile_writer_main.finalize()?;
 
         progress_main.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
