@@ -5,8 +5,10 @@ use crate::store::{
 };
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
+use futures::{prelude::*, stream};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{debug, info};
+use par_stream::prelude::*;
 use std::path::PathBuf;
 use tempfile::TempDir;
 use tile_grid::BoundingBox;
@@ -210,6 +212,10 @@ impl TileService {
             None
         };
 
+        if s3_writer.is_none() {
+            return self.par_seed(args, bbox).await;
+        }
+
         let mut tile_writer = tileset.store_writer.clone().unwrap();
 
         // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
@@ -321,6 +327,64 @@ impl TileService {
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
         );
         progress.finish_with_message(format!("{cnt} tiles generated"));
+
+        Ok(())
+    }
+
+    pub async fn par_seed(&self, args: &SeedArgs, bbox: BoundingBox) -> anyhow::Result<()> {
+        let progress = progress_bar();
+        let progress_main = progress.clone();
+
+        let tileset_name = Box::new(args.tileset.clone());
+        let tileset = self
+            .tileset(&args.tileset)
+            .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
+        let format = tileset.tile_format().clone();
+        let service = Box::new(self.clone());
+        let tms = self.grid(&tileset.tms)?;
+
+        let tile_writer = tileset.store_writer.clone().unwrap();
+        let mut tile_writer_main = tile_writer.clone();
+
+        // Number of worker threads (size >= #cores).
+        let threads = args.threads.unwrap_or(num_cpus::get());
+
+        let minzoom = args.minzoom.unwrap_or(0);
+        let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
+        let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
+        info!("Seeding tiles from level {minzoom} to {maxzoom}");
+        let iter = griditer.map(move |xyz| {
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
+            progress.set_message(path.clone());
+            progress.inc(1);
+            xyz
+        });
+        stream::iter(iter)
+            .par_then(threads, move |xyz| {
+                let tileset = tileset_name.clone();
+                let service = service.clone();
+                async move {
+                    let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
+                    let input: BoxRead = Box::new(tile.body);
+                    (xyz, input)
+                }
+            })
+            .par_then(threads, move |(xyz, tile)| {
+                let mut tile_writer = tile_writer.clone();
+                async move {
+                    tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
+                }
+            })
+            .collect::<Vec<_>>()
+            .await;
+
+        tile_writer_main.finalize()?;
+
+        progress_main.set_style(
+            ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
+        );
+        let cnt = progress_main.position() + 1;
+        progress_main.finish_with_message(format!("{cnt} tiles generated"));
 
         Ok(())
     }
