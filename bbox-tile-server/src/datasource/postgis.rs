@@ -1,6 +1,6 @@
 //! PostGIS tile source.
 
-use crate::config::{PostgisSourceParamsCfg, TileDiagnosticsCfg, VectorLayerCfg};
+use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
@@ -27,8 +27,10 @@ use tilejson::{tilejson, TileJSON};
 #[derive(Clone, Debug)]
 pub struct PgSource {
     ds: PgDatasource,
+    grid_srid: i32,
     layers: HashMap<String, PgMvtLayer>, // t-rex uses BTreeMap
-    diagnostics: Option<TileDiagnosticsCfg>,
+    /// Config with TileJSON metadata
+    config: PostgisSourceParamsCfg,
 }
 
 #[derive(Clone, Debug)]
@@ -39,10 +41,6 @@ pub struct PgMvtLayer {
     tile_size: u32,
     fid_field: Option<String>,
     query_limit: Option<u32>,
-    // TileJSON metadata
-    // description: Option<String>,
-    // maxzoom: Option<u8>,
-    // minzoom: Option<u8>,
     /// Queries for zoom steps
     queries: HashMap<u8, QueryInfo>,
     /// Query zoom step for all zoom levels
@@ -98,8 +96,9 @@ impl PgSource {
         }
         PgSource {
             ds: ds.clone(),
+            grid_srid,
             layers,
-            diagnostics: cfg.diagnostics.clone(),
+            config: cfg.clone(),
         }
     }
     async fn setup_layer(
@@ -323,7 +322,7 @@ impl TileRead for PgSource {
             }
             mvt.push_layer(mvt_layer);
         }
-        if let Some(diaganostics_cfg) = &self.diagnostics {
+        if let Some(diaganostics_cfg) = &self.config.diagnostics {
             mvt.add_diagnostics_layer(diaganostics_cfg, tile, &extent_info)?;
         }
         let blob = mvt.into_blob()?;
@@ -340,11 +339,35 @@ impl TileRead for PgSource {
     }
     async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
+        tj.attribution = Some(self.config.attribution());
+        // Minimum zoom level for which tiles are available.
+        // Optional. Default: 0. >= 0, <= 30.
+        tj.minzoom = Some(self.config.minzoom());
+        // Maximum zoom level for which tiles are available.
+        // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
+        // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
+        tj.maxzoom = Some(self.config.maxzoom());
+        let extent = self.config.get_extent();
+        tj.bounds = Some(tilejson::Bounds {
+            left: extent.minx,
+            bottom: extent.miny,
+            right: extent.maxx,
+            top: extent.maxy,
+        });
+        let center = self.config.get_center();
+        tj.center = Some(tilejson::Center {
+            longitude: center.1,
+            latitude: center.0,
+            zoom: self.config.get_start_zoom(),
+        });
         tj.other
             .insert("format".to_string(), format.file_suffix().into());
-        // tj.minzoom = self.minzoom;
-        // tj.maxzoom = self.maxzoom;
-        // tj.bounds = self.bounds;
+        if self.grid_srid != 3857 {
+            // TODO: add full grid information according to GDAL extension
+            // https://github.com/OSGeo/gdal/blob/release/3.4/gdal/ogr/ogrsf_frmts/mvt/ogrmvtdataset.cpp#L5497
+            tj.other
+                .insert("srs".to_string(), format!("EPSG:{}", self.grid_srid).into());
+        }
         let mut layers: Vec<tilejson::VectorLayer> = self
             .layers
             .iter()
@@ -382,7 +405,7 @@ impl TileRead for PgSource {
                 }
             })
             .collect();
-        if self.diagnostics.is_some() {
+        if self.config.diagnostics.is_some() {
             layers.push(tilejson::VectorLayer {
                 id: "diagnostics-tile".to_string(),
                 fields: HashMap::from([
@@ -428,7 +451,7 @@ impl TileRead for PgSource {
                 style: None,
             })
             .collect();
-        if self.diagnostics.is_some() {
+        if self.config.diagnostics.is_some() {
             layers.push(LayerInfo {
                 name: "diagnostics-tile".to_string(),
                 geometry_type: Some("line".to_string()),
