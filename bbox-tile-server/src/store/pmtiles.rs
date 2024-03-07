@@ -106,7 +106,7 @@ impl TileWriter for PmtilesStoreWriter {
     }
     async fn put_tile_mut(&mut self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
         let mut bytes: Vec<u8> = Vec::new();
-        input.read_to_end(&mut bytes).ok(); // TODO: map_err
+        input.read_to_end(&mut bytes)?;
         self.archive
             .as_mut()
             .expect("initialized")

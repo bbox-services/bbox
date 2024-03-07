@@ -5,10 +5,11 @@ use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWrite
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
+use flate2::{read::GzEncoder, Compression};
 use log::info;
 use martin_mbtiles::Metadata;
 use std::ffi::OsStr;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::Path;
 use tile_grid::Xyz;
 
@@ -72,7 +73,12 @@ impl TileWriter for MbtilesStore {
     }
     async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
         let mut bytes: Vec<u8> = Vec::new();
-        input.read_to_end(&mut bytes).ok(); // TODO: map_err
+        if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
+            let mut gz = GzEncoder::new(&mut *input, Compression::fast());
+            gz.read_to_end(&mut bytes)?;
+        } else {
+            input.read_to_end(&mut bytes)?;
+        }
         let mut conn = self.mbt.pool.acquire().await.unwrap();
         sqlx::query(
             r#"
