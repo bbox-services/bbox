@@ -108,6 +108,7 @@ pub trait TileRead: DynClone + Send + Sync {
             tilejson: self.tilejson(format).await?,
             layer_type: None,
             json: None,
+            agg_tiles_hash: None,
         })
     }
 }
