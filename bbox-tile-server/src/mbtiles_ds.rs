@@ -53,7 +53,7 @@ impl MbtilesDatasource {
             // PRAGMA page_size = 512
             // PRAGMA encoding = 'UTF-8'
             // VACUUM
-            create_flat_tables(&mut conn).await?;
+            create_flat_tables(&mut conn).await?; // create_normalized_tables(&mut conn).await?;
             create_metadata_table(&mut conn).await?;
 
             // metadata content example:

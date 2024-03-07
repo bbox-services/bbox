@@ -7,7 +7,7 @@ use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use flate2::{read::GzEncoder, Compression};
 use log::info;
-use martin_mbtiles::Metadata;
+use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
 use std::ffi::OsStr;
 use std::io::{Cursor, Read};
 use std::path::Path;
@@ -79,20 +79,17 @@ impl TileWriter for MbtilesStore {
         } else {
             input.read_to_end(&mut bytes)?;
         }
-        let mut conn = self.mbt.pool.acquire().await.unwrap();
-        sqlx::query(
-            r#"
-            INSERT OR REPLACE INTO tiles
-              (zoom_level, tile_column, tile_row, tile_data)
-              VALUES(?, ?, ?, ?)"#,
-        )
-        .bind(tile.z)
-        .bind(tile.x as i64)
-        .bind(tile.y as i64)
-        .bind(bytes)
-        .execute(&mut *conn)
-        .await
-        .unwrap(); // TODO
+        let mut conn = self.mbt.pool.acquire().await?;
+        self.mbt
+            .mbtiles
+            .insert_tiles(
+                &mut conn,
+                MbtType::Flat,
+                //MbtType::Normalized { hash_view: false }, -> "no such function: md5_hex"
+                CopyDuplicateMode::Override,
+                &[(tile.z, tile.x as u32, tile.y as u32, bytes)],
+            )
+            .await?;
         Ok(())
     }
 }
