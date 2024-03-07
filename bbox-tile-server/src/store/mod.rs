@@ -174,6 +174,8 @@ pub async fn store_writer_from_config(
                 .await
                 .unwrap_or_else(error_exit),
         ),
-        TileStoreCfg::Pmtiles(cfg) => Box::new(PmtilesStoreWriter::from_config(cfg, format)),
+        TileStoreCfg::Pmtiles(cfg) => {
+            Box::new(PmtilesStoreWriter::from_config(cfg, metadata, format))
+        }
     }
 }
