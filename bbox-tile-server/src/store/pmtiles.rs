@@ -4,6 +4,7 @@ use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWrite
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
+use flate2::{read::GzEncoder, Compression as GzCompression};
 use log::{debug, info};
 use martin_mbtiles::Metadata;
 use pmtiles::async_reader::AsyncPmTilesReader;
@@ -11,7 +12,7 @@ use pmtiles::mmap::MmapBackend;
 use pmtiles2::{util::tile_id, Compression, PMTiles, TileType};
 use serde_json::json;
 use std::fs::File;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::PathBuf;
 use tile_grid::Xyz;
 use tilejson::tilejson;
@@ -122,7 +123,12 @@ impl TileWriter for PmtilesStoreWriter {
     }
     async fn put_tile_mut(&mut self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
         let mut bytes: Vec<u8> = Vec::new();
-        input.read_to_end(&mut bytes)?;
+        if self.archive.as_ref().expect("initialized").tile_compression == Compression::GZip {
+            let mut gz = GzEncoder::new(&mut *input, GzCompression::fast());
+            gz.read_to_end(&mut bytes)?;
+        } else {
+            input.read_to_end(&mut bytes)?;
+        }
         self.archive
             .as_mut()
             .expect("initialized")
@@ -157,7 +163,11 @@ impl PmtilesStoreWriter {
             Format::Webp => TileType::WebP,
             _ => TileType::Unknown,
         };
-        archive.tile_compression = Compression::None;
+        archive.tile_compression = if *format == Format::Mvt {
+            Compression::GZip
+        } else {
+            Compression::None
+        };
         if let Some(minzoom) = metadata.tilejson.minzoom {
             archive.min_zoom = minzoom;
         }
