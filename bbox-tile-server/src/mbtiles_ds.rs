@@ -21,6 +21,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug)]
 pub struct MbtilesDatasource {
     pub mbtiles: Mbtiles,
+    pub format: Option<martin_tile_utils::Format>,
     pub pool: Pool<Sqlite>,
 }
 
@@ -31,11 +32,16 @@ impl MbtilesDatasource {
 
     pub async fn new_pool<P: AsRef<Path>>(filepath: P, metadata: Option<Metadata>) -> Result<Self> {
         let mbtiles = Mbtiles::new(filepath)?;
+        let format = metadata.clone().map(|meta| meta.tile_info.format);
         if let Some(metadata) = metadata {
             Self::initialize_mbtiles_db(&mbtiles, metadata).await?;
         }
         let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: open_readonly if metadata.is_none()
-        Ok(Self { mbtiles, pool })
+        Ok(Self {
+            mbtiles,
+            format,
+            pool,
+        })
     }
 
     pub async fn initialize_mbtiles_db(mbtiles: &Mbtiles, metadata: Metadata) -> MbtResult<()> {

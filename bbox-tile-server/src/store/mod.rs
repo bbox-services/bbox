@@ -35,6 +35,10 @@ pub enum TileStoreError {
     #[error("Operation not supported on readonly data store")]
     ReadOnly,
     #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    #[error(transparent)]
+    DbError(#[from] sqlx::Error),
+    #[error(transparent)]
     S3StoreError(#[from] S3StoreError),
     #[error(transparent)]
     MbtilesDsError(#[from] MbtilesDsError),
