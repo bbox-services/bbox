@@ -2,6 +2,7 @@ use crate::config::MbtilesStoreCfg;
 use martin_mbtiles::{
     create_flat_tables, create_metadata_table, MbtError, MbtResult, Mbtiles, Metadata,
 };
+use serde_json::json;
 use sqlx::{Connection, Pool, Sqlite, SqlitePool};
 use std::path::Path;
 use thiserror::Error;
@@ -63,10 +64,64 @@ impl MbtilesDatasource {
             mbtiles
                 .set_metadata_value(&mut conn, "name", Some(&metadata.id))
                 .await?;
-            let format = metadata.tile_info.format.to_string();
+            let format = if metadata.tile_info.format == martin_tile_utils::Format::Mvt {
+                "pbf".to_string()
+            } else {
+                metadata.tile_info.format.to_string()
+            };
             mbtiles
                 .set_metadata_value(&mut conn, "format", Some(&format))
                 .await?;
+            mbtiles
+                .set_metadata_value(
+                    &mut conn,
+                    "description",
+                    metadata.tilejson.description.as_deref(),
+                )
+                .await?;
+            mbtiles
+                .set_metadata_value(
+                    &mut conn,
+                    "attribution",
+                    metadata.tilejson.attribution.as_deref(),
+                )
+                .await?;
+            mbtiles
+                .set_metadata_value(&mut conn, "version", metadata.tilejson.version.as_deref())
+                .await?;
+            mbtiles
+                .set_metadata_value(
+                    &mut conn,
+                    "attribution",
+                    metadata.tilejson.attribution.as_deref(),
+                )
+                .await?;
+            let bounds = metadata.tilejson.bounds.map(|bounds| bounds.to_string());
+            mbtiles
+                .set_metadata_value(&mut conn, "bounds", bounds.as_deref())
+                .await?;
+            let center = metadata.tilejson.center.map(|center| center.to_string());
+            mbtiles
+                .set_metadata_value(&mut conn, "center", center.as_deref())
+                .await?;
+            let minzoom = metadata.tilejson.minzoom.map(|minzoom| minzoom.to_string());
+            mbtiles
+                .set_metadata_value(&mut conn, "minzoom", minzoom.as_deref())
+                .await?;
+            let maxzoom = metadata.tilejson.maxzoom.map(|maxzoom| maxzoom.to_string());
+            mbtiles
+                .set_metadata_value(&mut conn, "maxzoom", maxzoom.as_deref())
+                .await?;
+            if let Some(json) = metadata.json {
+                mbtiles
+                    .set_metadata_value(&mut conn, "json", Some(json.to_string().as_str()))
+                    .await?;
+            } else if let Some(vector_layers) = metadata.tilejson.vector_layers {
+                let json = json!({"vector_layers": vector_layers});
+                mbtiles
+                    .set_metadata_value(&mut conn, "json", Some(json.to_string().as_str()))
+                    .await?;
+            }
         }
         conn.close().await?;
         Ok(())

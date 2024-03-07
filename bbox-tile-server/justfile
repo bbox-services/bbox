@@ -43,6 +43,11 @@ seed-pmtiles: docker-is-ready
     sed 's/cache = "tilecache"/cache = "pmtilecache"/g' {{justfile_directory()}}/bbox-mvtbench.toml >/tmp/bbox-mvtbench.toml
     cargo run -- --config=/tmp/bbox-mvtbench.toml --loglevel=debug seed --tileset=ne_countries --maxzoom=3
 
+seed-mbtiles: docker-is-ready
+    sed 's/cache = "tilecache"/cache = "mbtilecache"/g' {{justfile_directory()}}/bbox-mvtbench.toml >/tmp/bbox-mvtbench.toml
+    rm -f /tmp/tilecache.mbtiles
+    cargo run -- --config=/tmp/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --maxzoom=3
+
 export AWS_ACCESS_KEY_ID := "miniostorage"
 export AWS_SECRET_ACCESS_KEY := "miniostorage"
 export S3_ENDPOINT_URL := "http://localhost:9000"

@@ -462,7 +462,6 @@ static WORLD_EXTENT: ExtentCfg = ExtentCfg {
     maxy: 90.0,
 };
 
-#[allow(dead_code)]
 impl PostgisSourceParamsCfg {
     pub fn minzoom(&self) -> u8 {
         self.minzoom
