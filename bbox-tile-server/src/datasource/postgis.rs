@@ -19,7 +19,7 @@ use sqlx::{
     postgres::{PgColumn, PgRow, PgStatement, PgTypeInfo},
     Column, Executor, Row, Statement, TypeInfo,
 };
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
 use tile_grid::{Tms, Xyz};
 use tilejson::{tilejson, TileJSON};
@@ -401,14 +401,14 @@ impl TileRead for PgSource {
                     description: None,
                     maxzoom: None,
                     minzoom: None,
-                    other: HashMap::default(),
+                    other: BTreeMap::default(),
                 }
             })
             .collect();
         if self.config.diagnostics.is_some() {
             layers.push(tilejson::VectorLayer {
                 id: "diagnostics-tile".to_string(),
-                fields: HashMap::from([
+                fields: BTreeMap::from([
                     (
                         "layer-total-percent".to_string(),
                         "Total size in bytes (uncompressed)".to_string(),
@@ -421,11 +421,11 @@ impl TileRead for PgSource {
                 description: None,
                 maxzoom: None,
                 minzoom: None,
-                other: HashMap::default(),
+                other: BTreeMap::default(),
             });
             layers.push(tilejson::VectorLayer {
                 id: "diagnostics-label".to_string(),
-                fields: HashMap::from([
+                fields: BTreeMap::from([
                     ("zxy".to_string(), "tile number".to_string()),
                     ("tile-top".to_string(), "tile extent".to_string()),
                     ("tile-left".to_string(), "tile extent".to_string()),
@@ -435,7 +435,7 @@ impl TileRead for PgSource {
                 description: None,
                 maxzoom: None,
                 minzoom: None,
-                other: HashMap::default(),
+                other: BTreeMap::default(),
             });
         }
         tj.vector_layers = Some(layers);
