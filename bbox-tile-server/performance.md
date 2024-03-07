@@ -2,35 +2,23 @@
 
 ## Local S3 test setup
 
-Install [MinIO Client](https://github.com/minio/mc):
-
-    cd /usr/local/bin
-    wget https://dl.min.io/client/mc/release/linux-amd64/mc
-    chmod +x mc
-    mc --help
-
 Setup storage directory:
 
     mkdir s3data
 
 Run MinIO:
 
-    docker run --security-opt label=disable -d --rm --name minio -p 9000:9000 -p 9001:9001 -v $PWD/s3data:/data -e MINIO_REGION_NAME=my-region -e MINIO_ROOT_USER=miniostorage -e MINIO_ROOT_PASSWORD=miniostorage minio/minio server /data --console-address ":9001"
+    just start-minio
 
 Setup Bucket:
 
-    export AWS_ACCESS_KEY_ID=miniostorage
-    export AWS_SECRET_ACCESS_KEY=miniostorage
-
-    mc config host add local-docker http://localhost:9000 miniostorage miniostorage
-    mc mb local-docker/tiles
-    mc policy set public local-docker/tiles
+    just setup-minio
 
 Access MinIO Console: http://localhost:9001
 
 Stop MinIO:
 
-    docker stop minio
+    just stop-minio
 
 
 ## Seeding tests
@@ -42,6 +30,10 @@ Relase Build:
 Local file seeding test:
 
     ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles --maxzoom=2
+
+or mvtbench:
+
+    just seed-s3
 
 Set S3 env vars:
 
@@ -60,7 +52,7 @@ https://github.com/pka/mvt-benchmark
 
 Start DB:
 
-    just start
+    just start-db
 
 Local file seeding benchmark:
 

@@ -88,6 +88,7 @@ impl TileWriter for S3Store {
 impl S3Store {
     pub async fn put_data(&self, key: String, mut input: BoxRead) -> Result<(), TileStoreError> {
         let bucket = self.bucket.clone();
+        // TODO: Workaround for https://github.com/rusoto/rusoto/issues/1980
         let client = S3Client::new(self.region.clone());
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {

@@ -40,8 +40,8 @@ pmtiles = { version = "0.3.1", features = ["mmap-async-tokio"] }
 pmtiles2 = { version = "0.2.2", default-features = false }
 prometheus = { workspace = true }
 reqwest = { workspace = true }
-rusoto_core = { version = "0.48.0", default-features = false, features = ["rustls"] }
-rusoto_s3 = { version = "0.48.0", default-features = false, features = ["rustls"] }
+rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }
+rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sqlx = { workspace = true }

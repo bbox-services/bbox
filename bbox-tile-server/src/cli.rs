@@ -1,19 +1,18 @@
-use crate::config::TileStoreCfg;
+use crate::config::{S3StoreCfg, TileStoreCfg};
 use crate::service::{ServiceError, TileService};
-use crate::store::{
-    files::FileStore, s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileStoreType, TileWriter,
-};
+use crate::store::{files::FileStore, s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileWriter};
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
 use futures::{prelude::*, stream};
 use indicatif::{ProgressBar, ProgressStyle};
-use log::{debug, info};
+use log::info;
 use par_stream::prelude::*;
+use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tempfile::TempDir;
 use tile_grid::BoundingBox;
-use tokio::task;
+use tile_grid::Xyz;
 
 #[derive(Debug, Parser)]
 #[command(name = "bbox-tile-server")]
@@ -159,17 +158,16 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 impl TileService {
     pub async fn seed_by_grid(&self, args: &SeedArgs) -> anyhow::Result<()> {
         let progress = progress_bar();
+        let progress_main = progress.clone();
 
+        let tileset_name = Arc::new(args.tileset.clone());
         let tileset = self
             .tileset(&args.tileset)
             .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
         let format = *tileset.tile_format();
+        let service = Arc::new(self.clone());
         let tms = self.grid(&tileset.tms)?;
-        let Some(cache_cfg) = &tileset.cache_config() else {
-            return Err(
-                ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
-            );
-        };
+
         let bbox = if let Some(numlist) = &args.extent {
             let arr: Vec<f64> = numlist
                 .split(',')
@@ -186,23 +184,19 @@ impl TileService {
             tms.xy_bbox()
         };
 
-        // We setup different pipelines for certain scenarios.
-        // Examples:
-        // map service source -> tile store writer
-        // map service source -> temporary file writer -> s3 store writer
-
-        let s3_writer = if args.s3_path.is_some() {
-            Some(
-                S3Store::from_args(args, &format)
-                    .await
-                    .unwrap_or_else(error_exit),
-            )
-        } else if let TileStoreCfg::S3(s3) = &cache_cfg {
-            Some(S3Store::from_config(s3, &format).unwrap_or_else(error_exit))
-        } else {
-            None
+        let Some(mut cache_cfg) = tileset.cache_config() else {
+            return Err(
+                ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
+            );
         };
-        let tmp_file_writer = if s3_writer.is_some() {
+        let s3_cache_cfg;
+        if let Some(s3_path) = &args.s3_path {
+            s3_cache_cfg = TileStoreCfg::S3(S3StoreCfg {
+                path: s3_path.to_string(),
+            });
+            cache_cfg = &s3_cache_cfg;
+        };
+        let tmp_file_writer = if let TileStoreCfg::S3(_) = cache_cfg {
             let file_dir = args
                 .base_dir
                 .as_ref()
@@ -213,139 +207,6 @@ impl TileService {
             None
         };
 
-        if s3_writer.is_none() {
-            return self.par_seed(args, bbox).await;
-        }
-
-        let mut tile_writer = tileset.store_writer.clone().unwrap();
-
-        // Keep a queue of tasks waiting for parallel async execution (size >= #cores).
-        let threads = args.threads.unwrap_or(num_cpus::get());
-        let writer_task_count = if s3_writer.is_some() {
-            args.tasks.unwrap_or(256)
-        } else {
-            0
-        };
-        let task_queue_size = writer_task_count + threads * 2;
-        let mut tasks = Vec::with_capacity(task_queue_size);
-
-        let (tx_s3, rx_s3) = async_channel::bounded(task_queue_size);
-
-        if let Some(s3_writer) = s3_writer {
-            let file_dir = tmp_file_writer.clone().unwrap().base_dir;
-            info!(
-                "Writing tiles to {s3_writer:?} (temporary dir: {})",
-                file_dir.to_string_lossy()
-            );
-            for _ in 0..writer_task_count {
-                let s3_writer = s3_writer.clone();
-                let base_dir = file_dir.clone();
-                let rx_s3 = rx_s3.clone();
-                tasks.push(task::spawn(async move {
-                    while let Ok(tile) = rx_s3.recv().await {
-                        let _ = s3_writer.copy_tile(&base_dir, &tile).await;
-                    }
-                }));
-            }
-            debug!("{} S3 writer tasks spawned", tasks.len());
-        }
-
-        // let (tx_cache, rx_cache) = async_channel::bounded(task_queue_size);
-        // for _ in 0..writer_task_count {
-        //     let service = self.clone();
-        //     let tileset = args.tileset.clone();
-        //     let tile_writer = tile_writer.clone();
-        //     let suffix = suffix.clone();
-        //     let rx_cache = rx_cache.clone();
-        //     tasks.push(task::spawn(async move {
-        //         while let Ok(xyz) = rx_cache.recv().await {
-        //             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &suffix);
-        //             let tile = service.read_tile(&tileset, &tile, &suffix).await.unwrap();
-        //             let input: BoxRead = Box::new(tile.body);
-
-        //             tile_writer.put_tile(path, input).await.unwrap();
-        //             // tx_s3.send(path.clone()).await.unwrap();
-        //         }
-        //     }));
-        // }
-
-        let minzoom = args.minzoom.unwrap_or(0);
-        let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
-        let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
-        let overwrite = args.overwrite.unwrap_or(false);
-        let mut cnt = 0;
-        info!("Seeding tiles from level {minzoom} to {maxzoom}");
-        for xyz in griditer {
-            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
-            progress.set_message(path.clone());
-            progress.inc(1);
-            let cache_exists = tile_writer.exists(&xyz).await;
-            if cache_exists && !overwrite {
-                continue;
-            }
-            cnt += 1;
-            // TODO: we should not clone for each tile, only for a pool of tasks
-            let service = self.clone();
-            let tileset = args.tileset.clone();
-            let tmp_file_writer = tmp_file_writer.clone();
-            let mut tile_writer = tile_writer.clone();
-            let tx_s3 = tx_s3.clone();
-            tasks.push(task::spawn(async move {
-                let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
-                let input: BoxRead = Box::new(tile.body);
-
-                if let Some(file_writer) = tmp_file_writer {
-                    file_writer.put_tile(&xyz, input).await.unwrap();
-                    if writer_task_count > 0 {
-                        tx_s3.send(xyz).await.unwrap();
-                    }
-                } else {
-                    tile_writer.put_tile_mut(&xyz, input).await.unwrap();
-                }
-            }));
-            if tasks.len() >= task_queue_size {
-                tasks = await_one_task(tasks).await;
-            }
-        }
-
-        // Wait for remaining WMS tasks
-        while tasks.len() > writer_task_count {
-            tasks = await_one_task(tasks).await;
-        }
-        tx_s3.close();
-        // tx_cache.close();
-        // Wait for remaining writer tasks
-        futures_util::future::join_all(tasks).await;
-
-        tile_writer.finalize()?;
-
-        // Remove temporary directories
-        if let Some(file_writer) = tmp_file_writer {
-            file_writer.remove_dir_all()?;
-        }
-
-        progress.set_style(
-            ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
-        );
-        progress.finish_with_message(format!("{cnt} tiles generated"));
-
-        Ok(())
-    }
-
-    pub async fn par_seed(&self, args: &SeedArgs, bbox: BoundingBox) -> anyhow::Result<()> {
-        let progress = progress_bar();
-        let progress_main = progress.clone();
-
-        let tileset_name = Arc::new(args.tileset.clone());
-        let tileset = self
-            .tileset(&args.tileset)
-            .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
-        let format = *tileset.tile_format();
-        let service = Arc::new(self.clone());
-        let tms = self.grid(&tileset.tms)?;
-
-        let tile_writer = tileset.store_writer.clone().unwrap();
-
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
 
@@ -353,13 +214,19 @@ impl TileService {
         let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
         let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
+
+        // We setup different pipelines for certain scenarios.
+        // Examples:
+        // map service source -> tile store writer
+        // map service source -> temporary file writer -> s3 store writer
+
         let iter = griditer.map(move |xyz| {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
             progress.set_message(path.clone());
             progress.inc(1);
             xyz
         });
-        stream::iter(iter)
+        let mut par_stream = stream::iter(iter)
             // .with_state((tileset_name, service))
             // .par_then(threads, move |(xyz, state)| async move {
             //     let (tileset, service) = state.deref();
@@ -372,33 +239,80 @@ impl TileService {
                     let input: BoxRead = Box::new(tile.body);
                     (xyz, input)
                 }
-            })
-            .batching(|mut stream| async move {
-                let mut buffer = Vec::with_capacity(10);
-                while let Some(value) = stream.next().await {
-                    buffer.push(value);
-                    if buffer.len() >= buffer.capacity() {
-                        break;
+            });
+
+        match cache_cfg {
+            TileStoreCfg::Files(_cfg) => {
+                let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
+                par_stream = par_stream.par_then(threads, move |(xyz, tile)| {
+                    let tile_writer = tile_writer.clone();
+                    async move {
+                        tile_writer.put_tile(&xyz, tile).await.unwrap();
+                        let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
+                        (xyz, empty)
                     }
-                }
-                (!buffer.is_empty()).then_some((buffer, stream))
-            })
-            .with_state(tile_writer)
-            .par_then(None, |(batch, mut tile_writer)| {
-                // FIXME: multiple threads for directory writer
-                async move {
-                    let last_batch = batch.len() < 10; // FIXME
-                    for (xyz, tile) in batch {
-                        tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
+                });
+            }
+            TileStoreCfg::S3(cfg) => {
+                let s3_writer =
+                    Arc::new(S3Store::from_config(cfg, &format).unwrap_or_else(error_exit));
+                let file_dir = Arc::new(tmp_file_writer.clone().unwrap().base_dir);
+                let file_writer = Arc::new(tmp_file_writer.clone().unwrap());
+                info!(
+                    "Writing tiles to {s3_writer:?} (temporary dir: {})",
+                    file_dir.to_string_lossy()
+                );
+                let s3_writer_thread_count = args.tasks.unwrap_or(256);
+                par_stream = par_stream.par_then(s3_writer_thread_count, move |(xyz, tile)| {
+                    let file_writer = file_writer.clone();
+                    let base_dir = file_dir.clone();
+                    let s3_writer = s3_writer.clone();
+                    async move {
+                        file_writer.put_tile(&xyz, tile).await.unwrap();
+                        let _ = s3_writer.copy_tile(&base_dir, &xyz).await;
+                        let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
+                        (xyz, empty)
                     }
-                    if last_batch {
-                        tile_writer.finalize().unwrap();
-                    }
-                    let _ = tile_writer.send();
-                }
-            })
-            .count()
-            .await;
+                });
+            }
+            TileStoreCfg::Mbtiles(_) | TileStoreCfg::Pmtiles(_) => {
+                let tile_writer = tileset.store_writer.clone().unwrap();
+                par_stream = par_stream
+                    .batching(|mut stream| async move {
+                        let mut buffer = Vec::with_capacity(10);
+                        while let Some(value) = stream.next().await {
+                            buffer.push(value);
+                            if buffer.len() >= buffer.capacity() {
+                                break;
+                            }
+                        }
+                        (!buffer.is_empty()).then_some((buffer, stream))
+                    })
+                    .with_state(tile_writer)
+                    .par_then(None, |(batch, mut tile_writer)| {
+                        async move {
+                            let last_batch = batch.len() < 10; // FIXME
+                            for (xyz, tile) in batch {
+                                tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
+                            }
+                            if last_batch {
+                                tile_writer.finalize().unwrap();
+                            }
+                            let _ = tile_writer.send();
+                            let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
+                            (Xyz::new(0, 0, 0), empty)
+                        }
+                    });
+            }
+        }
+
+        // Execute pipeline
+        par_stream.count().await;
+
+        // Remove temporary directories
+        if let Some(file_writer) = tmp_file_writer {
+            file_writer.remove_dir_all()?;
+        }
 
         progress_main.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
@@ -417,24 +331,3 @@ impl TileService {
         }
     }
 }
-
-async fn await_one_task<T>(tasks: Vec<task::JoinHandle<T>>) -> Vec<task::JoinHandle<T>> {
-    // debug!("await_one_task with {} spawned tasks left", tasks.len());
-    let (_result, _index, remaining) = futures_util::future::select_all(tasks).await;
-    // Ignoring all errors
-    remaining
-}
-
-// pub fn seed(args: &SeedArgs) {
-//     let rt = tokio::runtime::Runtime::new().unwrap_or_else(error_exit);
-//     // let threads = args.threads.unwrap_or(num_cpus::get());
-//     // let rt = tokio::runtime::Builder::new_multi_thread()
-//     //     .worker_threads(threads + 2) // 2 extra threads for blocking I/O
-//     //     .enable_io()
-//     //     .enable_time()
-//     //     .build()
-//     //     .unwrap();
-
-//     rt.block_on(async move { seed_by_grid(&args).await })
-//         .unwrap_or_else(error_exit);
-// }
