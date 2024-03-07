@@ -5,13 +5,16 @@ use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use log::{debug, info};
+use martin_mbtiles::Metadata;
 use pmtiles::async_reader::AsyncPmTilesReader;
 use pmtiles::mmap::MmapBackend;
 use pmtiles2::{util::tile_id, Compression, PMTiles, TileType};
+use serde_json::json;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::PathBuf;
 use tile_grid::Xyz;
+use tilejson::tilejson;
 
 pub struct PmtilesStoreReader {
     pub path: PathBuf,
@@ -22,6 +25,7 @@ pub struct PmtilesStoreReader {
 pub struct PmtilesStoreWriter {
     path: PathBuf,
     format: Format,
+    metadata: Metadata,
     // We need an option for consuming PMTiles when finalizing
     archive: Option<PMTiles<Cursor<Vec<u8>>>>,
 }
@@ -38,7 +42,7 @@ impl Clone for PmtilesStoreReader {
 // Custom impl because `Clone` is not implemented for `PMTiles`
 impl Clone for PmtilesStoreWriter {
     fn clone(&self) -> Self {
-        Self::new(self.path.clone(), &self.format)
+        Self::new(self.path.clone(), self.metadata.clone(), &self.format)
     }
 }
 
@@ -91,7 +95,19 @@ impl TileStoreType for PmtilesStoreWriter {
                 .as_ref()
                 .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?,
         );
-        Ok(Self::new(path, format))
+        let metadata = Metadata {
+            id: "pmtiles".to_string(),
+            tile_info: martin_tile_utils::TileInfo {
+                format: martin_tile_utils::Format::parse(format.file_suffix())
+                    .unwrap_or(martin_tile_utils::Format::Mvt),
+                encoding: martin_tile_utils::Encoding::Uncompressed,
+            },
+            layer_type: None,
+            tilejson: tilejson! { tiles: vec![] },
+            json: None,
+            agg_tiles_hash: None,
+        };
+        Ok(Self::new(path, metadata, format))
     }
 }
 
@@ -132,7 +148,7 @@ impl TileWriter for PmtilesStoreWriter {
 }
 
 impl PmtilesStoreWriter {
-    pub fn new(path: PathBuf, format: &Format) -> Self {
+    pub fn new(path: PathBuf, metadata: Metadata, format: &Format) -> Self {
         let mut archive = PMTiles::default();
         archive.tile_type = match format {
             Format::Jpeg => TileType::Jpeg,
@@ -142,14 +158,38 @@ impl PmtilesStoreWriter {
             _ => TileType::Unknown,
         };
         archive.tile_compression = Compression::None;
-        // TODO: set metadata and more
+        if let Some(minzoom) = metadata.tilejson.minzoom {
+            archive.min_zoom = minzoom;
+        }
+        if let Some(maxzoom) = metadata.tilejson.maxzoom {
+            archive.max_zoom = maxzoom;
+        }
+        if let Some(bounds) = metadata.tilejson.bounds {
+            archive.min_longitude = bounds.left;
+            archive.min_latitude = bounds.bottom;
+            archive.max_longitude = bounds.right;
+            archive.max_latitude = bounds.top;
+        }
+        if let Some(center) = metadata.tilejson.center {
+            archive.center_longitude = center.longitude;
+            archive.center_latitude = center.latitude;
+            archive.center_zoom = center.zoom;
+        }
+        let mut meta_data = json!({
+            "name": &metadata.id, "description": &metadata.tilejson.description, "attribution": &metadata.tilejson.attribution
+        });
+        if let Some(vector_layers) = &metadata.tilejson.vector_layers {
+            meta_data["vector_layers"] = json!(vector_layers);
+        }
+        archive.meta_data = Some(meta_data);
         Self {
             path,
+            metadata,
             format: *format,
             archive: Some(archive),
         }
     }
-    pub fn from_config(cfg: &PmtilesStoreCfg, format: &Format) -> Self {
-        Self::new(cfg.path.clone(), format)
+    pub fn from_config(cfg: &PmtilesStoreCfg, metadata: Metadata, format: &Format) -> Self {
+        Self::new(cfg.path.clone(), metadata, format)
     }
 }
