@@ -6,11 +6,9 @@ use futures::{prelude::*, stream};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::info;
 use par_stream::prelude::*;
-use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tile_grid::BoundingBox;
-use tile_grid::Xyz;
 
 #[derive(Debug, Parser)]
 #[command(name = "bbox-tile-server")]
@@ -203,7 +201,7 @@ impl TileService {
         // We setup different pipelines for certain scenarios.
         // Examples:
         // map service source -> tile store writer
-        // map service source -> temporary file writer -> s3 store writer
+        // map service source -> batch collector -> mbtiles store writer
 
         let progress = progress_bar();
         let progress_main = progress.clone();
@@ -213,77 +211,66 @@ impl TileService {
             progress.inc(1);
             xyz
         });
-        let mut par_stream = stream::iter(iter)
-            // .with_state((tileset_name, service))
-            // .par_then(threads, move |(xyz, state)| async move {
-            //     let (tileset, service) = state.deref();
-            .par_then(threads, move |xyz| {
-                let tileset = tileset_name.clone();
-                let service = service.clone();
-                async move {
-                    let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
-                    // let _ = state.send();
-                    let input: BoxRead = Box::new(tile.body);
-                    (xyz, input)
-                }
-            });
+        let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
+            let tileset = tileset_name.clone();
+            let service = service.clone();
+            async move {
+                let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
+                let input: BoxRead = Box::new(tile.body);
+                (xyz, input)
+            }
+        });
 
         match cache_cfg {
             TileStoreCfg::Files(_cfg) => {
-                par_stream = par_stream.par_then(threads, move |(xyz, tile)| {
-                    let tile_writer = tile_writer.clone();
-                    async move {
-                        tile_writer.put_tile(&xyz, tile).await.unwrap();
-                        let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
-                        (xyz, empty)
-                    }
-                });
+                par_stream
+                    .par_then(threads, move |(xyz, tile)| {
+                        let tile_writer = tile_writer.clone();
+                        async move {
+                            let _ = tile_writer.put_tile(&xyz, tile).await;
+                        }
+                    })
+                    .count()
+                    .await;
             }
             TileStoreCfg::S3(cfg) => {
                 info!("Writing tiles to {}", &cfg.path);
                 let s3_writer_thread_count = args.tasks.unwrap_or(256);
-                par_stream = par_stream.par_then(s3_writer_thread_count, move |(xyz, tile)| {
-                    let s3_writer = tile_writer.clone();
-                    async move {
-                        let _ = s3_writer.put_tile(&xyz, tile).await;
-                        let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
-                        (xyz, empty)
-                    }
-                });
+                par_stream
+                    .par_then(s3_writer_thread_count, move |(xyz, tile)| {
+                        let s3_writer = tile_writer.clone();
+                        async move {
+                            let _ = s3_writer.put_tile(&xyz, tile).await;
+                        }
+                    })
+                    .count()
+                    .await;
             }
             TileStoreCfg::Mbtiles(_) | TileStoreCfg::Pmtiles(_) => {
                 let tile_writer = tileset.store_writer.clone().unwrap();
-                par_stream = par_stream
-                    .batching(|mut stream| async move {
-                        let mut buffer = Vec::with_capacity(10);
+                let batch_size = 10;
+                par_stream
+                    .stateful_batching(tile_writer, |mut tile_writer, mut stream| async move {
+                        let mut batch = Vec::with_capacity(batch_size);
                         while let Some(value) = stream.next().await {
-                            buffer.push(value);
-                            if buffer.len() >= buffer.capacity() {
+                            batch.push(value);
+                            if batch.len() >= batch.capacity() {
                                 break;
                             }
                         }
-                        (!buffer.is_empty()).then_some((buffer, stream))
-                    })
-                    .with_state(tile_writer)
-                    .par_then(None, |(batch, mut tile_writer)| {
-                        async move {
-                            let last_batch = batch.len() < 10; // FIXME
-                            for (xyz, tile) in batch {
-                                tile_writer.put_tile_mut(&xyz, tile).await.unwrap();
-                            }
-                            if last_batch {
-                                tile_writer.finalize().unwrap();
-                            }
-                            let _ = tile_writer.send();
-                            let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
-                            (Xyz::new(0, 0, 0), empty)
+                        let empty = batch.is_empty();
+                        for (xyz, tile) in batch {
+                            let _ = tile_writer.put_tile_mut(&xyz, tile).await;
                         }
-                    });
+                        if empty {
+                            let _ = tile_writer.finalize();
+                        }
+                        (!empty).then_some(((), tile_writer, stream))
+                    })
+                    .count()
+                    .await;
             }
-        }
-
-        // Execute pipeline
-        par_stream.count().await;
+        };
 
         progress_main.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
