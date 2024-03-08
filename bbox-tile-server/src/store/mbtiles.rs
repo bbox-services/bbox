@@ -1,10 +1,8 @@
-use crate::cli::SeedArgs;
 use crate::config::MbtilesStoreCfg;
 use crate::mbtiles_ds::{Error as MbtilesDsError, MbtilesDatasource};
-use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWriter};
+use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
-use bbox_core::Format;
 use flate2::{read::GzEncoder, Compression};
 use log::info;
 use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
@@ -43,19 +41,6 @@ impl MbtilesStore {
             }
             _ => None,
         }
-    }
-}
-
-#[async_trait]
-impl TileStoreType for MbtilesStore {
-    async fn from_args(args: &SeedArgs, _format: &Format) -> Result<Self, TileStoreError> {
-        let path = args
-            .base_dir
-            .as_ref()
-            .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?
-            .into();
-        let cfg = MbtilesStoreCfg { path };
-        MbtilesStore::from_config(&cfg).await.map_err(Into::into)
     }
 }
 

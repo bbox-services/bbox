@@ -142,17 +142,18 @@ impl OgcApiService for TileService {
                 .mbtiles_metadata(&ts, &format)
                 .await
                 .unwrap_or_else(error_exit);
-            let cache_cfg = ts.cache.as_ref().map(|name| {
+            let cache_cfg = TileStoreCfg::from_cli_args(cli).or(ts.cache.as_ref().map(|name| {
                 stores
                     .get(name)
+                    .cloned()
                     .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name.to_string())))
-            });
-            let store_writer = if let Some(config) = cache_cfg {
+            }));
+            let store_writer = if let Some(config) = &cache_cfg {
                 Some(store_writer_from_config(config, &ts.name, &format, metadata).await)
             } else {
                 None
             };
-            let store_reader = if let Some(config) = cache_cfg {
+            let store_reader = if let Some(config) = &cache_cfg {
                 Some(store_reader_from_config(config, &ts.name, &format).await)
             } else {
                 None
@@ -164,7 +165,7 @@ impl OgcApiService for TileService {
                 store_reader,
                 store_writer,
                 config: ts.clone(),
-                cache_cfg: cache_cfg.cloned(),
+                cache_cfg,
                 cache_limits: ts.cache_limits,
             };
             self.tilesets.insert(ts.name, tileset);

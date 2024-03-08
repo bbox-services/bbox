@@ -1,3 +1,4 @@
+use crate::cli::Commands;
 use crate::datasource::source_config_from_cli_arg;
 use crate::t_rex::config as t_rex;
 use bbox_core::cli::CommonCommands;
@@ -239,6 +240,33 @@ pub struct MbtilesStoreCfg {
 #[serde(deny_unknown_fields)]
 pub struct PmtilesStoreCfg {
     pub path: PathBuf,
+}
+
+impl TileStoreCfg {
+    pub fn from_cli_args(cli: &ArgMatches) -> Option<Self> {
+        let Ok(Commands::Seed(args)) = Commands::from_arg_matches(cli) else {
+            return None;
+        };
+        if let Some(path) = &args.tile_path {
+            let cache_cfg = TileStoreCfg::Files(FileStoreCfg {
+                base_dir: path.into(),
+            });
+            Some(cache_cfg)
+        } else if let Some(s3_path) = &args.s3_path {
+            let cache_cfg = TileStoreCfg::S3(S3StoreCfg {
+                path: s3_path.to_string(),
+            });
+            Some(cache_cfg)
+        } else if let Some(path) = &args.mb_path {
+            let cache_cfg = TileStoreCfg::Mbtiles(MbtilesStoreCfg { path: path.into() });
+            Some(cache_cfg)
+        } else if let Some(path) = &args.pm_path {
+            let cache_cfg = TileStoreCfg::Pmtiles(PmtilesStoreCfg { path: path.into() });
+            Some(cache_cfg)
+        } else {
+            None
+        }
+    }
 }
 
 impl TileserverCfg {

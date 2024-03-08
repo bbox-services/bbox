@@ -1,7 +1,6 @@
-use crate::config::{S3StoreCfg, TileStoreCfg};
+use crate::config::TileStoreCfg;
 use crate::service::{ServiceError, TileService};
-use crate::store::{s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileWriter};
-use bbox_core::config::error_exit;
+use crate::store::{s3putfiles, BoxRead, CacheLayout};
 use clap::{Args, Parser};
 use futures::{prelude::*, stream};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -58,12 +57,18 @@ pub struct SeedArgs {
     /// Extent minx,miny,maxx,maxy (in grid reference system)
     #[arg(long)]
     pub extent: Option<String>,
+    /// Base directory for file store
+    #[arg(long, group = "store")]
+    pub tile_path: Option<String>,
     /// S3 path to upload to (e.g. s3://tiles)
-    #[arg(long, group = "output_s3", conflicts_with = "output_files")]
+    #[arg(long, group = "store")]
     pub s3_path: Option<String>,
-    /// Base directory for file output
-    #[arg(long, group = "output_files", conflicts_with = "output_s3")]
-    pub base_dir: Option<String>,
+    /// MBTiles path to store tiles
+    #[arg(long, group = "store")]
+    pub mb_path: Option<String>,
+    /// PMTiles path to store tiles
+    #[arg(long, group = "store")]
+    pub pm_path: Option<String>,
     /// Number of threads to use, defaults to number of logical cores
     #[arg(short, long)]
     pub threads: Option<usize>,
@@ -156,9 +161,6 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 impl TileService {
     pub async fn seed_by_grid(&self, args: &SeedArgs) -> anyhow::Result<()> {
-        let progress = progress_bar();
-        let progress_main = progress.clone();
-
         let tileset_name = Arc::new(args.tileset.clone());
         let tileset = self
             .tileset(&args.tileset)
@@ -183,18 +185,12 @@ impl TileService {
             tms.xy_bbox()
         };
 
-        let Some(mut cache_cfg) = tileset.cache_config() else {
+        let Some(cache_cfg) = tileset.cache_config() else {
             return Err(
                 ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
             );
         };
-        let s3_cache_cfg;
-        if let Some(s3_path) = &args.s3_path {
-            s3_cache_cfg = TileStoreCfg::S3(S3StoreCfg {
-                path: s3_path.to_string(),
-            });
-            cache_cfg = &s3_cache_cfg;
-        };
+        let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -209,6 +205,8 @@ impl TileService {
         // map service source -> tile store writer
         // map service source -> temporary file writer -> s3 store writer
 
+        let progress = progress_bar();
+        let progress_main = progress.clone();
         let iter = griditer.map(move |xyz| {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
             progress.set_message(path.clone());
@@ -232,7 +230,6 @@ impl TileService {
 
         match cache_cfg {
             TileStoreCfg::Files(_cfg) => {
-                let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
                 par_stream = par_stream.par_then(threads, move |(xyz, tile)| {
                     let tile_writer = tile_writer.clone();
                     async move {
@@ -243,12 +240,10 @@ impl TileService {
                 });
             }
             TileStoreCfg::S3(cfg) => {
-                let s3_writer =
-                    Arc::new(S3Store::from_config(cfg, &format).unwrap_or_else(error_exit));
-                info!("Writing tiles to {s3_writer:?}");
+                info!("Writing tiles to {}", &cfg.path);
                 let s3_writer_thread_count = args.tasks.unwrap_or(256);
                 par_stream = par_stream.par_then(s3_writer_thread_count, move |(xyz, tile)| {
-                    let s3_writer = s3_writer.clone();
+                    let s3_writer = tile_writer.clone();
                     async move {
                         let _ = s3_writer.put_tile(&xyz, tile).await;
                         let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());

@@ -19,7 +19,10 @@ stop-db:
 docker-is-ready:
     docker exec mvtbenchdb sh -c 'until pg_isready -h localhost -U postgres; do sleep 1; done'
 
+# -- s3 test environment
+
 start-minio:
+    mkdir -p s3data
     docker run --security-opt label=disable -d --rm --name minio -p 9000:9000 -p 9001:9001 -v $PWD/s3data:/data -e MINIO_REGION_NAME=my-region -e MINIO_ROOT_USER=miniostorage -e MINIO_ROOT_PASSWORD=miniostorage minio/minio server /data --console-address ":9001"
 
 stop-minio:
@@ -30,23 +33,24 @@ setup-minio:
     docker exec minio mc mb local-docker/tiles || true
     docker exec minio mc anonymous set public local-docker/tiles
 
+# -- mvtbench seeding
+
 # Seed to dir (Equal Earth)
 seed-files: cleanup docker-is-ready
     cargo build --release
     time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6
 
+cleanup:
+    rm -rf /tmp/mvtbench
+
 seed-files-test: cleanup docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --maxzoom=3
 
 seed-pmtiles: docker-is-ready
-    @# BBOX_TILESET_0__CACHE=pmtilecache cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=3
-    sed 's/cache = "tilecache"/cache = "pmtilecache"/g' {{justfile_directory()}}/bbox-mvtbench.toml >/tmp/bbox-mvtbench.toml
-    cargo run -- --config=/tmp/bbox-mvtbench.toml --loglevel=debug seed --tileset=ne_countries --maxzoom=3
+    cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=debug seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=3
 
 seed-mbtiles: docker-is-ready
-    sed 's/cache = "tilecache"/cache = "mbtilecache"/g' {{justfile_directory()}}/bbox-mvtbench.toml >/tmp/bbox-mvtbench.toml
-    rm -f /tmp/tilecache.mbtiles
-    cargo run -- --config=/tmp/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --maxzoom=3
+    cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=3
 
 export AWS_ACCESS_KEY_ID := "miniostorage"
 export AWS_SECRET_ACCESS_KEY := "miniostorage"
@@ -55,5 +59,16 @@ export S3_ENDPOINT_URL := "http://localhost:9000"
 seed-s3: docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --s3-path=s3://tiles --overwrite=true --maxzoom=3
 
-cleanup:
-    rm -rf /tmp/mvtbench
+# -- raster seeding
+
+seed-wms-mbtiles:
+    cargo run -- --loglevel=info seed --tileset=gebco --mb-path=/tmp/gebco.mbtile --maxzoom=3
+
+seed-wms-pmtiles:
+    cargo run -- --loglevel=info seed --tileset=gebco --pm-path=/tmp/gebco.pmtile --maxzoom=3
+
+seed-map-mbtiles:
+    cargo run -- --loglevel=warn seed --tileset=ne_extracts --mb-path=/tmp/ne_extracts.mbtile --maxzoom=3
+
+seed-map-pmtiles:
+    cargo run -- --loglevel=warn seed --tileset=ne_extracts --pm-path=/tmp/ne_extracts.pmtile --maxzoom=3

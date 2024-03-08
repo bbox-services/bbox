@@ -1,6 +1,5 @@
-use crate::cli::SeedArgs;
 use crate::config::PmtilesStoreCfg;
-use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWriter};
+use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
@@ -15,7 +14,6 @@ use std::fs::File;
 use std::io::{Cursor, Read};
 use std::path::PathBuf;
 use tile_grid::Xyz;
-use tilejson::tilejson;
 
 pub struct PmtilesStoreReader {
     pub path: PathBuf,
@@ -61,18 +59,6 @@ impl PmtilesStoreReader {
 }
 
 #[async_trait]
-impl TileStoreType for PmtilesStoreReader {
-    async fn from_args(args: &SeedArgs, _format: &Format) -> Result<Self, TileStoreError> {
-        let path = PathBuf::from(
-            args.base_dir
-                .as_ref()
-                .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?,
-        );
-        Self::create_reader(path).await
-    }
-}
-
-#[async_trait]
 impl TileReader for PmtilesStoreReader {
     async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let resp = if let Some(tile) = self.reader.get_tile(tile.z, tile.x, tile.y).await {
@@ -85,30 +71,6 @@ impl TileReader for PmtilesStoreReader {
             None
         };
         Ok(resp)
-    }
-}
-
-#[async_trait]
-impl TileStoreType for PmtilesStoreWriter {
-    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
-        let path = PathBuf::from(
-            args.base_dir
-                .as_ref()
-                .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?,
-        );
-        let metadata = Metadata {
-            id: "pmtiles".to_string(),
-            tile_info: martin_tile_utils::TileInfo {
-                format: martin_tile_utils::Format::parse(format.file_suffix())
-                    .unwrap_or(martin_tile_utils::Format::Mvt),
-                encoding: martin_tile_utils::Encoding::Uncompressed,
-            },
-            layer_type: None,
-            tilejson: tilejson! { tiles: vec![] },
-            json: None,
-            agg_tiles_hash: None,
-        };
-        Ok(Self::new(path, metadata, format))
     }
 }
 

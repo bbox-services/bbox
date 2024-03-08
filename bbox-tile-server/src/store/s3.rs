@@ -1,7 +1,6 @@
-use crate::cli::SeedArgs;
 use crate::config::S3StoreCfg;
 use crate::store::CacheLayout;
-use crate::store::{BoxRead, TileReader, TileStoreError, TileStoreType, TileWriter};
+use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
@@ -59,17 +58,6 @@ impl S3Store {
     }
     pub fn from_config(cfg: &S3StoreCfg, format: &Format) -> Result<Self, TileStoreError> {
         Self::from_s3_path(&cfg.path, *format).map_err(Into::into)
-    }
-}
-
-#[async_trait]
-impl TileStoreType for S3Store {
-    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
-        let s3_path = args
-            .s3_path
-            .as_ref()
-            .ok_or(TileStoreError::ArgMissing("s3_path".to_string()))?;
-        Self::from_s3_path(s3_path, *format).map_err(Into::into)
     }
 }
 

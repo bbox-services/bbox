@@ -1,6 +1,5 @@
-use crate::cli::SeedArgs;
 use crate::config::FileStoreCfg;
-use crate::store::{BoxRead, CacheLayout, TileReader, TileStoreError, TileStoreType, TileWriter};
+use crate::store::{BoxRead, CacheLayout, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
@@ -28,18 +27,6 @@ impl FileStore {
     #[allow(dead_code)]
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())
-    }
-}
-
-#[async_trait]
-impl TileStoreType for FileStore {
-    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError> {
-        let base_dir = PathBuf::from(
-            args.base_dir
-                .as_ref()
-                .ok_or(TileStoreError::ArgMissing("base_dir".to_string()))?,
-        );
-        Ok(FileStore::new(base_dir, *format))
     }
 }
 

@@ -2,10 +2,6 @@
 
 ## Local S3 test setup
 
-Setup storage directory:
-
-    mkdir s3data
-
 Run MinIO:
 
     just start-minio
