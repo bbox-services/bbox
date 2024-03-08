@@ -1,6 +1,6 @@
 use crate::config::{S3StoreCfg, TileStoreCfg};
 use crate::service::{ServiceError, TileService};
-use crate::store::{files::FileStore, s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileWriter};
+use crate::store::{s3::S3Store, s3putfiles, BoxRead, CacheLayout, TileWriter};
 use bbox_core::config::error_exit;
 use clap::{Args, Parser};
 use futures::{prelude::*, stream};
@@ -10,7 +10,6 @@ use par_stream::prelude::*;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tempfile::TempDir;
 use tile_grid::BoundingBox;
 use tile_grid::Xyz;
 
@@ -196,16 +195,6 @@ impl TileService {
             });
             cache_cfg = &s3_cache_cfg;
         };
-        let tmp_file_writer = if let TileStoreCfg::S3(_) = cache_cfg {
-            let file_dir = args
-                .base_dir
-                .as_ref()
-                .map(|d| PathBuf::from(&d))
-                .unwrap_or_else(|| TempDir::new().unwrap().into_path());
-            Some(FileStore::new(file_dir.clone(), format))
-        } else {
-            None
-        };
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -256,20 +245,12 @@ impl TileService {
             TileStoreCfg::S3(cfg) => {
                 let s3_writer =
                     Arc::new(S3Store::from_config(cfg, &format).unwrap_or_else(error_exit));
-                let file_dir = Arc::new(tmp_file_writer.clone().unwrap().base_dir);
-                let file_writer = Arc::new(tmp_file_writer.clone().unwrap());
-                info!(
-                    "Writing tiles to {s3_writer:?} (temporary dir: {})",
-                    file_dir.to_string_lossy()
-                );
+                info!("Writing tiles to {s3_writer:?}");
                 let s3_writer_thread_count = args.tasks.unwrap_or(256);
                 par_stream = par_stream.par_then(s3_writer_thread_count, move |(xyz, tile)| {
-                    let file_writer = file_writer.clone();
-                    let base_dir = file_dir.clone();
                     let s3_writer = s3_writer.clone();
                     async move {
-                        file_writer.put_tile(&xyz, tile).await.unwrap();
-                        let _ = s3_writer.copy_tile(&base_dir, &xyz).await;
+                        let _ = s3_writer.put_tile(&xyz, tile).await;
                         let empty: Box<dyn Read + Send + Sync> = Box::new(std::io::empty());
                         (xyz, empty)
                     }
@@ -308,11 +289,6 @@ impl TileService {
 
         // Execute pipeline
         par_stream.count().await;
-
-        // Remove temporary directories
-        if let Some(file_writer) = tmp_file_writer {
-            file_writer.remove_dir_all()?;
-        }
 
         progress_main.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
