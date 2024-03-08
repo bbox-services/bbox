@@ -25,6 +25,7 @@ impl FileStore {
             PathBuf::from_iter([cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter());
         Self::new(base_dir, *format)
     }
+    #[allow(dead_code)]
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())
     }

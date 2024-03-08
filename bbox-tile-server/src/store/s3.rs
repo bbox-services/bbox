@@ -113,6 +113,7 @@ impl S3Store {
         Ok(())
     }
     /// Put tile from temporary file
+    #[allow(dead_code)]
     pub async fn copy_tile(&self, base_dir: &Path, tile: &Xyz) -> Result<(), TileStoreError> {
         let fullpath = CacheLayout::Zxy.path(base_dir, tile, &self.format);
         let p = fullpath.as_path();
