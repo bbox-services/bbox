@@ -5,7 +5,6 @@ pub mod pmtiles;
 pub mod s3;
 pub mod s3putfiles;
 
-use crate::cli::SeedArgs;
 use crate::config::TileStoreCfg;
 use crate::mbtiles_ds::Error as MbtilesDsError;
 use crate::store::files::FileStore;
@@ -46,13 +45,6 @@ pub enum TileStoreError {
     MbtError(#[from] MbtError),
     #[error(transparent)]
     PmtilesError(#[from] ::pmtiles::error::Error),
-}
-
-#[async_trait]
-pub trait TileStoreType {
-    async fn from_args(args: &SeedArgs, format: &Format) -> Result<Self, TileStoreError>
-    where
-        Self: Clone + Sized;
 }
 
 #[async_trait]
