@@ -63,6 +63,7 @@ Results:
 * bbox-tile-server main files: 5.6s
 * bbox-tile-server main MBTiles: 6.0s
 * bbox-tile-server main PMTiles: 5.7s
+* bbox-tile-server main (batch) MBTiles: 5.7s
 
 ## S3 upload benchmarks
 

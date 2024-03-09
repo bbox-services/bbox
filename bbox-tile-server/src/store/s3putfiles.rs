@@ -6,6 +6,7 @@ use indicatif::ProgressIterator;
 use log::debug;
 use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use std::env;
+use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::task;
@@ -140,12 +141,14 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     for path in files.progress() {
         let prefix = prefix.clone();
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let input: BoxRead = Box::new(match std::fs::File::open(&path) {
+        let mut data = match std::fs::File::open(&path) {
             Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
             Ok(x) => x,
-        });
+        };
+        let mut bytes = Vec::new();
+        data.read_to_end(&mut bytes)?;
         let s3 = s3.clone();
-        tasks.push(task::spawn(async move { s3.put_data(key, input).await }));
+        tasks.push(task::spawn(async move { s3.put_data(key, bytes).await }));
         if tasks.len() >= task_queue_size {
             tasks = await_one_task(tasks).await;
         }

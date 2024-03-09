@@ -1,17 +1,16 @@
 use crate::config::PmtilesStoreCfg;
-use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
+use crate::store::{Compression, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
-use flate2::{read::GzEncoder, Compression as GzCompression};
 use log::{debug, info};
 use martin_mbtiles::Metadata;
 use pmtiles::async_reader::AsyncPmTilesReader;
 use pmtiles::mmap::MmapBackend;
-use pmtiles2::{util::tile_id, Compression, PMTiles, TileType};
+use pmtiles2::{util::tile_id, Compression as PmCompression, PMTiles, TileType};
 use serde_json::json;
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::path::PathBuf;
 use tile_grid::Xyz;
 
@@ -60,8 +59,8 @@ impl PmtilesStoreReader {
 
 #[async_trait]
 impl TileReader for PmtilesStoreReader {
-    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
-        let resp = if let Some(tile) = self.reader.get_tile(tile.z, tile.x, tile.y).await {
+    async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+        let resp = if let Some(tile) = self.reader.get_tile(xyz.z, xyz.x, xyz.y).await {
             Some(TileResponse {
                 content_type: Some(tile.tile_type.content_type().to_string()),
                 headers: TileResponse::new_headers(),
@@ -76,25 +75,24 @@ impl TileReader for PmtilesStoreReader {
 
 #[async_trait]
 impl TileWriter for PmtilesStoreWriter {
-    async fn exists(&self, _tile: &Xyz) -> bool {
-        // self.archive.get_tile(tile.x, tile.y, tile.z)?.is_some()
+    fn compression(&self) -> Compression {
+        match self.archive.as_ref().expect("initialized").tile_compression {
+            PmCompression::GZip => Compression::Gzip,
+            _ => Compression::None,
+        }
+    }
+    async fn exists(&self, _xyz: &Xyz) -> bool {
+        // self.archive.get_tile(xyz.x, xyz.y, xyz.z)?.is_some()
         false
     }
-    async fn put_tile(&self, _tile: &Xyz, _input: BoxRead) -> Result<(), TileStoreError> {
+    async fn put_tile(&self, _xyz: &Xyz, _data: Vec<u8>) -> Result<(), TileStoreError> {
         Err(TileStoreError::ReadOnly)
     }
-    async fn put_tile_mut(&mut self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
-        let mut bytes: Vec<u8> = Vec::new();
-        if self.archive.as_ref().expect("initialized").tile_compression == Compression::GZip {
-            let mut gz = GzEncoder::new(&mut *input, GzCompression::fast());
-            gz.read_to_end(&mut bytes)?;
-        } else {
-            input.read_to_end(&mut bytes)?;
-        }
+    async fn put_tile_mut(&mut self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
         self.archive
             .as_mut()
             .expect("initialized")
-            .add_tile(tile_id(tile.z, tile.x, tile.y), bytes);
+            .add_tile(tile_id(xyz.z, xyz.x, xyz.y), data);
         debug!(
             "put_tile_mut - num_tiles: {}",
             self.archive.as_ref().expect("initialized").num_tiles()
@@ -126,9 +124,9 @@ impl PmtilesStoreWriter {
             _ => TileType::Unknown,
         };
         archive.tile_compression = if *format == Format::Mvt {
-            Compression::GZip
+            PmCompression::GZip
         } else {
-            Compression::None
+            PmCompression::None
         };
         if let Some(minzoom) = metadata.tilejson.minzoom {
             archive.min_zoom = minzoom;

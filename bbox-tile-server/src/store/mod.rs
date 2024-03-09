@@ -17,8 +17,7 @@ use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
 use log::warn;
-use martin_mbtiles::MbtError;
-use martin_mbtiles::Metadata;
+use martin_mbtiles::{MbtError, Metadata};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
@@ -47,24 +46,39 @@ pub enum TileStoreError {
     PmtilesError(#[from] ::pmtiles::error::Error),
 }
 
+#[derive(Clone, Debug)]
+pub enum Compression {
+    // Unknown,
+    None,
+    Gzip,
+    // Brotli,
+    // Zstd,
+}
+
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
+    /// Tile storage compression
+    // TODO: move into TileStore trait
+    fn compression(&self) -> Compression {
+        Compression::None
+    }
     /// Check for existing tile
     /// Must not be implemented for cases where generating a tile is less expensive than checking
     // Method should probably return date of last change if known
-    async fn exists(&self, tile: &Xyz) -> bool;
+    async fn exists(&self, xyz: &Xyz) -> bool;
     /// Write tile into store
-    async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError>;
+    async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError>;
     /// Write tile into store requiring &mut self
-    async fn put_tile_mut(&mut self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError> {
+    async fn put_tile_mut(&mut self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
         // Most implementations support writing without &mut self
-        self.put_tile(tile, input).await
+        self.put_tile(xyz, data).await
     }
     /// Write multiple tiles into store
-    // &[(Xyz, BoxRead)] would be preferable, but converting &BoxRead to BoxRead is hard
-    async fn put_tiles(&mut self, tiles: Vec<(Xyz, BoxRead)>) -> Result<(), TileStoreError> {
-        for (xyz, tile) in tiles {
-            let _ = self.put_tile_mut(&xyz, tile).await;
+    async fn put_tiles(&mut self, tiles: &[(u8, u32, u32, Vec<u8>)]) -> Result<(), TileStoreError> {
+        for (z, x, y, tile) in tiles {
+            let _ = self
+                .put_tile_mut(&Xyz::new(*x as u64, *y as u64, *z), tile.to_vec()) //FIXME: avoid clone!
+                .await;
         }
         Ok(())
     }
@@ -79,7 +93,7 @@ clone_trait_object!(TileWriter);
 #[async_trait]
 pub trait TileReader: DynClone + Send + Sync {
     /// Lookup tile and return Read stream, if found
-    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError>;
+    async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError>;
 }
 
 clone_trait_object!(TileReader);
@@ -90,21 +104,21 @@ pub enum CacheLayout {
 }
 
 impl CacheLayout {
-    pub fn path(&self, base_dir: &Path, tile: &Xyz, format: &Format) -> PathBuf {
+    pub fn path(&self, base_dir: &Path, xyz: &Xyz, format: &Format) -> PathBuf {
         let mut path = base_dir.to_path_buf();
         match self {
             CacheLayout::Zxy => {
                 // "{z}/{x}/{y}.{format}"
-                path.push(&tile.z.to_string());
-                path.push(&tile.x.to_string());
-                path.push(&tile.y.to_string());
+                path.push(&xyz.z.to_string());
+                path.push(&xyz.x.to_string());
+                path.push(&xyz.y.to_string());
                 path.set_extension(format.file_suffix());
             }
         }
         path
     }
-    pub fn path_string(&self, base_dir: &Path, tile: &Xyz, format: &Format) -> String {
-        self.path(base_dir, tile, format)
+    pub fn path_string(&self, base_dir: &Path, xyz: &Xyz, format: &Format) -> String {
+        self.path(base_dir, xyz, format)
             .into_os_string()
             .to_string_lossy()
             .to_string()
@@ -116,17 +130,17 @@ pub struct NoStore;
 
 #[async_trait]
 impl TileWriter for NoStore {
-    async fn exists(&self, _tile: &Xyz) -> bool {
+    async fn exists(&self, _xyz: &Xyz) -> bool {
         false
     }
-    async fn put_tile(&self, _tile: &Xyz, mut _input: BoxRead) -> Result<(), TileStoreError> {
+    async fn put_tile(&self, _xyz: &Xyz, _data: Vec<u8>) -> Result<(), TileStoreError> {
         Ok(())
     }
 }
 
 #[async_trait]
 impl TileReader for NoStore {
-    async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+    async fn get_tile(&self, _xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         Ok(None)
     }
 }
