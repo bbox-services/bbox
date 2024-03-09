@@ -52,12 +52,17 @@ Start DB:
 
 Local file seeding benchmark:
 
-    just seed-files
+    just seed-bench-files
+    just seed-bench-mbtiles
+    just seed-bench-pmtiles
 
 Results:
 
-* bbox-tile-server v0.5.0-alpha4: 6.5s
-
+* bbox-tile-server future::select_all files: 4.2s (?)
+* bbox-tile-server future::select_all MBTiles: 6.8s
+* bbox-tile-server main files: 5.6s
+* bbox-tile-server main MBTiles: 6.0s
+* bbox-tile-server main PMTiles: 5.7s
 
 ## S3 upload benchmarks
 
