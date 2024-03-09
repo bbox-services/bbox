@@ -259,9 +259,7 @@ impl TileService {
                             }
                         }
                         let empty = batch.is_empty();
-                        for (xyz, tile) in batch {
-                            let _ = tile_writer.put_tile_mut(&xyz, tile).await;
-                        }
+                        let _ = tile_writer.put_tiles(batch).await;
                         if empty {
                             let _ = tile_writer.finalize();
                         }

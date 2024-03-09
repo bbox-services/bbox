@@ -60,6 +60,14 @@ pub trait TileWriter: DynClone + Send + Sync {
         // Most implementations support writing without &mut self
         self.put_tile(tile, input).await
     }
+    /// Write multiple tiles into store
+    // &[(Xyz, BoxRead)] would be preferable, but converting &BoxRead to BoxRead is hard
+    async fn put_tiles(&mut self, tiles: Vec<(Xyz, BoxRead)>) -> Result<(), TileStoreError> {
+        for (xyz, tile) in tiles {
+            let _ = self.put_tile_mut(&xyz, tile).await;
+        }
+        Ok(())
+    }
     /// Finalize writing
     fn finalize(&mut self) -> Result<(), TileStoreError> {
         Ok(())
