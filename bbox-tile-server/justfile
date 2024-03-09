@@ -36,41 +36,72 @@ setup-minio:
 # -- mvtbench seeding
 
 # mvtbench seed files
-seed-bench-files: seed-files-cleanup docker-is-ready
+seed-bench-files: docker-is-ready
+    rm -rf /tmp/mvtbench
     cargo build --release
     ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6
 
-seed-files-cleanup:
-    rm -rf /tmp/mvtbench
-
 # mvtbench seed MBTiles
-seed-bench-mbtiles: seed-mbtiles-cleanup docker-is-ready
+seed-bench-mbtiles: docker-is-ready
+    rm -f /tmp/mvtbench.mbtiles
     cargo build --release
-    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=6
-
-seed-mbtiles-cleanup:
-    rm -f /tmp/tilecache.mbtiles
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --mb-path=/tmp/mvtbench.mbtiles --tileset=ne_countries --maxzoom=6
 
 # mvtbench seed PMTiles
-seed-bench-pmtiles: seed-pmtiles-cleanup docker-is-ready
+seed-bench-pmtiles: docker-is-ready
+    rm -f /tmp/mvtbench.pmtiles
     cargo build --release
-    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=6
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --pm-path=/tmp/mvtbench.pmtiles --tileset=ne_countries --maxzoom=6
 
-seed-pmtiles-cleanup:
-    rm -f /tmp/tilecache.pmtiles
+# -- tile store write benchmarks
+
+seed-write-bench-files:
+    rm -rf /tmp/writebench
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.pmtiles
+
+seed-write-bench-mbtiles:
+    rm -f /tmp/writebench.mbtiles
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=info seed --mb-path=/tmp/writebench.mbtiles --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.pmtiles
+
+seed-write-bench-pmtiles:
+    rm -f /tmp/writebench.pmtiles
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --pm-path=/tmp/writebench.pmtiles --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.pmtiles
+
+# -- tile datasource read benchmarks
+
+seed-read-bench-pg: docker-is-ready
+    cargo build --release
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --no-store --tileset=ne_countries --maxzoom=6
+
+seed-read-bench-mbtiles:
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=info seed --no-store --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.mbtiles
+
+seed-read-bench-pmtiles:
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --no-store --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.pmtiles
+
+# Run all seeding benchmarks
+seed-all-benchmarks: seed-bench-files seed-bench-mbtiles seed-bench-pmtiles seed-write-bench-files seed-write-bench-mbtiles seed-write-bench-pmtiles seed-read-bench-pg seed-read-bench-mbtiles seed-read-bench-pmtiles
 
 # -- mvtbench test seeding
 
 # mvtbench test seed files
-seed-files: seed-files-cleanup docker-is-ready
+seed-files: docker-is-ready
+    rm -rf /tmp/mvtbench
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --maxzoom=3
 
 # mvtbench test seed MBTiles
-seed-mbtiles: seed-mbtiles-cleanup docker-is-ready
+seed-mbtiles: docker-is-ready
+    rm -f /tmp/tilecache.mbtiles
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=3
 
 # mvtbench test seed PMTiles
-seed-pmtiles: seed-pmtiles-cleanup docker-is-ready
+seed-pmtiles: docker-is-ready
+    rm -f /tmp/tilecache.pmtiles
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=debug seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=3
 
 export AWS_ACCESS_KEY_ID := "miniostorage"
@@ -80,28 +111,6 @@ export S3_ENDPOINT_URL := "http://localhost:9000"
 # mvtbench test seed S3
 seed-s3: docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --s3-path=s3://tiles --overwrite=true --maxzoom=3
-
-# -- tile store write benchmark
-
-seed-write-bench-files:
-    rm -rf /tmp/writebench
-    cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
-
-seed-write-bench-files-mb:
-    rm -rf /tmp/writebench
-    cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.mbtiles
-
-seed-write-bench-mbtiles:
-    rm -f /tmp/writebench.mbtiles
-    cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null --loglevel=info seed --mb-path=/tmp/writebench.mbtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
-
-seed-write-bench-pmtiles:
-    rm -f /tmp/writebench.pmtiles
-    cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --pm-path=/tmp/writebench.pmtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # -- raster seeding
 

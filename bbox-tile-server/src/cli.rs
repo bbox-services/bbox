@@ -67,6 +67,9 @@ pub struct SeedArgs {
     /// PMTiles path to store tiles
     #[arg(long, group = "store")]
     pub pm_path: Option<String>,
+    /// No tile store (for read benchmarks)
+    #[arg(long, group = "store")]
+    pub no_store: bool,
     /// Number of threads to use, defaults to number of logical cores
     #[arg(short, long)]
     pub threads: Option<usize>,
@@ -277,6 +280,9 @@ impl TileService {
                     .count()
                     .await;
             }
+            TileStoreCfg::NoStore => {
+                par_stream.count().await;
+            }
         };
 
         progress_main.set_style(
@@ -284,7 +290,7 @@ impl TileService {
         );
         let cnt = progress_main.position() + 1;
         let elapsed = progress_main.elapsed().as_millis() as f64 / 1000.0;
-        progress_main.finish_with_message(format!("{cnt} tiles generated in {elapsed:.1}s"));
+        progress_main.finish_with_message(format!("{cnt} tiles generated in {elapsed:.2}s"));
 
         Ok(())
     }

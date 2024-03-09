@@ -1,5 +1,5 @@
 use crate::cli::UploadArgs;
-use crate::store::{s3::S3Store, BoxRead};
+use crate::store::s3::S3Store;
 use bbox_core::{file_search, Format};
 use crossbeam::channel;
 use indicatif::ProgressIterator;
@@ -43,10 +43,10 @@ pub async fn put_files_seq(args: &UploadArgs) -> anyhow::Result<()> {
     let files = file_search::search(srcdir, "*").into_iter();
     for path in files.progress() {
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
-            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+        let mut input = match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {path:?} failed: {e}"),
             Ok(x) => x,
-        });
+        };
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {
             Ok(len) => len as i64,
@@ -92,10 +92,10 @@ pub async fn put_files_tasks(args: &UploadArgs) -> anyhow::Result<()> {
         let prefix = prefix.clone();
         let client = S3Client::new(region.clone());
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
-        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
-            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+        let mut input = match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {path:?} failed: {e}"),
             Ok(x) => x,
-        });
+        };
         tasks.push(task::spawn(async move {
             let mut data = Vec::with_capacity(4096);
             let content_length = match input.read_to_end(&mut data) {
@@ -142,7 +142,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
         let prefix = prefix.clone();
         let key = path.strip_prefix(&prefix)?.to_string_lossy().to_string();
         let mut data = match std::fs::File::open(&path) {
-            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+            Err(e) => anyhow::bail!("Opening input file {path:?} failed: {e}"),
             Ok(x) => x,
         };
         let mut bytes = Vec::new();
@@ -196,10 +196,10 @@ pub async fn put_files_channels(args: &UploadArgs) -> anyhow::Result<()> {
 
         wait_for_tile()?;
 
-        let mut input: BoxRead = Box::new(match std::fs::File::open(&path) {
-            Err(e) => anyhow::bail!("Opening input file {:?} failed: {e}", &path),
+        let mut input = match std::fs::File::open(&path) {
+            Err(e) => anyhow::bail!("Opening input file {path:?} failed: {e}"),
             Ok(x) => x,
-        });
+        };
         let mut data = Vec::with_capacity(4096);
         let content_length = match input.read_to_end(&mut data) {
             Ok(len) => len as i64,

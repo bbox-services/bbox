@@ -212,6 +212,7 @@ pub enum TileStoreCfg {
     S3(S3StoreCfg),
     Mbtiles(MbtilesStoreCfg),
     Pmtiles(PmtilesStoreCfg),
+    NoStore,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -263,6 +264,8 @@ impl TileStoreCfg {
         } else if let Some(path) = &args.pm_path {
             let cache_cfg = TileStoreCfg::Pmtiles(PmtilesStoreCfg { path: path.into() });
             Some(cache_cfg)
+        } else if args.no_store {
+            Some(TileStoreCfg::NoStore)
         } else {
             None
         }
