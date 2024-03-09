@@ -3,7 +3,8 @@ use crate::config::*;
 use crate::datasource::wms_fcgi::{HttpRequestParams, MapService, WmsMetrics};
 use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
 use crate::store::{
-    store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
+    store_reader_from_config, store_writer_from_config, Compression, TileReader, TileStoreError,
+    TileWriter,
 };
 use actix_web::web;
 use async_trait::async_trait;
@@ -14,6 +15,7 @@ use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::{CoreService, OgcApiService};
 use bbox_core::Format;
 use clap::{ArgMatches, Args, FromArgMatches};
+use flate2::{read::GzEncoder, Compression as GzCompression};
 use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use serde_json::json;
@@ -276,12 +278,12 @@ impl TileService {
             .get(tms)
             .ok_or(RegistryError::TmsNotFound(tms.to_string()))
     }
-    pub fn xyz_extent(&self, tms_id: &str, tile: &Xyz) -> Result<QueryExtent, TileSourceError> {
+    pub fn xyz_extent(&self, tms_id: &str, xyz: &Xyz) -> Result<QueryExtent, TileSourceError> {
         let tms = self.grid(tms_id)?;
-        let extent = tms.xy_bounds(tile);
+        let extent = tms.xy_bounds(xyz);
         let srid = tms.crs().as_srid();
-        let tile_matrix = tms.matrix(tile.z);
-        if !tms.is_valid(tile) {
+        let tile_matrix = tms.matrix(xyz.z);
+        if !tms.is_valid(xyz) {
             return Err(TileSourceError::TileXyzError);
         }
         let tile_width = tile_matrix.as_ref().tile_width;
@@ -297,9 +299,10 @@ impl TileService {
     pub async fn read_tile(
         &self,
         tileset: &str,
-        tile: &Xyz,
+        xyz: &Xyz,
         format: &Format,
-    ) -> Result<TileResponse, ServiceError> {
+        compression: Compression,
+    ) -> Result<Vec<u8>, ServiceError> {
         let metrics = self.wms_metrics();
         let ts = self
             .tileset(tileset)
@@ -310,16 +313,27 @@ impl TileService {
             req_path: "/",
             metrics,
         };
-        Ok(ts
+        let mut tile = ts
             .source
-            .xyz_request(self, &ts.tms, tile, format, request_params)
-            .await?)
+            .xyz_request(self, &ts.tms, xyz, format, request_params)
+            .await?;
+        let mut bytes: Vec<u8> = Vec::new();
+        match compression {
+            Compression::Gzip => {
+                let mut gz = GzEncoder::new(tile.body, GzCompression::fast());
+                gz.read_to_end(&mut bytes)?;
+            }
+            Compression::None => {
+                tile.body.read_to_end(&mut bytes)?;
+            }
+        }
+        Ok(bytes)
     }
     /// Get tile with cache lookup
     pub async fn tile_cached(
         &self,
         tileset: &str,
-        tile: &Xyz,
+        xyz: &Xyz,
         format: &Format,
         _gzip: bool,
         request_params: HttpRequestParams<'_>,
@@ -328,8 +342,8 @@ impl TileService {
             .tileset(tileset)
             .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
         if let Some(cache) = &tileset.store_reader {
-            if tileset.is_cachable_at(tile.z) {
-                if let Some(tile) = cache.get_tile(tile).await? {
+            if tileset.is_cachable_at(xyz.z) {
+                if let Some(tile) = cache.get_tile(xyz).await? {
                     //TODO: handle compression
                     //TODO: check returned format
                     return Ok(Some(tile));
@@ -340,17 +354,15 @@ impl TileService {
         // let tms = tileset.tms.clone();
         let mut tiledata = tileset
             .source
-            .xyz_request(self, &tileset.tms, tile, format, request_params)
+            .xyz_request(self, &tileset.tms, xyz, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
-        if tileset.is_cachable_at(tile.z) {
+        if tileset.is_cachable_at(xyz.z) {
             // Read tile into memory
             let mut body = Vec::new();
             tiledata.body.read_to_end(&mut body)?;
             if let Some(cache) = &tileset.store_writer {
-                cache
-                    .put_tile(tile, Box::new(Cursor::new(body.clone())))
-                    .await?;
+                cache.put_tile(xyz, body.clone()).await?;
             }
             Ok(Some(TileResponse {
                 content_type: tiledata.content_type,

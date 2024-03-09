@@ -1,6 +1,6 @@
 use crate::config::TileStoreCfg;
 use crate::service::{ServiceError, TileService};
-use crate::store::{s3putfiles, BoxRead, CacheLayout};
+use crate::store::{s3putfiles, CacheLayout};
 use clap::{Args, Parser};
 use futures::{prelude::*, stream};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -189,6 +189,7 @@ impl TileService {
             );
         };
         let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
+        let compression = tile_writer.compression();
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -214,10 +215,13 @@ impl TileService {
         let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
             let tileset = tileset_name.clone();
             let service = service.clone();
+            let compression = compression.clone();
             async move {
-                let tile = service.read_tile(&tileset, &xyz, &format).await.unwrap();
-                let input: BoxRead = Box::new(tile.body);
-                (xyz, input)
+                let tile = service
+                    .read_tile(&tileset, &xyz, &format, compression)
+                    .await
+                    .unwrap();
+                (xyz, tile)
             }
         });
 
@@ -252,14 +256,17 @@ impl TileService {
                 par_stream
                     .stateful_batching(tile_writer, |mut tile_writer, mut stream| async move {
                         let mut batch = Vec::with_capacity(batch_size);
-                        while let Some(value) = stream.next().await {
-                            batch.push(value);
+                        while let Some((xyz, tile)) = stream.next().await {
+                            batch.push((xyz.z, xyz.x as u32, xyz.y as u32, tile));
                             if batch.len() >= batch.capacity() {
                                 break;
                             }
                         }
                         let empty = batch.is_empty();
-                        let _ = tile_writer.put_tiles(batch).await;
+                        let _ = tile_writer.put_tiles(&batch).await;
+                        // for (xyz, tile) in batch {
+                        //     let _ = tile_writer.put_tile_mut(&xyz, tile).await;
+                        // }
                         if empty {
                             let _ = tile_writer.finalize();
                         }

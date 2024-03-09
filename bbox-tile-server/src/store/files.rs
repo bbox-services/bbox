@@ -1,5 +1,5 @@
 use crate::config::FileStoreCfg;
-use crate::store::{BoxRead, CacheLayout, TileReader, TileStoreError, TileWriter};
+use crate::store::{CacheLayout, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
@@ -32,12 +32,12 @@ impl FileStore {
 
 #[async_trait]
 impl TileWriter for FileStore {
-    async fn exists(&self, tile: &Xyz) -> bool {
-        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
+    async fn exists(&self, xyz: &Xyz) -> bool {
+        let p = CacheLayout::Zxy.path(&self.base_dir, xyz, &self.format);
         p.exists()
     }
-    async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
-        let fullpath = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
+    async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
+        let fullpath = CacheLayout::Zxy.path(&self.base_dir, xyz, &self.format);
         let p = fullpath.as_path();
         fs::create_dir_all(p.parent().unwrap())
             .map_err(|e| TileStoreError::FileError(p.parent().unwrap().into(), e))?;
@@ -45,7 +45,7 @@ impl TileWriter for FileStore {
         let mut writer = BufWriter::new(
             File::create(&fullpath).map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?,
         );
-        io::copy(&mut input, &mut writer)
+        io::copy(&mut data.as_slice(), &mut writer)
             .map_err(|e| TileStoreError::FileError(fullpath.clone(), e))?;
         Ok(())
     }
@@ -53,8 +53,8 @@ impl TileWriter for FileStore {
 
 #[async_trait]
 impl TileReader for FileStore {
-    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
-        let p = CacheLayout::Zxy.path(&self.base_dir, tile, &self.format);
+    async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+        let p = CacheLayout::Zxy.path(&self.base_dir, xyz, &self.format);
         if let Ok(f) = File::open(p) {
             Ok(Some(TileResponse {
                 content_type: None, // TODO: from `format`

@@ -1,6 +1,6 @@
 use crate::config::S3StoreCfg;
 use crate::store::CacheLayout;
-use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
+use crate::store::{TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::Format;
@@ -63,26 +63,22 @@ impl S3Store {
 
 #[async_trait]
 impl TileWriter for S3Store {
-    async fn exists(&self, _tile: &Xyz) -> bool {
+    async fn exists(&self, _xyz: &Xyz) -> bool {
         // 2nd level cache lookup is not supported
         false
     }
-    async fn put_tile(&self, tile: &Xyz, input: BoxRead) -> Result<(), TileStoreError> {
-        let key = CacheLayout::Zxy.path_string(&PathBuf::new(), tile, &self.format);
-        self.put_data(key, input).await
+    async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
+        let key = CacheLayout::Zxy.path_string(&PathBuf::new(), xyz, &self.format);
+        self.put_data(key, data).await
     }
 }
 
 impl S3Store {
-    pub async fn put_data(&self, key: String, mut input: BoxRead) -> Result<(), TileStoreError> {
+    pub async fn put_data(&self, key: String, data: Vec<u8>) -> Result<(), TileStoreError> {
         let bucket = self.bucket.clone();
         // TODO: Workaround for https://github.com/rusoto/rusoto/issues/1980
         let client = S3Client::new(self.region.clone());
-        let mut data = Vec::with_capacity(4096);
-        let content_length = match input.read_to_end(&mut data) {
-            Ok(len) => len as i64,
-            Err(e) => return Err(S3StoreError::ReadInputError(e).into()),
-        };
+        let content_length = data.len() as i64;
         debug!("cp {key} ({content_length} bytes)");
 
         if let Err(e) = {
@@ -102,13 +98,14 @@ impl S3Store {
     }
     /// Put tile from temporary file
     #[allow(dead_code)]
-    pub async fn copy_tile(&self, base_dir: &Path, tile: &Xyz) -> Result<(), TileStoreError> {
-        let fullpath = CacheLayout::Zxy.path(base_dir, tile, &self.format);
+    pub async fn copy_tile(&self, base_dir: &Path, xyz: &Xyz) -> Result<(), TileStoreError> {
+        let fullpath = CacheLayout::Zxy.path(base_dir, xyz, &self.format);
         let p = fullpath.as_path();
-        let reader = Box::new(BufReader::new(
-            File::open(p).map_err(|e| TileStoreError::FileError(p.into(), e))?,
-        ));
-        self.put_tile(tile, reader).await?;
+        let mut data =
+            BufReader::new(File::open(p).map_err(|e| TileStoreError::FileError(p.into(), e))?);
+        let mut bytes = Vec::new();
+        data.read_to_end(&mut bytes)?;
+        self.put_tile(xyz, bytes).await?;
         fs::remove_file(p).map_err(|e| TileStoreError::FileError(p.into(), e))?;
 
         Ok(())
@@ -117,7 +114,7 @@ impl S3Store {
 
 #[async_trait]
 impl TileReader for S3Store {
-    async fn get_tile(&self, _tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+    async fn get_tile(&self, _xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         // 2nd level cache lookup is not supported
         Ok(None)
     }

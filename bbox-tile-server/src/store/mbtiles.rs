@@ -1,13 +1,12 @@
 use crate::config::MbtilesStoreCfg;
 use crate::mbtiles_ds::{Error as MbtilesDsError, MbtilesDatasource};
-use crate::store::{BoxRead, TileReader, TileStoreError, TileWriter};
+use crate::store::{Compression, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::endpoints::TileResponse;
-use flate2::{read::GzEncoder, Compression};
 use log::info;
 use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
 use std::ffi::OsStr;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::path::Path;
 use tile_grid::Xyz;
 
@@ -46,24 +45,20 @@ impl MbtilesStore {
 
 #[async_trait]
 impl TileWriter for MbtilesStore {
-    async fn exists(&self, tile: &Xyz) -> bool {
-        match self
-            .mbt
-            .get_tile(tile.z, tile.x as u32, tile.y as u32)
-            .await
-        {
+    fn compression(&self) -> Compression {
+        if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
+            Compression::Gzip
+        } else {
+            Compression::None
+        }
+    }
+    async fn exists(&self, xyz: &Xyz) -> bool {
+        match self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await {
             Ok(None) | Err(_) => false,
             Ok(_) => true,
         }
     }
-    async fn put_tile(&self, tile: &Xyz, mut input: BoxRead) -> Result<(), TileStoreError> {
-        let mut bytes: Vec<u8> = Vec::new();
-        if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
-            let mut gz = GzEncoder::new(&mut *input, Compression::fast());
-            gz.read_to_end(&mut bytes)?;
-        } else {
-            input.read_to_end(&mut bytes)?;
-        }
+    async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
         let mut conn = self.mbt.pool.acquire().await?;
         self.mbt
             .mbtiles
@@ -72,34 +67,16 @@ impl TileWriter for MbtilesStore {
                 MbtType::Flat,
                 //MbtType::Normalized { hash_view: false }, -> "no such function: md5_hex"
                 CopyDuplicateMode::Override,
-                &[(tile.z, tile.x as u32, tile.y as u32, bytes)],
+                &[(xyz.z, xyz.x as u32, xyz.y as u32, data)],
             )
             .await?;
         Ok(())
     }
-    async fn put_tiles(&mut self, mut tiles: Vec<(Xyz, BoxRead)>) -> Result<(), TileStoreError> {
-        let batch = tiles
-            .iter_mut()
-            .map(|(xyz, tile)| {
-                let mut bytes: Vec<u8> = Vec::new();
-                if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
-                    let mut gz = GzEncoder::new(&mut *tile, Compression::fast());
-                    gz.read_to_end(&mut bytes).unwrap();
-                } else {
-                    tile.read_to_end(&mut bytes).unwrap();
-                }
-                (xyz.z, xyz.x as u32, xyz.y as u32, bytes)
-            })
-            .collect::<Vec<_>>();
+    async fn put_tiles(&mut self, tiles: &[(u8, u32, u32, Vec<u8>)]) -> Result<(), TileStoreError> {
         let mut conn = self.mbt.pool.acquire().await?;
         self.mbt
             .mbtiles
-            .insert_tiles(
-                &mut conn,
-                MbtType::Flat,
-                CopyDuplicateMode::Override,
-                &batch,
-            )
+            .insert_tiles(&mut conn, MbtType::Flat, CopyDuplicateMode::Override, tiles)
             .await?;
         Ok(())
     }
@@ -107,22 +84,19 @@ impl TileWriter for MbtilesStore {
 
 #[async_trait]
 impl TileReader for MbtilesStore {
-    async fn get_tile(&self, tile: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
-        let resp = if let Some(content) = self
-            .mbt
-            .get_tile(tile.z, tile.x as u32, tile.y as u32)
-            .await?
-        {
-            let content_type = Some("application/x-protobuf".to_string());
-            let body = Box::new(Cursor::new(content));
-            Some(TileResponse {
-                content_type,
-                headers: TileResponse::new_headers(),
-                body,
-            })
-        } else {
-            None
-        };
+    async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
+        let resp =
+            if let Some(content) = self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
+                let content_type = Some("application/x-protobuf".to_string());
+                let body = Box::new(Cursor::new(content));
+                Some(TileResponse {
+                    content_type,
+                    headers: TileResponse::new_headers(),
+                    body,
+                })
+            } else {
+                None
+            };
         Ok(resp)
     }
 }
