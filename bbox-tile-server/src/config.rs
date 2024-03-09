@@ -282,26 +282,32 @@ impl TileserverCfg {
             info!("Imported t-rex config:\n{}", cfg.as_toml());
         }
 
-        // Get config from CLI
-        if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
-            if let Some(file_or_url) = args.file_or_url {
-                if let Some(source_cfg) = source_config_from_cli_arg(&file_or_url) {
-                    let name = if let Some(name) = Path::new(&file_or_url).file_stem() {
-                        name.to_string_lossy().to_string()
-                    } else {
-                        file_or_url.to_string()
-                    };
-                    info!("Adding tileset `{name}`");
-                    let ts = TileSetCfg {
-                        name,
-                        tms: None,
-                        source: source_cfg,
-                        cache: None,
-                        cache_format: None,
-                        cache_limits: None,
-                    };
-                    cfg.tilesets.push(ts);
-                }
+        // Get datasource from CLI
+        let file_or_url =
+            if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
+                args.file_or_url
+            } else if let Ok(Commands::Seed(args)) = Commands::from_arg_matches(cli) {
+                args.file_or_url
+            } else {
+                None
+            };
+        if let Some(file_or_url) = file_or_url {
+            if let Some(source_cfg) = source_config_from_cli_arg(&file_or_url) {
+                let name = if let Some(name) = Path::new(&file_or_url).file_stem() {
+                    name.to_string_lossy().to_string()
+                } else {
+                    file_or_url.to_string()
+                };
+                info!("Adding tileset `{name}`");
+                let ts = TileSetCfg {
+                    name,
+                    tms: None,
+                    source: source_cfg,
+                    cache: None,
+                    cache_format: None,
+                    cache_limits: None,
+                };
+                cfg.tilesets.push(ts);
             }
         }
         cfg

@@ -38,7 +38,7 @@ setup-minio:
 # mvtbench seed files
 seed-bench-files: seed-files-cleanup docker-is-ready
     cargo build --release
-    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6
 
 seed-files-cleanup:
     rm -rf /tmp/mvtbench
@@ -46,7 +46,7 @@ seed-files-cleanup:
 # mvtbench seed MBTiles
 seed-bench-mbtiles: seed-mbtiles-cleanup docker-is-ready
     cargo build --release
-    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=6
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=6
 
 seed-mbtiles-cleanup:
     rm -f /tmp/tilecache.mbtiles
@@ -54,7 +54,7 @@ seed-mbtiles-cleanup:
 # mvtbench seed PMTiles
 seed-bench-pmtiles: seed-pmtiles-cleanup docker-is-ready
     cargo build --release
-    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=6
+    ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=6
 
 seed-pmtiles-cleanup:
     rm -f /tmp/tilecache.pmtiles
@@ -80,6 +80,28 @@ export S3_ENDPOINT_URL := "http://localhost:9000"
 # mvtbench test seed S3
 seed-s3: docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --s3-path=s3://tiles --overwrite=true --maxzoom=3
+
+# -- tile store write benchmark
+
+seed-write-bench-files:
+    rm -rf /tmp/writebench
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+
+seed-write-bench-files-mb:
+    rm -rf /tmp/writebench
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.mbtiles
+
+seed-write-bench-mbtiles:
+    rm -f /tmp/writebench.mbtiles
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=info seed --mb-path=/tmp/writebench.mbtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+
+seed-write-bench-pmtiles:
+    rm -f /tmp/writebench.pmtiles
+    cargo build --release
+    ../target/release/bbox-tile-server --config=/dev/null --loglevel=warn seed --pm-path=/tmp/writebench.pmtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # -- raster seeding
 
