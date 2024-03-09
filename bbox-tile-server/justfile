@@ -35,27 +35,49 @@ setup-minio:
 
 # -- mvtbench seeding
 
-# Seed to dir (Equal Earth)
-seed-files: cleanup docker-is-ready
+# mvtbench seed files
+seed-bench-files: seed-files-cleanup docker-is-ready
     cargo build --release
     time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --tileset=ne_countries --maxzoom=6
 
-cleanup:
+seed-files-cleanup:
     rm -rf /tmp/mvtbench
 
-seed-files-test: cleanup docker-is-ready
+# mvtbench seed MBTiles
+seed-bench-mbtiles: seed-mbtiles-cleanup docker-is-ready
+    cargo build --release
+    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=6
+
+seed-mbtiles-cleanup:
+    rm -f /tmp/tilecache.mbtiles
+
+# mvtbench seed PMTiles
+seed-bench-pmtiles: seed-pmtiles-cleanup docker-is-ready
+    cargo build --release
+    time ../target/release/bbox-tile-server --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=warn seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=6
+
+seed-pmtiles-cleanup:
+    rm -f /tmp/tilecache.pmtiles
+
+# -- mvtbench test seeding
+
+# mvtbench test seed files
+seed-files: seed-files-cleanup docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --maxzoom=3
 
-seed-pmtiles: docker-is-ready
-    cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=debug seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=3
-
-seed-mbtiles: docker-is-ready
+# mvtbench test seed MBTiles
+seed-mbtiles: seed-mbtiles-cleanup docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --mb-path=/tmp/tilecache.mbtiles --tileset=ne_countries --maxzoom=3
+
+# mvtbench test seed PMTiles
+seed-pmtiles: seed-pmtiles-cleanup docker-is-ready
+    cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=debug seed --pm-path=/tmp/tilecache.pmtiles --tileset=ne_countries --maxzoom=3
 
 export AWS_ACCESS_KEY_ID := "miniostorage"
 export AWS_SECRET_ACCESS_KEY := "miniostorage"
 export S3_ENDPOINT_URL := "http://localhost:9000"
 
+# mvtbench test seed S3
 seed-s3: docker-is-ready
     cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=info seed --tileset=ne_countries --s3-path=s3://tiles --overwrite=true --maxzoom=3
 
