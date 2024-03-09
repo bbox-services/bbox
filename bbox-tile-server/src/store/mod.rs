@@ -18,11 +18,8 @@ use bbox_core::Format;
 use dyn_clone::{clone_trait_object, DynClone};
 use log::warn;
 use martin_mbtiles::{MbtError, Metadata};
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
-
-pub type BoxRead = Box<dyn Read + Send + Sync>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum TileStoreError {
@@ -169,6 +166,7 @@ pub async fn store_reader_from_config(
                 Box::new(NoStore)
             }
         }
+        TileStoreCfg::NoStore => Box::new(NoStore),
     }
 }
 
@@ -191,5 +189,6 @@ pub async fn store_writer_from_config(
         TileStoreCfg::Pmtiles(cfg) => {
             Box::new(PmtilesStoreWriter::from_config(cfg, metadata, format))
         }
+        TileStoreCfg::NoStore => Box::new(NoStore),
     }
 }
