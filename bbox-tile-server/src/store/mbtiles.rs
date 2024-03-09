@@ -77,6 +77,32 @@ impl TileWriter for MbtilesStore {
             .await?;
         Ok(())
     }
+    async fn put_tiles(&mut self, mut tiles: Vec<(Xyz, BoxRead)>) -> Result<(), TileStoreError> {
+        let batch = tiles
+            .iter_mut()
+            .map(|(xyz, tile)| {
+                let mut bytes: Vec<u8> = Vec::new();
+                if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
+                    let mut gz = GzEncoder::new(&mut *tile, Compression::fast());
+                    gz.read_to_end(&mut bytes).unwrap();
+                } else {
+                    tile.read_to_end(&mut bytes).unwrap();
+                }
+                (xyz.z, xyz.x as u32, xyz.y as u32, bytes)
+            })
+            .collect::<Vec<_>>();
+        let mut conn = self.mbt.pool.acquire().await?;
+        self.mbt
+            .mbtiles
+            .insert_tiles(
+                &mut conn,
+                MbtType::Flat,
+                CopyDuplicateMode::Override,
+                &batch,
+            )
+            .await?;
+        Ok(())
+    }
 }
 
 #[async_trait]
