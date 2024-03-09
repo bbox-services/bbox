@@ -215,7 +215,9 @@ impl Datasources {
 }
 
 pub fn source_config_from_cli_arg(file_or_url: &str) -> Option<SourceParamCfg> {
-    MbtilesStore::config_from_cli_arg(file_or_url).map(SourceParamCfg::Mbtiles)
+    MbtilesStore::config_from_cli_arg(file_or_url)
+        .map(SourceParamCfg::Mbtiles)
+        .or(PmtilesStoreReader::config_from_cli_arg(file_or_url).map(SourceParamCfg::Pmtiles))
 }
 
 #[cfg(not(feature = "map-server"))]

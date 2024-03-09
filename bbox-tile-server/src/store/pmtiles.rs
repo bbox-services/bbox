@@ -9,9 +9,10 @@ use pmtiles::async_reader::AsyncPmTilesReader;
 use pmtiles::mmap::MmapBackend;
 use pmtiles2::{util::tile_id, Compression as PmCompression, PMTiles, TileType};
 use serde_json::json;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
 
 pub struct PmtilesStoreReader {
@@ -51,6 +52,17 @@ impl PmtilesStoreReader {
     }
     pub async fn from_config(cfg: &PmtilesStoreCfg) -> Result<Self, TileStoreError> {
         Self::create_reader(cfg.path.clone()).await
+    }
+    pub fn config_from_cli_arg(file_or_url: &str) -> Option<PmtilesStoreCfg> {
+        match Path::new(file_or_url).extension().and_then(OsStr::to_str) {
+            Some("pmtiles") => {
+                let cfg = PmtilesStoreCfg {
+                    path: file_or_url.into(),
+                };
+                Some(cfg)
+            }
+            _ => None,
+        }
     }
     pub async fn get_metadata(&self) -> Result<String, ::pmtiles::error::Error> {
         self.reader.get_metadata().await

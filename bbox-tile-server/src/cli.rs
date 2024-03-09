@@ -76,6 +76,8 @@ pub struct SeedArgs {
     /// Overwrite previously cached tiles
     #[arg(long)]
     pub overwrite: Option<bool>,
+    /// Read tiles from file or URL
+    pub file_or_url: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -159,6 +161,9 @@ By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 
 impl TileService {
     pub async fn seed_by_grid(&self, args: &SeedArgs) -> anyhow::Result<()> {
+        let progress = progress_bar();
+        let progress_main = progress.clone();
+
         let tileset_name = Arc::new(args.tileset.clone());
         let tileset = self
             .tileset(&args.tileset)
@@ -204,8 +209,6 @@ impl TileService {
         // map service source -> tile store writer
         // map service source -> batch collector -> mbtiles store writer
 
-        let progress = progress_bar();
-        let progress_main = progress.clone();
         let iter = griditer.map(move |xyz| {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
             progress.set_message(path.clone());
@@ -252,21 +255,20 @@ impl TileService {
             }
             TileStoreCfg::Mbtiles(_) | TileStoreCfg::Pmtiles(_) => {
                 let tile_writer = tileset.store_writer.clone().unwrap();
-                let batch_size = 10;
+                let batch_size = 200; // For MBTiles, create the largest prepared statement supported by SQLite (999 parameters)
                 par_stream
                     .stateful_batching(tile_writer, |mut tile_writer, mut stream| async move {
                         let mut batch = Vec::with_capacity(batch_size);
                         while let Some((xyz, tile)) = stream.next().await {
                             batch.push((xyz.z, xyz.x as u32, xyz.y as u32, tile));
+                            // let _ = tile_writer.put_tile_mut(&xyz, tile).await;
+                            // batch.push((xyz.z, xyz.x as u32, xyz.y as u32, Vec::<u8>::new()));
                             if batch.len() >= batch.capacity() {
                                 break;
                             }
                         }
                         let empty = batch.is_empty();
                         let _ = tile_writer.put_tiles(&batch).await;
-                        // for (xyz, tile) in batch {
-                        //     let _ = tile_writer.put_tile_mut(&xyz, tile).await;
-                        // }
                         if empty {
                             let _ = tile_writer.finalize();
                         }
@@ -281,7 +283,8 @@ impl TileService {
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
         );
         let cnt = progress_main.position() + 1;
-        progress_main.finish_with_message(format!("{cnt} tiles generated"));
+        let elapsed = progress_main.elapsed().as_millis() as f64 / 1000.0;
+        progress_main.finish_with_message(format!("{cnt} tiles generated in {elapsed:.1}s"));
 
         Ok(())
     }

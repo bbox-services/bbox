@@ -8,7 +8,7 @@ use crate::store::pmtiles::PmtilesStoreReader;
 use crate::store::TileReader;
 use async_trait::async_trait;
 use bbox_core::Format;
-use log::info;
+use log::debug;
 use tile_grid::Xyz;
 use tilejson::tilejson;
 use tilejson::TileJSON;
@@ -37,7 +37,7 @@ impl TileRead for PmtilesStoreReader {
         SourceType::Vector //TODO
     }
     async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
-        info!(
+        debug!(
             "Metadata {}: {}",
             self.path.display(),
             self.get_metadata().await?
