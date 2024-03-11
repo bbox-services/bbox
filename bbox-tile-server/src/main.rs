@@ -3,6 +3,7 @@ mod config;
 mod datasource;
 mod endpoints;
 mod mbtiles_ds;
+mod seed;
 mod service;
 mod store;
 mod t_rex;
