@@ -1,6 +1,6 @@
 use crate::cli::Commands;
+use crate::config_t_rex as t_rex;
 use crate::datasource::source_config_from_cli_arg;
-use crate::t_rex::config as t_rex;
 use bbox_core::cli::CommonCommands;
 use bbox_core::config::{error_exit, from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::pg_ds::DsPostgisCfg;
@@ -491,7 +491,6 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
     }
 }
 
-#[allow(dead_code)]
 static WORLD_EXTENT: ExtentCfg = ExtentCfg {
     minx: -180.0,
     miny: -90.0,
@@ -607,18 +606,6 @@ impl VectorLayerCfg {
             .and_then(|q| q.tolerance.as_ref())
             .unwrap_or(&self.tolerance)
     }
-    // Layer properties needed e.g. for metadata.json
-    // pub fn metadata(&self) -> HashMap<&str, String> {
-    //     let mut metadata = HashMap::new();
-    //     metadata.insert("id", self.name.clone());
-    //     metadata.insert("name", self.name.clone());
-    //     metadata.insert("description", "".to_string());
-    //     metadata.insert("buffer-size", self.buffer_size.unwrap_or(0).to_string());
-    //     metadata.insert("minzoom", self.minzoom().to_string());
-    //     metadata.insert("maxzoom", self.maxzoom(22).to_string());
-    //     //metadata.insert("srs", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over".to_string());
-    //     metadata
-    // }
 }
 
 // Mapproxy Yaml:

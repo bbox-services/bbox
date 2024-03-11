@@ -1,12 +1,12 @@
 mod cli;
 mod config;
+mod config_t_rex;
 mod datasource;
 mod endpoints;
 mod mbtiles_ds;
 mod seed;
 mod service;
 mod store;
-mod t_rex;
 
 use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
