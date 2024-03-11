@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.5.0 alpha5 (2024-03-11)
+
+* Add basic CORS header support
+* Support MBTiles as tile datasource and tile store
+* Add MBTiles metadata.json service endpoint
+* Support PMTiles as tile datasource and tile store
+* Support different fields in zoom-dependent layer queries
+* T-rex configuration support
+* Add basic diagnostics tile layer
+* Fix PG queries with reprojected layers
+* CLI args for tile stores and tile datasources
+* Fix map request trace spans
+* Support temporal and queryable fields for Postgis collections
+* FCGI auto-detection on Fedora
+
 ## 0.5.0 alpha4 (2023-10-30)
 
 * Use ST_AsMvtGeom for PostGIS tilesets
