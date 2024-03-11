@@ -1,3 +1,5 @@
+//! t-rex compatibilty functions
+
 use serde::Deserialize;
 use std::fs::File;
 use std::io::Read;
