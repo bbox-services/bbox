@@ -25,7 +25,7 @@ Relase Build:
 
 Local file seeding test:
 
-    ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=gebco --tile-path=/tmp/tiles --maxzoom=2
 
 or mvtbench:
 
@@ -106,6 +106,6 @@ Local QGIS NaturalEarth WMS
 
 Local QGIS NaturalEarth WMS to local directory
 
-    ../target/release/bbox-tile-server seed --tileset=ne_extracts --maxzoom=18 --base-dir=/tmp/tiles
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --maxzoom=18 --tile-path=/tmp/tiles
 
     -> 13s

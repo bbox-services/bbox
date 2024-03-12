@@ -19,85 +19,7 @@ Tile seeder features:
 
 ## Configuration
 
-Datasources:
-```toml
-[[datasource]]
-name = "mvtbenchdb"
-[datasource.postgis]
-url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
-
-[[datasource]]
-name = "ne_extracts"
-[datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
-
-[[datasource]]
-name = "gebco"
-[datasource.wms_proxy]
-baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
-format = "image/jpeg"
-```
-
-Vector tiles from PostGIS table:
-```toml
-[[tileset]]
-name = "ne_countries"
-[tileset.postgis]
-datasource = "mvtbenchdb"
-extent = [-179.97277, -83.05457, 179.99366, 83.23559]
-attribution = "Natural Earth v4"
-
-[[tileset.postgis.layer]]
-name = "country-name"
-table_name = "ne_10m_admin_0_country_points"
-geometry_type = "POINT"
-srid = 3857
-buffer_size = 0
-[[tileset.postgis.layer.query]]
-sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
-```
-
-Raster tiles with QGIS Server backend:
-```toml
-[[tileset]]
-name = "ne_extracts"
-map_service = { project = "ne_extracts", suffix = "qgz", layers = "ne_extracts" }
-cache = "tilecache"
-```
-
-Raster tiles with UMN Mapserver backend:
-```toml
-[[tileset]]
-name = "ne_umn"
-map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
-```
-
-Raster tiles from external WMS:
-```toml
-[[tileset]]
-name = "gebco"
-wms_proxy = { source = "gebco", layers = "gebco_latest" }
-```
-
-Tile caches:
-```toml
-[[tilecache]]
-name = "tilecache"
-[tilecache.files]
-base_dir = "/tmp/tilecache"
-
-[[tilecache]]
-name = "aws"
-[tilecache.s3]
-path = "s3://tiles"
-```
-
-Custom tile grid:
-```toml
-[[grid]]
-json = "../assets/custom-grid-lv95.json"
-```
-
+See [Documentation](https://www.bbox.earth/tile-server/configuration.html) for examples.
 
 ## Usage
 
@@ -175,15 +97,15 @@ Relase Build:
 
 Seed with proxy WMS:
 
-    ../target/release/bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles/gebco --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=gebco --tile-path=/tmp/tiles/gebco --maxzoom=2
 
 Seed with embedded map service:
 
-    ../target/release/bbox-tile-server seed --tileset=ne_extracts --base-dir=/tmp/tiles/ne_extracts --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=ne_extracts --tile-path=/tmp/tiles/ne_extracts --maxzoom=2
 
 Seed PostGIS MVT tiles:
 
-    ../target/release/bbox-tile-server seed --tileset=ne_countries --base-dir=/tmp/tiles/ne_countries --maxzoom=2
+    ../target/release/bbox-tile-server seed --tileset=ne_countries --tile-path=/tmp/tiles/ne_countries --maxzoom=2
 
 #### Seed to S3 storage
 
