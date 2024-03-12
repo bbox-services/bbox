@@ -34,7 +34,6 @@ attribution = "Natural Earth v4"
 name = "country-name"
 table_name = "ne_10m_admin_0_country_points"
 geometry_type = "POINT"
-srid = 3857
 buffer_size = 0
 [[tileset.postgis.layer.query]]
 sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
@@ -76,6 +75,24 @@ base_dir = "/tmp/tilecache"
 name = "aws"
 [tilecache.s3]
 path = "s3://tiles"
+
+[[tilestore]]
+name = "mbtilecache"
+[tilestore.mbtiles]
+path = "/tmp/tilecache.mbtiles"
+
+[[tilestore]]
+name = "pmtilecache"
+[tilestore.pmtiles]
+path = "/tmp/tilecache.pmtiles"
+```
+
+To use a tilecache when serving tiles, add the tilecache name to the tileset:
+
+```toml
+[[tileset]]
+name = "ne_countries"
+cache = "tilecache"
 ```
 
 ## Custom tile grid
@@ -83,3 +100,12 @@ path = "s3://tiles"
 ```toml
 [[grid]]
 json = "../assets/custom-grid-lv95.json"
+```
+
+To use the custom tile grid, add the tms name to the tileset:
+
+```toml
+[[tileset]]
+name = "rivers_lakes"
+tms = "LV95"
+```
