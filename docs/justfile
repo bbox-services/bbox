@@ -1,15 +1,20 @@
-all: build
+#!/usr/bin/env just --justfile
+
+set shell := ["bash", "-c"]
 
 # https://rust-lang.github.io/mdBook/guide/installation.html
 
+# Build docs
 build:
-	mdbook build
+    mdbook build
 
+# Serve docs
 serve:
-	mdbook serve --open --port 8321
+    mdbook serve --open --port 8321
 
+# Extract configuration reference from rustdoc
 srcdoc:
-	cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --no-defaults --output-format json
+    cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --no-defaults --output-format json
 
 # Example output:
 #     "0:994:2121": {
