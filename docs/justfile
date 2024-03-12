@@ -12,6 +12,10 @@ build:
 serve:
     mdbook serve --open --port 8321
 
+# Update version in downlad urls
+update-version version:
+    sed --in-place s!download/v.*/!download/{{version}}/!g src/installation.md
+
 # Extract configuration reference from rustdoc
 srcdoc:
     cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --no-defaults --output-format json
