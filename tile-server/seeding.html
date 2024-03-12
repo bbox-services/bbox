@@ -181,13 +181,13 @@
                     <main>
                         <h1 id="tile-seeding"><a class="header" href="#tile-seeding">Tile seeding</a></h1>
 <p>Seed with proxy WMS:</p>
-<pre><code>bbox-tile-server seed --tileset=gebco --base-dir=/tmp/tiles/gebco --maxzoom=2
+<pre><code>bbox-tile-server seed --tileset=gebco --tile-path=/tmp/tiles/gebco --maxzoom=2
 </code></pre>
 <p>Seed with embedded map service:</p>
-<pre><code>bbox-tile-server seed --tileset=ne_extracts --base-dir=/tmp/tiles/ne_extracts --maxzoom=2
+<pre><code>bbox-tile-server seed --tileset=ne_extracts --tile-path=/tmp/tiles/ne_extracts --maxzoom=2
 </code></pre>
 <p>Seed PostGIS MVT tiles:</p>
-<pre><code>bbox-tile-server seed --tileset=ne_countries --base-dir=/tmp/tiles/ne_countries --maxzoom=2
+<pre><code>bbox-tile-server seed --tileset=ne_countries --tile-path=/tmp/tiles/ne_countries --maxzoom=2
 </code></pre>
 <h2 id="seed-to-s3-storage"><a class="header" href="#seed-to-s3-storage">Seed to S3 storage</a></h2>
 <p>Set S3 env vars:</p>
@@ -197,6 +197,12 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 </code></pre>
 <p>Seed raster tiles:</p>
 <pre><code>bbox-tile-server seed --tileset=ne_extracts --s3-path=s3://tiles --maxzoom=5
+</code></pre>
+<h2 id="seed-to-mbtiles-archive"><a class="header" href="#seed-to-mbtiles-archive">Seed to MBTiles archive</a></h2>
+<pre><code>bbox-tile-server seed --mb-path=/tmp/mvtbench.mbtiles --tileset=ne_countries --maxzoom=6
+</code></pre>
+<h2 id="seed-to-pmtiles-archive"><a class="header" href="#seed-to-pmtiles-archive">Seed to PMTiles archive</a></h2>
+<pre><code>bbox-tile-server seed --pm-path=/tmp/mvtbench.pmtiles --tileset=ne_countries --maxzoom=6
 </code></pre>
 
                     </main>
