@@ -1,7 +1,7 @@
-mod config;
+pub mod config;
 mod endpoints;
-mod qgis_plugins;
-mod runtime_templates;
+pub mod qgis_plugins;
+pub mod runtime_templates;
 mod service;
 
 pub use service::*;

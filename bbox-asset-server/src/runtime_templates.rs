@@ -11,16 +11,12 @@ pub struct TemplateDirCfg {
     pub dir: String,
 }
 
+#[derive(Default)]
 pub struct RuntimeTemplates {
     envs: HashMap<String, Environment<'static>>,
 }
 
 impl RuntimeTemplates {
-    pub fn new() -> Self {
-        Self {
-            envs: HashMap::new(),
-        }
-    }
     pub fn add(&mut self, dir: &str, path: &str) {
         let mut env = Environment::new();
         env.set_loader(path_loader(dir));

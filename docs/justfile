@@ -16,104 +16,107 @@ serve:
 update-version version:
     sed --in-place s!download/v.*/!download/{{version}}/!g src/installation.md
 
-# Extract configuration reference from rustdoc
-srcdoc:
-    cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --no-defaults --output-format json
+rustdoc:
+    cargo +nightly rustdoc --lib -p bbox-core -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-feature-server -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-tile-server -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-map-server -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-asset-server -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-processes-server -- -Z unstable-options --output-format json
+    cargo +nightly rustdoc --lib -p bbox-routing-server -- -Z unstable-options --output-format json
+    @# cat ../target/doc/bbox_tile_server.json | jq . >bbox-tile-server.json
 
-# Example output:
-#     "0:994:2121": {
-#       "id": "0:994:2121",
-#       "crate_id": 0,
-#       "name": "TileSetCfg",
-#       "span": {
-#         "filename": "bbox-tile-server/src/config.rs",
-#         "begin": [
-#           25,
-#           0
-#         ],
-#         "end": [
-#           39,
-#           1
-#         ]
-#       },
-#       "visibility": "public",
-#       "docs": null,
-#       "links": {},
-#       "attrs": [
-#         "#[serde(deny_unknown_fields)]"
-#       ],
-#       "deprecation": null,
-#       "inner": {
-#         "struct": {
-#           "kind": {
-#             "plain": {
-#               "fields": [
-#                 "0:995:1025",
-#                 "0:996:2025",
-#                 "0:1000:2130",
-#                 "0:997:2133",
-#                 "0:998:2135",
-#                 "0:999:2136"
-#               ],
-#               "fields_stripped": false
-#             }
-#           },
-#           "generics": {
-#             "params": [],
-#             "where_predicates": []
-#           },
-#           "impls": []
-#         }
-#       }
-#     },
-#     "0:998:2135": {
-#       "id": "0:998:2135",
-#       "crate_id": 0,
-#       "name": "cache_format",
-#       "span": {
-#         "filename": "bbox-tile-server/src/config.rs",
-#         "begin": [
-#           37,
-#           4
-#         ],
-#         "end": [
-#           37,
-#           36
-#         ]
-#       },
-#       "visibility": "public",
-#       "docs": "tile format in store. Defaults to `png` for raster and `pbf` for vector tiles",
-#       "attrs": [
-#         "#[serde(rename = \"format\")]"
-#       ],
-#       "deprecation": null,
-#       "inner": {
-#         "struct_field": {
-#           "resolved_path": {
-#             "name": "Option",
-#             "id": "2:42344:194",
-#             "args": {
-#               "angle_bracketed": {
-#                 "args": [
-#                   {
-#                     "type": {
-#                       "resolved_path": {
-#                         "name": "String",
-#                         "id": "5:7632:243",
-#                         "args": {
-#                           "angle_bracketed": {
-#                             "args": [],
-#                             "bindings": []
-#                           }
-#                         }
-#                       }
-#                     }
-#                   }
-#                 ],
-#                 "bindings": []
-#               }
-#             }
-#           }
-#         }
-#       }
-#     },
+gendoc: (genref "../target/doc/bbox_tile_server.json" "src/tile-server/reference.md" "TileserverCfg" "Tile Server Reference") (genref "../target/doc/bbox_feature_server.json" "src/feature-server/reference.md" "FeatureServiceCfg" "Feature Server Reference") (genref "../target/doc/bbox_map_server.json" "src/map-server/reference.md" "MapServerCfg" "Map Server Reference") (genref "../target/doc/bbox_asset_server.json" "src/asset-server/reference.md" "AssetserverCfg" "Asset Server Reference") (genref "../target/doc/bbox_processes_server.json" "src/processes-server/reference.md" "ProcessesServerCfg" "Processes Server Reference") (genref "../target/doc/bbox_routing_server.json" "src/routing-server/reference.md" "RoutingServerCfg" "Routing Server Reference")
+
+# Extract configuration reference from rustdoc
+refdoc: rustdoc gendoc
+
+[private]
+genref json md root title:
+  #!/usr/bin/env python3
+  import json
+  import jmespath
+  import sys
+  import re
+
+  def get(data, id):
+      entry = jmespath.search("index.* | [?id=='%s']" % id, data)
+      struct = jmespath.search("""index.* | [?id=='%s'] | [0].{name: name, attr: attrs[0], fieldtype: inner.struct_field.resolved_path.{name: name, id:id}, fieldrefs: inner.struct.kind.plain.fields, enums: inner.enum.variants, variant: inner.variant.kind.tuple, docs: docs}""" % id, data)
+      return (entry, struct)
+
+  def fname(struct):
+      m = re.findall(r'rename = "(\w+)"', struct.get('attr') or '')
+      name = m[0] if m else struct.get('name')
+      return pretty_typename(name)
+
+  def pretty_typename(name):
+      mapping = {
+          'NonZeroU16': 'u16',
+          'std::path::PathBuf': 'Path',
+      }
+      for src, dst in mapping.items():
+          name = name.replace(src, dst)
+      name = name.removesuffix('ParamCfg')
+      name = name.removesuffix('Cfg')
+      name = re.sub(r"^.*::", "", name)
+      return name
+
+  def typedoc(data, root, toplevel):
+      queue = [root]
+      for idx, (level, id) in enumerate(queue):
+          (entry, struct) = get(data, id)
+          if struct:  # skip external or std
+              if level > 0:
+                  print("")
+              title = toplevel if toplevel else fname(struct)
+              print("#" * min(level+1, 4), end=' ')
+              print(title)
+              print("")
+              if struct.get('docs'):
+                print(struct.get('docs'))
+              fieldrefs = struct['fieldrefs']
+              if struct['variant']:
+                  (ventry, vstruct) = get(data, struct['variant'][0])
+                  (ventry, vstruct) = get(data, vstruct['fieldtype']['id'])
+                  fieldrefs = vstruct['fieldrefs']
+              if fieldrefs:
+                  fieldtypesbf = []
+                  for ref in fieldrefs:
+                      (entry, struct) = get(data, ref)
+                      struct = jmespath.search("""index.* | [?id=='%s'] | [0].{name: name, attr: attrs[0], fieldtype: inner.struct_field.resolved_path.{name: name, id:id}, fieldtypeargs: inner.struct_field.resolved_path.args.angle_bracketed.args[0].type.resolved_path.{name: name, id:id}, primitive: inner.struct_field.primitive, primitiveargs: inner.struct_field.resolved_path.args.angle_bracketed.args[0].type.primitive, variant: inner.variant.kind.tuple, docs: docs}""" % ref, data)
+                      # TODO: handle {‘args’: [{‘type’: {‘tuple’: [{‘primitive’: ‘f64’}, {‘primitive’: ‘f64’}]}}]
+                      fieldtype = {'name': struct['primitive'], 'id': None} if struct['primitive'] else struct['fieldtype']
+                      fieldtypename = (fieldtype or {}).get('name')
+                      fieldtypearg = {'name': struct['primitiveargs'], 'id': None} if struct['primitiveargs'] else struct['fieldtypeargs']
+                      vec = '[]' if fieldtypename == 'Vec' else ''
+                      if 'flatten' in (struct.get('attr') or ''):
+                          fieldname = ''
+                      else:
+                          fieldname = f"`{fname(struct)}{vec}` "
+                      typeid = (fieldtypearg or fieldtype).get('id')
+                      queue.append((level+1, typeid))
+                      typename = (fieldtypearg or fieldtype).get('name')
+                      iscfg = 'Cfg' in typename
+                      typename = pretty_typename(typename)
+                      typemd = f"[{typename}](#{typename.lower()})" if iscfg else f"*{typename}*"
+                      optional = ' (optional)' if fieldtypename == 'Option' or 'default' in (struct.get('attr') or '') else ''
+                      docpart = f": {struct.get('docs')}" if struct.get('docs') else ''
+                      print(f"* {fieldname}{typemd}{optional}{docpart}")
+                      #print(f" // {entry}")
+              elif struct['enums']:
+                  # Prepend
+                  for id in reversed(struct['enums']):
+                        queue.insert(idx+1, (level+1, id))
+              if toplevel:
+                  return queue[idx+1:]
+      return []
+
+  #with open('../target/doc/bbox_core.json') as f:
+  #    coredata = json.load(f)
+  with open('{{json}}') as f:
+      data = json.load(f)
+      id = jmespath.search("index.* | [?name=='%s'] | [0].id" % '{{root}}', data)
+      with open('{{md}}', 'w') as sys.stdout:
+          level1 = typedoc(data, (0, id), '{{title}}')
+          for el in level1:
+              typedoc(data, el, None)

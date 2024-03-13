@@ -1,4 +1,4 @@
-mod config;
+pub mod config;
 mod ds;
 mod endpoints;
 mod engine;
