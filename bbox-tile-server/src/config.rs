@@ -30,7 +30,7 @@ pub struct TileserverCfg {
 #[serde(deny_unknown_fields)]
 pub struct TileSetCfg {
     pub name: String,
-    /// Tile format (Default: Raster)
+    // Tile format (Default: Raster)
     // pub format: Option<TileFormatCfg>,
     /// List of available tile matrix set identifiers (Default: WebMercatorQuad)
     pub tms: Option<String>,
@@ -206,12 +206,17 @@ pub struct TileCacheProviderCfg {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(rename_all = "lowercase", deny_unknown_fields)]
+#[serde(deny_unknown_fields)]
 pub enum TileStoreCfg {
+    #[serde(rename = "files")]
     Files(FileStoreCfg),
+    #[serde(rename = "s3")]
     S3(S3StoreCfg),
+    #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesStoreCfg),
+    #[serde(rename = "pmtiles")]
     Pmtiles(PmtilesStoreCfg),
+    #[serde(rename = "nostore")]
     NoStore,
 }
 

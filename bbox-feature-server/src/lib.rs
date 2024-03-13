@@ -1,4 +1,4 @@
-mod config;
+pub mod config;
 pub mod datasource;
 mod endpoints;
 mod error;

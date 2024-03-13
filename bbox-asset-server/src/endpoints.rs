@@ -66,7 +66,7 @@ impl AssetService {
             }
         }
 
-        let mut template_envs = RuntimeTemplates::new();
+        let mut template_envs = RuntimeTemplates::default();
         for template_dir in &service_cfg.template {
             let dir = app_dir(&template_dir.dir);
             if Path::new(&dir).is_dir() {

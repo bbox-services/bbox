@@ -1,5 +1,5 @@
 pub mod cli;
-mod config;
+pub mod config;
 pub mod config_t_rex;
 pub mod datasource;
 mod endpoints;
