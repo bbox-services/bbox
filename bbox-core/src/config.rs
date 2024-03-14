@@ -70,6 +70,15 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 
 // -- Common configuration --
 
+#[derive(Deserialize)]
+pub struct CoreServiceCfg {
+    pub webserver: Option<WebserverCfg>,
+    pub metrics: Option<MetricsCfg>,
+    #[serde(default)]
+    pub datasource: Vec<NamedDatasourceCfg>,
+    pub auth: Option<AuthCfg>,
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {

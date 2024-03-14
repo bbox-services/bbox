@@ -16,7 +16,6 @@ use log::info;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::io::Read;
-use std::iter::FromIterator;
 use std::path::Path;
 
 /// Tile reader response
