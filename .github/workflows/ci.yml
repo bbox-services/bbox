@@ -59,17 +59,20 @@ jobs:
           if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
             # Skip bbox-map-server on Windows (uses Unix sockets)
             cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,frontend
+            cargo build --release --target ${{ matrix.target }} --package bbox-tile-server --no-default-features
           elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
             # compile without debug symbols
             RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-server
+            RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-tile-server
           else
             cargo build --release --target ${{ matrix.target }} --package bbox-server
+            cargo build --release --target ${{ matrix.target }} --package bbox-tile-server
           fi
           mkdir target_releases
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            mv target/${{ matrix.target }}/release/bbox-server.exe target_releases
+            mv target/${{ matrix.target }}/release/bbox-*.exe target_releases
           else
-            mv target/${{ matrix.target }}/release/bbox-server target_releases
+            mv target/${{ matrix.target }}/release/bbox*server target_releases
           fi
       - name: Save build artifact build-${{ matrix.target }}
         uses: actions/upload-artifact@v3
