@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: rustup
         shell: bash
@@ -44,7 +44,7 @@ jobs:
           key: ${{ matrix.target }}
 
       - name: Install protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint
@@ -75,7 +75,7 @@ jobs:
             mv target/${{ matrix.target }}/release/bbox*server target_releases
           fi
       - name: Save build artifact build-${{ matrix.target }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.target }}
           path: target_releases/*
@@ -86,14 +86,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - run: rustup toolchain install stable --profile minimal
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Install protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       # - name: Start postgres
@@ -153,8 +153,8 @@ jobs:
             name: bbox-server-Darwin-aarch64.tar.gz
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-${{ matrix.target }}
           path: target/
