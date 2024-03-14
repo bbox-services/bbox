@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0 alpha6 (2024-03-14)
+
+* Fix startup failure without CORS configuration
+
 ## 0.5.0 alpha5 (2024-03-11)
 
 * Add basic CORS header support
