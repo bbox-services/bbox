@@ -138,12 +138,15 @@ impl CoreService {
         self.web_config.cors.is_some()
     }
     pub fn cors(&self) -> Cors {
-        let cors_cfg = self.web_config.cors.as_ref().expect("has_cors");
-        let mut cors = Cors::default().allowed_methods(vec!["GET"]);
-        if cors_cfg.allow_all_origins {
-            cors = cors.allow_any_origin().send_wildcard();
+        if let Some(cors_cfg) = self.web_config.cors.as_ref() {
+            let mut cors = Cors::default().allowed_methods(vec!["GET"]);
+            if cors_cfg.allow_all_origins {
+                cors = cors.allow_any_origin().send_wildcard();
+            }
+            cors
+        } else {
+            Cors::default()
         }
-        cors
     }
     pub fn has_metrics(&self) -> bool {
         self.metrics.is_some()
