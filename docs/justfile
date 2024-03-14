@@ -12,8 +12,13 @@ build:
 serve:
     mdbook serve --open --port 8321
 
-# Update version in downlad urls
+# Update version cargo files
 update-version version:
+    sed --in-place 's/^version = ".*/version = "{{version}}"/g' ../bbox-core/Cargo.toml ../bbox-server/Cargo.toml ../bbox-processes-server/Cargo.toml ../bbox-tile-server/Cargo.toml ../bbox-map-server/Cargo.toml ../bbox-feature-server/Cargo.toml ../bbox-frontend/Cargo.toml
+    cd .. && cargo build
+
+# Update version in downlad urls
+update-version-doc version:
     sed --in-place s!download/v.*/!download/{{version}}/!g src/installation.md
 
 rustdoc:
