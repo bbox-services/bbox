@@ -14,7 +14,7 @@ serve:
 
 # Update version cargo files
 update-version version:
-    sed --in-place 's/^version = ".*/version = "{{version}}"/g' ../bbox-core/Cargo.toml ../bbox-server/Cargo.toml ../bbox-processes-server/Cargo.toml ../bbox-tile-server/Cargo.toml ../bbox-map-server/Cargo.toml ../bbox-feature-server/Cargo.toml ../bbox-frontend/Cargo.toml
+    sed --in-place 's/^version = ".*/version = "{{version}}"/g' ../bbox-asset-server/Cargo.toml ../bbox-core/Cargo.toml ../bbox-feature-server/Cargo.toml ../bbox-frontend/Cargo.toml ../bbox-map-server/Cargo.toml ../bbox-processes-server/Cargo.toml ../bbox-server/Cargo.toml ../bbox-tile-server/Cargo.toml
     cd .. && cargo build
 
 # Update version in downlad urls

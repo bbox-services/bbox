@@ -799,7 +799,7 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
 name = "bbox-asset-server"
-version = "0.5.0-alpha5"
+version = "0.5.0-alpha7"
 dependencies = [
  "actix-files",
  "actix-web",
