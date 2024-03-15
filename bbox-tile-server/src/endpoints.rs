@@ -1,10 +1,12 @@
 use crate::datasource::wms_fcgi::{HttpRequestParams, WmsMetrics};
+use crate::filter_params::FilterParams;
 use crate::service::{ServiceError, TileService};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::CoreService;
 use bbox_core::Format;
 use log::error;
+use std::collections::HashMap;
 use tile_grid::{
     Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
 };
@@ -111,6 +113,17 @@ async fn tile_request(
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
     let tile = Xyz::new(x, y, z);
+    let mut filters: HashMap<String, String> =
+        match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
+            Ok(f) => f
+                .iter()
+                .map(|k| (k.0.to_lowercase(), k.1.to_owned()))
+                .collect(),
+            Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
+        };
+
+    let datetime = filters.remove("datetime");
+    let fp = FilterParams { datetime, filters };
     let gzip = req
         .headers()
         .get(header::ACCEPT_ENCODING)
@@ -129,7 +142,7 @@ async fn tile_request(
         metrics: &metrics,
     };
     match service
-        .tile_cached(tileset, &tile, format, gzip, request_params)
+        .tile_cached(tileset, &tile, &fp, format, gzip, request_params)
         .await
     {
         Ok(Some(tile_resp)) => {

@@ -3,6 +3,7 @@ mod config;
 mod config_t_rex;
 mod datasource;
 mod endpoints;
+mod filter_params;
 mod mbtiles_ds;
 mod seed;
 mod service;

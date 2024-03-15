@@ -13,7 +13,7 @@ actix-web = { workspace = true }
 async-trait = { workspace = true }
 awc = { workspace = true }
 bbox-core = { path = "../bbox-core" }
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }

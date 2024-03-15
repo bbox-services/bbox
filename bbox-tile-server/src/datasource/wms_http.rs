@@ -4,6 +4,7 @@ use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
+use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::config::WmsHttpSourceProviderCfg;
@@ -75,6 +76,7 @@ impl TileRead for WmsHttpSource {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
+        _filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {

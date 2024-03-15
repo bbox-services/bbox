@@ -7,6 +7,7 @@ use crate::datasource::{
     wms_fcgi::HttpRequestParams,
     LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
+use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::pg_ds::PgDatasource;
@@ -226,6 +227,7 @@ impl TileRead for PgSource {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
+        filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
@@ -271,7 +273,14 @@ impl TileRead for PgSource {
                             query
                         }
                     }
-                    QueryParam::QueryField(ref _field) => unimplemented!(), // TODO: bind passed query params
+                    QueryParam::QueryField(ref field) => {
+                        if let Some(value) = filter.filters.get(field) {
+                            query.bind(value)
+                        } else {
+                            info!("Filter parameter `{field}` missing");
+                            return Err(TileSourceError::FilterParamError);
+                        }
+                    }
                 }
             }
             debug!("Query layer `{id}`");
