@@ -1,6 +1,7 @@
 use crate::config::VectorLayerCfg;
 use crate::datasource::postgis::{FieldInfo, FieldTypeInfo};
 use log::{info, warn};
+use regex::Regex;
 use sqlx::TypeInfo;
 
 #[derive(Clone, Debug)]
@@ -13,6 +14,9 @@ pub struct SqlQuery {
 pub enum QueryParam {
     Bbox,
     Zoom,
+    X,
+    Y,
+    QueryField(String),
     PixelWidth,
     ScaleDenominator,
 }
@@ -64,7 +68,10 @@ impl SqlQuery {
         if let Some(user_query) = user_query {
             // user query
             sqlquery = format!("SELECT {select_list} FROM ({user_query}) AS _q");
-            if !user_query.contains("!bbox!") {
+            let is_xyz_query = user_query.contains("!x!")
+                && user_query.contains("!y!")
+                && user_query.contains("!zoom!");
+            if !user_query.contains("!bbox!") && !is_xyz_query {
                 sqlquery.push_str(&intersect_clause);
             }
         } else {
@@ -87,20 +94,28 @@ impl SqlQuery {
     /// Replace variables (!bbox!, !zoom!, etc.) in query
     // https://github.com/mapnik/mapnik/wiki/PostGIS
     fn replace_params(sqlin: &str, bbox_expr: String, bbox_expr_unbuffered: String) -> Self {
+        let re = Regex::new(r"!(\w+)!").unwrap();
         let mut sql = sqlin.to_string();
         let mut params = Vec::new();
         let mut numvars = 0;
+
+        if sql.contains("!bbox_unbuffered!") {
+            if !sql.contains("!bbox!") {
+                params.push(QueryParam::Bbox);
+                numvars += 4;
+            }
+            sql = sql.replace("!bbox_unbuffered!", &bbox_expr_unbuffered);
+        }
         if sql.contains("!bbox!") {
             params.push(QueryParam::Bbox);
             numvars += 4;
             sql = sql.replace("!bbox!", &bbox_expr);
         }
-        if sql.contains("!bbox_unbuffered!") {
-            sql = sql.replace("!bbox_unbuffered!", &bbox_expr_unbuffered);
-        }
         // replace e.g. !zoom! with $5
         for (var, par, cast) in [
             ("!zoom!", QueryParam::Zoom, ""),
+            ("!x!", QueryParam::X, ""),
+            ("!y!", QueryParam::Y, ""),
             ("!pixel_width!", QueryParam::PixelWidth, "FLOAT8"),
             (
                 "!scale_denominator!",
@@ -117,6 +132,12 @@ impl SqlQuery {
                     sql = sql.replace(var, &format!("${numvars}"));
                 }
             }
+        }
+        // Search and replace field query vars
+        for (_, [field]) in re.captures_iter(&sql.clone()).map(|c| c.extract()) {
+            params.push(QueryParam::QueryField(field.to_string()));
+            numvars += 1;
+            sql = sql.replace(&format!("!{field}!"), &format!("${numvars}"));
         }
         SqlQuery { sql, params }
     }
@@ -500,12 +521,12 @@ mod test {
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,
-            sql: Some(String::from("SELECT geometry AS geom FROM osm_place_point")),
+            sql: Some(String::from("SELECT geometry FROM osm_place_point")),
         }];
         let postgis2 = false;
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
-               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry AS geom FROM osm_place_point) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
 
         layer.queries = vec![VectorLayerQueryCfg {
             minzoom: 0,
@@ -519,5 +540,41 @@ mod test {
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT * FROM osm_place_point WHERE name='Bern') AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+    }
+
+    #[test]
+    fn test_xyz_queries() {
+        let (mut layer, fields) = layer_cfg();
+        layer.queries = vec![VectorLayerQueryCfg {
+            minzoom: 0,
+            maxzoom: Some(22),
+            simplify: None,
+            tolerance: None,
+            sql: Some(String::from(
+                "SELECT geom FROM prepared_tiles WHERE x=!x! AND y=!y! and z=!zoom!",
+            )),
+        }];
+        let postgis2 = false;
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geom", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
+                   .sql,
+               "SELECT ST_AsMvtGeom(geom, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geom FROM (SELECT geom FROM prepared_tiles WHERE x=$6 AND y=$7 and z=$5) AS _q");
+    }
+
+    #[test]
+    fn test_field_query() {
+        let (mut layer, fields) = layer_cfg();
+        let postgis2 = false;
+        layer.queries = vec![VectorLayerQueryCfg {
+            minzoom: 0,
+            maxzoom: Some(22),
+            simplify: None,
+            tolerance: None,
+            sql: Some(String::from(
+                "SELECT geometry FROM osm_place_point WHERE typecol=!typecol!",
+            )),
+        }];
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
+                   .sql,
+               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE typecol=$5) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
     }
 }

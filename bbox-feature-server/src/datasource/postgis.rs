@@ -71,15 +71,7 @@ impl CollectionDatasource for PgDatasource {
         if pk_column.is_none() {
             warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
         }
-        let other_columns = if let Some(fields) = srccfg.queryable_fields.clone() {
-            let mut hm = HashSet::new();
-            for field in fields {
-                hm.insert(field);
-            }
-            hm
-        } else {
-            HashSet::new()
-        };
+        let other_columns = srccfg.queryable_fields.clone().into_iter().collect();
 
         let source = PgCollectionSource {
             ds: self.clone(),

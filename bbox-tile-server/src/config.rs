@@ -16,31 +16,36 @@ use std::path::{Path, PathBuf};
 #[derive(Deserialize, Serialize, Default, Debug)]
 #[serde(default)]
 pub struct TileserverCfg {
+    /// Custom grid definitions
     #[serde(rename = "grid")]
     pub grids: Vec<GridCfg>,
     #[serde(rename = "datasource")]
     pub datasources: Vec<NamedDatasourceCfg>,
+    /// Tileset configurations
     #[serde(rename = "tileset")]
     pub tilesets: Vec<TileSetCfg>,
     #[serde(rename = "tilestore")]
     pub tilestores: Vec<TileCacheProviderCfg>,
 }
 
+/// Tileset configuration
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TileSetCfg {
+    // Tileset name, visible part of endpoint
     pub name: String,
     // Tile format (Default: Raster)
     // pub format: Option<TileFormatCfg>,
     /// List of available tile matrix set identifiers (Default: WebMercatorQuad)
     pub tms: Option<String>,
-    /// Source parameters
+    /// Tile sources
     #[serde(flatten)]
     pub source: SourceParamCfg,
     /// Tile cache name (Default: no cache)
     pub cache: Option<String>,
-    /// tile format in store. Defaults to `png` for raster and `pbf` for vector tiles
+    /// Tile format in store. Defaults to `png` for raster and `pbf` for vector tiles
     pub cache_format: Option<String>,
+    /// Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.
     pub cache_limits: Option<CacheLimitCfg>,
 }
 
@@ -48,25 +53,32 @@ pub struct TileSetCfg {
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct GridCfg {
-    /// JSON file path
+    /// Grid JSON file path
     pub json: String,
 }
 
+/// Tile sources
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub enum SourceParamCfg {
+    /// Raster tiles from external WMS
     #[serde(rename = "wms_proxy")]
     WmsHttp(WmsHttpSourceParamsCfg),
+    /// Raster tiles from map service
     #[serde(rename = "map_service")]
     WmsFcgi(WmsFcgiSourceParamsCfg),
+    /// PostGIS datasource
     #[serde(rename = "postgis")]
     Postgis(PostgisSourceParamsCfg),
+    /// Tiles from MBTile archive
     #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesStoreCfg),
+    /// Tiles from PMTile archive
     #[serde(rename = "pmtiles")]
     Pmtiles(PmtilesStoreCfg),
 }
 
+/// Raster tiles from external WMS
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct WmsHttpSourceParamsCfg {
@@ -75,6 +87,7 @@ pub struct WmsHttpSourceParamsCfg {
     pub layers: String,
 }
 
+/// Raster tiles from map service
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct WmsFcgiSourceParamsCfg {
@@ -88,23 +101,35 @@ pub struct WmsFcgiSourceParamsCfg {
     pub tile_size: Option<NonZeroU16>,
 }
 
+/// PostGIS tile datasource
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PostgisSourceParamsCfg {
-    /// Name of tileserver.source config (Default: first with matching type)
+    /// Named datasource (Default: first with matching type)
     // maybe we should allow direct DS URLs?
     pub datasource: Option<String>,
     pub extent: Option<ExtentCfg>,
+    // Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.
     pub minzoom: Option<u8>,
+    /// Maximum zoom level for which tiles are available (Default: 22).
+    ///
+    /// If unset, maxzoom is deduced from layer and query maxzoom limits.
+    /// Viewers use data from tiles at maxzoom when displaying the map at higher zoom levels.
     pub maxzoom: Option<u8>,
+    /// Longitude, latitude of map center (in WGS84).
+    ///
+    /// Viewers can use this value to set the default location.
     pub center: Option<(f64, f64)>,
+    /// Start zoom level. Must be between minzoom and maxzoom.
     pub start_zoom: Option<u8>,
+    /// Acknowledgment of ownership, authorship or copyright.
     pub attribution: Option<String>,
     /// PostGIS 2 compatible query (without ST_AsMVT)
     #[serde(default)]
     pub postgis2: bool,
     /// Add diagnostics layer
     pub diagnostics: Option<TileDiagnosticsCfg>,
+    /// Layer definitions
     #[serde(rename = "layer")]
     pub layers: Vec<VectorLayerCfg>,
 }
@@ -125,11 +150,17 @@ pub struct TileDiagnosticsCfg {
     pub reference_size: Option<u64>,
 }
 
+/// PostGIS vector layer
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct VectorLayerCfg {
+    /// Layer name.
     pub name: String,
+    /// Name of geometry field.
     pub geometry_field: Option<String>,
+    /// Type of geometry in PostGIS database
+    ///
+    /// `POINT` | `MULTIPOINT` | `LINESTRING` | `MULTILINESTRING` | `POLYGON` | `MULTIPOLYGON` | `COMPOUNDCURVE` | `CURVEPOLYGON`
     pub geometry_type: Option<String>,
     /// Spatial reference system (PostGIS SRID)
     pub srid: Option<i32>,
@@ -140,6 +171,7 @@ pub struct VectorLayerCfg {
     pub fid_field: Option<String>,
     // Input for derived queries
     pub table_name: Option<String>,
+    /// Maximal number of features to read for a single tile.
     pub query_limit: Option<u32>,
     // Custom queries
     #[serde(default, rename = "query")]
@@ -178,16 +210,28 @@ fn default_tolerance() -> String {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct VectorLayerQueryCfg {
+    /// Minimal zoom level for using this query.
     #[serde(default)]
     pub minzoom: u8,
+    /// Maximal zoom level for using this query.
     pub maxzoom: Option<u8>,
     /// Simplify geometry (override layer default setting)
     pub simplify: Option<bool>,
     /// Simplification tolerance (override layer default setting)
     pub tolerance: Option<String>,
+    /// User defined SQL query.
+    ///
+    /// The following variables are replaced at runtime:
+    /// * !bbox!: Bounding box of tile
+    /// * !zoom!: Zoom level of tile request
+    /// * !x!, !y!: x, y of tile request (disables geometry filter)
+    /// * !scale_denominator!: Map scale of tile request
+    /// * !pixel_width!: Width of pixel in grid units
+    /// * !*fieldname*!: Custom field query variable
     pub sql: Option<String>,
 }
 
+/// Tile cache limits
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct CacheLimitCfg {
@@ -214,6 +258,7 @@ pub enum TileStoreCfg {
     S3(S3StoreCfg),
     #[serde(rename = "mbtiles")]
     Mbtiles(MbtilesStoreCfg),
+    /// Tiles from PMTile archive
     #[serde(rename = "pmtiles")]
     Pmtiles(PmtilesStoreCfg),
     #[serde(rename = "nostore")]
@@ -236,12 +281,14 @@ pub struct S3StoreCfg {
     // pub aws_secret_access_key: Option<String>,
 }
 
+/// MBTile archive
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MbtilesStoreCfg {
     pub path: PathBuf,
 }
 
+/// PMTile archive
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PmtilesStoreCfg {
