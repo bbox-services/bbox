@@ -88,6 +88,10 @@ With PostGIS Service:
     curl -s http://localhost:8080/xyz/ne_countries.style.json | jq .
     x-www-browser http://localhost:8080/html/maplibre/ne_countries
 
+With filter parameter:
+
+    curl -o /tmp/tile.mvt 'http://localhost:8080/xyz/taxi_zones/0/0/0.mvt?color=3.0'
+
 
 ### Seeding
 

@@ -10,6 +10,7 @@ pub mod wms_fcgi;
 pub mod wms_http;
 
 use crate::config::{SourceParamCfg, TileSetCfg};
+use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
 use crate::store::pmtiles::PmtilesStoreReader;
@@ -30,6 +31,8 @@ pub enum TileSourceError {
     #[error("tileserver.source of type {0} expected")]
     TileSourceTypeError(String),
     #[error("tile not found / out of bounds")]
+    FilterParamError,
+    #[error("missing filter parameter")]
     TileXyzError,
     #[error(transparent)]
     RegistryError(#[from] RegistryError),
@@ -76,6 +79,7 @@ pub trait TileRead: DynClone + Send + Sync {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
+        filter: &FilterParams,
         format: &Format,
         request_params: wms_fcgi::HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError>;

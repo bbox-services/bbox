@@ -25,6 +25,7 @@ bbox-asset-server = { path = "../bbox-asset-server", optional = true }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bytes = "1.1.0"
 clap = { workspace = true }
+chrono = { workspace = true }
 crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
 futures = "0.3"
@@ -44,6 +45,7 @@ rusoto_core = { version = "0.47.0", default-features = false, features = ["rustl
 rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_urlencoded = { workspace = true }
 sqlx = { workspace = true }
 tempfile = { workspace = true }
 thiserror = { workspace = true }

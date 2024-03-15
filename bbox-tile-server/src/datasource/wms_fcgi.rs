@@ -2,6 +2,7 @@
 
 use crate::config::WmsFcgiSourceParamsCfg;
 use crate::datasource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
+use crate::filter_params::FilterParams;
 use crate::service::{QueryExtent, TileService};
 use async_trait::async_trait;
 use bbox_core::Format;
@@ -93,6 +94,7 @@ impl TileRead for WmsFcgiSource {
         service: &TileService,
         tms_id: &str,
         tile: &Xyz,
+        _filter: &FilterParams,
         format: &Format,
         request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {

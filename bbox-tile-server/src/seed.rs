@@ -1,5 +1,6 @@
 use crate::cli::*;
 use crate::config::TileStoreCfg;
+use crate::filter_params::FilterParams;
 use crate::service::{ServiceError, TileService};
 use crate::store::{s3putfiles, CacheLayout};
 use futures::{prelude::*, stream};
@@ -108,11 +109,12 @@ impl TileService {
         });
         let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
             let tileset = tileset_name.clone();
+            let filter = FilterParams::default();
             let service = service.clone();
             let compression = compression.clone();
             async move {
                 let tile = service
-                    .read_tile(&tileset, &xyz, &format, compression)
+                    .read_tile(&tileset, &xyz, &filter, &format, compression)
                     .await
                     .unwrap();
                 (xyz, tile)

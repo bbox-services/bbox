@@ -26,11 +26,16 @@ impl SqlQuery {
     pub fn build_field_query(layer: &VectorLayerCfg, user_query: Option<&String>) -> Self {
         let sql = if let Some(sql) = user_query {
             // Replace vars with valid SQL
-            sql.replace("!bbox!", "ST_MakeEnvelope(0,0,0,0,3857)")
+            let sql = sql
+                .replace("!bbox!", "ST_MakeEnvelope(0,0,0,0,3857)")
                 .replace("!bbox_unbuffered!", "ST_MakeEnvelope(0,0,0,0,3857)")
                 .replace("!zoom!", "0")
+                .replace("!x!", "0")
+                .replace("!y!", "0")
                 .replace("!pixel_width!", "0")
-                .replace("!scale_denominator!", "0")
+                .replace("!scale_denominator!", "0");
+            let re = Regex::new(r"!(\w+)!").expect("regex"); // TODO: handle more typecasts r"!(\w+)!(::\w+)?"
+            re.replace_all(&sql, "'0'").to_string()
         } else {
             format!(
                 "SELECT * FROM {}",
@@ -94,7 +99,7 @@ impl SqlQuery {
     /// Replace variables (!bbox!, !zoom!, etc.) in query
     // https://github.com/mapnik/mapnik/wiki/PostGIS
     fn replace_params(sqlin: &str, bbox_expr: String, bbox_expr_unbuffered: String) -> Self {
-        let re = Regex::new(r"!(\w+)!").unwrap();
+        let re = Regex::new(r"!(\w+)!").expect("regex");
         let mut sql = sqlin.to_string();
         let mut params = Vec::new();
         let mut numvars = 0;
@@ -570,11 +575,11 @@ mod test {
             simplify: None,
             tolerance: None,
             sql: Some(String::from(
-                "SELECT geometry FROM osm_place_point WHERE typecol=!typecol!",
+                "SELECT geometry FROM osm_place_point WHERE col1=!colval1! AND col2=!colval2!",
             )),
         }];
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
-               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE typecol=$5) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE col1=$5 AND col2=$6) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
     }
 }

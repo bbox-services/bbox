@@ -4,6 +4,7 @@ use crate::config::TileSetCfg;
 use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
+use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
 use crate::store::TileReader;
@@ -20,6 +21,7 @@ impl TileRead for MbtilesStore {
         _service: &TileService,
         _tms_id: &str,
         tile: &Xyz,
+        _filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {

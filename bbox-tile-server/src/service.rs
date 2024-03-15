@@ -2,6 +2,7 @@ use crate::cli::Commands;
 use crate::config::*;
 use crate::datasource::wms_fcgi::{HttpRequestParams, MapService, WmsMetrics};
 use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
+use crate::filter_params::FilterParams;
 use crate::store::{
     store_reader_from_config, store_writer_from_config, Compression, TileReader, TileStoreError,
     TileWriter,
@@ -300,6 +301,7 @@ impl TileService {
         &self,
         tileset: &str,
         xyz: &Xyz,
+        filter: &FilterParams,
         format: &Format,
         compression: Compression,
     ) -> Result<Vec<u8>, ServiceError> {
@@ -315,7 +317,7 @@ impl TileService {
         };
         let mut tile = ts
             .source
-            .xyz_request(self, &ts.tms, xyz, format, request_params)
+            .xyz_request(self, &ts.tms, xyz, filter, format, request_params)
             .await?;
         let mut bytes: Vec<u8> = Vec::new();
         match compression {
@@ -334,6 +336,7 @@ impl TileService {
         &self,
         tileset: &str,
         xyz: &Xyz,
+        filter: &FilterParams,
         format: &Format,
         _gzip: bool,
         request_params: HttpRequestParams<'_>,
@@ -354,7 +357,7 @@ impl TileService {
         // let tms = tileset.tms.clone();
         let mut tiledata = tileset
             .source
-            .xyz_request(self, &tileset.tms, xyz, format, request_params)
+            .xyz_request(self, &tileset.tms, xyz, filter, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         if tileset.is_cachable_at(xyz.z) {

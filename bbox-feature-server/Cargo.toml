@@ -14,7 +14,7 @@ html = ["bbox-core/html"]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
 bbox-core = { path = "../bbox-core" }
-chrono = "0.4"
+chrono = { workspace = true }
 clap = { workspace = true }
 dyn-clone = "1.0.6"
 futures = { workspace = true }
@@ -25,7 +25,7 @@ once_cell = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_urlencoded = "0.7.1"
+serde_urlencoded = { workspace = true }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 

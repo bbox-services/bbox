@@ -70,12 +70,12 @@ async fn features(
     collection_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
     if let Some(collection) = inventory.core_collection(&collection_id) {
-        let mut filters =
+        let mut filters: HashMap<String, String> =
             match serde_urlencoded::from_str::<Vec<(String, String)>>(req.query_string()) {
                 Ok(f) => f
                     .iter()
                     .map(|k| (k.0.to_lowercase(), k.1.to_owned()))
-                    .collect::<HashMap<String, String>>(),
+                    .collect(),
                 Err(_e) => return Ok(HttpResponse::BadRequest().finish()),
             };
 
