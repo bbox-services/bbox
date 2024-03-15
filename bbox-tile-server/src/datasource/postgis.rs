@@ -250,6 +250,8 @@ impl TileRead for PgSource {
                         .bind(extent.right)
                         .bind(extent.top),
                     QueryParam::Zoom => query.bind(tile.z as i32),
+                    QueryParam::X => query.bind(tile.x as i32),
+                    QueryParam::Y => query.bind(tile.y as i32),
                     QueryParam::PixelWidth => {
                         if let Some(pixel_width) = grid.resolution_z(tile.z) {
                             // TODO: grid_width = grid.tile_width_z(tile.z)
@@ -269,6 +271,7 @@ impl TileRead for PgSource {
                             query
                         }
                     }
+                    QueryParam::QueryField(ref _field) => unimplemented!(), // TODO: bind passed query params
                 }
             }
             debug!("Query layer `{id}`");

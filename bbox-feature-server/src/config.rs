@@ -63,9 +63,13 @@ pub struct PostgisCollectionCfg {
     pub fid_field: Option<String>,
     pub geometry_field: Option<String>,
     //pub field_list: Option<Vec<String>>,
+    /// Field used for temporal filter expressions
     pub temporal_field: Option<String>,
+    /// Field used for temporal end filter expressions
     pub temporal_end_field: Option<String>,
-    pub queryable_fields: Option<Vec<String>>,
+    /// Fields which can be used in filter expressions
+    #[serde(default)]
+    pub queryable_fields: Vec<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
