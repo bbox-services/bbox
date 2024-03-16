@@ -104,18 +104,12 @@ impl SqlQuery {
         let mut params = Vec::new();
         let mut numvars = 0;
 
-        if sql.contains("!bbox_unbuffered!") {
-            if !sql.contains("!bbox!") {
-                params.push(QueryParam::Bbox);
-                numvars += 4;
-            }
-            sql = sql.replace("!bbox_unbuffered!", &bbox_expr_unbuffered);
-        }
-        if sql.contains("!bbox!") {
+        if sql.contains("!bbox!") || sql.contains("!bbox_unbuffered!") {
             params.push(QueryParam::Bbox);
             numvars += 4;
-            sql = sql.replace("!bbox!", &bbox_expr);
         }
+        sql = sql.replace("!bbox!", &bbox_expr);
+        sql = sql.replace("!bbox_unbuffered!", &bbox_expr_unbuffered);
         // replace e.g. !zoom! with $5
         for (var, par, cast) in [
             ("!zoom!", QueryParam::Zoom, ""),
