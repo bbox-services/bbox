@@ -29,7 +29,7 @@ use tilejson::{tilejson, TileJSON};
 pub struct PgSource {
     ds: PgDatasource,
     grid_srid: i32,
-    layers: HashMap<String, PgMvtLayer>, // t-rex uses BTreeMap
+    layers: BTreeMap<String, PgMvtLayer>,
     /// Config with TileJSON metadata
     config: PostgisSourceParamsCfg,
 }
@@ -84,7 +84,7 @@ impl PgSource {
     pub async fn create(ds: &PgDatasource, cfg: &PostgisSourceParamsCfg, tms: &Tms) -> PgSource {
         let grid_srid = tms.crs().as_srid();
 
-        let mut layers = HashMap::new();
+        let mut layers = BTreeMap::new();
         for layer in &cfg.layers {
             match Self::setup_layer(ds, layer, grid_srid, cfg.postgis2).await {
                 Ok(mvt_layer) => {
