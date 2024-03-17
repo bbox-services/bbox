@@ -18,7 +18,7 @@ use log::{debug, error, info, warn};
 use serde_json::json;
 use sqlx::{
     postgres::{PgColumn, PgRow, PgStatement, PgTypeInfo},
-    Column, Connection, Executor, Row, Statement, TypeInfo,
+    Column, Executor, Row, Statement, TypeInfo,
 };
 use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
@@ -186,10 +186,10 @@ impl PgSource {
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
-            // Workaround for broken cached query:
-            for _ in 0..ds.pool.size() {
-                ds.pool.acquire().await?.clear_cached_statements().await?;
-            }
+            // Workaround for cached queries with incorrect parameter types
+            // for _ in 0..ds.pool.size() {
+            //     ds.pool.acquire().await?.clear_cached_statements().await?;
+            // }
             debug!(
                 "Layer `{}`: Query for minzoom {zoom}: {}",
                 layer.name, query.sql
