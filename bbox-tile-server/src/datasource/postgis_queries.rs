@@ -3,6 +3,7 @@ use crate::datasource::postgis::{FieldInfo, FieldTypeInfo};
 use log::{info, warn};
 use regex::Regex;
 use sqlx::{postgres::PgTypeInfo, TypeInfo};
+use std::collections::BTreeSet;
 
 #[derive(Clone, Debug)]
 pub struct SqlQuery {
@@ -125,7 +126,11 @@ impl SqlQuery {
             }
         }
         // Search and replace field query vars
-        for (_, [field]) in re.captures_iter(&sql.clone()).map(|c| c.extract()) {
+        let mut unique_fields = BTreeSet::new();
+        for (_, [field]) in re.captures_iter(&sql).map(|c| c.extract()) {
+            unique_fields.insert(field.to_string());
+        }
+        for field in unique_fields {
             params.push(QueryParam::QueryField(field.to_string()));
             numvars += 1;
             sql = sql.replace(&format!("!{field}!"), &format!("${numvars}"));
@@ -588,5 +593,18 @@ mod test {
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
                    .sql,
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE col1=$5 AND col2=$6) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+
+        layer.queries = vec![VectorLayerQueryCfg {
+            minzoom: 0,
+            maxzoom: Some(22),
+            simplify: None,
+            tolerance: None,
+            sql: Some(String::from(
+                "SELECT geometry FROM osm_place_point WHERE col1=!colval! OR col2=!colval!",
+            )),
+        }];
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, layer.queries[0].sql.as_ref(), postgis2)
+                   .sql,
+               "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE col1=$5 OR col2=$5) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
     }
 }
