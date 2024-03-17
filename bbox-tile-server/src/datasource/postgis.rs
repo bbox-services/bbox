@@ -118,9 +118,10 @@ impl PgSource {
         for zoom in layer.zoom_steps() {
             let layer_query = layer.query(zoom);
             let field_query = SqlQuery::build_field_query(layer, layer_query);
+            let param_types = field_query.param_types();
             let mut geometry_field = None;
             let mut fields = Vec::new();
-            match ds.pool.prepare(&field_query.sql).await {
+            match ds.pool.prepare_with(&field_query.sql, &param_types).await {
                 Ok(stmt) => {
                     for col in stmt.columns() {
                         let info = column_info(col, &layer.name);
@@ -148,6 +149,7 @@ impl PgSource {
                             fields.push(field_info);
                         }
                     }
+                    debug!("Query parameters: {:?}", stmt.parameters());
                 }
                 Err(e) => {
                     error!(
@@ -172,28 +174,8 @@ impl PgSource {
                 layer_query,
                 postgis2,
             );
-            // types for prepare_with
-            // let param_types: Vec<PgTypeInfo> = query
-            //     .params
-            //     .iter()
-            //     .map(|param| match param {
-            //         QueryParam::Bbox => vec![
-            //             PgTypeInfo::with_name("FLOAT8"),
-            //             PgTypeInfo::with_name("FLOAT8"),
-            //             PgTypeInfo::with_name("FLOAT8"),
-            //             PgTypeInfo::with_name("FLOAT8"),
-            //         ],
-            //         QueryParam::Zoom | QueryParam::X | QueryParam::Y => {
-            //             vec![PgTypeInfo::with_name("INT4")]
-            //         }
-            //         QueryParam::PixelWidth | QueryParam::ScaleDenominator => {
-            //             vec![PgTypeInfo::with_name("FLOAT8")]
-            //         }
-            //         QueryParam::QueryField(_) => vec![PgTypeInfo::with_name("VARCHAR")],
-            //     })
-            //     .flatten()
-            //     .collect();
-            let stmt = match ds.pool.prepare(&query.sql).await {
+            let param_types = query.param_types();
+            let stmt = match ds.pool.prepare_with(&query.sql, &param_types).await {
                 Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
                 Err(e) => {
                     error!(

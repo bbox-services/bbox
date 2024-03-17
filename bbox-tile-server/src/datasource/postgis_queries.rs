@@ -2,7 +2,7 @@ use crate::config::VectorLayerCfg;
 use crate::datasource::postgis::{FieldInfo, FieldTypeInfo};
 use log::{info, warn};
 use regex::Regex;
-use sqlx::TypeInfo;
+use sqlx::{postgres::PgTypeInfo, TypeInfo};
 
 #[derive(Clone, Debug)]
 pub struct SqlQuery {
@@ -24,30 +24,22 @@ pub enum QueryParam {
 impl SqlQuery {
     /// Initial select query for column type detection
     pub fn build_field_query(layer: &VectorLayerCfg, user_query: Option<&String>) -> Self {
-        let sql = if let Some(sql) = user_query {
+        if let Some(sql) = user_query {
             // Replace vars with valid SQL
-            let sql = sql
-                .replace("!bbox!", "ST_MakeEnvelope(0,0,0,0,3857)")
-                .replace("!bbox_unbuffered!", "ST_MakeEnvelope(0,0,0,0,3857)")
-                .replace("!zoom!", "0")
-                .replace("!x!", "0")
-                .replace("!y!", "0")
-                .replace("!pixel_width!", "0")
-                .replace("!scale_denominator!", "0");
-            let re = Regex::new(r"!(\w+)!").expect("regex"); // TODO: handle more typecasts r"!(\w+)!(::\w+)?"
-            re.replace_all(&sql, "'0'").to_string()
+            let bbox_expr = "ST_MakeEnvelope($1,$2,$3,$4,3857)";
+            Self::replace_params(sql, bbox_expr.to_string(), bbox_expr.to_string())
         } else {
-            format!(
+            let sql = format!(
                 "SELECT * FROM {}",
                 layer
                     .table_name
                     .as_ref()
                     .expect("query and table_name undefined")
-            )
-        };
-        SqlQuery {
-            sql,
-            params: Vec::new(),
+            );
+            SqlQuery {
+                sql,
+                params: Vec::new(),
+            }
         }
     }
 
@@ -139,6 +131,27 @@ impl SqlQuery {
             sql = sql.replace(&format!("!{field}!"), &format!("${numvars}"));
         }
         SqlQuery { sql, params }
+    }
+
+    pub fn param_types(&self) -> Vec<PgTypeInfo> {
+        self.params
+            .iter()
+            .flat_map(|param| match param {
+                QueryParam::Bbox => vec![
+                    PgTypeInfo::with_name("FLOAT8"),
+                    PgTypeInfo::with_name("FLOAT8"),
+                    PgTypeInfo::with_name("FLOAT8"),
+                    PgTypeInfo::with_name("FLOAT8"),
+                ],
+                QueryParam::Zoom | QueryParam::X | QueryParam::Y => {
+                    vec![PgTypeInfo::with_name("INT4")]
+                }
+                QueryParam::PixelWidth | QueryParam::ScaleDenominator => {
+                    vec![PgTypeInfo::with_name("FLOAT8")]
+                }
+                QueryParam::QueryField(_) => vec![PgTypeInfo::with_name("VARCHAR")],
+            })
+            .collect()
     }
 }
 
