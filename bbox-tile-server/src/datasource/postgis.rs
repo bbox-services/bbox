@@ -18,7 +18,7 @@ use log::{debug, error, info, warn};
 use serde_json::json;
 use sqlx::{
     postgres::{PgColumn, PgRow, PgStatement, PgTypeInfo},
-    Column, Executor, Row, Statement, TypeInfo,
+    Column, Connection, Executor, Row, Statement, TypeInfo,
 };
 use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
@@ -172,6 +172,27 @@ impl PgSource {
                 layer_query,
                 postgis2,
             );
+            // types for prepare_with
+            // let param_types: Vec<PgTypeInfo> = query
+            //     .params
+            //     .iter()
+            //     .map(|param| match param {
+            //         QueryParam::Bbox => vec![
+            //             PgTypeInfo::with_name("FLOAT8"),
+            //             PgTypeInfo::with_name("FLOAT8"),
+            //             PgTypeInfo::with_name("FLOAT8"),
+            //             PgTypeInfo::with_name("FLOAT8"),
+            //         ],
+            //         QueryParam::Zoom | QueryParam::X | QueryParam::Y => {
+            //             vec![PgTypeInfo::with_name("INT4")]
+            //         }
+            //         QueryParam::PixelWidth | QueryParam::ScaleDenominator => {
+            //             vec![PgTypeInfo::with_name("FLOAT8")]
+            //         }
+            //         QueryParam::QueryField(_) => vec![PgTypeInfo::with_name("VARCHAR")],
+            //     })
+            //     .flatten()
+            //     .collect();
             let stmt = match ds.pool.prepare(&query.sql).await {
                 Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
                 Err(e) => {
@@ -183,6 +204,10 @@ impl PgSource {
                     return Err(TileSourceError::TypeDetectionError);
                 }
             };
+            // Workaround for broken cached query:
+            for _ in 0..ds.pool.size() {
+                ds.pool.acquire().await?.clear_cached_statements().await?;
+            }
             debug!(
                 "Layer `{}`: Query for minzoom {zoom}: {}",
                 layer.name, query.sql
