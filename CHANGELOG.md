@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 beta1 (2024-03-18)
+
+- Add x, y and custom fields to layer queries
+- Keep order of PG tile layers
+- Add bbox-tile-server release assets
+
 ## 0.5.0 alpha6 (2024-03-14)
 
 * Fix startup failure without CORS configuration
