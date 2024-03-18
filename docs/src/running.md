@@ -14,7 +14,18 @@ Commands:
 Options:
   -c, --config <FILE>        Config file (Default: bbox.toml)
       --loglevel <LOGLEVEL>  Log level (Default: info) [possible values: error, warn, info, debug, trace]
+  -t, --t-rex-config <FILE>  T-Rex config file
   -h, --help                 Print help
+```
+
+```shell
+Usage: bbox-server serve [FILE_OR_URL]
+
+Arguments:
+  [FILE_OR_URL]  Serve service from file or URL
+
+Options:
+  -h, --help  Print help
 ```
 
 ## Access Web Backend
