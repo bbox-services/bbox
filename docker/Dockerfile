@@ -32,7 +32,7 @@ RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 # Final Stage
 # ------------------------------------------------------------------------------
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ARG BUILD_DIR=bbox-server
 ARG BUILDAPP=$BUILD_DIR

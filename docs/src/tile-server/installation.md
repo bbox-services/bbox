@@ -21,5 +21,5 @@ If you [install Rust](https://www.rust-lang.org/tools/install), you can build BB
 ```shell
 cd bbox-tile-server
 cargo install --path .
-bbox-server --help
+bbox-tile-server --help
 ```

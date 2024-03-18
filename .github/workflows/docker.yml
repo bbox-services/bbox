@@ -45,3 +45,15 @@ jobs:
           buildargs: BUILD_DIR
           tags: "${{ steps.get_tag.outputs.tag }}"
           dockerfile: docker/Dockerfile-qgis-server
+
+      - name: Build and Publish bbox-tile-server
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        env:
+          BUILD_DIR: bbox-tile-server
+        with:
+          name: sourcepole/bbox-tile-server
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          buildargs: BUILD_DIR
+          tags: "${{ steps.get_tag.outputs.tag }}"
+          dockerfile: docker/Dockerfile
