@@ -231,7 +231,7 @@ bbox-server --help
 <ul>
 <li><code>webserver</code> <a href="core/reference.html#webserver">Webserver</a> (optional)</li>
 <li><code>metrics</code> <a href="core/reference.html#metrics">Metrics</a> (optional)</li>
-<li><code>datasource[]</code> <a href="core/reference.html#nameddatasource">NamedDatasource</a></li>
+<li><code>datasource[]</code> <a href="core/reference.html#nameddatasource">NamedDatasource</a> (optional)</li>
 <li><code>auth</code> <a href="core/reference.html#auth">Auth</a> (optional)</li>
 </ul>
 <h2 id="webserver-1"><a class="header" href="#webserver-1">Webserver</a></h2>
@@ -459,9 +459,9 @@ curl -s http://127.0.0.1:8080/collections/populated_places_names/items/2 | jq .
 <li><code>sql</code> <em>String</em> (optional): Custom SQL query</li>
 <li><code>fid_field</code> <em>String</em> (optional)</li>
 <li><code>geometry_field</code> <em>String</em> (optional)</li>
-<li><code>temporal_field</code> <em>String</em> (optional)</li>
-<li><code>temporal_end_field</code> <em>String</em> (optional)</li>
-<li><code>queryable_fields</code> <em>Vec</em> (optional)</li>
+<li><code>temporal_field</code> <em>String</em> (optional): Field used for temporal filter expressions</li>
+<li><code>temporal_end_field</code> <em>String</em> (optional): Field used for temporal end filter expressions</li>
+<li><code>queryable_fields[]</code> <em>String</em> (optional): Fields which can be used in filter expressions</li>
 </ul>
 <h4 id="gpkg-1"><a class="header" href="#gpkg-1">gpkg</a></h4>
 <ul>
@@ -788,32 +788,36 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tile-server-reference"><a class="header" href="#tile-server-reference">Tile Server Reference</a></h1>
 <ul>
-<li><code>grid[]</code> <a href="tile-server/reference.html#grid">Grid</a></li>
+<li><code>grid[]</code> <a href="tile-server/reference.html#grid">Grid</a>: Custom grid definitions</li>
 <li><code>datasource[]</code> <a href="tile-server/reference.html#nameddatasource">NamedDatasource</a></li>
-<li><code>tileset[]</code> <a href="tile-server/reference.html#tileset">TileSet</a></li>
+<li><code>tileset[]</code> <a href="tile-server/reference.html#tileset">TileSet</a>: Tileset configurations</li>
 <li><code>tilestore[]</code> <a href="tile-server/reference.html#tilecacheprovider">TileCacheProvider</a></li>
 </ul>
 <h2 id="grid"><a class="header" href="#grid">Grid</a></h2>
 <p>Custom grid definition</p>
 <ul>
-<li><code>json</code> <em>String</em>: JSON file path</li>
+<li><code>json</code> <em>String</em>: Grid JSON file path</li>
 </ul>
 <h2 id="tileset"><a class="header" href="#tileset">TileSet</a></h2>
+<p>Tileset configuration</p>
 <ul>
-<li><code>name</code> <em>String</em></li>
-<li><code>tms</code> <em>String</em> (optional): List of available tile matrix set identifiers (Default: WebMercatorQuad)</li>
-<li><a href="tile-server/reference.html#source">Source</a>: Source parameters</li>
+<li><code>name</code> <em>String</em>: Tileset name, visible part of endpoint</li>
+<li><code>tms</code> <em>String</em> (optional): Tile matrix set identifier (Default: <code>WebMercatorQuad</code>)</li>
+<li><a href="tile-server/reference.html#source">Source</a>: Tile source</li>
 <li><code>cache</code> <em>String</em> (optional): Tile cache name (Default: no cache)</li>
-<li><code>cache_format</code> <em>String</em> (optional): tile format in store. Defaults to <code>png</code> for raster and <code>pbf</code> for vector tiles</li>
-<li><code>cache_limits</code> <a href="tile-server/reference.html#cachelimit">CacheLimit</a> (optional)</li>
+<li><code>cache_format</code> <em>String</em> (optional): Tile format in store. Defaults to <code>png</code> for raster and <code>pbf</code> for vector tiles</li>
+<li><code>cache_limits</code> <a href="tile-server/reference.html#cachelimit">CacheLimit</a> (optional): Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.</li>
 </ul>
 <h3 id="source"><a class="header" href="#source">Source</a></h3>
+<p>Tile sources</p>
 <h4 id="wms_proxy-1"><a class="header" href="#wms_proxy-1">wms_proxy</a></h4>
+<p>Raster tiles from external WMS</p>
 <ul>
-<li><code>source</code> <em>String</em>: name of WmsHttpSourceProviderCfg</li>
+<li><code>source</code> <em>String</em>: Name of <code>wms_proxy</code> datasource</li>
 <li><code>layers</code> <em>String</em></li>
 </ul>
 <h4 id="map_service"><a class="header" href="#map_service">map_service</a></h4>
+<p>Raster tiles from map service</p>
 <ul>
 <li><code>project</code> <em>String</em></li>
 <li><code>suffix</code> <em>String</em></li>
@@ -822,27 +826,38 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 <li><code>tile_size</code> <em>u16</em> (optional): Width and height of tile. Defaults to grid tile size (usually 256x256)</li>
 </ul>
 <h4 id="postgis-2"><a class="header" href="#postgis-2">postgis</a></h4>
+<p>PostGIS datasource</p>
 <ul>
-<li><code>datasource</code> <em>String</em> (optional): Name of tileserver.source config (Default: first with matching type)</li>
+<li><code>datasource</code> <em>String</em> (optional): Name of <code>postgis</code> datasource (Default: first with matching type)</li>
 <li><code>extent</code> <a href="tile-server/reference.html#extent">Extent</a> (optional)</li>
-<li><code>minzoom</code> <em>u8</em> (optional)</li>
-<li><code>maxzoom</code> <em>u8</em> (optional)</li>
-<li><code>center</code> <em>Option</em> (optional)</li>
-<li><code>start_zoom</code> <em>u8</em> (optional)</li>
-<li><code>attribution</code> <em>String</em> (optional)</li>
+<li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available (Default: 22).</li>
+</ul>
+<p>If unset, maxzoom is deduced from layer and query maxzoom limits.
+Viewers use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
+<ul>
+<li><code>center</code> <em>Option</em> (optional): Longitude, latitude of map center (in WGS84).</li>
+</ul>
+<p>Viewers can use this value to set the default location.</p>
+<ul>
+<li><code>start_zoom</code> <em>u8</em> (optional): Start zoom level. Must be between minzoom and maxzoom.</li>
+<li><code>attribution</code> <em>String</em> (optional): Acknowledgment of ownership, authorship or copyright.</li>
 <li><code>postgis2</code> <em>bool</em> (optional): PostGIS 2 compatible query (without ST_AsMVT)</li>
 <li><code>diagnostics</code> <a href="tile-server/reference.html#tilediagnostics">TileDiagnostics</a> (optional): Add diagnostics layer</li>
-<li><code>layer[]</code> <a href="tile-server/reference.html#vectorlayer">VectorLayer</a></li>
+<li><code>layer[]</code> <a href="tile-server/reference.html#vectorlayer">VectorLayer</a>: Layer definitions</li>
 </ul>
 <h4 id="mbtiles-1"><a class="header" href="#mbtiles-1">mbtiles</a></h4>
+<p>Tiles from MBTile archive</p>
 <ul>
 <li><code>path</code> <em>Path</em></li>
 </ul>
 <h4 id="pmtiles"><a class="header" href="#pmtiles">pmtiles</a></h4>
+<p>Tiles from PMTile archive</p>
 <ul>
 <li><code>path</code> <em>Path</em></li>
 </ul>
 <h3 id="cachelimit"><a class="header" href="#cachelimit">CacheLimit</a></h3>
+<p>Tile cache limits</p>
 <ul>
 <li><code>minzoom</code> <em>u8</em> (optional)</li>
 <li><code>maxzoom</code> <em>u8</em> (optional)</li>
@@ -859,56 +874,75 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 <li><code>reference_size</code> <em>u64</em> (optional): Maximal tile size (uncompressed)</li>
 </ul>
 <h4 id="vectorlayer"><a class="header" href="#vectorlayer">VectorLayer</a></h4>
+<p>PostGIS vector layer</p>
 <ul>
-<li><code>name</code> <em>String</em></li>
-<li><code>geometry_field</code> <em>String</em> (optional)</li>
-<li><code>geometry_type</code> <em>String</em> (optional)</li>
+<li><code>name</code> <em>String</em>: Layer name.</li>
+<li><code>geometry_field</code> <em>String</em> (optional): Name of geometry field.</li>
+<li><code>geometry_type</code> <em>String</em> (optional): Type of geometry in PostGIS database</li>
+</ul>
+<p><code>POINT</code> | <code>MULTIPOINT</code> | <code>LINESTRING</code> | <code>MULTILINESTRING</code> | <code>POLYGON</code> | <code>MULTIPOLYGON</code> | <code>COMPOUNDCURVE</code> | <code>CURVEPOLYGON</code></p>
+<ul>
 <li><code>srid</code> <em>i32</em> (optional): Spatial reference system (PostGIS SRID)</li>
 <li><code>no_transform</code> <em>bool</em> (optional): Assume geometry is in grid SRS</li>
 <li><code>fid_field</code> <em>String</em> (optional): Name of feature ID field</li>
-<li><code>table_name</code> <em>String</em> (optional)</li>
-<li><code>query_limit</code> <em>u32</em> (optional)</li>
-<li><code>query[]</code> <a href="tile-server/reference.html#vectorlayerquery">VectorLayerQuery</a> (optional)</li>
-<li><code>minzoom</code> <em>u8</em> (optional)</li>
-<li><code>maxzoom</code> <em>u8</em> (optional)</li>
+<li><code>table_name</code> <em>String</em> (optional): Select all fields from table (either table or <code>query</code> is required)</li>
+<li><code>query[]</code> <a href="tile-server/reference.html#vectorlayerquery">VectorLayerQuery</a> (optional): Custom queries</li>
+<li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for which tiles are available.</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available.</li>
+<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile.</li>
 <li><code>tile_size</code> <em>u32</em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)</li>
-<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons)</li>
-<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (default to !pixel_width!/2)</li>
 <li><code>buffer_size</code> <em>u32</em> (optional): Tile buffer size in pixels (None: no clipping)</li>
+<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons)</li>
+<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (default to <code>!pixel_width!/2</code>)</li>
 <li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries before clipping (lines and polygons)</li>
 <li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox</li>
 </ul>
 <h4 id="vectorlayerquery"><a class="header" href="#vectorlayerquery">VectorLayerQuery</a></h4>
 <ul>
-<li><code>minzoom</code> <em>u8</em> (optional)</li>
-<li><code>maxzoom</code> <em>u8</em> (optional)</li>
+<li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for using this query.</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximal zoom level for using this query.</li>
 <li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (override layer default setting)</li>
 <li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (override layer default setting)</li>
-<li><code>sql</code> <em>String</em> (optional)</li>
+<li><code>sql</code> <em>String</em> (optional): User defined SQL query.</li>
+</ul>
+<p>The following variables are replaced at runtime:</p>
+<ul>
+<li><code>!bbox!</code>: Bounding box of tile</li>
+<li><code>!zoom!</code>: Zoom level of tile request</li>
+<li><code>!x!</code>, <code>!y!</code>: x, y of tile request (disables geometry filter)</li>
+<li><code>!scale_denominator!</code>: Map scale of tile request</li>
+<li><code>!pixel_width!</code>: Width of pixel in grid units</li>
+<li><code>!&lt;fieldname&gt;!</code>: Custom field query variable</li>
 </ul>
 <h2 id="tilecacheprovider"><a class="header" href="#tilecacheprovider">TileCacheProvider</a></h2>
 <ul>
-<li><code>name</code> <em>String</em></li>
-<li><a href="tile-server/reference.html#tilestore">TileStore</a></li>
+<li><code>name</code> <em>String</em>: Name of tile cache</li>
+<li><a href="tile-server/reference.html#tilestore">TileStore</a>: Tile store</li>
 </ul>
 <h3 id="tilestore"><a class="header" href="#tilestore">TileStore</a></h3>
+<p>Tile stores</p>
 <h4 id="files"><a class="header" href="#files">files</a></h4>
+<p>File system tiles store</p>
 <ul>
 <li><code>base_dir</code> <em>Path</em>: Base directory, tileset name will be appended</li>
 </ul>
 <h4 id="s3"><a class="header" href="#s3">s3</a></h4>
+<p>S3 tile store</p>
 <ul>
 <li><code>path</code> <em>String</em></li>
 </ul>
 <h4 id="mbtiles-2"><a class="header" href="#mbtiles-2">mbtiles</a></h4>
+<p>MBTile archive</p>
 <ul>
 <li><code>path</code> <em>Path</em></li>
 </ul>
 <h4 id="pmtiles-1"><a class="header" href="#pmtiles-1">pmtiles</a></h4>
+<p>PMTile archive</p>
 <ul>
 <li><code>path</code> <em>Path</em></li>
 </ul>
 <h4 id="nostore"><a class="header" href="#nostore">nostore</a></h4>
+<p>Disable tile cache</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-asset-server"><a class="header" href="#bbox-asset-server">BBOX Asset server</a></h1>
 <p>Serving static and templated files.</p>
 <p>Features:</p>
