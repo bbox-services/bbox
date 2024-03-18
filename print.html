@@ -216,7 +216,7 @@ bbox-server --help
 </code></pre>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
 <p>BBOX is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-server-qgis">Docker image</a>. You could either share a configuration file from the host with the container via the <code>-v</code> param, or you can run BBOX in auto-discover mode.</p>
-<pre><code class="language-shell">docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
+<pre><code class="language-shell">docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.5.0-beta1
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="core-configuration"><a class="header" href="#core-configuration">Core Configuration</a></h1>
 <p>Configuration is read from <code>bbox.toml</code> and environment variables.</p>
@@ -647,6 +647,10 @@ Storage Backend: Local files</li>
 <pre><code class="language-shell">cd bbox-tile-server
 cargo install --path .
 bbox-tile-server --help
+</code></pre>
+<h2 id="docker-2"><a class="header" href="#docker-2">Docker</a></h2>
+<p>BBOX tile server is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-tile-server">Docker image</a>. You could either share a configuration file from the host with the container via the <code>-v</code> param, or you can run BBOX in auto-discover mode.</p>
+<pre><code class="language-shell">docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-tile-server:latest
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tile-server-configuration"><a class="header" href="#tile-server-configuration">Tile server configuration</a></h1>
 <h2 id="datasources-1"><a class="header" href="#datasources-1">Datasources</a></h2>
