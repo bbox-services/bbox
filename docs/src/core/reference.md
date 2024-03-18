@@ -2,7 +2,7 @@
 
 * `webserver` [Webserver](#webserver) (optional)
 * `metrics` [Metrics](#metrics) (optional)
-* `datasource[]` [NamedDatasource](#nameddatasource)
+* `datasource[]` [NamedDatasource](#nameddatasource) (optional)
 * `auth` [Auth](#auth) (optional)
 
 ## Webserver

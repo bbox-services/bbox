@@ -33,9 +33,9 @@ Collections with configuration
 * `sql` *String* (optional): Custom SQL query
 * `fid_field` *String* (optional)
 * `geometry_field` *String* (optional)
-* `temporal_field` *String* (optional)
-* `temporal_end_field` *String* (optional)
-* `queryable_fields` *Vec* (optional)
+* `temporal_field` *String* (optional): Field used for temporal filter expressions
+* `temporal_end_field` *String* (optional): Field used for temporal end filter expressions
+* `queryable_fields[]` *String* (optional): Fields which can be used in filter expressions
 
 #### gpkg
 
