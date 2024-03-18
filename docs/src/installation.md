@@ -9,10 +9,10 @@ You can download BBOX from [GitHub releases page](https://github.com/bbox-servic
 | macOS ARM | [ARM64][rl-macos-arm-tar] |
 | Windows   | [64-bit][rl-win64-zip]    |
 
-[rl-linux-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-alpha6/bbox-server-Linux-x86_64.tar.gz
-[rl-macos-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-alpha6/bbox-server-Darwin-x86_64.tar.gz
-[rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-alpha6/bbox-server-Darwin-arch64.tar.gz
-[rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-alpha6/bbox-server-Windows-x86_64.zip
+[rl-linux-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-beta1/bbox-server-x86_64-unknown-linux-gnu.tar.gz
+[rl-macos-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-beta1/bbox-server-x86_64-apple-darwin.tar.gz
+[rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-beta1/bbox-server-aarch64-apple-darwin.tar.gz
+[rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.5.0-beta1/bbox-server-x86_64-pc-windows-msvc.zip
 
 # Building with Cargo
 
