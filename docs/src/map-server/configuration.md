@@ -13,15 +13,15 @@
 
 ```toml
 [mapserver.qgis_backend]
-project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
-qgs.path = "/qgis"             # WMS URL base path
-qgz.path = "/qgz"              # WMS URL base path
+project_basedir = "./projects"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"              # URL base path *.qgs
+qgz.path = "/qgz"               # URL base path *.qgz
 ```
 
 ## UMN MapServer settings
 
 ```toml
 [mapserver.umn_backend]
-project_basedir = "../assets"  # Base dir for project files (.map)
-path = "/wms/map"              # WMS URL base path
+project_basedir = "./maps"    # Base dir for project files (.map)
+path = "/wms/map"             # URL base path
 ```

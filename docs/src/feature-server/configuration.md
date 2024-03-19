@@ -4,24 +4,24 @@
 
 ```toml
 [[datasource]]
-name = "t_rex_tests"
+name = "mvtbenchdb"
 [datasource.postgis]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
 name = "ne_extracts"
 [datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
+path = "../data/ne_extracts.gpkg"
 ```
 
 ## Collections with auto discovery
 
 ```toml
 [[collections.postgis]]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[collections.directory]]
-dir = "../assets"
+dir = "../data"
 ```
 
 ## Collections

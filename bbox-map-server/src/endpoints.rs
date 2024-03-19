@@ -42,6 +42,7 @@ async fn wms_fcgi(
     body: String,
     req: HttpRequest,
 ) -> Result<HttpResponse, actix_web::Error> {
+    // TODO support "/qgz/{project}/1.0.0/WMTSCapabilities.xml"
     let fcgi_query = format!("map={project}.{}&{}", suffix.as_str(), req.query_string());
     let conn_info = req.connection_info().clone();
     let request_params = HttpRequestParams {
