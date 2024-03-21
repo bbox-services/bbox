@@ -22,9 +22,7 @@ fn init_tracer(config: &MetricsCfg) {
 }
 
 pub(crate) fn init_metrics_exporter() -> Option<PrometheusExporter> {
-    let Some(metrics_cfg) = MetricsCfg::from_config() else {
-        return None;
-    };
+    let metrics_cfg = MetricsCfg::from_config()?;
 
     init_tracer(&metrics_cfg);
 
