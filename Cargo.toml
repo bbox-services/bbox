@@ -17,7 +17,8 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 rust-version = "1.65"
-repository = "https://github.com/sourcepole/bbox"
+repository = "https://github.com/bbox-services/bbox"
+homepage = "https://www.bbox.earth"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
