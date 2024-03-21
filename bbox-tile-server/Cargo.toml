@@ -1,11 +1,17 @@
 [package]
 name = "bbox-tile-server"
 version = "0.5.0-beta2"
-authors = ["Pirmin Kalberer <pka@sourcepole.ch>"]
-edition = "2021"
-rust-version = "1.65"
-repository = "https://github.com/sourcepole/bbox"
-license = "MIT OR Apache-2.0"
+authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
+readme = "README.md"
+description = "Vector and raster tiles server supporting various sources and storage formats"
+keywords = ["maps", "tiles", "mbtiles", "pmtiles", "postgis"]
+categories = ["science::geo"]
+
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
 
 [features]
 default = ["map-server", "asset-server"]
@@ -62,3 +68,21 @@ flate2 = "1.0.28"
 [[bin]]
 name = "bbox-tile-server"
 path = "src/main.rs"
+
+[package.metadata.deb]
+name = "bbox-tile-server"
+license-file = ["../LICENSE-MIT", "4"]
+maintainer = "Pirmin Kalberer <pirmin.kalberer@gmail.com>, BBOX contributors"
+extended-description = """
+BBOX tile server delivers and produces vector and raster tiles from data
+sources like PostGIS, QGIS Server, UMN Mapserver and external WMS servers.
+Tiles can be stored in a file system, on S3, as MBTiles or PMTiles archives.
+BBOX provides OGC Tiles API endpoints and CLI parameters for seeding."""
+section = "utility"
+priority = "optional"
+revision = ""
+depends = "$auto"
+assets = [
+    ["../target/release/bbox-tile-server", "/usr/bin/bbox-tile-server", "755"],
+    ["README.md", "/usr/share/doc/bbox-tile-server/README.md", "644"],
+]
