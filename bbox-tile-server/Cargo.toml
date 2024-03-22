@@ -86,3 +86,7 @@ assets = [
     ["../target/release/bbox-tile-server", "/usr/bin/bbox-tile-server", "755"],
     ["README.md", "/usr/share/doc/bbox-tile-server/README.md", "644"],
 ]
+
+[package.metadata.deb.variants.bookworm]
+revision = "bookworm"
+depends = "libc6 (>= 2.34)"
