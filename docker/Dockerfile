@@ -28,6 +28,11 @@ ARG BUILD_FEATURES=""
 
 RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 
+# build Debian package
+RUN apt update && apt install -y dpkg-dev
+RUN cargo install cargo-deb --locked
+RUN cd bbox-tile-server && cargo deb
+
 # ------------------------------------------------------------------------------
 # Final Stage
 # ------------------------------------------------------------------------------
