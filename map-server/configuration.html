@@ -188,14 +188,14 @@
 </code></pre>
 <h2 id="qgis-server-settings"><a class="header" href="#qgis-server-settings">QGIS Server settings</a></h2>
 <pre><code class="language-toml">[mapserver.qgis_backend]
-project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
-qgs.path = "/qgis"             # WMS URL base path
-qgz.path = "/qgz"              # WMS URL base path
+project_basedir = "./projects"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"              # URL base path *.qgs
+qgz.path = "/qgz"               # URL base path *.qgz
 </code></pre>
 <h2 id="umn-mapserver-settings"><a class="header" href="#umn-mapserver-settings">UMN MapServer settings</a></h2>
 <pre><code class="language-toml">[mapserver.umn_backend]
-project_basedir = "../assets"  # Base dir for project files (.map)
-path = "/wms/map"              # WMS URL base path
+project_basedir = "./maps"    # Base dir for project files (.map)
+path = "/wms/map"             # URL base path
 </code></pre>
 
                     </main>

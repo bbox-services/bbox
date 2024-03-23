@@ -382,21 +382,21 @@ Output formats: GeoJSON</li>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="feature-server-configuration"><a class="header" href="#feature-server-configuration">Feature server configuration</a></h1>
 <h2 id="datasources"><a class="header" href="#datasources">Datasources</a></h2>
 <pre><code class="language-toml">[[datasource]]
-name = "t_rex_tests"
+name = "mvtbenchdb"
 [datasource.postgis]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
 name = "ne_extracts"
 [datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
+path = "../data/ne_extracts.gpkg"
 </code></pre>
 <h2 id="collections-with-auto-discovery"><a class="header" href="#collections-with-auto-discovery">Collections with auto discovery</a></h2>
 <pre><code class="language-toml">[[collections.postgis]]
-url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
+url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[collections.directory]]
-dir = "../assets"
+dir = "../data"
 </code></pre>
 <h2 id="collections"><a class="header" href="#collections">Collections</a></h2>
 <pre><code class="language-toml">[[collection]]
@@ -515,14 +515,14 @@ Intelligent process dispatching (slow query detection)</li>
 </code></pre>
 <h2 id="qgis-server-settings"><a class="header" href="#qgis-server-settings">QGIS Server settings</a></h2>
 <pre><code class="language-toml">[mapserver.qgis_backend]
-project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
-qgs.path = "/qgis"             # WMS URL base path
-qgz.path = "/qgz"              # WMS URL base path
+project_basedir = "./projects"  # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"              # URL base path *.qgs
+qgz.path = "/qgz"               # URL base path *.qgz
 </code></pre>
 <h2 id="umn-mapserver-settings"><a class="header" href="#umn-mapserver-settings">UMN MapServer settings</a></h2>
 <pre><code class="language-toml">[mapserver.umn_backend]
-project_basedir = "../assets"  # Base dir for project files (.map)
-path = "/wms/map"              # WMS URL base path
+project_basedir = "./maps"    # Base dir for project files (.map)
+path = "/wms/map"             # URL base path
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-api-endpoints-2"><a class="header" href="#bbox-api-endpoints-2">BBOX API Endpoints</a></h1>
 <p>Services are available via the following HTTP endpoints:</p>
