@@ -84,6 +84,8 @@ jobs:
           mv ../target/debian/*.deb ../target_releases/
           cargo deb -v --variant bookworm
           mv ../target/debian/*.deb ../target_releases/
+          cargo deb -v --variant bullseye
+          mv ../target/debian/*.deb ../target_releases/
       - name: Save build artifact build-${{ matrix.target }}
         uses: actions/upload-artifact@v4
         with:
