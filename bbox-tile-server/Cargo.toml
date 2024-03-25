@@ -90,3 +90,7 @@ assets = [
 [package.metadata.deb.variants.bookworm]
 revision = "bookworm"
 depends = "libc6 (>= 2.34)"
+
+[package.metadata.deb.variants.bullseye]
+revision = "bullseye"
+depends = "libc6 (>= 2.18)"

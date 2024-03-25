@@ -32,6 +32,9 @@ RUN cd $BUILD_DIR && cargo install $BUILD_FEATURES --path . --verbose
 RUN apt update && apt install -y dpkg-dev
 RUN cargo install cargo-deb --locked
 RUN cd bbox-tile-server && cargo deb
+# Build package and copy to host:
+# docker build --build-arg BUILD_DIR=bbox-tile-server --target builder -t bbox-deb-build -f docker/Dockerfile .
+# docker run -v $PWD/assets:/mnt bbox-deb-build bash -c "cp /app/target/debian/* /mnt"
 
 # ------------------------------------------------------------------------------
 # Final Stage
