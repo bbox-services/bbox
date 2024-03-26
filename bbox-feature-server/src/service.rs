@@ -1,13 +1,12 @@
 use crate::config::FeatureServiceCfg;
 use crate::datasource::Datasources;
 use crate::inventory::Inventory;
-use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::config::error_exit;
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::{ApiLink, CoreCollection};
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::OgcApiService;
 use clap::ArgMatches;
 
 #[derive(Clone, Default)]
@@ -65,9 +64,6 @@ impl OgcApiService for FeatureService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()

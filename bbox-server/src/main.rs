@@ -2,7 +2,7 @@ mod service;
 
 use crate::service::BboxService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::{CoreService, OgcApiService, ServiceEndpoints};
 use log::info;
 use std::path::Path;
 
@@ -104,15 +104,15 @@ async fn run_service() -> std::io::Result<()> {
             .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .configure(|cfg| core.register_endpoints(cfg, &core))
+            .configure(|cfg| core.register_endpoints(cfg))
             .configure(bbox_core::static_assets::register_endpoints)
-            .configure(|cfg| map_service.register_endpoints(cfg, &core))
-            .configure(|cfg| tile_service.register_endpoints(cfg, &core))
-            .configure(|cfg| feature_service.register_endpoints(cfg, &core))
-            .configure(|cfg| asset_service.register_endpoints(cfg, &core))
-            .configure(|cfg| processes_service.register_endpoints(cfg, &core))
-            .configure(|cfg| routing_service.register_endpoints(cfg, &core))
-            .configure(|cfg| bbox_service.register_endpoints(cfg, &core));
+            .configure(|cfg| map_service.register_endpoints(cfg))
+            .configure(|cfg| tile_service.register_endpoints(cfg))
+            .configure(|cfg| feature_service.register_endpoints(cfg))
+            .configure(|cfg| asset_service.register_endpoints(cfg))
+            .configure(|cfg| processes_service.register_endpoints(cfg))
+            .configure(|cfg| routing_service.register_endpoints(cfg))
+            .configure(|cfg| bbox_service.register_endpoints(cfg));
 
         #[cfg(feature = "frontend")]
         {

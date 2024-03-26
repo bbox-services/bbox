@@ -3,7 +3,7 @@ use crate::filter_params::FilterParams;
 use crate::service::{ServiceError, TileService};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
-use bbox_core::service::CoreService;
+use bbox_core::service::ServiceEndpoints;
 use bbox_core::Format;
 use log::error;
 use std::collections::HashMap;
@@ -292,8 +292,8 @@ async fn get_tile_set(tile_matrix_set_id: web::Path<String>) -> HttpResponse {
     HttpResponse::Ok().json(tileset)
 }
 
-impl TileService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for TileService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
         cfg.app_data(web::Data::new(self.clone()))
             .service(
                 web::resource("/xyz/{tileset}/{z}/{x}/{y}.{format}").route(

@@ -6,7 +6,7 @@ use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use bbox_core::app_dir;
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
-use bbox_core::service::CoreService;
+use bbox_core::service::ServiceEndpoints;
 use log::{info, warn};
 use minijinja::context;
 use std::io::Write;
@@ -49,8 +49,8 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
     Ok(NamedFile::from_file(file, "plugin.xml")?)
 }
 
-impl AssetService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for AssetService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
         let service_cfg = AssetserverCfg::from_config();
 
         for static_dir in &service_cfg.static_ {

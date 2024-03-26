@@ -7,13 +7,12 @@ use crate::store::{
     store_reader_from_config, store_writer_from_config, Compression, TileReader, TileStoreError,
     TileWriter,
 };
-use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
 use bbox_core::endpoints::TileResponse;
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::OgcApiService;
 use bbox_core::Format;
 use clap::{ArgMatches, Args, FromArgMatches};
 use flate2::{read::GzEncoder, Compression as GzCompression};
@@ -248,9 +247,6 @@ impl OgcApiService for TileService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()

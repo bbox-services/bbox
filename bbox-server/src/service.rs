@@ -2,7 +2,7 @@ use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::metrics::{no_metrics, NoMetrics};
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::{OgcApiService, ServiceEndpoints};
 use clap::ArgMatches;
 
 #[derive(Clone, Default)]
@@ -15,8 +15,11 @@ impl OgcApiService for BboxService {
     type Metrics = NoMetrics;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {}
-    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig, _core: &CoreService) {}
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
     }
+}
+
+impl ServiceEndpoints for BboxService {
+    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig) {}
 }

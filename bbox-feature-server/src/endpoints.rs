@@ -5,7 +5,7 @@ use actix_web::{web, Error, HttpRequest, HttpResponse};
 use bbox_core::api::OgcApiInventory;
 use bbox_core::endpoints::absurl;
 use bbox_core::ogcapi::{ApiLink, CoreCollections};
-use bbox_core::service::CoreService;
+use bbox_core::service::ServiceEndpoints;
 use bbox_core::templates::{create_env_embedded, html_accepted, render_endpoint};
 use minijinja::{context, Environment};
 use once_cell::sync::Lazy;
@@ -171,8 +171,8 @@ type Templates = bbox_core::templates::NoTemplates;
 
 static TEMPLATES: Lazy<Environment<'static>> = Lazy::new(create_env_embedded::<Templates>);
 
-impl FeatureService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for FeatureService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
         cfg.app_data(web::Data::new(self.inventory.clone()))
             .service(web::resource("/collections").route(web::get().to(collections)))
             .service(web::resource("/collections.json").route(web::get().to(collections)))

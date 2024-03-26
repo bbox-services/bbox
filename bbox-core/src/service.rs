@@ -49,7 +49,10 @@ pub trait OgcApiService: Default + Clone + Send {
     async fn cli_run(&self, _cli: &ArgMatches) -> bool {
         false
     }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService);
+}
+
+pub trait ServiceEndpoints: OgcApiService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig);
 }
 
 #[derive(Clone, Default)]
@@ -64,10 +67,13 @@ impl OgcApiService for DummyService {
     type Metrics = NoMetrics;
 
     async fn read_config(&mut self, _cli: &ArgMatches) {}
-    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig, _core: &CoreService) {}
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
     }
+}
+
+impl ServiceEndpoints for DummyService {
+    fn register_endpoints(&self, _cfg: &mut web::ServiceConfig) {}
 }
 
 #[derive(Clone)]
@@ -239,9 +245,6 @@ impl OgcApiService for CoreService {
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
     }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
-    }
     fn metrics(&self) -> &'static Self::Metrics {
         static METRICS: OnceCell<RequestMetrics> = OnceCell::new();
         METRICS.get_or_init(|| {
@@ -251,7 +254,8 @@ impl OgcApiService for CoreService {
 }
 
 #[actix_web::main]
-pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result<()> {
+pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
+) -> std::io::Result<()> {
     let mut core = CoreService::new();
 
     let mut service = T::default();
@@ -274,8 +278,8 @@ pub async fn run_service<T: OgcApiService + Sync + 'static>() -> std::io::Result
     let tls_config = core.tls_config();
     let mut server = HttpServer::new(move || {
         App::new()
-            .configure(|cfg| core.register_endpoints(cfg, &core))
-            .configure(|cfg| service.register_endpoints(cfg, &core))
+            .configure(|cfg| core.register_endpoints(cfg))
+            .configure(|cfg| service.register_endpoints(cfg))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_name("bbox".to_owned())

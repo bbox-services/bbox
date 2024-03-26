@@ -6,7 +6,7 @@ use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::OgcApiService;
 use clap::ArgMatches;
 use log::error;
 use prometheus::Registry;
@@ -127,9 +127,6 @@ impl OgcApiService for MapService {
     }
     fn add_metrics(&self, prometheus: &Registry) {
         register_metrics(prometheus, self.metrics());
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         wms_metrics(self.num_fcgi_processes)
