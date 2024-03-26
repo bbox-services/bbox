@@ -161,7 +161,7 @@ impl SqlQuery {
 }
 
 /// Build geometry selection expression for feature query.
-fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, _zoom: u8) -> String {
+fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, zoom: u8) -> String {
     let layer_srid = layer.srid.unwrap_or(0);
     let mut geom_expr = String::from(geom_name as &str);
 
@@ -194,6 +194,36 @@ fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, _zoo
             );
             geom_expr = format!("ST_Transform({geom_expr},{grid_srid})");
         }
+    }
+
+    // Simplify
+    if layer.simplify(zoom) {
+        geom_expr = match layer
+            .geometry_type
+            .as_ref()
+            .unwrap_or(&"GEOMETRY".to_string()) as &str
+        {
+            "LINESTRING" | "MULTILINESTRING" | "COMPOUNDCURVE" => format!(
+                "ST_Multi(ST_SimplifyPreserveTopology({},{}))",
+                geom_expr,
+                layer.tolerance(zoom)
+            ),
+            "POLYGON" | "MULTIPOLYGON" | "CURVEPOLYGON" => {
+                if layer.make_valid {
+                    format!(
+                    "ST_CollectionExtract(ST_Multi(ST_MakeValid(ST_SnapToGrid({geom_expr}, {}))),3)::geometry(MULTIPOLYGON,{layer_srid})",
+                    layer.tolerance(zoom)
+                )
+                } else {
+                    let empty_geom = format!("ST_GeomFromText('MULTIPOLYGON EMPTY',{layer_srid})");
+                    format!(
+                        "COALESCE(ST_SnapToGrid({geom_expr}, {}),{empty_geom})::geometry(MULTIPOLYGON,{layer_srid})",
+                        layer.tolerance(zoom),
+                    )
+                }
+            }
+            _ => geom_expr, // No simplification for points or unknown types
+        };
     }
 
     let tile_size = layer.tile_size;
@@ -484,25 +514,26 @@ mod test {
     }
 
     #[test]
-    fn test_clipping_pg2() {
+    fn test_simplification() {
         let (mut layer, fields) = layer_cfg();
-        let postgis2 = true;
-        layer.buffer_size = Some(10);
-        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT ST_Intersection(geometry,ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
-        layer.make_valid = true;
-        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT ST_Intersection(ST_MakeValid(geometry),ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
+        let postgis2 = false;
+        layer.simplify = true;
         layer.geometry_type = Some("POLYGON".to_string());
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT ST_Multi(ST_Buffer(ST_Intersection(ST_MakeValid(geometry),ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)), 0.0)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
-        layer.geometry_type = Some("POINT".to_string());
+               "SELECT ST_AsMvtGeom(COALESCE(ST_SnapToGrid(geometry, $5::FLOAT8/2),ST_GeomFromText('MULTIPOLYGON EMPTY',3857))::geometry(MULTIPOLYGON,3857), ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+        layer.make_valid = true;
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-               "SELECT geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
-        layer.buffer_size = Some(0);
+               "SELECT ST_AsMvtGeom(ST_CollectionExtract(ST_Multi(ST_MakeValid(ST_SnapToGrid(geometry, $5::FLOAT8/2))),3)::geometry(MULTIPOLYGON,3857), ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+        layer.geometry_type = Some("LINESTRING".to_string());
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT ST_AsMvtGeom(ST_Multi(ST_SimplifyPreserveTopology(geometry,$5::FLOAT8/2)), ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+        layer.tolerance = "0.5".to_string();
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT ST_AsMvtGeom(ST_Multi(ST_SimplifyPreserveTopology(geometry,0.5)), ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
+        layer.geometry_type = Some("POINT".to_string());
         assert_eq!(
             SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
-            "SELECT geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)"
+            "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)"
         );
     }
 
@@ -524,6 +555,29 @@ mod test {
         assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
                "SELECT ST_Multi(ST_SimplifyPreserveTopology(ST_Multi(geometry),0.5)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
         layer.geometry_type = Some("POINT".to_string());
+        assert_eq!(
+            SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+            "SELECT geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)"
+        );
+    }
+
+    #[test]
+    fn test_clipping_pg2() {
+        let (mut layer, fields) = layer_cfg();
+        let postgis2 = true;
+        layer.buffer_size = Some(10);
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT ST_Intersection(geometry,ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
+        layer.make_valid = true;
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT ST_Intersection(ST_MakeValid(geometry),ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
+        layer.geometry_type = Some("POLYGON".to_string());
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT ST_Multi(ST_Buffer(ST_Intersection(ST_MakeValid(geometry),ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)), 0.0)) AS geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
+        layer.geometry_type = Some("POINT".to_string());
+        assert_eq!(SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
+               "SELECT geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1-10*$5::FLOAT8,$2-10*$5::FLOAT8,$3+10*$5::FLOAT8,$4+10*$5::FLOAT8,3857)");
+        layer.buffer_size = Some(0);
         assert_eq!(
             SqlQuery::build_tile_query(&layer, "geometry", &fields, 3857, 10, None, postgis2).sql,
             "SELECT geometry FROM osm_place_point WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)"

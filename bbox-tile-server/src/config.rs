@@ -178,23 +178,27 @@ pub struct VectorLayerCfg {
     pub minzoom: Option<u8>,
     /// Maximum zoom level for which tiles are available.
     pub maxzoom: Option<u8>,
-    /// Maximal number of features to read for a single tile.
+    /// Maximal number of features to read for a single tile (Default: unlimited).
     pub query_limit: Option<u32>,
     /// Width and height of the tile (Default: 4096. Grid default size is 256)
     #[serde(default = "default_tile_size")]
     pub tile_size: u32,
     /// Tile buffer size in pixels (None: no clipping)
     pub buffer_size: Option<u32>,
-    /// Simplify geometry (lines and polygons)
+    /// Simplify geometry (lines and polygons). (Default: false)
+    ///
+    /// Applied to PostGIS sources only.
     #[serde(default)]
     pub simplify: bool,
-    /// Simplification tolerance (default to `!pixel_width!/2`)
+    /// Simplification tolerance (defaults to `!pixel_width!/2`)
     #[serde(default = "default_tolerance")]
     pub tolerance: String,
-    /// Fix invalid geometries before clipping (lines and polygons)
+    /// Fix invalid geometries after simplification (Default: false)
+    ///
+    /// Remark: Clipping step does also fix invalid geometries.
     #[serde(default)]
     pub make_valid: bool,
-    /// Apply ST_Shift_Longitude to (transformed) bbox
+    /// Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)
     #[serde(default)]
     pub shift_longitude: bool,
 }
