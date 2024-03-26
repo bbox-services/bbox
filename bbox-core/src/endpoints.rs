@@ -2,7 +2,7 @@ use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::auth::oidc::{AuthRequest, OidcClient};
 use crate::config::WebserverCfg;
 use crate::ogcapi::*;
-use crate::service::CoreService;
+use crate::service::{CoreService, ServiceEndpoints};
 use crate::static_assets::favicon;
 use actix_session::Session;
 use actix_web::{
@@ -171,8 +171,8 @@ async fn logout(session: Session) -> impl Responder {
     web::Redirect::to("/").using_status_code(StatusCode::FOUND)
 }
 
-impl CoreService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for CoreService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
         cfg.app_data(web::Data::new(self.web_config.clone()))
             .app_data(web::Data::new(self.ogcapi.clone()))
             .app_data(web::Data::new(self.openapi.clone()))

@@ -1,11 +1,10 @@
 use crate::config::AssetserverCfg;
 use crate::qgis_plugins::plugin_files;
-use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::app_dir;
 use bbox_core::cli::{NoArgs, NoCommands};
 use bbox_core::metrics::{no_metrics, NoMetrics};
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::OgcApiService;
 use clap::ArgMatches;
 use log::{info, warn};
 use std::collections::HashMap;
@@ -41,9 +40,6 @@ impl OgcApiService for AssetService {
         }
 
         // static and template dir config is processed in OgcApiService::register
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
