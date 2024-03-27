@@ -1,4 +1,4 @@
-use crate::logger;
+use crate::config::Loglevel;
 use crate::service::OgcApiService;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
 use log::warn;
@@ -13,15 +13,6 @@ pub struct GlobalArgs {
     /// Log level (Default: info)
     #[arg(long)]
     pub loglevel: Option<Loglevel>,
-}
-
-#[derive(clap::ValueEnum, Clone, Debug)]
-pub enum Loglevel {
-    Error,
-    Warn,
-    Info,
-    Debug,
-    Trace,
 }
 
 #[derive(Parser, Debug)]
@@ -80,7 +71,6 @@ impl CliArgs {
         if let Some(config) = args.config {
             env::set_var("BBOX_CONFIG", config);
         }
-        logger::init(args.loglevel);
     }
 }
 

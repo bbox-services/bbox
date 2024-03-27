@@ -1,4 +1,4 @@
-use crate::cli::Loglevel;
+use crate::config::Loglevel;
 use std::env;
 
 pub fn init(level: Option<Loglevel>) {

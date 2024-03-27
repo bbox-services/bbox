@@ -1,6 +1,7 @@
 use crate::config::*;
 use crate::fcgi_process::FcgiProcessPool;
 use crate::inventory::*;
+use bbox_core::config::Loglevel;
 use bbox_core::{app_dir, file_search};
 use log::{info, warn};
 use std::collections::{HashMap, HashSet};
@@ -13,11 +14,12 @@ pub trait FcgiBackendType {
     fn project_files(&self) -> Vec<&'static str>;
     fn project_basedir(&self) -> &str;
     fn url_base(&self, suffix: &str) -> Option<&str>;
-    fn env_defaults(&self) -> Vec<(&str, &str)> {
+    fn env_defaults(&self, _loglevel: &Option<Loglevel>) -> Vec<(&str, &str)> {
         Vec::new()
     }
-    fn envs(&self) -> Vec<(String, String)> {
-        self.env_defaults()
+    /// Return env vars for backend, optionally overwritten by runtime env vars
+    fn envs(&self, loglevel: &Option<Loglevel>) -> Vec<(String, String)> {
+        self.env_defaults(loglevel)
             .iter()
             .map(|(name, val)| (name.to_string(), env::var(name).unwrap_or(val.to_string())))
             .collect()
@@ -61,12 +63,26 @@ impl FcgiBackendType for QgisFcgiBackend {
             _ => None,
         }
     }
-    fn env_defaults(&self) -> Vec<(&str, &str)> {
+    fn env_defaults(&self, loglevel: &Option<Loglevel>) -> Vec<(&str, &str)> {
+        let log_level = match loglevel.as_ref().unwrap_or(&Loglevel::Info) {
+            Loglevel::Error => "CRITICAL",
+            Loglevel::Warn => "WARNING",
+            _ => "INFO",
+        };
+        // We turn off logging at level error, because QGIS_SERVER_LOG_LEVEL seems to be ignored
+        let log_stderr = match loglevel.as_ref().unwrap_or(&Loglevel::Info) {
+            Loglevel::Error => "false",
+            _ => "true",
+        };
+        let log_profile = match loglevel.as_ref().unwrap_or(&Loglevel::Info) {
+            Loglevel::Info => "1",
+            _ => "0",
+        };
         vec![
             ("QGIS_PLUGINPATH", &self.plugindir),
-            ("QGIS_SERVER_LOG_STDERR", "true"),
-            ("QGIS_SERVER_LOG_LEVEL", "INFO"), // TODO: control with bbox log level
-            ("QGIS_SERVER_LOG_PROFILE", "0"), // Rather useless, since only initialialization times are profiled
+            ("QGIS_SERVER_LOG_STDERR", log_stderr),
+            ("QGIS_SERVER_LOG_LEVEL", log_level),
+            ("QGIS_SERVER_LOG_PROFILE", log_profile),
             ("QGIS_SERVER_IGNORE_BAD_LAYERS", "true"),
             ("QGIS_SERVER_TRUST_LAYER_METADATA", "true"),
             ("QGIS_SERVER_FORCE_READONLY_LAYERS", "true"), // TODO: Disable for WFS-T
@@ -108,7 +124,7 @@ impl FcgiBackendType for UmnFcgiBackend {
     fn url_base(&self, _suffix: &str) -> Option<&str> {
         Some(&self.config.path)
     }
-    fn env_defaults(&self) -> Vec<(&str, &str)> {
+    fn env_defaults(&self, _loglevel: &Option<Loglevel>) -> Vec<(&str, &str)> {
         vec![("MS_ERRORFILE", "stderr")]
         // MS_DEBUGLEVEL: The debug level 0=off 5=verbose
         // See also https://github.com/camptocamp/docker-mapserver
@@ -158,6 +174,7 @@ fn find_exe(locations: Vec<String>) -> Option<String> {
 
 pub fn detect_backends(
     config: &MapServerCfg,
+    loglevel: &Option<Loglevel>,
 ) -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();
     let mut pools = Vec::new();
@@ -255,8 +272,13 @@ pub fn detect_backends(
                 backend.name()
             );
 
-            let process_pool =
-                FcgiProcessPool::new(exe_path, Some(basedir.clone()), backend, num_fcgi_processes);
+            let process_pool = FcgiProcessPool::new(
+                exe_path,
+                Some(basedir.clone()),
+                backend,
+                loglevel,
+                num_fcgi_processes,
+            );
             pools.push(process_pool);
         } else {
             warn!(
