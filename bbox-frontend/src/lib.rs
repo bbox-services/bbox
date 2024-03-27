@@ -1,15 +1,15 @@
 pub mod endpoints;
-#[cfg(feature = "qwc2")]
+#[cfg(feature = "map-server")]
 mod qwc2_config;
 
-#[cfg(feature = "qwc2")]
+#[cfg(feature = "map-server")]
 pub use crate::qwc2_config::themes_json;
 
-#[cfg(feature = "qwc2")]
+#[cfg(feature = "map-server")]
 pub use bbox_map_server::inventory::{Inventory as MapInventory, WmsService};
 
-#[cfg(not(feature = "qwc2"))]
-mod qwc2 {
+#[cfg(not(feature = "map-server"))]
+mod dummy_inventory {
     #[derive(serde::Serialize)]
     pub struct WmsService;
 
@@ -23,5 +23,5 @@ mod qwc2 {
     }
 }
 
-#[cfg(not(feature = "qwc2"))]
-pub use qwc2::*;
+#[cfg(not(feature = "map-server"))]
+pub use dummy_inventory::*;

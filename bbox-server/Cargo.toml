@@ -7,10 +7,10 @@ repository = "https://github.com/sourcepole/bbox"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "frontend", "qwc2"]
+default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "frontend"]
 feature-server = ["bbox-feature-server"]
 asset-server = ["bbox-asset-server"]
-map-server = ["bbox-map-server", "bbox-tile-server?/map-server"]
+map-server = ["bbox-map-server", "bbox-tile-server?/map-server", "bbox-frontend?/map-server"]
 processes-server = ["bbox-processes-server"]
 routing-server = ["bbox-routing-server"]
 tile-server = ["bbox-tile-server"]
