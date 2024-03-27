@@ -1,8 +1,7 @@
 use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::auth::oidc::OidcClient;
-use crate::cli::{CommonCommands, GlobalArgs, NoArgs, NoCommands};
-use crate::config::{AuthCfg, WebserverCfg};
-use crate::logger;
+use crate::cli::{CliArgs, CommonCommands, GlobalArgs, NoArgs, NoCommands};
+use crate::config::{ConfigError, CoreServiceCfg, WebserverCfg};
 use crate::metrics::{init_metrics_exporter, no_metrics, NoMetrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use crate::tls::load_rustls_config;
@@ -16,20 +15,26 @@ use actix_web::{
 };
 use actix_web_opentelemetry::{RequestMetrics, RequestMetricsBuilder, RequestTracing};
 use async_trait::async_trait;
-use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
-use log::{info, warn};
+use clap::{ArgMatches, Args, Parser, Subcommand};
+use log::info;
 use once_cell::sync::OnceCell;
 use opentelemetry_prometheus::PrometheusExporter;
 use prometheus::Registry;
-use std::env;
+
+pub trait ServiceConfig: Sized {
+    /// Initialize service config from config files, environment variables and cli args
+    fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError>;
+}
 
 #[async_trait]
-pub trait OgcApiService: Default + Clone + Send {
+pub trait OgcApiService: Clone + Send {
+    type Config: ServiceConfig;
     type CliCommands: Subcommand + Parser + core::fmt::Debug;
     type CliArgs: Args + core::fmt::Debug;
     type Metrics;
 
-    async fn read_config(&mut self, cli: &ArgMatches);
+    /// Create service from config
+    async fn create(cfg: &Self::Config, core_cfg: &CoreServiceCfg) -> Self;
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
         Vec::new()
     }
@@ -60,13 +65,25 @@ pub struct DummyService {
     _dummy: (),
 }
 
+#[derive(Clone)]
+pub struct NoConfig;
+
+impl ServiceConfig for NoConfig {
+    fn initialize(_args: &ArgMatches) -> Result<Self, ConfigError> {
+        Ok(NoConfig)
+    }
+}
+
 #[async_trait]
 impl OgcApiService for DummyService {
+    type Config = NoConfig;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;
 
-    async fn read_config(&mut self, _cli: &ArgMatches) {}
+    async fn create(_cfg: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+        DummyService::default()
+    }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
     }
@@ -78,7 +95,6 @@ impl ServiceEndpoints for DummyService {
 
 #[derive(Clone)]
 pub struct CoreService {
-    pub(crate) cli: Command,
     pub web_config: WebserverCfg,
     pub(crate) ogcapi: OgcApiInventory,
     pub(crate) openapi: OpenApiDoc,
@@ -86,33 +102,8 @@ pub struct CoreService {
     pub(crate) oidc: Option<OidcClient>,
 }
 
-impl Default for CoreService {
-    fn default() -> Self {
-        CoreService {
-            cli: NoCommands::command(),
-            web_config: WebserverCfg::default(),
-            ogcapi: OgcApiInventory::default(),
-            openapi: OpenApiDoc::new(),
-            metrics: None,
-            oidc: None,
-        }
-    }
-}
-
 impl CoreService {
-    pub fn new() -> Self {
-        let mut svc = CoreService::default();
-        svc.add_service(&svc.clone());
-        svc
-    }
     pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
-        // Add cli commands
-        let mut cli = T::CliCommands::augment_subcommands(self.cli.clone());
-        if std::any::type_name::<T::CliArgs>() != "bbox_core::cli::NoArgs" {
-            cli = T::CliArgs::augment_args(cli);
-        }
-        self.cli = cli;
-
         let api_base = "";
 
         self.ogcapi
@@ -135,10 +126,6 @@ impl CoreService {
         if let Some(metrics) = &self.metrics {
             svc.add_metrics(metrics.registry())
         }
-    }
-    pub fn cli_matches(&self) -> ArgMatches {
-        // cli.about("BBOX tile server")
-        self.cli.clone().get_matches()
     }
     pub fn has_cors(&self) -> bool {
         self.web_config.cors.is_some()
@@ -179,25 +166,28 @@ impl CoreService {
 
 #[async_trait]
 impl OgcApiService for CoreService {
+    type Config = CoreServiceCfg;
     type CliCommands = CommonCommands;
     type CliArgs = GlobalArgs;
     type Metrics = RequestMetrics;
 
-    async fn read_config(&mut self, cli: &ArgMatches) {
-        let Ok(args) = GlobalArgs::from_arg_matches(cli) else {
-            warn!("GlobalArgs::from_arg_matches error");
-            return;
+    async fn create(cfg: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+        let metrics = init_metrics_exporter();
+        let oidc = if let Some(auth_cfg) = &cfg.auth {
+            if let Some(oidc_cfg) = &auth_cfg.oidc {
+                Some(OidcClient::from_config(oidc_cfg).await)
+            } else {
+                None
+            }
+        } else {
+            None
         };
-        if let Some(config) = args.config {
-            env::set_var("BBOX_CONFIG", config);
-        }
-        logger::init(args.loglevel);
-
-        self.web_config = WebserverCfg::from_config();
-        let auth_cfg = AuthCfg::from_config();
-        self.metrics = init_metrics_exporter();
-        if let Some(cfg) = &auth_cfg.oidc {
-            self.oidc = Some(OidcClient::from_config(cfg).await);
+        CoreService {
+            web_config: cfg.webserver.clone().unwrap_or_default(),
+            ogcapi: OgcApiInventory::default(),
+            openapi: OpenApiDoc::new(),
+            metrics,
+            oidc,
         }
     }
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
@@ -253,18 +243,23 @@ impl OgcApiService for CoreService {
     }
 }
 
+/// Generic main method for a single OgcApiService
 #[actix_web::main]
 pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
 ) -> std::io::Result<()> {
-    let mut core = CoreService::new();
+    let mut cli = CliArgs::default();
+    cli.register_service_args::<CoreService>();
+    cli.register_service_args::<T>();
+    cli.apply_global_args();
+    let matches = cli.cli_matches();
 
-    let mut service = T::default();
+    let core_cfg = CoreServiceCfg::initialize(&matches).unwrap();
+    let mut core = CoreService::create(&core_cfg, &core_cfg).await;
+
+    let service_cfg = T::Config::initialize(&matches).unwrap();
+    let service = T::create(&service_cfg, &core_cfg).await;
+
     core.add_service(&service);
-
-    let matches = core.cli_matches();
-
-    core.read_config(&matches).await;
-    service.read_config(&matches).await;
 
     if service.cli_run(&matches).await {
         return Ok(());

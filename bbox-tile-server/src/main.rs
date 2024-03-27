@@ -9,39 +9,48 @@ mod seed;
 mod service;
 mod store;
 
+use crate::config::TileserverCfg;
 use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
-use bbox_core::service::{CoreService, OgcApiService, ServiceEndpoints};
+use bbox_core::cli::CliArgs;
+use bbox_core::config::CoreServiceCfg;
+use bbox_core::service::{CoreService, OgcApiService, ServiceConfig, ServiceEndpoints};
 
 #[cfg(feature = "asset-server")]
-use bbox_asset_server::AssetService;
+use bbox_asset_server::{config::AssetserverCfg, AssetService};
 #[cfg(feature = "map-server")]
-use bbox_map_server::MapService;
+use bbox_map_server::{config::MapServerCfg, MapService};
 
 #[cfg(not(feature = "map-server"))]
-use bbox_core::service::DummyService as MapService;
+use bbox_core::service::{DummyService as MapService, NoConfig as MapServerCfg};
 #[cfg(not(feature = "asset-server"))]
-use bbox_core::service::DummyService as AssetService;
+use bbox_core::service::{DummyService as AssetService, NoConfig as AssetserverCfg};
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
-    let mut core = CoreService::new();
+    let mut cli = CliArgs::default();
+    cli.register_service_args::<CoreService>();
+    cli.register_service_args::<MapService>();
+    cli.register_service_args::<TileService>();
+    cli.register_service_args::<AssetService>();
+    cli.apply_global_args();
+    let matches = cli.cli_matches();
 
-    let mut map_service = MapService::default();
+    let core_cfg = CoreServiceCfg::initialize(&matches).unwrap();
+    let mut core = CoreService::create(&core_cfg, &core_cfg).await;
+
+    let cfg = MapServerCfg::initialize(&matches).unwrap();
+    let map_service = MapService::create(&cfg, &core_cfg).await;
     core.add_service(&map_service);
 
-    let mut tile_service = TileService::default();
+    let cfg = TileserverCfg::initialize(&matches).unwrap();
+    #[allow(unused_mut)]
+    let mut tile_service = TileService::create(&cfg, &core_cfg).await;
     core.add_service(&tile_service);
 
-    let mut asset_service = AssetService::default();
+    let cfg = AssetserverCfg::initialize(&matches).unwrap();
+    let asset_service = AssetService::create(&cfg, &core_cfg).await;
     core.add_service(&asset_service);
-
-    let matches = core.cli_matches();
-
-    core.read_config(&matches).await;
-    map_service.read_config(&matches).await;
-    tile_service.read_config(&matches).await;
-    asset_service.read_config(&matches).await;
 
     #[cfg(feature = "map-server")]
     tile_service.set_map_service(&map_service);

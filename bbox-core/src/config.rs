@@ -1,6 +1,8 @@
 use crate::auth::oidc::OidcAuthCfg;
 use crate::pg_ds::DsPostgisCfg;
+use crate::service::ServiceConfig;
 use actix_web::HttpRequest;
+use clap::ArgMatches;
 use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
@@ -26,6 +28,12 @@ pub fn app_config() -> &'static Figment {
         }
         config
     })
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ConfigError {
+    #[error("Configuration error")]
+    ConfigurationError,
 }
 
 pub fn from_config_or_exit<'a, T: Default + Deserialize<'a>>(tag: &str) -> T {
@@ -70,7 +78,7 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 
 // -- Common configuration --
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct CoreServiceCfg {
     pub webserver: Option<WebserverCfg>,
     pub metrics: Option<MetricsCfg>,
@@ -98,6 +106,13 @@ pub struct CorsCfg {
     // pub allowed_origins: Vec<String>,
 }
 
+impl ServiceConfig for CoreServiceCfg {
+    fn initialize(_args: &ArgMatches) -> Result<Self, ConfigError> {
+        let cfg: CoreServiceCfg = from_config_root_or_exit();
+        Ok(cfg)
+    }
+}
+
 impl Default for WebserverCfg {
     fn default() -> Self {
         let cors = if cfg!(debug_assertions) {
@@ -120,9 +135,6 @@ impl Default for WebserverCfg {
 }
 
 impl WebserverCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("webserver").unwrap_or_default()
-    }
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())
     }
@@ -140,12 +152,6 @@ impl WebserverCfg {
 #[serde(default, deny_unknown_fields)]
 pub struct AuthCfg {
     pub oidc: Option<OidcAuthCfg>,
-}
-
-impl AuthCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("auth").unwrap_or_default()
-    }
 }
 
 // -- Metrics --

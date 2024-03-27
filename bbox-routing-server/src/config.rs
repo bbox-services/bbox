@@ -1,5 +1,7 @@
-use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::config::{from_config_opt_or_exit, ConfigError};
 use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::service::ServiceConfig;
+use clap::ArgMatches;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -33,8 +35,9 @@ pub struct RoutingServiceCfg {
     pub node_dst: Option<String>,
 }
 
-impl RoutingServerCfg {
-    pub fn from_config() -> Option<Self> {
-        from_config_opt_or_exit("routing")
+impl ServiceConfig for RoutingServerCfg {
+    fn initialize(_cli: &ArgMatches) -> Result<Self, ConfigError> {
+        let cfg = from_config_opt_or_exit("routing").unwrap_or_default();
+        Ok(cfg)
     }
 }

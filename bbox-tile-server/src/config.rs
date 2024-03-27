@@ -2,8 +2,11 @@ use crate::cli::Commands;
 use crate::config_t_rex as t_rex;
 use crate::datasource::source_config_from_cli_arg;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::{error_exit, from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
+use bbox_core::config::{
+    error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, NamedDatasourceCfg,
+};
 use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::service::ServiceConfig;
 use clap::{ArgMatches, FromArgMatches};
 use log::{info, warn};
 use regex::Regex;
@@ -335,8 +338,8 @@ impl TileStoreCfg {
     }
 }
 
-impl TileserverCfg {
-    pub fn from_config(cli: &ArgMatches) -> Self {
+impl ServiceConfig for TileserverCfg {
+    fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError> {
         let mut cfg: TileserverCfg = from_config_root_or_exit();
 
         // Handle CLI args
@@ -346,6 +349,13 @@ impl TileserverCfg {
                     .unwrap_or_else(error_exit);
             cfg = t_rex_cfg.into();
             info!("Imported t-rex config:\n{}", cfg.as_toml());
+        }
+
+        if let Some(cache) = TileStoreCfg::from_cli_args(cli) {
+            cfg.tilestores.push(TileCacheProviderCfg {
+                name: "<cli>".to_string(),
+                cache,
+            });
         }
 
         // Get datasource from CLI
@@ -376,8 +386,11 @@ impl TileserverCfg {
                 cfg.tilesets.push(ts);
             }
         }
-        cfg
+        Ok(cfg)
     }
+}
+
+impl TileserverCfg {
     pub fn as_toml(&self) -> String {
         toml::to_string(&self).unwrap()
     }

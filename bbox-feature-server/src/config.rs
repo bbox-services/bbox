@@ -1,5 +1,6 @@
-use bbox_core::config::{from_config_root_or_exit, NamedDatasourceCfg};
+use bbox_core::config::{from_config_root_or_exit, ConfigError, NamedDatasourceCfg};
 use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::service::ServiceConfig;
 use clap::ArgMatches;
 use serde::Deserialize;
 
@@ -85,10 +86,10 @@ pub struct GpkgCollectionCfg {
     //pub field_list: Option<Vec<String>>,
 }
 
-impl FeatureServiceCfg {
-    pub fn from_config(_cli: &ArgMatches) -> Self {
+impl ServiceConfig for FeatureServiceCfg {
+    fn initialize(_cli: &ArgMatches) -> Result<Self, ConfigError> {
         let cfg: FeatureServiceCfg = from_config_root_or_exit();
-        cfg
+        Ok(cfg)
     }
 }
 
