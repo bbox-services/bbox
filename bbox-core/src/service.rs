@@ -56,14 +56,12 @@ pub trait OgcApiService: Clone + Send {
     }
 }
 
-pub trait ServiceEndpoints: OgcApiService {
+pub trait ServiceEndpoints {
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig);
 }
 
-#[derive(Clone, Default)]
-pub struct DummyService {
-    _dummy: (),
-}
+#[derive(Clone)]
+pub struct DummyService;
 
 #[derive(Clone)]
 pub struct NoConfig;
@@ -82,7 +80,7 @@ impl OgcApiService for DummyService {
     type Metrics = NoMetrics;
 
     async fn create(_cfg: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
-        DummyService::default()
+        DummyService
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
@@ -112,8 +110,7 @@ impl CoreService {
         self.ogcapi
             .conformance_classes
             .extend(svc.conformance_classes());
-        //TODO: svc.collections() is empty before read_config is called
-        //self.ogcapi.collections.extend(svc.collections());
+        self.ogcapi.collections.extend(svc.collections());
 
         if let Some(yaml) = svc.openapi_yaml() {
             if self.openapi.is_empty() {
