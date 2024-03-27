@@ -1,20 +1,9 @@
-mod cli;
-mod config;
-mod config_t_rex;
-mod datasource;
-mod endpoints;
-mod filter_params;
-mod mbtiles_ds;
-mod seed;
-mod service;
-mod store;
-
-use crate::config::TileServiceCfg;
-use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_core::cli::CliArgs;
 use bbox_core::config::CoreServiceCfg;
 use bbox_core::service::{CoreService, OgcApiService, ServiceConfig, ServiceEndpoints};
+use bbox_tile_server::config::TileServiceCfg;
+use bbox_tile_server::service::TileService;
 
 #[cfg(feature = "asset-server")]
 use bbox_asset_server::{config::AssetServiceCfg, AssetService};
