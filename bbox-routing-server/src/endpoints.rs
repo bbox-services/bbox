@@ -2,7 +2,7 @@ use crate::engine::Router;
 use crate::error;
 use crate::service::RoutingService;
 use actix_web::{web, HttpResponse};
-use bbox_core::service::CoreService;
+use bbox_core::service::ServiceEndpoints;
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -242,8 +242,8 @@ async fn valhalla_route(
     HttpResponse::Ok().json(route)
 }
 
-impl RoutingService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for RoutingService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
         if let Some(router) = &self.router {
             cfg.app_data(web::Data::new(router.clone()));
         }

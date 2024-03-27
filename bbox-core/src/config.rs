@@ -1,6 +1,9 @@
 use crate::auth::oidc::OidcAuthCfg;
+use crate::cli::GlobalArgs;
 use crate::pg_ds::DsPostgisCfg;
+use crate::service::ServiceConfig;
 use actix_web::HttpRequest;
+use clap::{ArgMatches, FromArgMatches};
 use core::fmt::Display;
 use figment::providers::{Env, Format, Toml};
 use figment::Figment;
@@ -26,6 +29,12 @@ pub fn app_config() -> &'static Figment {
         }
         config
     })
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ConfigError {
+    #[error("Configuration error")]
+    ConfigurationError,
 }
 
 pub fn from_config_or_exit<'a, T: Default + Deserialize<'a>>(tag: &str) -> T {
@@ -70,7 +79,7 @@ pub fn error_exit<T: Display, R>(err: T) -> R {
 
 // -- Common configuration --
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct CoreServiceCfg {
     pub webserver: Option<WebserverCfg>,
     pub metrics: Option<MetricsCfg>,
@@ -82,12 +91,25 @@ pub struct CoreServiceCfg {
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct WebserverCfg {
+    /// IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)
     pub server_addr: String,
+    /// Number of parallel web server threads. Defaults to number of available logical CPUs
     worker_threads: Option<usize>,
     public_server_url: Option<String>,
+    /// Log level (Default: info)
+    pub loglevel: Option<Loglevel>,
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
     pub cors: Option<CorsCfg>,
+}
+
+#[derive(clap::ValueEnum, Deserialize, Serialize, Clone, Debug)]
+pub enum Loglevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -96,6 +118,26 @@ pub struct CorsCfg {
     pub allow_all_origins: bool,
     // #[serde(rename = "allowed_origin")]
     // pub allowed_origins: Vec<String>,
+}
+
+impl ServiceConfig for CoreServiceCfg {
+    fn initialize(args: &ArgMatches) -> Result<Self, ConfigError> {
+        let mut cfg: CoreServiceCfg = from_config_root_or_exit();
+        if let Ok(args) = GlobalArgs::from_arg_matches(args) {
+            if let Some(loglevel) = args.loglevel {
+                let mut webserver = cfg.webserver.unwrap_or_default();
+                webserver.loglevel = Some(loglevel);
+                cfg.webserver = Some(webserver);
+            }
+        };
+        Ok(cfg)
+    }
+}
+
+impl CoreServiceCfg {
+    pub fn loglevel(&self) -> Option<Loglevel> {
+        self.webserver.clone().and_then(|cfg| cfg.loglevel)
+    }
 }
 
 impl Default for WebserverCfg {
@@ -112,6 +154,7 @@ impl Default for WebserverCfg {
             server_addr: "127.0.0.1:8080".to_string(),
             worker_threads: None,
             public_server_url: None,
+            loglevel: None,
             tls_cert: None,
             tls_key: None,
             cors,
@@ -120,9 +163,6 @@ impl Default for WebserverCfg {
 }
 
 impl WebserverCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("webserver").unwrap_or_default()
-    }
     pub fn worker_threads(&self) -> usize {
         self.worker_threads.unwrap_or(num_cpus::get())
     }
@@ -140,12 +180,6 @@ impl WebserverCfg {
 #[serde(default, deny_unknown_fields)]
 pub struct AuthCfg {
     pub oidc: Option<OidcAuthCfg>,
-}
-
-impl AuthCfg {
-    pub fn from_config() -> Self {
-        from_config_opt_or_exit("auth").unwrap_or_default()
-    }
 }
 
 // -- Metrics --

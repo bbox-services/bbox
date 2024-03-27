@@ -8,7 +8,7 @@ use actix_files::NamedFile;
 use actix_web::{
     http::header::ContentEncoding, http::StatusCode, web, Either, HttpRequest, HttpResponse,
 };
-use bbox_core::service::CoreService;
+use bbox_core::service::ServiceEndpoints;
 use log::{info, warn};
 use serde_json::json;
 
@@ -209,8 +209,11 @@ fn job_result_response(job_result: crate::error::Result<JobResult>) -> JobResult
     }
 }
 
-impl ProcessesService {
-    pub(crate) fn register(&self, cfg: &mut web::ServiceConfig, _core: &CoreService) {
+impl ServiceEndpoints for ProcessesService {
+    fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
+        if self.backend.is_none() {
+            return;
+        }
         cfg.service(web::resource("/processes").route(web::get().to(process_list)))
             .service(
                 web::resource("/processes/{processID}")

@@ -1,4 +1,4 @@
-use crate::config::RoutingServiceCfg;
+use crate::config::RoutingCfg;
 use crate::ds::{ds_from_config, RouterDs};
 use crate::error::{self, Result};
 use fast_paths::{FastGraph, ShortestPath};
@@ -103,7 +103,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub async fn from_config(config: &RoutingServiceCfg) -> Result<Self> {
+    pub async fn from_config(config: &RoutingCfg) -> Result<Self> {
         let ds = ds_from_config(config).await?;
         let dist = config.search_dist.unwrap_or(DEFAULT_SEARCH_DISTANCE);
         let cache_name = ds.cache_name().to_string();
@@ -256,7 +256,7 @@ pub mod tests {
     use super::*;
 
     pub async fn router(gpkg: &str, table: &str, geom: &str) -> Router {
-        let cfg = RoutingServiceCfg {
+        let cfg = RoutingCfg {
             gpkg: gpkg.to_string(),
             table: table.to_string(),
             geom: geom.to_string(),

@@ -1,39 +1,38 @@
 use crate::config::FeatureServiceCfg;
 use crate::datasource::Datasources;
 use crate::inventory::Inventory;
-use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
-use bbox_core::config::error_exit;
+use bbox_core::config::{error_exit, CoreServiceCfg};
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::{ApiLink, CoreCollection};
-use bbox_core::service::{CoreService, OgcApiService};
-use clap::ArgMatches;
+use bbox_core::service::OgcApiService;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct FeatureService {
     pub inventory: Inventory,
 }
 #[async_trait]
 impl OgcApiService for FeatureService {
+    type Config = FeatureServiceCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;
 
-    async fn read_config(&mut self, cli: &ArgMatches) {
-        let config = FeatureServiceCfg::from_config(cli);
+    async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
         let mut sources = Datasources::create(&config.datasources)
             .await
             .unwrap_or_else(error_exit);
 
-        self.inventory = Inventory::scan(&config.auto_collections).await;
-        for cfg in config.collections {
+        let mut inventory = Inventory::scan(&config.auto_collections).await;
+        for cfg in &config.collections {
             let collection = sources
-                .setup_collection(&cfg)
+                .setup_collection(cfg)
                 .await
                 .unwrap_or_else(error_exit);
-            self.inventory.add_collection(collection);
+            inventory.add_collection(collection);
         }
+        FeatureService { inventory }
     }
     fn conformance_classes(&self) -> Vec<String> {
         let mut classes = vec![
@@ -65,9 +64,6 @@ impl OgcApiService for FeatureService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()

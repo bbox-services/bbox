@@ -1,9 +1,11 @@
-use bbox_core::config::config_error_exit;
+use bbox_core::config::{config_error_exit, ConfigError};
+use bbox_core::service::ServiceConfig;
+use clap::ArgMatches;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct ProcessesServerCfg {
+pub struct ProcessesServiceCfg {
     pub dagster_backend: Option<DagsterBackendCfg>,
 }
 
@@ -21,7 +23,14 @@ pub struct DagsterBackendCfg {
     pub request_timeout: Option<u64>,
 }
 
-impl ProcessesServerCfg {
+impl ServiceConfig for ProcessesServiceCfg {
+    fn initialize(_cli: &ArgMatches) -> Result<Self, ConfigError> {
+        let cfg = ProcessesServiceCfg::from_config();
+        Ok(cfg)
+    }
+}
+
+impl ProcessesServiceCfg {
     pub fn from_config() -> Self {
         let config = bbox_core::config::app_config();
         if config.find_value("processes").is_ok() {

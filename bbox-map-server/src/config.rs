@@ -1,6 +1,7 @@
 use crate::wms_fcgi_backend::{MockFcgiBackend, QgisFcgiBackend, UmnFcgiBackend};
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::config::{from_config_opt_or_exit, ConfigError};
+use bbox_core::service::ServiceConfig;
 use clap::{ArgMatches, FromArgMatches};
 use log::warn;
 use serde::Deserialize;
@@ -11,7 +12,7 @@ use std::path::Path;
 
 #[derive(Deserialize, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct MapServerCfg {
+pub struct MapServiceCfg {
     num_fcgi_processes: Option<usize>,
     pub fcgi_client_pool_size: usize,
     pub wait_timeout: Option<u64>,
@@ -79,9 +80,9 @@ pub struct MockBackendCfg {
     pub path: String,
 }
 
-impl Default for MapServerCfg {
+impl Default for MapServiceCfg {
     fn default() -> Self {
-        let mut cfg = MapServerCfg {
+        let mut cfg = MapServiceCfg {
             num_fcgi_processes: None,
             fcgi_client_pool_size: 1,
             wait_timeout: Some(90000),
@@ -102,14 +103,14 @@ impl Default for MapServerCfg {
     }
 }
 
-impl MapServerCfg {
-    pub fn from_config(cli: &ArgMatches) -> Self {
+impl ServiceConfig for MapServiceCfg {
+    fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError> {
         // Check if there is a backend configuration
         let has_qgis_config =
             from_config_opt_or_exit::<QgisBackendCfg>("mapserver.qgis_backend").is_some();
         let has_umn_config =
             from_config_opt_or_exit::<UmnBackendCfg>("mapserver.umn_backend").is_some();
-        let mut cfg: MapServerCfg = from_config_opt_or_exit("mapserver").unwrap_or_default();
+        let mut cfg: MapServiceCfg = from_config_opt_or_exit("mapserver").unwrap_or_default();
 
         // Get config from CLI
         if let Ok(CommonCommands::Serve(args)) = CommonCommands::from_arg_matches(cli) {
@@ -138,8 +139,11 @@ impl MapServerCfg {
                 }
             }
         }
-        cfg
+        Ok(cfg)
     }
+}
+
+impl MapServiceCfg {
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())
     }

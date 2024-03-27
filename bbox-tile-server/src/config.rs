@@ -2,8 +2,11 @@ use crate::cli::Commands;
 use crate::config_t_rex as t_rex;
 use crate::datasource::source_config_from_cli_arg;
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::{error_exit, from_config_root_or_exit, DatasourceCfg, NamedDatasourceCfg};
+use bbox_core::config::{
+    error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, NamedDatasourceCfg,
+};
 use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::service::ServiceConfig;
 use clap::{ArgMatches, FromArgMatches};
 use log::{info, warn};
 use regex::Regex;
@@ -15,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 #[serde(default)]
-pub struct TileserverCfg {
+pub struct TileServiceCfg {
     /// Custom grid definitions
     #[serde(rename = "grid")]
     pub grids: Vec<GridCfg>,
@@ -178,23 +181,27 @@ pub struct VectorLayerCfg {
     pub minzoom: Option<u8>,
     /// Maximum zoom level for which tiles are available.
     pub maxzoom: Option<u8>,
-    /// Maximal number of features to read for a single tile.
+    /// Maximal number of features to read for a single tile (Default: unlimited).
     pub query_limit: Option<u32>,
     /// Width and height of the tile (Default: 4096. Grid default size is 256)
     #[serde(default = "default_tile_size")]
     pub tile_size: u32,
     /// Tile buffer size in pixels (None: no clipping)
     pub buffer_size: Option<u32>,
-    /// Simplify geometry (lines and polygons)
+    /// Simplify geometry (lines and polygons). (Default: false)
+    ///
+    /// Applied to PostGIS sources only.
     #[serde(default)]
     pub simplify: bool,
-    /// Simplification tolerance (default to `!pixel_width!/2`)
+    /// Simplification tolerance (defaults to `!pixel_width!/2`)
     #[serde(default = "default_tolerance")]
     pub tolerance: String,
-    /// Fix invalid geometries before clipping (lines and polygons)
+    /// Fix invalid geometries after simplification (Default: false)
+    ///
+    /// Remark: Clipping step does also fix invalid geometries.
     #[serde(default)]
     pub make_valid: bool,
-    /// Apply ST_Shift_Longitude to (transformed) bbox
+    /// Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)
     #[serde(default)]
     pub shift_longitude: bool,
 }
@@ -331,9 +338,9 @@ impl TileStoreCfg {
     }
 }
 
-impl TileserverCfg {
-    pub fn from_config(cli: &ArgMatches) -> Self {
-        let mut cfg: TileserverCfg = from_config_root_or_exit();
+impl ServiceConfig for TileServiceCfg {
+    fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError> {
+        let mut cfg: TileServiceCfg = from_config_root_or_exit();
 
         // Handle CLI args
         if let Some(t_rex_config) = cli.get_one::<PathBuf>("t_rex_config") {
@@ -342,6 +349,13 @@ impl TileserverCfg {
                     .unwrap_or_else(error_exit);
             cfg = t_rex_cfg.into();
             info!("Imported t-rex config:\n{}", cfg.as_toml());
+        }
+
+        if let Some(cache) = TileStoreCfg::from_cli_args(cli) {
+            cfg.tilestores.push(TileCacheProviderCfg {
+                name: "<cli>".to_string(),
+                cache,
+            });
         }
 
         // Get datasource from CLI
@@ -372,14 +386,17 @@ impl TileserverCfg {
                 cfg.tilesets.push(ts);
             }
         }
-        cfg
+        Ok(cfg)
     }
+}
+
+impl TileServiceCfg {
     pub fn as_toml(&self) -> String {
         toml::to_string(&self).unwrap()
     }
 }
 
-impl From<t_rex::ApplicationCfg> for TileserverCfg {
+impl From<t_rex::ApplicationCfg> for TileServiceCfg {
     fn from(t_rex_config: t_rex::ApplicationCfg) -> Self {
         let re = Regex::new(r#"\) AS "\w+"$"#).expect("re");
         let datasources = t_rex_config
@@ -541,7 +558,7 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
                 }
             })
             .collect();
-        TileserverCfg {
+        TileServiceCfg {
             grids,
             datasources,
             tilesets,

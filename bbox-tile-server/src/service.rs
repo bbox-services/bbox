@@ -7,13 +7,12 @@ use crate::store::{
     store_reader_from_config, store_writer_from_config, Compression, TileReader, TileStoreError,
     TileWriter,
 };
-use actix_web::web;
 use async_trait::async_trait;
-use bbox_core::config::error_exit;
+use bbox_core::config::{error_exit, CoreServiceCfg};
 use bbox_core::endpoints::TileResponse;
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
-use bbox_core::service::{CoreService, OgcApiService};
+use bbox_core::service::OgcApiService;
 use bbox_core::Format;
 use clap::{ArgMatches, Args, FromArgMatches};
 use flate2::{read::GzEncoder, Compression as GzCompression};
@@ -27,7 +26,7 @@ use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
 use tilejson::TileJSON;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct TileService {
     tilesets: Tilesets,
     grids: HashMap<String, Tms>,
@@ -109,15 +108,18 @@ pub struct ServiceArgs {
 
 #[async_trait]
 impl OgcApiService for TileService {
+    type Config = TileServiceCfg;
     type CliCommands = Commands;
     type CliArgs = ServiceArgs;
     type Metrics = NoMetrics;
 
-    async fn read_config(&mut self, cli: &ArgMatches) {
-        let config = TileserverCfg::from_config(cli);
+    async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+        let mut tilesets = HashMap::new();
+        let mut service_grids = HashMap::new();
+
         // Register custom grids
         let mut grids = tms().clone();
-        for grid in config.grids {
+        for grid in &config.grids {
             let custom = TileMatrixSet::from_json_file(&grid.json).unwrap_or_else(error_exit);
             grids
                 .register(vec![custom], true)
@@ -128,11 +130,12 @@ impl OgcApiService for TileService {
 
         let stores: TileStoreConfigs = config
             .tilestores
-            .into_iter()
-            .map(|cfg| (cfg.name.clone(), cfg.cache))
+            .iter()
+            .cloned()
+            .map(|cfg| (cfg.name, cfg.cache))
             .collect();
 
-        for ts in config.tilesets {
+        for ts in &config.tilesets {
             let tms_id = ts.tms.clone().unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
             let source = datasources.setup_tile_source(&ts.source, &tms).await;
@@ -142,15 +145,21 @@ impl OgcApiService for TileService {
                 .and_then(|suffix| Format::from_suffix(suffix))
                 .unwrap_or(*source.default_format()); // TODO: emit warning or error
             let metadata = source
-                .mbtiles_metadata(&ts, &format)
+                .mbtiles_metadata(ts, &format)
                 .await
                 .unwrap_or_else(error_exit);
-            let cache_cfg = TileStoreCfg::from_cli_args(cli).or(ts.cache.as_ref().map(|name| {
-                stores
-                    .get(name)
-                    .cloned()
-                    .unwrap_or_else(|| error_exit(ServiceError::CacheNotFound(name.to_string())))
-            }));
+            let cache_cfg = stores
+                .get("<cli>")
+                .or(ts
+                    .cache
+                    .as_ref()
+                    .map(|name| {
+                        stores.get(name).cloned().unwrap_or_else(|| {
+                            error_exit(ServiceError::CacheNotFound(name.to_string()))
+                        })
+                    })
+                    .as_ref())
+                .cloned();
             let store_writer = if let Some(config) = &cache_cfg {
                 Some(store_writer_from_config(config, &ts.name, &format, metadata).await)
             } else {
@@ -169,10 +178,15 @@ impl OgcApiService for TileService {
                 store_writer,
                 config: ts.clone(),
                 cache_cfg,
-                cache_limits: ts.cache_limits,
+                cache_limits: ts.cache_limits.clone(),
             };
-            self.tilesets.insert(ts.name, tileset);
-            self.grids.insert(tms_id, tms);
+            tilesets.insert(ts.name.clone(), tileset);
+            service_grids.insert(tms_id, tms);
+        }
+        TileService {
+            tilesets,
+            grids: service_grids,
+            map_service: None, // Assigned in run_service
         }
     }
 
@@ -248,9 +262,6 @@ impl OgcApiService for TileService {
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))
-    }
-    fn register_endpoints(&self, cfg: &mut web::ServiceConfig, core: &CoreService) {
-        self.register(cfg, core)
     }
     fn metrics(&self) -> &'static Self::Metrics {
         no_metrics()
