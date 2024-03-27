@@ -2,6 +2,7 @@ use crate::api::{OgcApiInventory, OpenApiDoc};
 use crate::auth::oidc::OidcClient;
 use crate::cli::{CliArgs, CommonCommands, GlobalArgs, NoArgs, NoCommands};
 use crate::config::{ConfigError, CoreServiceCfg, WebserverCfg};
+use crate::logger;
 use crate::metrics::{init_metrics_exporter, no_metrics, NoMetrics};
 use crate::ogcapi::{ApiLink, CoreCollection};
 use crate::tls::load_rustls_config;
@@ -169,6 +170,7 @@ impl OgcApiService for CoreService {
     type Metrics = RequestMetrics;
 
     async fn create(cfg: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+        logger::init(cfg.loglevel());
         let metrics = init_metrics_exporter();
         let oidc = if let Some(auth_cfg) = &cfg.auth {
             if let Some(oidc_cfg) = &auth_cfg.oidc {

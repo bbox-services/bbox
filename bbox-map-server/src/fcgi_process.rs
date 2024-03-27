@@ -19,6 +19,7 @@ use crate::dispatcher::{DispatchConfig, Dispatcher};
 use crate::wms_fcgi_backend::FcgiBackendType;
 use async_process::{Child as ChildProcess, Command, Stdio};
 use async_trait::async_trait;
+use bbox_core::config::Loglevel;
 use bufstream::BufStream;
 use fastcgi_client::Client;
 use log::{debug, error, info, warn};
@@ -127,6 +128,7 @@ impl FcgiProcessPool {
         fcgi_bin: String,
         base_dir: Option<PathBuf>,
         backend: &dyn FcgiBackendType,
+        loglevel: &Option<Loglevel>,
         num_processes: usize,
     ) -> Self {
         // We use the system temp path, but according to FHS /run would be correct
@@ -134,7 +136,7 @@ impl FcgiProcessPool {
         FcgiProcessPool {
             fcgi_bin,
             base_dir,
-            envs: backend.envs(),
+            envs: backend.envs(loglevel),
             backend_name: backend.name().to_string(),
             suffixes: backend
                 .project_files()
