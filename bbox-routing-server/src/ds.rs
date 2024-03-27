@@ -1,4 +1,4 @@
-use crate::config::RoutingServiceCfg;
+use crate::config::RoutingCfg;
 use crate::engine::{NodeIndex, DEFAULT_SEARCH_DISTANCE};
 use crate::error::Result;
 use async_trait::async_trait;
@@ -22,7 +22,7 @@ pub trait RouterDs: Send {
 
 pub type GraphData = (InputGraph, NodeIndex);
 
-pub async fn ds_from_config(config: &RoutingServiceCfg) -> Result<Box<dyn RouterDs>> {
+pub async fn ds_from_config(config: &RoutingCfg) -> Result<Box<dyn RouterDs>> {
     let ds = if config.postgis.is_some() {
         Box::new(PgRouteTablesDs(config.clone())) as Box<dyn RouterDs>
     } else {
@@ -32,7 +32,7 @@ pub async fn ds_from_config(config: &RoutingServiceCfg) -> Result<Box<dyn Router
 }
 
 /// GPKG routing source
-pub struct GpkgLinesDs(RoutingServiceCfg);
+pub struct GpkgLinesDs(RoutingCfg);
 
 #[async_trait]
 impl RouterDs for GpkgLinesDs {
@@ -69,7 +69,7 @@ impl RouterDs for GpkgLinesDs {
 }
 
 /// PostGIS routing source
-pub struct PgRouteTablesDs(RoutingServiceCfg);
+pub struct PgRouteTablesDs(RoutingCfg);
 
 #[async_trait]
 impl RouterDs for PgRouteTablesDs {

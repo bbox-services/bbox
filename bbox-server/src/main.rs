@@ -6,30 +6,30 @@ use log::info;
 use std::path::Path;
 
 #[cfg(feature = "asset-server")]
-use bbox_asset_server::{config::AssetserverCfg, AssetService};
+use bbox_asset_server::{config::AssetServiceCfg, AssetService};
 #[cfg(feature = "feature-server")]
 use bbox_feature_server::{config::FeatureServiceCfg, FeatureService};
 #[cfg(feature = "map-server")]
-use bbox_map_server::{config::MapServerCfg, MapService};
+use bbox_map_server::{config::MapServiceCfg, MapService};
 #[cfg(feature = "processes-server")]
-use bbox_processes_server::{config::ProcessesServerCfg, ProcessesService};
+use bbox_processes_server::{config::ProcessesServiceCfg, ProcessesService};
 #[cfg(feature = "routing-server")]
-use bbox_routing_server::{config::RoutingServerCfg, RoutingService};
+use bbox_routing_server::{config::RoutingServiceCfg, RoutingService};
 #[cfg(feature = "tile-server")]
-use bbox_tile_server::{config::TileserverCfg, TileService};
+use bbox_tile_server::{config::TileServiceCfg, TileService};
 
 #[cfg(not(feature = "feature-server"))]
 use bbox_core::service::{DummyService as FeatureService, NoConfig as FeatureServiceCfg};
 #[cfg(not(feature = "asset-server"))]
-use bbox_core::service::{DummyService as AssetService, NoConfig as AssetserverCfg};
+use bbox_core::service::{DummyService as AssetService, NoConfig as AssetServiceCfg};
 #[cfg(not(feature = "map-server"))]
-use bbox_core::service::{DummyService as MapService, NoConfig as MapServerCfg};
+use bbox_core::service::{DummyService as MapService, NoConfig as MapServiceCfg};
 #[cfg(not(feature = "processes-server"))]
-use bbox_core::service::{DummyService as ProcessesService, NoConfig as ProcessesServerCfg};
+use bbox_core::service::{DummyService as ProcessesService, NoConfig as ProcessesServiceCfg};
 #[cfg(not(feature = "routing-server"))]
-use bbox_core::service::{DummyService as RoutingService, NoConfig as RoutingServerCfg};
+use bbox_core::service::{DummyService as RoutingService, NoConfig as RoutingServiceCfg};
 #[cfg(not(feature = "tile-server"))]
-use bbox_core::service::{DummyService as TileService, NoConfig as TileserverCfg};
+use bbox_core::service::{DummyService as TileService, NoConfig as TileServiceCfg};
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
@@ -47,16 +47,16 @@ async fn run_service() -> std::io::Result<()> {
     let core_cfg = CoreServiceCfg::initialize(&matches).unwrap();
     let mut core = CoreService::create(&core_cfg, &core_cfg).await;
 
-    let cfg = MapServerCfg::initialize(&matches).unwrap();
+    let cfg = MapServiceCfg::initialize(&matches).unwrap();
     let map_service = MapService::create(&cfg, &core_cfg).await;
     core.add_service(&map_service);
 
-    let cfg = TileserverCfg::initialize(&matches).unwrap();
+    let cfg = TileServiceCfg::initialize(&matches).unwrap();
     #[allow(unused_mut)]
     let mut tile_service = TileService::create(&cfg, &core_cfg).await;
     core.add_service(&tile_service);
 
-    let cfg = AssetserverCfg::initialize(&matches).unwrap();
+    let cfg = AssetServiceCfg::initialize(&matches).unwrap();
     let asset_service = AssetService::create(&cfg, &core_cfg).await;
     core.add_service(&asset_service);
 
@@ -64,11 +64,11 @@ async fn run_service() -> std::io::Result<()> {
     let feature_service = FeatureService::create(&cfg, &core_cfg).await;
     core.add_service(&feature_service);
 
-    let cfg = ProcessesServerCfg::initialize(&matches).unwrap();
+    let cfg = ProcessesServiceCfg::initialize(&matches).unwrap();
     let processes_service = ProcessesService::create(&cfg, &core_cfg).await;
     core.add_service(&processes_service);
 
-    let cfg = RoutingServerCfg::initialize(&matches).unwrap();
+    let cfg = RoutingServiceCfg::initialize(&matches).unwrap();
     let routing_service = RoutingService::create(&cfg, &core_cfg).await;
     core.add_service(&routing_service);
 

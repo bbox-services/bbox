@@ -6,7 +6,7 @@
 //
 // https://docs.dagster.io/concepts/dagit/graphql#using-the-graphql-api
 
-use crate::config::{DagsterBackendCfg, ProcessesServerCfg};
+use crate::config::{DagsterBackendCfg, ProcessesServiceCfg};
 use crate::endpoints::JobResult;
 use crate::error::{self, Result};
 use crate::models::{self, StatusCode};
@@ -22,7 +22,7 @@ pub struct DagsterBackend {
 
 impl DagsterBackend {
     pub fn new() -> Self {
-        let config = ProcessesServerCfg::from_config()
+        let config = ProcessesServiceCfg::from_config()
             .dagster_backend
             .expect("Backend config missing");
         DagsterBackend { config }

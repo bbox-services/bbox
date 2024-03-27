@@ -9,7 +9,7 @@ mod seed;
 mod service;
 mod store;
 
-use crate::config::TileserverCfg;
+use crate::config::TileServiceCfg;
 use crate::service::TileService;
 use actix_web::{middleware, middleware::Condition, App, HttpServer};
 use bbox_core::cli::CliArgs;
@@ -17,14 +17,14 @@ use bbox_core::config::CoreServiceCfg;
 use bbox_core::service::{CoreService, OgcApiService, ServiceConfig, ServiceEndpoints};
 
 #[cfg(feature = "asset-server")]
-use bbox_asset_server::{config::AssetserverCfg, AssetService};
+use bbox_asset_server::{config::AssetServiceCfg, AssetService};
 #[cfg(feature = "map-server")]
-use bbox_map_server::{config::MapServerCfg, MapService};
+use bbox_map_server::{config::MapServiceCfg, MapService};
 
 #[cfg(not(feature = "map-server"))]
-use bbox_core::service::{DummyService as MapService, NoConfig as MapServerCfg};
+use bbox_core::service::{DummyService as MapService, NoConfig as MapServiceCfg};
 #[cfg(not(feature = "asset-server"))]
-use bbox_core::service::{DummyService as AssetService, NoConfig as AssetserverCfg};
+use bbox_core::service::{DummyService as AssetService, NoConfig as AssetServiceCfg};
 
 #[actix_web::main]
 async fn run_service() -> std::io::Result<()> {
@@ -39,16 +39,16 @@ async fn run_service() -> std::io::Result<()> {
     let core_cfg = CoreServiceCfg::initialize(&matches).unwrap();
     let mut core = CoreService::create(&core_cfg, &core_cfg).await;
 
-    let cfg = MapServerCfg::initialize(&matches).unwrap();
+    let cfg = MapServiceCfg::initialize(&matches).unwrap();
     let map_service = MapService::create(&cfg, &core_cfg).await;
     core.add_service(&map_service);
 
-    let cfg = TileserverCfg::initialize(&matches).unwrap();
+    let cfg = TileServiceCfg::initialize(&matches).unwrap();
     #[allow(unused_mut)]
     let mut tile_service = TileService::create(&cfg, &core_cfg).await;
     core.add_service(&tile_service);
 
-    let cfg = AssetserverCfg::initialize(&matches).unwrap();
+    let cfg = AssetServiceCfg::initialize(&matches).unwrap();
     let asset_service = AssetService::create(&cfg, &core_cfg).await;
     core.add_service(&asset_service);
 

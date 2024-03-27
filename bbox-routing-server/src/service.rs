@@ -1,4 +1,4 @@
-use crate::config::RoutingServerCfg;
+use crate::config::RoutingServiceCfg;
 use crate::engine::Router;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
@@ -15,7 +15,7 @@ pub struct RoutingService {
 
 #[async_trait]
 impl OgcApiService for RoutingService {
-    type Config = RoutingServerCfg;
+    type Config = RoutingServiceCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;
