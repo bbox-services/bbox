@@ -3,6 +3,6 @@ mod dagster;
 mod endpoints;
 mod error;
 mod models;
-mod service;
+pub mod service;
 
 pub use service::*;
