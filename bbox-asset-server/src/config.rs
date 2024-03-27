@@ -1,6 +1,8 @@
 use crate::qgis_plugins::QgisPluginRepoCfg;
 use crate::runtime_templates::TemplateDirCfg;
-use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::config::{from_config_opt_or_exit, ConfigError};
+use bbox_core::service::ServiceConfig;
+use clap::ArgMatches;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -22,7 +24,13 @@ pub struct StaticDirCfg {
 }
 
 impl AssetserverCfg {
-    pub fn from_config() -> Self {
+    pub(crate) fn from_config() -> Self {
         from_config_opt_or_exit("assets").unwrap_or_default()
+    }
+}
+
+impl ServiceConfig for AssetserverCfg {
+    fn initialize(_args: &ArgMatches) -> Result<Self, ConfigError> {
+        Ok(AssetserverCfg::from_config())
     }
 }

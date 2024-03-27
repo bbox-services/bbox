@@ -1,4 +1,7 @@
 use bbox_core::config::config_error_exit;
+use bbox_core::config::ConfigError;
+use bbox_core::service::ServiceConfig;
+use clap::ArgMatches;
 use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
@@ -19,6 +22,13 @@ pub struct DagsterBackendCfg {
     pub repository_location_name: String,
     /// Backend request timeout (ms) (Default: 10s)
     pub request_timeout: Option<u64>,
+}
+
+impl ServiceConfig for ProcessesServerCfg {
+    fn initialize(_cli: &ArgMatches) -> Result<Self, ConfigError> {
+        let cfg = ProcessesServerCfg::from_config();
+        Ok(cfg)
+    }
 }
 
 impl ProcessesServerCfg {

@@ -6,13 +6,13 @@ use crate::wms_fcgi_backend::detect_backends;
 use actix_web::web;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
+use bbox_core::config::CoreServiceCfg;
 use bbox_core::service::OgcApiService;
-use clap::ArgMatches;
 use log::error;
 use prometheus::Registry;
 use std::collections::HashMap;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct MapService {
     // Dispatcher is not Clone, so we wrap as web::Data already here
     pub(crate) fcgi_clients: Vec<web::Data<FcgiDispatcher>>,
@@ -25,54 +25,50 @@ pub struct MapService {
     pub(crate) inventory: Inventory,
 }
 
-async fn init_wms_backend(config: &MapServerCfg) -> MapService {
-    let num_fcgi_processes = config.num_fcgi_processes();
-    let default_project = config.default_project.clone();
-    let (process_pools, inventory) = detect_backends(config).unwrap();
-    let fcgi_clients = process_pools
-        .iter()
-        .map(|process_pool| web::Data::new(process_pool.client_dispatcher(config)))
-        .collect::<Vec<_>>();
-    let mut suffix_fcgi = HashMap::new();
-    for (poolno, fcgi_pool) in process_pools.iter().enumerate() {
-        for suffix_url in &fcgi_pool.suffixes {
-            suffix_fcgi.insert(suffix_url.suffix.clone(), poolno);
-        }
-    }
-
-    for mut process_pool in process_pools {
-        match process_pool.spawn_processes().await {
-            Ok(_) => {
-                actix_web::rt::spawn(async move {
-                    process_pool.watchdog_loop().await;
-                });
-            }
-            Err(e) => {
-                error!("Spawn error: {e}");
-            }
-        }
-    }
-    // FIXME: Wait until FCGI services are started
-    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-
-    MapService {
-        fcgi_clients,
-        suffix_fcgi,
-        num_fcgi_processes,
-        default_project,
-        inventory,
-    }
-}
-
 #[async_trait]
 impl OgcApiService for MapService {
+    type Config = MapServerCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = WmsMetrics;
 
-    async fn read_config(&mut self, cli: &ArgMatches) {
-        let config = MapServerCfg::from_config(cli);
-        *self = init_wms_backend(&config).await;
+    async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+        let num_fcgi_processes = config.num_fcgi_processes();
+        let default_project = config.default_project.clone();
+        let (process_pools, inventory) = detect_backends(config).unwrap();
+        let fcgi_clients = process_pools
+            .iter()
+            .map(|process_pool| web::Data::new(process_pool.client_dispatcher(config)))
+            .collect::<Vec<_>>();
+        let mut suffix_fcgi = HashMap::new();
+        for (poolno, fcgi_pool) in process_pools.iter().enumerate() {
+            for suffix_url in &fcgi_pool.suffixes {
+                suffix_fcgi.insert(suffix_url.suffix.clone(), poolno);
+            }
+        }
+
+        for mut process_pool in process_pools {
+            match process_pool.spawn_processes().await {
+                Ok(_) => {
+                    actix_web::rt::spawn(async move {
+                        process_pool.watchdog_loop().await;
+                    });
+                }
+                Err(e) => {
+                    error!("Spawn error: {e}");
+                }
+            }
+        }
+        // FIXME: Wait until FCGI services are started
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+        MapService {
+            fcgi_clients,
+            suffix_fcgi,
+            num_fcgi_processes,
+            default_project,
+            inventory,
+        }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![

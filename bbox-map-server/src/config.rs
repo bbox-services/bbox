@@ -1,6 +1,7 @@
 use crate::wms_fcgi_backend::{MockFcgiBackend, QgisFcgiBackend, UmnFcgiBackend};
 use bbox_core::cli::CommonCommands;
-use bbox_core::config::from_config_opt_or_exit;
+use bbox_core::config::{from_config_opt_or_exit, ConfigError};
+use bbox_core::service::ServiceConfig;
 use clap::{ArgMatches, FromArgMatches};
 use log::warn;
 use serde::Deserialize;
@@ -102,8 +103,8 @@ impl Default for MapServerCfg {
     }
 }
 
-impl MapServerCfg {
-    pub fn from_config(cli: &ArgMatches) -> Self {
+impl ServiceConfig for MapServerCfg {
+    fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError> {
         // Check if there is a backend configuration
         let has_qgis_config =
             from_config_opt_or_exit::<QgisBackendCfg>("mapserver.qgis_backend").is_some();
@@ -138,8 +139,11 @@ impl MapServerCfg {
                 }
             }
         }
-        cfg
+        Ok(cfg)
     }
+}
+
+impl MapServerCfg {
     pub fn num_fcgi_processes(&self) -> usize {
         self.num_fcgi_processes.unwrap_or(num_cpus::get())
     }
