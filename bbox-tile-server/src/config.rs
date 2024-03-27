@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Serialize, Default, Debug)]
 #[serde(default)]
-pub struct TileserverCfg {
+pub struct TileServiceCfg {
     /// Custom grid definitions
     #[serde(rename = "grid")]
     pub grids: Vec<GridCfg>,
@@ -338,9 +338,9 @@ impl TileStoreCfg {
     }
 }
 
-impl ServiceConfig for TileserverCfg {
+impl ServiceConfig for TileServiceCfg {
     fn initialize(cli: &ArgMatches) -> Result<Self, ConfigError> {
-        let mut cfg: TileserverCfg = from_config_root_or_exit();
+        let mut cfg: TileServiceCfg = from_config_root_or_exit();
 
         // Handle CLI args
         if let Some(t_rex_config) = cli.get_one::<PathBuf>("t_rex_config") {
@@ -390,13 +390,13 @@ impl ServiceConfig for TileserverCfg {
     }
 }
 
-impl TileserverCfg {
+impl TileServiceCfg {
     pub fn as_toml(&self) -> String {
         toml::to_string(&self).unwrap()
     }
 }
 
-impl From<t_rex::ApplicationCfg> for TileserverCfg {
+impl From<t_rex::ApplicationCfg> for TileServiceCfg {
     fn from(t_rex_config: t_rex::ApplicationCfg) -> Self {
         let re = Regex::new(r#"\) AS "\w+"$"#).expect("re");
         let datasources = t_rex_config
@@ -558,7 +558,7 @@ impl From<t_rex::ApplicationCfg> for TileserverCfg {
                 }
             })
             .collect();
-        TileserverCfg {
+        TileServiceCfg {
             grids,
             datasources,
             tilesets,

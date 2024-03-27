@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct AssetserverCfg {
+pub struct AssetServiceCfg {
     #[serde(rename = "static")]
     pub static_: Vec<StaticDirCfg>,
     pub template: Vec<TemplateDirCfg>,
@@ -23,14 +23,14 @@ pub struct StaticDirCfg {
     pub dir: String,
 }
 
-impl AssetserverCfg {
+impl AssetServiceCfg {
     pub(crate) fn from_config() -> Self {
         from_config_opt_or_exit("assets").unwrap_or_default()
     }
 }
 
-impl ServiceConfig for AssetserverCfg {
+impl ServiceConfig for AssetServiceCfg {
     fn initialize(_args: &ArgMatches) -> Result<Self, ConfigError> {
-        Ok(AssetserverCfg::from_config())
+        Ok(AssetServiceCfg::from_config())
     }
 }

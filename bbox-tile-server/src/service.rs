@@ -108,7 +108,7 @@ pub struct ServiceArgs {
 
 #[async_trait]
 impl OgcApiService for TileService {
-    type Config = TileserverCfg;
+    type Config = TileServiceCfg;
     type CliCommands = Commands;
     type CliArgs = ServiceArgs;
     type Metrics = NoMetrics;

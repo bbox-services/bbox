@@ -1,4 +1,4 @@
-use crate::config::AssetserverCfg;
+use crate::config::AssetServiceCfg;
 use crate::qgis_plugins::*;
 use crate::runtime_templates::RuntimeTemplates;
 use crate::service::{AssetService, PluginIndex};
@@ -51,7 +51,7 @@ async fn plugin_xml(plugins_index: web::Data<PluginIndex>, req: HttpRequest) -> 
 
 impl ServiceEndpoints for AssetService {
     fn register_endpoints(&self, cfg: &mut web::ServiceConfig) {
-        let service_cfg = AssetserverCfg::from_config();
+        let service_cfg = AssetServiceCfg::from_config();
 
         for static_dir in &service_cfg.static_ {
             let dir = app_dir(&static_dir.dir);

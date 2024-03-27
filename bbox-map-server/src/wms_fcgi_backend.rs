@@ -173,7 +173,7 @@ fn find_exe(locations: Vec<String>) -> Option<String> {
 }
 
 pub fn detect_backends(
-    config: &MapServerCfg,
+    config: &MapServiceCfg,
     loglevel: &Option<Loglevel>,
 ) -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();

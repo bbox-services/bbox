@@ -6,14 +6,14 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
 #[serde(default, deny_unknown_fields)]
-pub struct RoutingServerCfg {
-    pub service: Vec<RoutingServiceCfg>,
+pub struct RoutingServiceCfg {
+    pub service: Vec<RoutingCfg>,
 }
 
 /// Routing service configuration
 #[derive(Deserialize, Clone, Default, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct RoutingServiceCfg {
+pub struct RoutingCfg {
     pub profile: Option<String>,
     /// Node search distance
     pub search_dist: Option<f64>,
@@ -35,7 +35,7 @@ pub struct RoutingServiceCfg {
     pub node_dst: Option<String>,
 }
 
-impl ServiceConfig for RoutingServerCfg {
+impl ServiceConfig for RoutingServiceCfg {
     fn initialize(_cli: &ArgMatches) -> Result<Self, ConfigError> {
         let cfg = from_config_opt_or_exit("routing").unwrap_or_default();
         Ok(cfg)

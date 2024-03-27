@@ -1,4 +1,4 @@
-use crate::config::AssetserverCfg;
+use crate::config::AssetServiceCfg;
 use crate::qgis_plugins::plugin_files;
 use async_trait::async_trait;
 use bbox_core::app_dir;
@@ -19,7 +19,7 @@ pub struct AssetService {
 
 #[async_trait]
 impl OgcApiService for AssetService {
-    type Config = AssetserverCfg;
+    type Config = AssetServiceCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;

@@ -1,4 +1,4 @@
-use crate::config::ProcessesServerCfg;
+use crate::config::ProcessesServiceCfg;
 use crate::dagster::DagsterBackend;
 use async_trait::async_trait;
 use bbox_core::cli::{NoArgs, NoCommands};
@@ -16,7 +16,7 @@ pub struct ProcessesService {
 
 #[async_trait]
 impl OgcApiService for ProcessesService {
-    type Config = ProcessesServerCfg;
+    type Config = ProcessesServiceCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;

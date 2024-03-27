@@ -1,4 +1,4 @@
-use crate::config::MapServerCfg;
+use crate::config::MapServiceCfg;
 use crate::fcgi_process::FcgiDispatcher;
 use crate::inventory::Inventory;
 use crate::metrics::{register_metrics, wms_metrics, WmsMetrics};
@@ -27,7 +27,7 @@ pub struct MapService {
 
 #[async_trait]
 impl OgcApiService for MapService {
-    type Config = MapServerCfg;
+    type Config = MapServiceCfg;
     type CliCommands = NoCommands;
     type CliArgs = NoArgs;
     type Metrics = WmsMetrics;
