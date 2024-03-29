@@ -83,10 +83,16 @@ Map viewer template examples:
 
 With PostGIS Service:
 
-    docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb
+    just start-db
+    just serve
 
     curl -s http://localhost:8080/xyz/ne_countries.style.json | jq .
-    x-www-browser http://localhost:8080/html/maplibre/ne_countries
+
+    x-www-browser http://localhost:8080/assets/maplibre.html?style=/xyz/ne_countries.style.json
+
+Tile request:
+
+    curl -o /tmp/tile.mvt http://localhost:8080/xyz/ne_countries/2/2/2.pbf
 
 With filter parameter:
 

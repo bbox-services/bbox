@@ -16,6 +16,7 @@ use bbox_core::service::OgcApiService;
 use bbox_core::Format;
 use clap::{ArgMatches, Args, FromArgMatches};
 use flate2::{read::GzEncoder, Compression as GzCompression};
+use log::debug;
 use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use serde_json::json;
@@ -308,6 +309,7 @@ impl TileService {
         })
     }
     /// Tile request
+    // Used for seeding, compresses tiles according to target store
     pub async fn read_tile(
         &self,
         tileset: &str,
@@ -326,30 +328,21 @@ impl TileService {
             req_path: "/",
             metrics,
         };
-        let mut tile = ts
+        let tile = ts
             .source
             .xyz_request(self, &ts.tms, xyz, filter, format, request_params)
             .await?;
-        let mut bytes: Vec<u8> = Vec::new();
-        match compression {
-            Compression::Gzip => {
-                let mut gz = GzEncoder::new(tile.body, GzCompression::fast());
-                gz.read_to_end(&mut bytes)?;
-            }
-            Compression::None => {
-                tile.body.read_to_end(&mut bytes)?;
-            }
-        }
-        Ok(bytes)
+        read_bytes(tile.body, &compression)
     }
     /// Get tile with cache lookup
+    // Used for serving
     pub async fn tile_cached(
         &self,
         tileset: &str,
         xyz: &Xyz,
         filter: &FilterParams,
         format: &Format,
-        _gzip: bool,
+        gzip: bool,
         request_params: HttpRequestParams<'_>,
     ) -> Result<Option<TileResponse>, ServiceError> {
         let tileset = self
@@ -358,26 +351,38 @@ impl TileService {
         if let Some(cache) = &tileset.store_reader {
             if tileset.is_cachable_at(xyz.z) {
                 if let Some(tile) = cache.get_tile(xyz).await? {
-                    //TODO: handle compression
+                    debug!("Delivering tile from cache @ {xyz:?}");
+                    //FIXME: handle compression
                     //TODO: check returned format
                     return Ok(Some(tile));
                 }
             }
         }
         // Request tile and write into cache
-        // let tms = tileset.tms.clone();
+        debug!("Request tile from source @ {xyz:?}");
         let mut tiledata = tileset
             .source
             .xyz_request(self, &tileset.tms, xyz, filter, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         if tileset.is_cachable_at(xyz.z) {
+            debug!("Writing tile into cache @ {xyz:?}");
             // Read tile into memory
-            let mut body = Vec::new();
-            tiledata.body.read_to_end(&mut body)?;
+            let cache_compression = tileset
+                .store_writer
+                .as_ref()
+                .map(|s| s.compression())
+                .unwrap_or(Compression::None);
+            let body = read_bytes(tiledata.body, &cache_compression)?;
             if let Some(cache) = &tileset.store_writer {
                 cache.put_tile(xyz, body.clone()).await?;
             }
+            if cache_compression == Compression::Gzip && gzip {
+                tiledata
+                    .headers
+                    .insert("Content-Encoding".to_string(), "Gzip".to_string());
+            }
+            // TODO: decompress if !gzip
             Ok(Some(TileResponse {
                 content_type: tiledata.content_type,
                 headers: tiledata.headers,
@@ -532,4 +537,22 @@ impl TileService {
             DUMMY_METRICS.get_or_init(WmsMetrics::default)
         }
     }
+}
+
+/// Read tile body with optional compression
+fn read_bytes(
+    mut input: impl std::io::Read,
+    compression: &Compression,
+) -> Result<Vec<u8>, ServiceError> {
+    let mut bytes: Vec<u8> = Vec::new();
+    match compression {
+        Compression::Gzip => {
+            let mut gz = GzEncoder::new(input, GzCompression::fast());
+            gz.read_to_end(&mut bytes)?;
+        }
+        Compression::None => {
+            input.read_to_end(&mut bytes)?;
+        }
+    }
+    Ok(bytes)
 }
