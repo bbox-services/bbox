@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 beta2 (2024-03-29)
+
+- Support simplification in ST_AsMvt mode
+- Add loglevel to webserver config
+- Disable QWC2 viewer in default build
+- Publish deb packages
+
 ## 0.5.0 beta1 (2024-03-18)
 
 - Add x, y and custom fields to layer queries
