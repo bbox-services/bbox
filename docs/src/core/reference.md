@@ -7,10 +7,29 @@
 
 ## Webserver
 
-* `server_addr` *String*
+* `server_addr` *String*: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)
+* `loglevel` *Loglevel* (optional): Log level (Default: info)
 * `tls_cert` *String* (optional)
 * `tls_key` *String* (optional)
 * `cors` [Cors](#cors) (optional)
+
+### Loglevel
+
+
+#### Error
+
+
+#### Warn
+
+
+#### Info
+
+
+#### Debug
+
+
+#### Trace
+
 
 ### Cors
 
