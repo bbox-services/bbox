@@ -236,11 +236,18 @@ bbox-server --help
 </ul>
 <h2 id="webserver-1"><a class="header" href="#webserver-1">Webserver</a></h2>
 <ul>
-<li><code>server_addr</code> <em>String</em></li>
+<li><code>server_addr</code> <em>String</em>: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)</li>
+<li><code>loglevel</code> <em>Loglevel</em> (optional): Log level (Default: info)</li>
 <li><code>tls_cert</code> <em>String</em> (optional)</li>
 <li><code>tls_key</code> <em>String</em> (optional)</li>
 <li><code>cors</code> <a href="core/reference.html#cors">Cors</a> (optional)</li>
 </ul>
+<h3 id="loglevel"><a class="header" href="#loglevel">Loglevel</a></h3>
+<h4 id="error"><a class="header" href="#error">Error</a></h4>
+<h4 id="warn"><a class="header" href="#warn">Warn</a></h4>
+<h4 id="info"><a class="header" href="#info">Info</a></h4>
+<h4 id="debug"><a class="header" href="#debug">Debug</a></h4>
+<h4 id="trace"><a class="header" href="#trace">Trace</a></h4>
 <h3 id="cors"><a class="header" href="#cors">Cors</a></h3>
 <ul>
 <li><code>allow_all_origins</code> <em>bool</em></li>
@@ -962,13 +969,19 @@ Viewers use data from tiles at maxzoom when displaying the map at higher zoom le
 <li><code>query[]</code> <a href="tile-server/reference.html#vectorlayerquery">VectorLayerQuery</a> (optional): Custom queries</li>
 <li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for which tiles are available.</li>
 <li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available.</li>
-<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile.</li>
+<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile (Default: unlimited).</li>
 <li><code>tile_size</code> <em>u32</em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)</li>
 <li><code>buffer_size</code> <em>u32</em> (optional): Tile buffer size in pixels (None: no clipping)</li>
-<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons)</li>
-<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (default to <code>!pixel_width!/2</code>)</li>
-<li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries before clipping (lines and polygons)</li>
-<li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox</li>
+<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons). (Default: false)</li>
+</ul>
+<p>Applied to PostGIS sources only.</p>
+<ul>
+<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (defaults to <code>!pixel_width!/2</code>)</li>
+<li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries after simplification (Default: false)</li>
+</ul>
+<p>Remark: Clipping step does also fix invalid geometries.</p>
+<ul>
+<li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)</li>
 </ul>
 <h4 id="vectorlayerquery"><a class="header" href="#vectorlayerquery">VectorLayerQuery</a></h4>
 <ul>
@@ -1239,9 +1252,9 @@ node_dst = "target"
 <p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="routing-server-reference"><a class="header" href="#routing-server-reference">Routing Server Reference</a></h1>
 <ul>
-<li><code>service[]</code> <a href="routing-server/reference.html#routingservice">RoutingService</a></li>
+<li><code>service[]</code> <a href="routing-server/reference.html#routing">Routing</a></li>
 </ul>
-<h2 id="routingservice"><a class="header" href="#routingservice">RoutingService</a></h2>
+<h2 id="routing"><a class="header" href="#routing">Routing</a></h2>
 <p>Routing service configuration</p>
 <ul>
 <li><code>profile</code> <em>String</em> (optional)</li>

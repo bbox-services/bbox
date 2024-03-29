@@ -282,13 +282,19 @@ Viewers use data from tiles at maxzoom when displaying the map at higher zoom le
 <li><code>query[]</code> <a href="#vectorlayerquery">VectorLayerQuery</a> (optional): Custom queries</li>
 <li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for which tiles are available.</li>
 <li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available.</li>
-<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile.</li>
+<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile (Default: unlimited).</li>
 <li><code>tile_size</code> <em>u32</em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)</li>
 <li><code>buffer_size</code> <em>u32</em> (optional): Tile buffer size in pixels (None: no clipping)</li>
-<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons)</li>
-<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (default to <code>!pixel_width!/2</code>)</li>
-<li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries before clipping (lines and polygons)</li>
-<li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox</li>
+<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons). (Default: false)</li>
+</ul>
+<p>Applied to PostGIS sources only.</p>
+<ul>
+<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (defaults to <code>!pixel_width!/2</code>)</li>
+<li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries after simplification (Default: false)</li>
+</ul>
+<p>Remark: Clipping step does also fix invalid geometries.</p>
+<ul>
+<li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)</li>
 </ul>
 <h4 id="vectorlayerquery"><a class="header" href="#vectorlayerquery">VectorLayerQuery</a></h4>
 <ul>

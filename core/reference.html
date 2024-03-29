@@ -188,11 +188,18 @@
 </ul>
 <h2 id="webserver"><a class="header" href="#webserver">Webserver</a></h2>
 <ul>
-<li><code>server_addr</code> <em>String</em></li>
+<li><code>server_addr</code> <em>String</em>: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)</li>
+<li><code>loglevel</code> <em>Loglevel</em> (optional): Log level (Default: info)</li>
 <li><code>tls_cert</code> <em>String</em> (optional)</li>
 <li><code>tls_key</code> <em>String</em> (optional)</li>
 <li><code>cors</code> <a href="#cors">Cors</a> (optional)</li>
 </ul>
+<h3 id="loglevel"><a class="header" href="#loglevel">Loglevel</a></h3>
+<h4 id="error"><a class="header" href="#error">Error</a></h4>
+<h4 id="warn"><a class="header" href="#warn">Warn</a></h4>
+<h4 id="info"><a class="header" href="#info">Info</a></h4>
+<h4 id="debug"><a class="header" href="#debug">Debug</a></h4>
+<h4 id="trace"><a class="header" href="#trace">Trace</a></h4>
 <h3 id="cors"><a class="header" href="#cors">Cors</a></h3>
 <ul>
 <li><code>allow_all_origins</code> <em>bool</em></li>
