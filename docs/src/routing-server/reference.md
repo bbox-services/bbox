@@ -1,8 +1,8 @@
 # Routing Server Reference
 
-* `service[]` [RoutingService](#routingservice)
+* `service[]` [Routing](#routing)
 
-## RoutingService
+## Routing
 
 Routing service configuration
 * `profile` *String* (optional)

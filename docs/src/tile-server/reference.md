@@ -100,13 +100,17 @@ PostGIS vector layer
 * `query[]` [VectorLayerQuery](#vectorlayerquery) (optional): Custom queries
 * `minzoom` *u8* (optional): Minimal zoom level for which tiles are available.
 * `maxzoom` *u8* (optional): Maximum zoom level for which tiles are available.
-* `query_limit` *u32* (optional): Maximal number of features to read for a single tile.
+* `query_limit` *u32* (optional): Maximal number of features to read for a single tile (Default: unlimited).
 * `tile_size` *u32* (optional): Width and height of the tile (Default: 4096. Grid default size is 256)
 * `buffer_size` *u32* (optional): Tile buffer size in pixels (None: no clipping)
-* `simplify` *bool* (optional): Simplify geometry (lines and polygons)
-* `tolerance` *String* (optional): Simplification tolerance (default to `!pixel_width!/2`)
-* `make_valid` *bool* (optional): Fix invalid geometries before clipping (lines and polygons)
-* `shift_longitude` *bool* (optional): Apply ST_Shift_Longitude to (transformed) bbox
+* `simplify` *bool* (optional): Simplify geometry (lines and polygons). (Default: false)
+
+Applied to PostGIS sources only.
+* `tolerance` *String* (optional): Simplification tolerance (defaults to `!pixel_width!/2`)
+* `make_valid` *bool* (optional): Fix invalid geometries after simplification (Default: false)
+
+Remark: Clipping step does also fix invalid geometries.
+* `shift_longitude` *bool* (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)
 
 #### VectorLayerQuery
 
