@@ -4,6 +4,10 @@ name = "pg"
 #url = "postgresql://mvtbench:mvtbench@mvtbenchdb/mvtbench"
 url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
+[[assets.static]]
+dir = "./assets"
+path = "/assets"
+
 [[tilestore]]
 name = "tilecache"    
 [tilestore.files]
@@ -23,7 +27,7 @@ path = "/tmp/tilecache.pmtiles"
 [[tileset]]
 name = "ne_countries"
 tms = "WebMercatorQuad"
-cache = "tilecache"
+cache = "mbtilecache"
 [tileset.postgis]
 minzoom = 0
 maxzoom = 6
@@ -34,6 +38,9 @@ minx = -179.97277
 miny = -83.05457
 maxx = 179.99366
 maxy = 83.23559
+
+[tileset.postgis.diagnostics]
+reference_size = 800_000
 
 [[tileset.postgis.layer]]
 name = "country"

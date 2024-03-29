@@ -33,6 +33,10 @@ setup-minio:
     docker exec minio mc mb local-docker/tiles || true
     docker exec minio mc anonymous set public local-docker/tiles
 
+# Serve mvtbench tile service
+serve: docker-is-ready
+    cargo run -- --config={{justfile_directory()}}/bbox-mvtbench.toml --loglevel=debug serve
+
 # -- mvtbench seeding
 
 # mvtbench seed files

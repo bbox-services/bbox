@@ -154,10 +154,6 @@ async fn tile_request(
                 r.insert_header((key.as_str(), value.as_str()));
                 // TODO: use append_header for "Server-Timing" and others?
             }
-            // if gzip {
-            //     // data is already gzip compressed
-            //     r.insert_header(header::ContentEncoding::Gzip);
-            // }
             // let cache_max_age = service.webserver.cache_control_max_age.unwrap_or(300);
             // r.insert_header((header::CACHE_CONTROL, format!("max-age={}", cache_max_age)));
             Ok(r.streaming(tile_resp.into_stream()))

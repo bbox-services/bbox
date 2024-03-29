@@ -3,19 +3,20 @@
 
 <head>
   <title>MapLibre Viewer</title>
-  <script src='https://unpkg.com/maplibre-gl@3.0.1/dist/maplibre-gl.js'></script>
-  <link href='https://unpkg.com/maplibre-gl@3.0.1/dist/maplibre-gl.css' rel='stylesheet' />
+  <script src='https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.js'></script>
+  <link href='https://unpkg.com/maplibre-gl@4.0.2/dist/maplibre-gl.css' rel='stylesheet' />
 </head>
 
 <body>
   <div id='map' style='width: 100%; height: 600px;'></div>
   <script>
-  var map = new maplibregl.Map({
-    container: 'map',
-    style: location.origin + '/assets/mbtiles_mvt_fl-style.json',
-    center: [9.5076, 47.0944],
-    zoom: 11
-  });
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const style = urlParams.get('style') || '/assets/mbtiles_mvt_fl-style.json';
+    var map = new maplibregl.Map({
+      container: 'map',
+      style: location.origin + style
+    });
   </script>
 </body>
 

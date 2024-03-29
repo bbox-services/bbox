@@ -43,7 +43,7 @@ pub enum TileStoreError {
     PmtilesError(#[from] ::pmtiles::error::Error),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Compression {
     // Unknown,
     None,
