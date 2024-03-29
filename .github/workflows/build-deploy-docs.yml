@@ -15,12 +15,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install just
+        uses: taiki-e/install-action@v2
+        with: { tool: just }
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Python build dependencies
+        run: python -m pip install jmespath
+
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
           mdbook-version: 'latest'
 
-      - run: mdbook build docs
+      - name: Generate reference documentation
+        run: cd docs && just refdoc
+
+      - name: Build mdBook
+        run: cd docs && just build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
