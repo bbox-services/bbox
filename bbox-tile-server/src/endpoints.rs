@@ -4,7 +4,7 @@ use crate::service::{ServiceError, TileService};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::ServiceEndpoints;
-use bbox_core::Format;
+use bbox_core::{Compression, Format};
 use log::error;
 use std::collections::HashMap;
 use tile_grid::{
@@ -124,16 +124,17 @@ async fn tile_request(
 
     let datetime = filters.remove("datetime");
     let fp = FilterParams { datetime, filters };
-    let gzip = req
+    let compression = req
         .headers()
         .get(header::ACCEPT_ENCODING)
         .and_then(|headerval| {
             headerval
                 .to_str()
                 .ok()
-                .map(|headerstr| headerstr.contains("gzip"))
+                .filter(|headerstr| headerstr.contains("gzip"))
+                .map(|_| Compression::Gzip)
         })
-        .unwrap_or(false);
+        .unwrap_or(Compression::None);
     let conn_info = req.connection_info().clone();
     let request_params = HttpRequestParams {
         scheme: conn_info.scheme(),
@@ -142,7 +143,7 @@ async fn tile_request(
         metrics: &metrics,
     };
     match service
-        .tile_cached(tileset, &tile, &fp, format, gzip, request_params)
+        .tile_cached(tileset, &tile, &fp, format, compression, request_params)
         .await
     {
         Ok(Some(tile_resp)) => {

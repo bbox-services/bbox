@@ -74,6 +74,9 @@ impl TileReader for PmtilesStoreReader {
         let resp = if let Some(tile) = self.reader.get_tile(xyz.z, xyz.x, xyz.y).await {
             let mut response = TileResponse::new();
             response.set_content_type(tile.tile_type.content_type());
+            if let Some(encoding) = tile.tile_compression.content_encoding() {
+                response.insert_header(("Content-Encoding", encoding.to_lowercase()));
+            }
             Some(response.with_body(Box::new(Cursor::new(tile.data))))
         } else {
             None

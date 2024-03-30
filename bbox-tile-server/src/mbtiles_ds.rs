@@ -21,7 +21,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug)]
 pub struct MbtilesDatasource {
     pub mbtiles: Mbtiles,
-    pub format: Option<martin_tile_utils::Format>,
+    pub format: martin_tile_utils::Format,
     pub pool: Pool<Sqlite>,
 }
 
@@ -32,11 +32,15 @@ impl MbtilesDatasource {
 
     pub async fn new_pool<P: AsRef<Path>>(filepath: P, metadata: Option<Metadata>) -> Result<Self> {
         let mbtiles = Mbtiles::new(filepath)?;
-        let format = metadata.clone().map(|meta| meta.tile_info.format);
-        if let Some(metadata) = metadata {
+        let format = if let Some(metadata) = metadata {
+            let format = metadata.tile_info.format;
             Self::initialize_mbtiles_db(&mbtiles, metadata).await?;
-        }
-        let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: open_readonly if metadata.is_none()
+            format
+        } else {
+            let metadata = Self::read_metadata(&mbtiles).await?;
+            metadata.tile_info.format
+        };
+        let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: SqliteConnectOptions::read_only(true) if metadata.is_none()
         Ok(Self {
             mbtiles,
             format,
@@ -44,7 +48,14 @@ impl MbtilesDatasource {
         })
     }
 
-    pub async fn initialize_mbtiles_db(mbtiles: &Mbtiles, metadata: Metadata) -> MbtResult<()> {
+    async fn read_metadata(mbtiles: &Mbtiles) -> MbtResult<Metadata> {
+        let mut conn = mbtiles.open_readonly().await?;
+        let metadata = mbtiles.get_metadata(&mut conn).await?;
+        conn.close().await?;
+        Ok(metadata)
+    }
+
+    async fn initialize_mbtiles_db(mbtiles: &Mbtiles, metadata: Metadata) -> MbtResult<()> {
         let mut conn = mbtiles.open_or_new().await?;
         let layout = mbtiles.detect_type(&mut conn).await;
         if let Err(MbtError::InvalidDataFormat(_)) = layout {
