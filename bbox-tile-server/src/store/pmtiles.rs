@@ -72,11 +72,9 @@ impl PmtilesStoreReader {
 impl TileReader for PmtilesStoreReader {
     async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let resp = if let Some(tile) = self.reader.get_tile(xyz.z, xyz.x, xyz.y).await {
-            Some(TileResponse {
-                content_type: Some(tile.tile_type.content_type().to_string()),
-                headers: TileResponse::new_headers(),
-                body: Box::new(Cursor::new(tile.data)),
-            })
+            let mut response = TileResponse::new();
+            response.set_content_type(tile.tile_type.content_type());
+            Some(response.with_body(Box::new(Cursor::new(tile.data))))
         } else {
             None
         };

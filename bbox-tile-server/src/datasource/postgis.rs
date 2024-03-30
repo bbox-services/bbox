@@ -5,13 +5,13 @@ use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::HttpRequestParams,
-    LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    LayerInfo, SourceType, TileRead, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::pg_ds::PgDatasource;
-use bbox_core::Format;
+use bbox_core::{Format, TileResponse};
 use futures::TryStreamExt;
 use geozero::{mvt, wkb, ToMvt};
 use log::{debug, error, info, warn};
@@ -345,13 +345,10 @@ impl TileRead for PgSource {
             mvt.add_diagnostics_layer(diaganostics_cfg, tile, &extent_info)?;
         }
         let blob = mvt.into_blob()?;
-        let content_type = Some("application/x-protobuf".to_string());
+        let mut response = TileResponse::new();
+        response.set_content_type("application/x-protobuf");
         let body = Box::new(Cursor::new(blob));
-        Ok(TileResponse {
-            content_type,
-            headers: TileResponse::new_headers(),
-            body,
-        })
+        Ok(response.with_body(body))
     }
     fn source_type(&self) -> SourceType {
         SourceType::Vector

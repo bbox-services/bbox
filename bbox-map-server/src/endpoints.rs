@@ -1,7 +1,6 @@
 use crate::fcgi_process::*;
 use crate::metrics::WmsMetrics;
 use crate::service::MapService;
-use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::{guard, web, HttpRequest, HttpResponse};
 use bbox_core::service::{OgcApiService, ServiceEndpoints};
 use bbox_core::TileResponse;
@@ -21,8 +20,6 @@ pub enum FcgiError {
     FcgiTimeout,
     #[error("FCGI request error")]
     FcgiRequestError,
-    #[error(transparent)]
-    InvalidHeaderValue(#[from] actix_web::http::header::InvalidHeaderValue),
     #[error("I/O error")]
     IoError(#[from] std::io::Error),
 }
@@ -90,7 +87,7 @@ pub async fn wms_fcgi_request(
     )
     .await?;
     let mut response = HttpResponse::Ok();
-    for (key, value) in &wms_resp.headers {
+    for (key, value) in wms_resp.headers() {
         response.insert_header((key, value));
         // TODO: use append_header for "Server-Timing" and others?
     }
@@ -201,8 +198,7 @@ pub async fn wms_fcgi_req(
 
     let mut cursor = Cursor::new(fcgiout);
     // Read headers
-    let mut content_type = None;
-    let mut headers = TileResponse::new_headers();
+    let mut response = TileResponse::new();
     let mut line = String::new();
     while let Ok(_bytes) = cursor.read_line(&mut line) {
         // Truncate newline
@@ -220,7 +216,7 @@ pub async fn wms_fcgi_req(
         let (key, value) = (parts[0], parts[1]);
         match key {
             "Content-Type" => {
-                content_type = Some(value.to_string());
+                response.set_content_type(value.to_string());
             }
             "Content-Length" | "Server" => {} // ignore
             "X-us" => {
@@ -235,10 +231,7 @@ pub async fn wms_fcgi_req(
                 // Return server timing to browser
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
                 // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
-                headers.insert(
-                    HeaderName::from_static("Server-Timing"),
-                    HeaderValue::from_str(&format!("wms-backend;dur={}", us / 1000))?,
-                );
+                response.insert_header(("Server-Timing", format!("wms-backend;dur={}", us / 1000)));
             }
             "X-trace" => { /* 'requestReady': 52612.36819832, 'responseComplete': 52612.588838557 */
             }
@@ -267,11 +260,7 @@ pub async fn wms_fcgi_req(
     drop(ctx2);
     // --- <
 
-    Ok(TileResponse {
-        content_type,
-        headers,
-        body: Box::new(cursor),
-    })
+    Ok(response.with_body(Box::new(cursor)))
 }
 
 impl ServiceEndpoints for MapService {

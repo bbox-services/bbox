@@ -55,11 +55,10 @@ impl TileReader for FileStore {
     async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let p = CacheLayout::Zxy.path(&self.base_dir, xyz, &self.format);
         if let Ok(f) = File::open(p) {
-            Ok(Some(TileResponse {
-                content_type: None, // TODO: from `format`
-                headers: TileResponse::new_headers(),
-                body: Box::new(BufReader::new(f)),
-            }))
+            Ok(Some(
+                TileResponse::new().with_body(Box::new(BufReader::new(f))),
+            ))
+            // TODO: Set content_type from `format`
         } else {
             Ok(None)
         }

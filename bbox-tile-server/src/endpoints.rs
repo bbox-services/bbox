@@ -147,10 +147,10 @@ async fn tile_request(
     {
         Ok(Some(tile_resp)) => {
             let mut r = HttpResponse::Ok();
-            if let Some(content_type) = &tile_resp.content_type {
-                r.content_type(content_type.as_str());
+            if let Some(content_type) = tile_resp.content_type() {
+                r.content_type(content_type);
             }
-            for (key, value) in &tile_resp.headers {
+            for (key, value) in tile_resp.headers() {
                 r.insert_header((key, value));
                 // TODO: use append_header for "Server-Timing" and others?
             }

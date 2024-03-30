@@ -6,7 +6,6 @@ use crate::filter_params::FilterParams;
 use crate::store::{
     store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
 };
-use actix_web::http::header::{HeaderName, HeaderValue};
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, CoreServiceCfg};
 use bbox_core::metrics::{no_metrics, NoMetrics};
@@ -371,24 +370,17 @@ impl TileService {
                 .as_ref()
                 .map(|s| s.compression())
                 .unwrap_or(Compression::None);
-            let content_type = tiledata.content_type.clone();
-            let mut headers = tiledata.headers.clone();
+            let mut response = TileResponse::new();
+            response.set_headers(tiledata.headers());
             let body = tiledata.read_bytes(&cache_compression)?;
             if let Some(cache) = &tileset.store_writer {
                 cache.put_tile(xyz, body.clone()).await?;
             }
             if cache_compression == Compression::Gzip && gzip {
-                headers.insert(
-                    HeaderName::from_static("Content-Encoding"),
-                    HeaderValue::from_static("Gzip"),
-                );
+                response.insert_header(("Content-Encoding", "Gzip"));
             }
             // TODO: decompress if !gzip
-            Ok(Some(TileResponse {
-                content_type,
-                headers,
-                body: Box::new(Cursor::new(body)),
-            }))
+            Ok(Some(response.with_body(Box::new(Cursor::new(body)))))
         } else {
             Ok(Some(tiledata))
         }

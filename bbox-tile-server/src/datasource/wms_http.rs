@@ -2,13 +2,13 @@
 
 use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use async_trait::async_trait;
 use bbox_core::config::WmsHttpSourceProviderCfg;
-use bbox_core::Format;
+use bbox_core::{Format, TileResponse};
 use log::debug;
 use std::io::Cursor;
 use tile_grid::{BoundingBox, Xyz};
@@ -56,16 +56,16 @@ impl WmsHttpSource {
 
     async fn bbox_request(&self, extent: &BoundingBox) -> Result<TileResponse, TileSourceError> {
         let wms_resp = self.get_map_response(extent).await?;
-        let content_type = wms_resp
+        let mut response = TileResponse::new();
+        if let Some(content_type) = wms_resp
             .headers()
             .get("content-type")
-            .map(|ct| ct.to_str().unwrap().to_string());
+            .map(|ct| ct.to_str().expect("invalid content-type"))
+        {
+            response.set_content_type(content_type);
+        }
         let body = Box::new(Cursor::new(wms_resp.bytes().await?));
-        Ok(TileResponse {
-            content_type,
-            headers: TileResponse::new_headers(),
-            body,
-        })
+        Ok(response.with_body(body))
     }
 }
 

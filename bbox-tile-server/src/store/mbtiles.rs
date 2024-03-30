@@ -87,13 +87,10 @@ impl TileReader for MbtilesStore {
     async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
         let resp =
             if let Some(content) = self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
-                let content_type = Some("application/x-protobuf".to_string());
+                let mut response = TileResponse::new();
+                response.set_content_type("application/x-protobuf");
                 let body = Box::new(Cursor::new(content));
-                Some(TileResponse {
-                    content_type,
-                    headers: TileResponse::new_headers(),
-                    body,
-                })
+                Some(response.with_body(body))
             } else {
                 None
             };
