@@ -1,8 +1,7 @@
 use crate::config::PmtilesStoreCfg;
-use crate::store::{Compression, TileReader, TileStoreError, TileWriter};
+use crate::store::{TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
-use bbox_core::endpoints::TileResponse;
-use bbox_core::Format;
+use bbox_core::{Compression, Format, TileResponse};
 use log::{debug, info};
 use martin_mbtiles::Metadata;
 use pmtiles::async_reader::AsyncPmTilesReader;

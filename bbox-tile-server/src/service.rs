@@ -4,24 +4,21 @@ use crate::datasource::wms_fcgi::{HttpRequestParams, MapService, WmsMetrics};
 use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
 use crate::filter_params::FilterParams;
 use crate::store::{
-    store_reader_from_config, store_writer_from_config, Compression, TileReader, TileStoreError,
-    TileWriter,
+    store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
 };
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, CoreServiceCfg};
-use bbox_core::endpoints::TileResponse;
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::ogcapi::ApiLink;
 use bbox_core::service::OgcApiService;
-use bbox_core::Format;
+use bbox_core::{Compression, Format, TileResponse};
 use clap::{ArgMatches, Args, FromArgMatches};
-use flate2::{read::GzEncoder, Compression as GzCompression};
 use log::debug;
 use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::num::NonZeroU16;
 use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
@@ -332,7 +329,7 @@ impl TileService {
             .source
             .xyz_request(self, &ts.tms, xyz, filter, format, request_params)
             .await?;
-        read_bytes(tile.body, &compression)
+        Ok(tile.read_bytes(&compression)?)
     }
     /// Get tile with cache lookup
     // Used for serving
@@ -360,7 +357,7 @@ impl TileService {
         }
         // Request tile and write into cache
         debug!("Request tile from source @ {xyz:?}");
-        let mut tiledata = tileset
+        let tiledata = tileset
             .source
             .xyz_request(self, &tileset.tms, xyz, filter, format, request_params)
             .await?;
@@ -373,19 +370,19 @@ impl TileService {
                 .as_ref()
                 .map(|s| s.compression())
                 .unwrap_or(Compression::None);
-            let body = read_bytes(tiledata.body, &cache_compression)?;
+            let content_type = tiledata.content_type.clone();
+            let mut headers = tiledata.headers.clone();
+            let body = tiledata.read_bytes(&cache_compression)?;
             if let Some(cache) = &tileset.store_writer {
                 cache.put_tile(xyz, body.clone()).await?;
             }
             if cache_compression == Compression::Gzip && gzip {
-                tiledata
-                    .headers
-                    .insert("Content-Encoding".to_string(), "Gzip".to_string());
+                headers.insert("Content-Encoding".to_string(), "Gzip".to_string());
             }
             // TODO: decompress if !gzip
             Ok(Some(TileResponse {
-                content_type: tiledata.content_type,
-                headers: tiledata.headers,
+                content_type,
+                headers,
                 body: Box::new(Cursor::new(body)),
             }))
         } else {
@@ -537,22 +534,4 @@ impl TileService {
             DUMMY_METRICS.get_or_init(WmsMetrics::default)
         }
     }
-}
-
-/// Read tile body with optional compression
-fn read_bytes(
-    mut input: impl std::io::Read,
-    compression: &Compression,
-) -> Result<Vec<u8>, ServiceError> {
-    let mut bytes: Vec<u8> = Vec::new();
-    match compression {
-        Compression::Gzip => {
-            let mut gz = GzEncoder::new(input, GzCompression::fast());
-            gz.read_to_end(&mut bytes)?;
-        }
-        Compression::None => {
-            input.read_to_end(&mut bytes)?;
-        }
-    }
-    Ok(bytes)
 }
