@@ -1,11 +1,11 @@
 //! FCGI tile sources like QGIS Server or UMN Mapsever.
 
 use crate::config::WmsFcgiSourceParamsCfg;
-use crate::datasource::{LayerInfo, SourceType, TileRead, TileResponse, TileSourceError};
+use crate::datasource::{LayerInfo, SourceType, TileRead, TileSourceError};
 use crate::filter_params::FilterParams;
 use crate::service::{QueryExtent, TileService};
 use async_trait::async_trait;
-use bbox_core::Format;
+use bbox_core::{Format, TileResponse};
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{
     endpoints::FcgiError, endpoints::HttpRequestParams, metrics::WmsMetrics, MapService,
