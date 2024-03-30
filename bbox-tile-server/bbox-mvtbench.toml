@@ -27,7 +27,7 @@ path = "/tmp/tilecache.pmtiles"
 [[tileset]]
 name = "ne_countries"
 tms = "WebMercatorQuad"
-cache = "mbtilecache"
+cache = "tilecache"
 [tileset.postgis]
 minzoom = 0
 maxzoom = 6

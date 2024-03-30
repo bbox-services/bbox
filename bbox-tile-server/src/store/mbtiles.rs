@@ -46,10 +46,9 @@ impl MbtilesStore {
 #[async_trait]
 impl TileWriter for MbtilesStore {
     fn compression(&self) -> Compression {
-        if let Some(martin_tile_utils::Format::Mvt) = self.mbt.format {
-            Compression::Gzip
-        } else {
-            Compression::None
+        match self.mbt.format {
+            martin_tile_utils::Format::Mvt => Compression::Gzip,
+            _ => Compression::None,
         }
     }
     async fn exists(&self, xyz: &Xyz) -> bool {
@@ -88,7 +87,10 @@ impl TileReader for MbtilesStore {
         let resp =
             if let Some(content) = self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
                 let mut response = TileResponse::new();
-                response.set_content_type("application/x-protobuf");
+                if self.mbt.format == martin_tile_utils::Format::Mvt {
+                    response.set_content_type("application/x-protobuf");
+                    response.insert_header(("Content-Encoding", "gzip"));
+                }
                 let body = Box::new(Cursor::new(content));
                 Some(response.with_body(body))
             } else {

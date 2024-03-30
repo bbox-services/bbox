@@ -18,7 +18,6 @@ use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
-use std::io::Cursor;
 use std::num::NonZeroU16;
 use std::path::PathBuf;
 use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
@@ -62,6 +61,12 @@ impl TileSet {
     }
     pub fn cache_config(&self) -> Option<&TileStoreCfg> {
         self.cache_cfg.as_ref()
+    }
+    pub fn cache_compression(&self) -> Compression {
+        self.store_writer
+            .as_ref()
+            .map(|s| s.compression())
+            .unwrap_or(Compression::None)
     }
 }
 
@@ -329,7 +334,8 @@ impl TileService {
             .source
             .xyz_request(self, &ts.tms, xyz, filter, format, request_params)
             .await?;
-        Ok(tile.read_bytes(&compression)?)
+        let data = tile.read_bytes(&compression)?;
+        Ok(data.body)
     }
     /// Get tile with cache lookup
     // Used for serving
@@ -339,7 +345,7 @@ impl TileService {
         xyz: &Xyz,
         filter: &FilterParams,
         format: &Format,
-        gzip: bool,
+        compression: Compression,
         request_params: HttpRequestParams<'_>,
     ) -> Result<Option<TileResponse>, ServiceError> {
         let tileset = self
@@ -349,9 +355,9 @@ impl TileService {
             if tileset.is_cachable_at(xyz.z) {
                 if let Some(tile) = cache.get_tile(xyz).await? {
                     debug!("Delivering tile from cache @ {xyz:?}");
-                    //FIXME: handle compression
+                    let response = tile.with_compression(&compression);
                     //TODO: check returned format
-                    return Ok(Some(tile));
+                    return Ok(Some(response));
                 }
             }
         }
@@ -365,24 +371,15 @@ impl TileService {
         if tileset.is_cachable_at(xyz.z) {
             debug!("Writing tile into cache @ {xyz:?}");
             // Read tile into memory
-            let cache_compression = tileset
-                .store_writer
-                .as_ref()
-                .map(|s| s.compression())
-                .unwrap_or(Compression::None);
-            let mut response = TileResponse::new();
-            response.set_headers(tiledata.headers());
-            let body = tiledata.read_bytes(&cache_compression)?;
+            let response_data = tiledata.read_bytes(&tileset.cache_compression())?;
             if let Some(cache) = &tileset.store_writer {
-                cache.put_tile(xyz, body.clone()).await?;
+                cache.put_tile(xyz, response_data.body.clone()).await?;
             }
-            if cache_compression == Compression::Gzip && gzip {
-                response.insert_header(("Content-Encoding", "Gzip"));
-            }
-            // TODO: decompress if !gzip
-            Ok(Some(response.with_body(Box::new(Cursor::new(body)))))
+            let response = response_data.as_response(&compression);
+            Ok(Some(response))
         } else {
-            Ok(Some(tiledata))
+            let response = tiledata.with_compression(&compression);
+            Ok(Some(response))
         }
     }
     /// TileJSON layer metadata (<https://github.com/mapbox/tilejson-spec>)
