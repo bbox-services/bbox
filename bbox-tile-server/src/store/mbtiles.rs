@@ -1,8 +1,8 @@
 use crate::config::MbtilesStoreCfg;
 use crate::mbtiles_ds::{Error as MbtilesDsError, MbtilesDatasource};
-use crate::store::{Compression, TileReader, TileStoreError, TileWriter};
+use crate::store::{TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
-use bbox_core::endpoints::TileResponse;
+use bbox_core::{Compression, TileResponse};
 use log::info;
 use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
 use std::ffi::OsStr;

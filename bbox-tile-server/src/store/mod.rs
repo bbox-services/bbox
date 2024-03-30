@@ -13,8 +13,7 @@ use crate::store::pmtiles::{PmtilesStoreReader, PmtilesStoreWriter};
 use crate::store::s3::{S3Store, S3StoreError};
 use async_trait::async_trait;
 use bbox_core::config::error_exit;
-use bbox_core::endpoints::TileResponse;
-use bbox_core::Format;
+use bbox_core::{Compression, Format, TileResponse};
 use dyn_clone::{clone_trait_object, DynClone};
 use log::warn;
 use martin_mbtiles::{MbtError, Metadata};
@@ -41,15 +40,6 @@ pub enum TileStoreError {
     MbtError(#[from] MbtError),
     #[error(transparent)]
     PmtilesError(#[from] ::pmtiles::error::Error),
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum Compression {
-    // Unknown,
-    None,
-    Gzip,
-    // Brotli,
-    // Zstd,
 }
 
 #[async_trait]

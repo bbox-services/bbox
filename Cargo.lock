@@ -829,6 +829,7 @@ dependencies = [
  "clap",
  "env_logger 0.9.3",
  "figment",
+ "flate2",
  "futures-core",
  "fxhash",
  "ignore",

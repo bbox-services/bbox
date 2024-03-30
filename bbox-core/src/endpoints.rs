@@ -4,6 +4,7 @@ use crate::config::WebserverCfg;
 use crate::ogcapi::*;
 use crate::service::{CoreService, ServiceEndpoints};
 use crate::static_assets::favicon;
+use crate::TileResponse;
 use actix_session::Session;
 use actix_web::{
     error::ErrorInternalServerError, guard, guard::Guard, guard::GuardContext, http::header,
@@ -13,22 +14,11 @@ use actix_web_opentelemetry::PrometheusMetricsHandler;
 use async_stream::stream;
 use futures_core::stream::Stream;
 use log::info;
-use std::collections::HashMap;
 use std::convert::Infallible;
 use std::io::Read;
 use std::path::Path;
 
-/// Tile reader response
-pub struct TileResponse {
-    pub content_type: Option<String>,
-    pub headers: HashMap<String, String>, //TODO: optimize
-    pub body: Box<dyn Read + Send + Sync>,
-}
-
 impl TileResponse {
-    pub fn new_headers() -> HashMap<String, String> {
-        HashMap::new()
-    }
     pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
         let bytes = self.body.bytes().map_while(|val| val.ok());
         stream! {

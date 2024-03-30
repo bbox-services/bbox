@@ -63,7 +63,7 @@ toml = "0.8.10"
 regex = "1.10.3"
 geo-types = "0.7.13"
 par-stream = { version = "0.10.2", features = ["runtime-tokio"] }
-flate2 = "1.0.28"
+flate2 = { workspace = true }
 
 [[bin]]
 name = "bbox-tile-server"

@@ -1,8 +1,7 @@
 use crate::config::FileStoreCfg;
 use crate::store::{CacheLayout, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
-use bbox_core::endpoints::TileResponse;
-use bbox_core::Format;
+use bbox_core::{Format, TileResponse};
 use log::debug;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
