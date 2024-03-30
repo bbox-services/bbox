@@ -1,6 +1,7 @@
 use crate::fcgi_process::*;
 use crate::metrics::WmsMetrics;
 use crate::service::MapService;
+use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::{guard, web, HttpRequest, HttpResponse};
 use bbox_core::service::{OgcApiService, ServiceEndpoints};
 use bbox_core::TileResponse;
@@ -20,6 +21,8 @@ pub enum FcgiError {
     FcgiTimeout,
     #[error("FCGI request error")]
     FcgiRequestError,
+    #[error(transparent)]
+    InvalidHeaderValue(#[from] actix_web::http::header::InvalidHeaderValue),
     #[error("I/O error")]
     IoError(#[from] std::io::Error),
 }
@@ -88,7 +91,7 @@ pub async fn wms_fcgi_request(
     .await?;
     let mut response = HttpResponse::Ok();
     for (key, value) in &wms_resp.headers {
-        response.insert_header((key.as_str(), value.as_str()));
+        response.insert_header((key, value));
         // TODO: use append_header for "Server-Timing" and others?
     }
     Ok(response.streaming(wms_resp.into_stream()))
@@ -233,8 +236,8 @@ pub async fn wms_fcgi_req(
                 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing
                 // https://developer.mozilla.org/en-US/docs/Tools/Network_Monitor/request_details#timings_tab
                 headers.insert(
-                    "Server-Timing".to_string(),
-                    format!("wms-backend;dur={}", us / 1000),
+                    HeaderName::from_static("Server-Timing"),
+                    HeaderValue::from_str(&format!("wms-backend;dur={}", us / 1000))?,
                 );
             }
             "X-trace" => { /* 'requestReady': 52612.36819832, 'responseComplete': 52612.588838557 */
