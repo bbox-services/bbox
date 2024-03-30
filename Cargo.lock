@@ -1009,7 +1009,6 @@ dependencies = [
  "clap",
  "crossbeam",
  "dyn-clone",
- "flate2",
  "futures",
  "futures-util",
  "geo-types",

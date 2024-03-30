@@ -26,16 +26,17 @@ actix-web = { workspace = true }
 anyhow = "1.0.52"
 async-channel = "1.6.1"
 async-trait = { workspace = true }
-bbox-core = { path = "../bbox-core" }
 bbox-asset-server = { path = "../bbox-asset-server", optional = true }
+bbox-core = { path = "../bbox-core" }
 bbox-map-server = { path = "../bbox-map-server", optional = true }
 bytes = "1.1.0"
-clap = { workspace = true }
 chrono = { workspace = true }
+clap = { workspace = true }
 crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
 futures = "0.3"
 futures-util = "0.3.21"
+geo-types = "0.7.13"
 geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
 indicatif = "0.16.2"
 log = { workspace = true }
@@ -43,9 +44,11 @@ martin-mbtiles = { package = "mbtiles", version = "0.9.1", default-features = fa
 martin-tile-utils = "0.4.1"
 num_cpus = { workspace = true }
 once_cell = { workspace = true }
+par-stream = { version = "0.10.2", features = ["runtime-tokio"] }
 pmtiles = { version = "0.3.1", features = ["mmap-async-tokio"] }
 pmtiles2 = { version = "0.2.2", default-features = false }
 prometheus = { workspace = true }
+regex = "1.10.3"
 reqwest = { workspace = true }
 rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }
 rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
@@ -60,10 +63,6 @@ tile-grid = { git = "https://github.com/pka/tile-grid" }
 tilejson = "0.4.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 toml = "0.8.10"
-regex = "1.10.3"
-geo-types = "0.7.13"
-par-stream = { version = "0.10.2", features = ["runtime-tokio"] }
-flate2 = { workspace = true }
 
 [[bin]]
 name = "bbox-tile-server"
