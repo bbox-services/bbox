@@ -151,7 +151,7 @@ async fn tile_request(
                 r.content_type(content_type.as_str());
             }
             for (key, value) in &tile_resp.headers {
-                r.insert_header((key.as_str(), value.as_str()));
+                r.insert_header((key, value));
                 // TODO: use append_header for "Server-Timing" and others?
             }
             // let cache_max_age = service.webserver.cache_control_max_age.unwrap_or(300);

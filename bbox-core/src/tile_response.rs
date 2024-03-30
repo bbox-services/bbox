@@ -1,5 +1,5 @@
+use actix_web::http::header::HeaderMap;
 use flate2::{read::GzEncoder, Compression as GzCompression};
-use std::collections::HashMap;
 use std::io::Read;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -14,13 +14,13 @@ pub enum Compression {
 /// Tile reader response
 pub struct TileResponse {
     pub content_type: Option<String>,
-    pub headers: HashMap<String, String>, //TODO: optimize
+    pub headers: HeaderMap,
     pub body: Box<dyn Read + Send + Sync>,
 }
 
 impl TileResponse {
-    pub fn new_headers() -> HashMap<String, String> {
-        HashMap::new()
+    pub fn new_headers() -> HeaderMap {
+        HeaderMap::new()
     }
     /// Read tile body with optional compression
     pub fn read_bytes(mut self, compression: &Compression) -> Result<Vec<u8>, std::io::Error> {
