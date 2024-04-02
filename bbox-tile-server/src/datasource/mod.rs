@@ -30,9 +30,9 @@ pub enum TileSourceError {
     TileSourceNotFound(String),
     #[error("tileserver.source of type {0} expected")]
     TileSourceTypeError(String),
-    #[error("tile not found / out of bounds")]
-    FilterParamError,
     #[error("missing filter parameter")]
+    FilterParamError,
+    #[error("tile not found / out of bounds")]
     TileXyzError,
     #[error(transparent)]
     RegistryError(#[from] RegistryError),
