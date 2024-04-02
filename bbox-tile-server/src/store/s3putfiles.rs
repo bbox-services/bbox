@@ -133,7 +133,7 @@ pub async fn put_files(args: &UploadArgs) -> anyhow::Result<()> {
     let task_queue_size = args.tasks.unwrap_or(256);
     let mut tasks = Vec::with_capacity(task_queue_size);
 
-    let s3 = S3Store::from_s3_path(&args.s3_path, Format::Mvt)?; // Format will be ignored
+    let s3 = S3Store::from_s3_path(&args.s3_path, &None, Format::Mvt)?; // Format will be ignored
 
     let srcdir = &args.srcdir;
     let prefix = PathBuf::from(format!("{}/", srcdir.to_string_lossy()));

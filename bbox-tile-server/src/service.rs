@@ -100,7 +100,7 @@ impl SourceLookup for Tilesets {
     }
 }
 
-type TileStoreConfigs = HashMap<String, TileStoreCfg>;
+type TileStoreConfigs = HashMap<String, TileCacheProviderCfg>;
 
 #[derive(Args, Debug)]
 pub struct ServiceArgs {
@@ -135,7 +135,7 @@ impl OgcApiService for TileService {
             .tilestores
             .iter()
             .cloned()
-            .map(|cfg| (cfg.name, cfg.cache))
+            .map(|cfg| (cfg.name.clone(), cfg))
             .collect();
 
         for ts in &config.tilesets {
@@ -164,12 +164,24 @@ impl OgcApiService for TileService {
                     .as_ref())
                 .cloned();
             let store_writer = if let Some(config) = &cache_cfg {
-                Some(store_writer_from_config(config, &ts.name, &format, metadata).await)
+                Some(
+                    store_writer_from_config(
+                        &config.cache,
+                        &config.compression,
+                        &ts.name,
+                        &format,
+                        metadata,
+                    )
+                    .await,
+                )
             } else {
                 None
             };
             let store_reader = if let Some(config) = &cache_cfg {
-                Some(store_reader_from_config(config, &ts.name, &format).await)
+                Some(
+                    store_reader_from_config(&config.cache, &config.compression, &ts.name, &format)
+                        .await,
+                )
             } else {
                 None
             };
@@ -180,7 +192,7 @@ impl OgcApiService for TileService {
                 store_reader,
                 store_writer,
                 config: ts.clone(),
-                cache_cfg,
+                cache_cfg: cache_cfg.map(|cfg| cfg.cache),
                 cache_limits: ts.cache_limits.clone(),
             };
             tilesets.insert(ts.name.clone(), tileset);

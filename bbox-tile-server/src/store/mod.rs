@@ -5,7 +5,7 @@ pub mod pmtiles;
 pub mod s3;
 pub mod s3putfiles;
 
-use crate::config::TileStoreCfg;
+use crate::config::{StoreCompressionCfg, TileStoreCfg};
 use crate::mbtiles_ds::Error as MbtilesDsError;
 use crate::store::files::FileStore;
 use crate::store::mbtiles::MbtilesStore;
@@ -45,10 +45,8 @@ pub enum TileStoreError {
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
     /// Tile storage compression
-    // TODO: move into TileStore trait
-    fn compression(&self) -> Compression {
-        Compression::None
-    }
+    // TODO: move into common store trait?
+    fn compression(&self) -> Compression;
     /// Check for existing tile
     /// Must not be implemented for cases where generating a tile is less expensive than checking
     // Method should probably return date of last change if known
@@ -117,6 +115,9 @@ pub struct NoStore;
 
 #[async_trait]
 impl TileWriter for NoStore {
+    fn compression(&self) -> Compression {
+        Compression::None
+    }
     async fn exists(&self, _xyz: &Xyz) -> bool {
         false
     }
@@ -134,13 +135,19 @@ impl TileReader for NoStore {
 
 pub async fn store_reader_from_config(
     config: &TileStoreCfg,
+    compression: &Option<StoreCompressionCfg>,
     tileset_name: &str,
     format: &Format,
 ) -> Box<dyn TileReader> {
     match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(
+            cfg,
+            compression,
+            tileset_name,
+            format,
+        )),
         TileStoreCfg::S3(cfg) => {
-            Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
+            Box::new(S3Store::from_config(cfg, compression, format).unwrap_or_else(error_exit))
         }
         TileStoreCfg::Mbtiles(cfg) => Box::new(
             MbtilesStore::from_config(cfg)
@@ -162,14 +169,20 @@ pub async fn store_reader_from_config(
 
 pub async fn store_writer_from_config(
     config: &TileStoreCfg,
+    compression: &Option<StoreCompressionCfg>,
     tileset_name: &str,
     format: &Format,
     metadata: Metadata,
 ) -> Box<dyn TileWriter> {
     match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(cfg, tileset_name, format)),
+        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(
+            cfg,
+            compression,
+            tileset_name,
+            format,
+        )),
         TileStoreCfg::S3(cfg) => {
-            Box::new(S3Store::from_config(cfg, format).unwrap_or_else(error_exit))
+            Box::new(S3Store::from_config(cfg, compression, format).unwrap_or_else(error_exit))
         }
         TileStoreCfg::Mbtiles(cfg) => Box::new(
             MbtilesStore::from_config_writable(cfg, metadata)
