@@ -2,8 +2,9 @@ use crate::config::MbtilesStoreCfg;
 use martin_mbtiles::{
     create_flat_tables, create_metadata_table, MbtError, MbtResult, Mbtiles, Metadata,
 };
+use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat, TileInfo};
 use serde_json::json;
-use sqlx::{Connection, Pool, Sqlite, SqlitePool};
+use sqlx::{Connection, Pool, Row, Sqlite, SqlitePool};
 use std::path::Path;
 use thiserror::Error;
 
@@ -21,7 +22,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Clone, Debug)]
 pub struct MbtilesDatasource {
     pub mbtiles: Mbtiles,
-    pub format: martin_tile_utils::Format,
+    pub format_info: TileInfo,
     pub pool: Pool<Sqlite>,
 }
 
@@ -32,18 +33,20 @@ impl MbtilesDatasource {
 
     pub async fn new_pool<P: AsRef<Path>>(filepath: P, metadata: Option<Metadata>) -> Result<Self> {
         let mbtiles = Mbtiles::new(filepath)?;
-        let format = if let Some(metadata) = metadata {
-            let format = metadata.tile_info.format;
+        let format_info = Self::detect_tile_format(&mbtiles).await.ok().flatten();
+        let tile_info = if let Some(metadata) = metadata {
+            let tile_info = metadata.tile_info;
             Self::initialize_mbtiles_db(&mbtiles, metadata).await?;
-            format
+            tile_info
         } else {
             let metadata = Self::read_metadata(&mbtiles).await?;
-            metadata.tile_info.format
+            metadata.tile_info
         };
+        let format_info = format_info.unwrap_or(tile_info);
         let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: SqliteConnectOptions::read_only(true) if metadata.is_none()
         Ok(Self {
             mbtiles,
-            format,
+            format_info,
             pool,
         })
     }
@@ -53,6 +56,23 @@ impl MbtilesDatasource {
         let metadata = mbtiles.get_metadata(&mut conn).await?;
         conn.close().await?;
         Ok(metadata)
+    }
+
+    async fn detect_tile_format(mbtiles: &Mbtiles) -> MbtResult<Option<TileInfo>> {
+        let mut conn = mbtiles.open_readonly().await?;
+        let row = sqlx::query("SELECT tile_data FROM tiles WHERE tile_data IS NOT NULL LIMIT 1")
+            .fetch_optional(&mut conn)
+            .await?;
+        let tile_info = row.and_then(|row| {
+            let data = row.get::<&[u8], _>(0);
+            let mut tile_info = TileInfo::detect(data);
+            if tile_info.is_none() && !data.is_empty() {
+                tile_info = Some(TileInfo::new(TileFormat::Mvt, TileEncoding::Uncompressed));
+            }
+            tile_info
+        });
+        conn.close().await?;
+        Ok(tile_info)
     }
 
     async fn initialize_mbtiles_db(mbtiles: &Mbtiles, metadata: Metadata) -> MbtResult<()> {
@@ -81,7 +101,7 @@ impl MbtilesDatasource {
             mbtiles
                 .set_metadata_value(&mut conn, "name", &metadata.id)
                 .await?;
-            let format = if metadata.tile_info.format == martin_tile_utils::Format::Mvt {
+            let format = if metadata.tile_info.format == TileFormat::Mvt {
                 "pbf".to_string()
             } else {
                 metadata.tile_info.format.to_string()

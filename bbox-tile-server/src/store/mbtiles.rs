@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use bbox_core::{Compression, TileResponse};
 use log::info;
 use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
+use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat};
 use std::ffi::OsStr;
 use std::io::Cursor;
 use std::path::Path;
@@ -46,8 +47,8 @@ impl MbtilesStore {
 #[async_trait]
 impl TileWriter for MbtilesStore {
     fn compression(&self) -> Compression {
-        match self.mbt.format {
-            martin_tile_utils::Format::Mvt => Compression::Gzip,
+        match self.mbt.format_info.encoding {
+            TileEncoding::Gzip => Compression::Gzip,
             _ => Compression::None,
         }
     }
@@ -87,9 +88,11 @@ impl TileReader for MbtilesStore {
         let resp =
             if let Some(content) = self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
                 let mut response = TileResponse::new();
-                if self.mbt.format == martin_tile_utils::Format::Mvt {
+                if self.mbt.format_info.format == TileFormat::Mvt {
                     response.set_content_type("application/x-protobuf");
-                    response.insert_header(("Content-Encoding", "gzip"));
+                }
+                if let Some(encoding) = self.mbt.format_info.encoding.content_encoding() {
+                    response.insert_header(("Content-Encoding", encoding));
                 }
                 let body = Box::new(Cursor::new(content));
                 Some(response.with_body(body))
