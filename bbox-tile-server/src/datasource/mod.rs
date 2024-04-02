@@ -20,6 +20,7 @@ use bbox_core::{Format, NamedObjectStore, TileResponse};
 use dyn_clone::{clone_trait_object, DynClone};
 use geozero::error::GeozeroError;
 use martin_mbtiles::Metadata;
+use std::env;
 use tile_grid::{RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
 
@@ -132,12 +133,14 @@ impl Datasources {
         // TODO: setup referenced datasources only (?)
         let mut ds_handler = Datasources::default();
         for named_ds in datasources {
-            // TODO:  check duplicate names
+            // TODO: check duplicate names
+            // TODO: move into core, combined with feature-server Datasource
+            let envar = env::var(format!("BBOX_DATASOURCE_{}", &named_ds.name.to_uppercase())).ok();
             let ds = &named_ds.datasource;
             match ds {
                 DatasourceCfg::Postgis(cfg) => ds_handler.pg_datasources.add(
                     &named_ds.name,
-                    postgis::Datasource::from_config(cfg)
+                    postgis::Datasource::from_config(cfg, envar)
                         .await
                         .unwrap_or_else(error_exit),
                 ),

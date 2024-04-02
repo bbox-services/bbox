@@ -1,5 +1,4 @@
-use bbox_core::config::{from_config_opt_or_exit, ConfigError};
-use bbox_core::pg_ds::DsPostgisCfg;
+use bbox_core::config::{from_config_opt_or_exit, ConfigError, DsPostgisCfg};
 use bbox_core::service::ServiceConfig;
 use clap::ArgMatches;
 use serde::Deserialize;

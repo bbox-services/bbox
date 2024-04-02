@@ -1,6 +1,5 @@
 use crate::auth::oidc::OidcAuthCfg;
 use crate::cli::GlobalArgs;
-use crate::pg_ds::DsPostgisCfg;
 use crate::service::ServiceConfig;
 use actix_web::HttpRequest;
 use clap::{ArgMatches, FromArgMatches};
@@ -240,26 +239,19 @@ pub enum DatasourceCfg {
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
+pub struct DsPostgisCfg {
+    pub url: String,
+    // pub pool: Option<u16>,
+    // pub connection_timeout: Option<u64>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct DsGpkgCfg {
     pub path: PathBuf,
     // pub pool_min_connections(0)
     // pub pool_max_connections(8)
 }
-
-/*
-// t-rex Datasource (top-level Array)
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DatasourceCfg {
-    pub name: Option<String>,
-    pub default: Option<bool>,
-    // Postgis
-    pub dbconn: Option<String>,
-    pub pool: Option<u16>,
-    pub connection_timeout: Option<u64>,
-    // GDAL
-    pub path: Option<String>,
-}
-*/
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]

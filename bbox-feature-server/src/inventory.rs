@@ -68,7 +68,7 @@ impl Inventory {
             }
         }
         for cfg in &config.postgis {
-            match PgDatasource::from_config(cfg).await {
+            match PgDatasource::from_config(cfg, None).await {
                 Ok(mut ds) => {
                     info!("Scanning '{}' for feature collections", cfg.url);
                     match ds.collections().await {
