@@ -1010,8 +1010,15 @@ Viewers use data from tiles at maxzoom when displaying the map at higher zoom le
 <h2 id="tilecacheprovider"><a class="header" href="#tilecacheprovider">TileCacheProvider</a></h2>
 <ul>
 <li><code>name</code> <em>String</em>: Name of tile cache</li>
+<li><code>compression</code> <a href="tile-server/reference.html#storecompression">StoreCompression</a> (optional): Tile compression method. Default is store type dependent.</li>
 <li><a href="tile-server/reference.html#tilestore">TileStore</a>: Tile store</li>
 </ul>
+<h3 id="storecompression"><a class="header" href="#storecompression">StoreCompression</a></h3>
+<p>Tile data compression</p>
+<h4 id="none"><a class="header" href="#none">None</a></h4>
+<p>No compression</p>
+<h4 id="gzip"><a class="header" href="#gzip">Gzip</a></h4>
+<p>Gzip compression. Default for MBTiles and PMTiles.</p>
 <h3 id="tilestore"><a class="header" href="#tilestore">TileStore</a></h3>
 <p>Tile stores</p>
 <h4 id="files"><a class="header" href="#files">files</a></h4>
