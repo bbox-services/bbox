@@ -26,13 +26,16 @@ pub struct MbtilesDatasource {
     pub pool: Pool<Sqlite>,
 }
 
+pub fn mbtiles_from_path<P: AsRef<Path>>(filepath: P) -> Result<Mbtiles> {
+    Ok(Mbtiles::new(filepath)?)
+}
+
 impl MbtilesDatasource {
     pub async fn from_config(ds: &MbtilesStoreCfg, metadata: Option<Metadata>) -> Result<Self> {
-        Self::new_pool(&ds.path, metadata).await
+        Self::new_pool(mbtiles_from_path(&ds.path)?, metadata).await
     }
 
-    pub async fn new_pool<P: AsRef<Path>>(filepath: P, metadata: Option<Metadata>) -> Result<Self> {
-        let mbtiles = Mbtiles::new(filepath)?;
+    pub async fn new_pool(mbtiles: Mbtiles, metadata: Option<Metadata>) -> Result<Self> {
         let format_info = Self::detect_tile_format(&mbtiles).await.ok().flatten();
         let tile_info = if let Some(metadata) = metadata {
             let tile_info = metadata.tile_info;
