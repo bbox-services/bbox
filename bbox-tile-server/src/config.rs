@@ -254,10 +254,24 @@ pub struct CacheLimitCfg {
 pub struct TileCacheProviderCfg {
     /// Name of tile cache
     pub name: String,
+    /// Tile compression method. Default is store type dependent.
+    pub compression: Option<StoreCompressionCfg>,
     // pub layout: CacheLayout,
     /// Tile store
     #[serde(flatten)]
     pub cache: TileStoreCfg,
+}
+
+/// Tile data compression
+#[derive(Deserialize, Serialize, PartialEq, Clone, Debug)]
+pub enum StoreCompressionCfg {
+    // Unknown,
+    /// No compression
+    None,
+    /// Gzip compression. Default for MBTiles and PMTiles.
+    Gzip,
+    // Brotli,
+    // Zstd,
 }
 
 /// Tile stores
@@ -354,6 +368,7 @@ impl ServiceConfig for TileServiceCfg {
         if let Some(cache) = TileStoreCfg::from_cli_args(cli) {
             cfg.tilestores.push(TileCacheProviderCfg {
                 name: "<cli>".to_string(),
+                compression: None,
                 cache,
             });
         }
@@ -448,6 +463,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
             })
             .map(|cache| TileCacheProviderCfg {
                 name: "tilecache".to_string(),
+                compression: Some(StoreCompressionCfg::Gzip),
                 cache,
             });
         let cache_name = tilestore.as_ref().map(|ts| ts.name.clone());

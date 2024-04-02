@@ -1,8 +1,7 @@
-use crate::config::S3StoreCfg;
-use crate::store::CacheLayout;
-use crate::store::{TileReader, TileStoreError, TileWriter};
+use crate::config::{S3StoreCfg, StoreCompressionCfg};
+use crate::store::{CacheLayout, TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
-use bbox_core::{Format, TileResponse};
+use bbox_core::{Compression, Format, TileResponse};
 use log::debug;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;
@@ -16,6 +15,7 @@ use tile_grid::Xyz;
 pub struct S3Store {
     bucket: String,
     region: rusoto_core::Region,
+    compression: StoreCompressionCfg,
     format: Format,
 }
 
@@ -30,7 +30,11 @@ pub enum S3StoreError {
 }
 
 impl S3Store {
-    pub fn from_s3_path(s3_path: &str, format: Format) -> Result<Self, S3StoreError> {
+    pub fn from_s3_path(
+        s3_path: &str,
+        compression: &Option<StoreCompressionCfg>,
+        format: Format,
+    ) -> Result<Self, S3StoreError> {
         let bucket = match s3_path.strip_prefix("s3://") {
             None => return Err(S3StoreError::InvalidS3Path),
             Some(bucket) => {
@@ -48,20 +52,32 @@ impl S3Store {
             },
             Err(_) => rusoto_core::Region::default(),
         };
+        let compression = compression.clone().unwrap_or(StoreCompressionCfg::None);
 
         Ok(S3Store {
             bucket,
             region,
+            compression,
             format,
         })
     }
-    pub fn from_config(cfg: &S3StoreCfg, format: &Format) -> Result<Self, TileStoreError> {
-        Self::from_s3_path(&cfg.path, *format).map_err(Into::into)
+    pub fn from_config(
+        cfg: &S3StoreCfg,
+        compression: &Option<StoreCompressionCfg>,
+        format: &Format,
+    ) -> Result<Self, TileStoreError> {
+        Self::from_s3_path(&cfg.path, compression, *format).map_err(Into::into)
     }
 }
 
 #[async_trait]
 impl TileWriter for S3Store {
+    fn compression(&self) -> Compression {
+        match self.compression {
+            StoreCompressionCfg::Gzip => Compression::Gzip,
+            StoreCompressionCfg::None => Compression::None,
+        }
+    }
     async fn exists(&self, _xyz: &Xyz) -> bool {
         // 2nd level cache lookup is not supported
         false
