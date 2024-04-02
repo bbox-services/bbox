@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 beta3 (2024-03-02)
+
+- Support reading/writing compressed tiles from/into cache
+- Add compression config for file and S3 tile stores
+- Add env var for PostGIS datasource
+
 ## 0.5.0 beta2 (2024-03-29)
 
 - Support simplification in ST_AsMvt mode
