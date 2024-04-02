@@ -3,9 +3,9 @@ use crate::config_t_rex as t_rex;
 use crate::datasource::source_config_from_cli_arg;
 use bbox_core::cli::CommonCommands;
 use bbox_core::config::{
-    error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, NamedDatasourceCfg,
+    error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, DsPostgisCfg,
+    NamedDatasourceCfg,
 };
-use bbox_core::pg_ds::DsPostgisCfg;
 use bbox_core::service::ServiceConfig;
 use clap::{ArgMatches, FromArgMatches};
 use log::{info, warn};

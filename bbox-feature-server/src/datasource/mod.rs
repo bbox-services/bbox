@@ -9,6 +9,7 @@ use bbox_core::config::{DatasourceCfg, NamedDatasourceCfg};
 use bbox_core::ogcapi::{CoreExtent, CoreFeature};
 use bbox_core::NamedObjectStore;
 use dyn_clone::{clone_trait_object, DynClone};
+use std::env;
 
 pub mod gpkg;
 pub mod postgis;
@@ -48,9 +49,11 @@ impl Datasources {
         let mut ds_handler = Datasources::default();
         for named_ds in datasources {
             // TODO: check duplicate names
+            // TODO: move into core, combined with tile-server Datasource
+            let envar = env::var(format!("BBOX_DATASOURCE_{}", &named_ds.name.to_uppercase())).ok();
             match &named_ds.datasource {
                 DatasourceCfg::Postgis(cfg) => {
-                    let ds = postgis::Datasource::from_config(cfg)
+                    let ds = postgis::Datasource::from_config(cfg, envar)
                         .await
                         .map_err(|e| Error::DatasourceSetupError(e.to_string()))?;
                     ds_handler.pg_datasources.add(&named_ds.name, ds);

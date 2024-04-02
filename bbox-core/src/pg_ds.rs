@@ -1,5 +1,5 @@
+use crate::config::DsPostgisCfg;
 use log::info;
-use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use thiserror::Error;
 
@@ -17,8 +17,8 @@ pub struct PgDatasource {
 }
 
 impl PgDatasource {
-    pub async fn from_config(ds: &DsPostgisCfg) -> Result<Self> {
-        Self::new_pool(&ds.url).await
+    pub async fn from_config(ds: &DsPostgisCfg, envvar: Option<String>) -> Result<Self> {
+        Self::new_pool(&envvar.unwrap_or(ds.url.clone())).await
     }
     pub async fn new_pool(url: &str) -> Result<Self> {
         info!("Connecting to {url}");
@@ -30,24 +30,3 @@ impl PgDatasource {
         Ok(PgDatasource { pool })
     }
 }
-
-#[derive(Deserialize, Serialize, Clone, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct DsPostgisCfg {
-    pub url: String,
-}
-
-/*
-// t-rex Datasource (top-level Array)
-#[derive(Deserialize, Serialize, Clone, Debug)]
-pub struct DatasourceCfg {
-    pub name: Option<String>,
-    pub default: Option<bool>,
-    // Postgis
-    pub dbconn: Option<String>,
-    pub pool: Option<u16>,
-    pub connection_timeout: Option<u64>,
-    // GDAL
-    pub path: Option<String>,
-}
-*/
