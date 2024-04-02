@@ -21,6 +21,10 @@ update-version version:
 update-version-doc version:
     sed --in-place -e 's!download/v.*/!download/{{version}}/!g' -e 's!sourcepole/\(bbox-.*\):.*!sourcepole/\1:{{version}}!g' src/installation.md  src/tile-server/installation.md
 
+# Update deb package version in downlad urls
+update-deb-version version:
+    sed --in-place -e 's!_.*\(-.*.deb$\)!_{{version}}\1!g' src/installation.md  src/tile-server/installation.md
+
 rustdoc:
     cargo +nightly rustdoc --lib -p bbox-core -- -Z unstable-options --output-format json
     cargo +nightly rustdoc --lib -p bbox-feature-server -- -Z unstable-options --output-format json
