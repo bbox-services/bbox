@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 beta4 (2024-04-03)
+
+- Detect compression in MBTiles
+- Fix landing page without map server feature
+- Return available tilesets in /tiles endpoint
+- Don't open QWC2 viewer with incactive feature
+- Emit error message for missing map service feature
+
 ## 0.5.0 beta3 (2024-04-02)
 
 - Support reading/writing compressed tiles from/into cache
