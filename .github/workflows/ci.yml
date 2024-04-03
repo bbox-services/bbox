@@ -195,9 +195,11 @@ jobs:
           7z a ../files/bbox-tile-server-x86_64-pc-windows-msvc.zip bbox-tile-server.exe
           cd ..
 
+      - name: Generate Changelog
+        run: echo "See [CHANGELOG](https://github.com/bbox-services/bbox/blob/main/CHANGELOG.md#xzy-betax-$(date +'%Y-%m-%d'))" > ${{ github.workspace }}-CHANGELOG.txt
       - name: Publish
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           files: 'target/files/*'
-          body_path: CHANGELOG.md
+          body_path: ${{ github.workspace }}-CHANGELOG.txt
