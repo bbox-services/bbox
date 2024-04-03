@@ -169,58 +169,70 @@ async fn tile_request(
 
 /// list of available tilesets
 // tiles
-async fn get_tile_sets_list() -> HttpResponse {
-    // hardcoded list, required for core conformance test
-    let tile_matrix_set_id = "mbtiles_mvt_fl";
-    let tilesets = TileSets {
-        tilesets: vec![TileSetItem {
-            title: Some(tile_matrix_set_id.to_string()),
-            data_type: DataType::Vector,
-            crs: Crs::from_epsg(3857),
-            tile_matrix_set_uri: Some(
-                "http://www.opengis.net/def/tilematrixset/OGC/1.0/WebMercatorQuad".to_string(),
-            ),
-            links: vec![
-                Link {
-                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
-                    r#type: Some("application/json".to_string()),
-                    title: Some("WebMercatorQuadTileMatrixSet definition (as JSON)".to_string()),
-                    href: "/tileMatrixSets/WebMercatorQuad".to_string(),
-                    hreflang: None,
-                    length: None,
-                },
-                Link {
-                    rel: "self".to_string(),
-                    r#type: Some("application/json".to_string()),
-                    title: Some(format!(
-                        "Tileset metadata for {tile_matrix_set_id} (as JSON)"
-                    )),
-                    href: format!("/tiles/{tile_matrix_set_id}"),
-                    hreflang: None,
-                    length: None,
-                },
-                Link {
-                    rel: "self".to_string(),
-                    r#type: Some("application/json+tilejson".to_string()),
-                    title: Some(format!(
-                        "Tileset metadata for {tile_matrix_set_id} (in TileJSON format)"
-                    )),
-                    href: format!("/xyz/{tile_matrix_set_id}.json"),
-                    hreflang: None,
-                    length: None,
-                },
-                Link {
-                    rel: "item".to_string(),
-                    r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
-                    title: Some(format!("Tiles for {tile_matrix_set_id} (as MVT)")),
-                    href: format!(
+async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
+    let tile_set_items: Vec<TileSetItem> = service
+        .tilesets
+        .iter()
+        .map(|(tile_matrix_set_id, tileset)| {
+            let mut ts_item = TileSetItem {
+                title: Some(tile_matrix_set_id.to_string()),
+                data_type: DataType::Vector,
+                crs: Crs::from_epsg(3857),
+                tile_matrix_set_uri: None,
+                links: vec![
+                    Link {
+                        rel: "self".to_string(),
+                        r#type: Some("application/json".to_string()),
+                        title: Some(format!(
+                            "Tileset metadata for {tile_matrix_set_id} (as JSON)"
+                        )),
+                        href: format!("/tiles/{tile_matrix_set_id}"),
+                        hreflang: None,
+                        length: None,
+                    },
+                    Link {
+                        rel: "self".to_string(),
+                        r#type: Some("application/json+tilejson".to_string()),
+                        title: Some(format!(
+                            "Tileset metadata for {tile_matrix_set_id} (in TileJSON format)"
+                        )),
+                        href: format!("/xyz/{tile_matrix_set_id}.json"),
+                        hreflang: None,
+                        length: None,
+                    },
+                    Link {
+                        rel: "item".to_string(),
+                        r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
+                        title: Some(format!("Tiles for {tile_matrix_set_id} (as MVT)")),
+                        href: format!(
                         "/map/tiles/{tile_matrix_set_id}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}"
                     ),
-                    hreflang: None,
-                    length: None,
-                },
-            ],
-        }],
+                        hreflang: None,
+                        length: None,
+                    },
+                ],
+            };
+            if let Ok(grid) = service.grid(&tileset.tms) {
+                ts_item.crs = grid.tms.crs.clone();
+                ts_item.tile_matrix_set_uri = grid.tms.uri.clone();
+                if grid.tms.id == "WebMercatorQuad" {
+                    ts_item.links.push(Link {
+                        rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+                        r#type: Some("application/json".to_string()),
+                        title: Some(
+                            "WebMercatorQuadTileMatrixSet definition (as JSON)".to_string(),
+                        ),
+                        href: "/tileMatrixSets/WebMercatorQuad".to_string(),
+                        hreflang: None,
+                        length: None,
+                    });
+                }
+            }
+            ts_item
+        })
+        .collect();
+    let tilesets = TileSets {
+        tilesets: tile_set_items,
         links: None,
     };
     HttpResponse::Ok().json(tilesets)
