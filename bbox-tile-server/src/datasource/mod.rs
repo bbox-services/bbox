@@ -187,9 +187,10 @@ impl Datasources {
             #[cfg(feature = "map-server")]
             SourceParamCfg::WmsFcgi(cfg) => Box::new(wms_fcgi::WmsFcgiSource::from_config(cfg)),
             #[cfg(not(feature = "map-server"))]
-            SourceParamCfg::WmsFcgi(_cfg) => {
-                // TODO: Emit warning
-                unimplemented!()
+            SourceParamCfg::WmsFcgi(cfg) => {
+                bbox_core::config::config_error_exit(
+                    &format!("Cannot add map service tile source with project `{}` - Map service feature is not active.", cfg.project));
+                unreachable!()
             }
             SourceParamCfg::Postgis(pg_cfg) => {
                 let ds = self
