@@ -25,7 +25,7 @@ use tilejson::TileJSON;
 
 #[derive(Clone)]
 pub struct TileService {
-    tilesets: Tilesets,
+    pub(crate) tilesets: Tilesets,
     grids: HashMap<String, Tms>,
     // Map service backend
     pub(crate) map_service: Option<MapService>,
