@@ -1,6 +1,6 @@
 [package]
 name = "bbox-frontend"
-version = "0.5.0"
+version = "0.5.1-beta1"
 authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
 
 edition.workspace = true
