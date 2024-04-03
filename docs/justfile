@@ -12,18 +12,14 @@ build:
 serve:
     mdbook serve --open --port 8321
 
-# Update version cargo files
+# Update version cargo files (e.g. 0.5.0-beta4)
 update-version version:
     sed --in-place 's/^version = ".*/version = "{{version}}"/g' ../bbox-asset-server/Cargo.toml ../bbox-core/Cargo.toml ../bbox-feature-server/Cargo.toml ../bbox-frontend/Cargo.toml ../bbox-map-server/Cargo.toml ../bbox-processes-server/Cargo.toml ../bbox-server/Cargo.toml ../bbox-tile-server/Cargo.toml
     cd .. && cargo build
 
-# Update version in downlad urls
+# Update version in downlad urls (e.g. v0.5.0-beta4)
 update-version-doc version:
-    sed --in-place -e 's!download/v.*/!download/{{version}}/!g' -e 's!sourcepole/\(bbox-.*\):.*!sourcepole/\1:{{version}}!g' src/installation.md  src/tile-server/installation.md
-
-# Update deb package version in downlad urls
-update-deb-version version:
-    sed --in-place -e 's!_.*\(-.*.deb$\)!_{{version}}\1!g' src/installation.md  src/tile-server/installation.md
+    V={{version}}; VD=${V:1}; VD=${VD/-/.}; sed --in-place -e 's!download/v.*/!download/{{version}}/!g' -e 's!sourcepole/\(bbox-.*\):.*!sourcepole/\1:{{version}}!g' -e "s!_.*\(-.*.deb$\)!_$VD\1!g" src/installation.md  src/tile-server/installation.md
 
 rustdoc:
     cargo +nightly rustdoc --lib -p bbox-core -- -Z unstable-options --output-format json

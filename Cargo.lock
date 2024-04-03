@@ -799,7 +799,7 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
 name = "bbox-asset-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-files",
  "actix-web",
@@ -818,7 +818,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-core"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-cors",
  "actix-session",
@@ -857,7 +857,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-feature-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-web",
  "async-trait",
@@ -882,7 +882,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-frontend"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-web",
  "bbox-core",
@@ -898,7 +898,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-map-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-web",
  "async-process",
@@ -925,7 +925,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-processes-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-files",
  "actix-web",
@@ -970,7 +970,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-service",
  "actix-web",
@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "bbox-tile-server"
-version = "0.5.0-beta4"
+version = "0.5.0-beta5"
 dependencies = [
  "actix-web",
  "anyhow",
