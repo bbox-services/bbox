@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 beta3 (2024-03-02)
+## 0.5.0 beta3 (2024-04-02)
 
 - Support reading/writing compressed tiles from/into cache
 - Add compression config for file and S3 tile stores

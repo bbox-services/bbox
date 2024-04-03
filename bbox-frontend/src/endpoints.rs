@@ -146,4 +146,7 @@ pub fn register(cfg: &mut web::ServiceConfig) {
             .service(resource("/qwc2_map/{id}/themes.json").route(get().to(qwc2_theme)))
             .service(resource(r#"/qwc2_map/{id}/{filename:.*}"#).route(get().to(qwc2_map)));
     }
+    if cfg!(not(feature = "map-server")) {
+        cfg.app_data(web::Data::new(MapInventory::default()));
+    }
 }
