@@ -92,7 +92,7 @@ With PostGIS Service:
 
 Tile request:
 
-    curl -o /tmp/tile.mvt http://localhost:8080/xyz/ne_countries/2/2/2.pbf
+    curl -o /tmp/tile.mvt http://localhost:8080/xyz/ne_countries/2/2/2.mvt
 
 With filter parameter:
 

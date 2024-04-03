@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0 (2024-04-03)
+
+No changes since 0.5.0 beta4
+
 ## 0.5.0 beta4 (2024-04-03)
 
 - Detect compression in MBTiles
