@@ -19,6 +19,7 @@
   - [Endpoints](tile-server/endpoints.md)
   - [Seeding](tile-server/seeding.md)
   - [Reference](tile-server/reference.md)
+  - [Guides](tile-server/guides.md)
 - [Asset server](asset-server/README.md)
   - [Configuration](asset-server/configuration.md)
   - [Reference](asset-server/reference.md)
