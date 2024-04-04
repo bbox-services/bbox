@@ -180,8 +180,21 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="instrumentation"><a class="header" href="#instrumentation">Instrumentation</a></h1>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<h3 id="prometheus-metrics"><a class="header" href="#prometheus-metrics">Prometheus metrics</a></h3>
+<pre><code class="language-toml">[metrics.prometheus]
+# Prometheus metrics endpoint
+# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
+path = "/metrics"
+</code></pre>
+<h3 id="jaeger-tracing"><a class="header" href="#jaeger-tracing">Jaeger tracing</a></h3>
+<pre><code class="language-toml">[metrics.jaeger]
+# Environment variable prefix: BBOX_METRICS__JAEGER__
+agent_endpoint = "localhost:6831"
+</code></pre>
+<h2 id="applications"><a class="header" href="#applications">Applications</a></h2>
 <h3 id="prometheus"><a class="header" href="#prometheus">Prometheus</a></h3>
-<p>https://prometheus.io/</p>
+<p><a href="https://prometheus.io/">https://prometheus.io/</a></p>
 <p>Run Prometheus:</p>
 <pre><code>docker run --rm -p 127.0.0.1:9090:9090 -v $PWD/instrumentation/prometheus.yml:/etc/prometheus/prometheus.yml:ro prom/prometheus
 </code></pre>
@@ -191,7 +204,7 @@
 <p>Expression example:</p>
 <pre><code>http_requests_duration_bucket
 </code></pre>
-<h3 id="jaeger-tracing"><a class="header" href="#jaeger-tracing">Jaeger tracing</a></h3>
+<h3 id="jaeger-tracing-1"><a class="header" href="#jaeger-tracing-1">Jaeger tracing</a></h3>
 <p>Run jaeger in background:</p>
 <pre><code>docker run --rm -d -p 6831:6831/udp -p 6832:6832/udp -p 16686:16686 jaegertracing/all-in-one:latest
 </code></pre>
@@ -199,7 +212,7 @@
 <pre><code>x-www-browser http://localhost:16686/
 </code></pre>
 <h3 id="grafana"><a class="header" href="#grafana">Grafana</a></h3>
-<p>https://grafana.com/docs/grafana/</p>
+<p><a href="https://grafana.com/docs/grafana/">https://grafana.com/docs/grafana/</a></p>
 <p>Run Grafana:</p>
 <pre><code>docker run -rm -p 127.0.0.1:3000:3000 grafana/grafana
 </code></pre>
@@ -217,21 +230,9 @@
 <p>Request duration 90th percentile</p>
 <pre><code>histogram_quantile(0.9, rate(http_requests_duration_bucket[5m]))
 </code></pre>
-<p>https://www.robustperception.io/how-does-a-prometheus-histogram-work</p>
+<p><a href="https://www.robustperception.io/how-does-a-prometheus-histogram-work">https://www.robustperception.io/how-does-a-prometheus-histogram-work</a></p>
 <p>WMS Endpoint:</p>
 <pre><code>http_requests_duration_sum{endpoint="/qgis/{project:.+}"}
-</code></pre>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<h3 id="prometheus-metrics"><a class="header" href="#prometheus-metrics">Prometheus metrics</a></h3>
-<pre><code class="language-toml">[metrics.prometheus]
-# Prometheus metrics endpoint
-# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
-path = "/metrics"
-</code></pre>
-<h3 id="jaeger-tracing-1"><a class="header" href="#jaeger-tracing-1">Jaeger tracing</a></h3>
-<pre><code class="language-toml">[metrics.jaeger] 
-# Environment variable prefix: BBOX_METRICS__JAEGER__
-agent_endpoint = "localhost:6831"
 </code></pre>
 
                     </main>

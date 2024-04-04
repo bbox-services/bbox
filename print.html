@@ -195,9 +195,11 @@
 <p>Features:</p>
 <ul>
 <li>Built-in high performance HTTP server</li>
-<li>QWC2 Map viewer</li>
-<li>Instrumentation: Prometheus and Jaeger tracing</li>
+<li>OpenAPI support with built-in UI</li>
+<li>Instrumentation: Prometheus metrics and Jaeger tracing</li>
 <li>Healths endpoints for Docker and Kubernetes hosting</li>
+<li>Common configuration file</li>
+<li>Open Source under Apache-2.0 / MIT license: <a href="https://github.com/bbox-services/bbox/">https://github.com/bbox-services/bbox/</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="binary-distributions"><a class="header" href="#binary-distributions">Binary Distributions</a></h2>
 <p>You can download BBOX from <a href="https://github.com/bbox-services/bbox/releases">GitHub releases page</a>.</p>
@@ -215,7 +217,7 @@ cargo install --path .
 bbox-server --help
 </code></pre>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
-<p>BBOX is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-server-qgis">Docker image</a>. You could either share a configuration file from the host with the container via the <code>-v</code> param, or you can run BBOX in auto-discover mode.</p>
+<p>BBOX is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-server-qgis">Docker image</a>. You can either share a configuration file from the host with the container via the <code>-v</code> param, or run BBOX in auto-discovery mode.</p>
 <pre><code class="language-shell">docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.5.0
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="core-configuration"><a class="header" href="#core-configuration">Core Configuration</a></h1>
@@ -373,11 +375,13 @@ OGC API - Features - Part 1: Core 1.0</li>
 <li><input disabled="" type="checkbox"/>
 OGC API - Features - Part 2: Coordinate Reference Systems by Reference 1.0</li>
 <li><input disabled="" type="checkbox" checked=""/>
-OpenAPI endpoint</li>
-<li><input disabled="" type="checkbox" checked=""/>
 Builtin storage backends: PostGIS, GeoPackage</li>
 <li><input disabled="" type="checkbox" checked=""/>
+SQL queries with time and custom query parameters</li>
+<li><input disabled="" type="checkbox" checked=""/>
 Output formats: GeoJSON</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Compatibility: WFS + WFS-T via QGIS Server</li>
 </ul>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Run feature server with <code>bbox.toml</code> configuration:</p>
@@ -494,7 +498,7 @@ curl -s http://127.0.0.1:8080/collections/populated_places_names/items/2 | jq .
 <li><input disabled="" type="checkbox" checked=""/>
 OGC WMS 1.3 Server</li>
 <li><input disabled="" type="checkbox"/>
-OGC Map API Server</li>
+OGC API – Maps (Draft)</li>
 <li><input disabled="" type="checkbox" checked=""/>
 FCGI backends:
 <ul>
@@ -504,10 +508,10 @@ QGIS Server</li>
 UNN Mapserver</li>
 </ul>
 </li>
-<li><input disabled="" type="checkbox"/>
+<li><input disabled="" type="checkbox" checked=""/>
 Instrumentation data for WMS backends</li>
-<li><input disabled="" type="checkbox"/>
-Intelligent process dispatching (slow query detection)</li>
+<li><input disabled="" type="checkbox" checked=""/>
+FCGI dispatcher optimized for WMS requests</li>
 </ul>
 <h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
 <p>Run feature server with <code>bbox.toml</code> configuration:</p>
@@ -612,15 +616,24 @@ curl -s --data @wfsadd.xml 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;REQUES
 <p>Features:</p>
 <ul>
 <li><input disabled="" type="checkbox" checked=""/>
-Vector tile server (Source: PostGIS)</li>
+OGC API – Tiles - Part 1: Core 1.0</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Vector tile server
+<ul>
+<li><input disabled="" type="checkbox" checked=""/>
+Vector data source: PostGIS</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Tile archives: MBTiles, PMTiles</li>
+</ul>
+</li>
 <li><input disabled="" type="checkbox" checked=""/>
 Raster tile server (Backends: QGIS Server and MapServer)</li>
 <li><input disabled="" type="checkbox" checked=""/>
-Tile proxy server (Backends: WMS)</li>
+Tile proxy server (WMS backend)</li>
 <li><input disabled="" type="checkbox" checked=""/>
-OGC API - Tiles Core</li>
+XYZ tile service endpoint with TileJSON metadata</li>
 <li><input disabled="" type="checkbox" checked=""/>
-XYZ vector tiles with TileJSON metadata</li>
+Support for Custom Tile Matrix Sets</li>
 <li><input disabled="" type="checkbox"/>
 OGC WMTS (via map service backend)</li>
 </ul>
@@ -629,9 +642,7 @@ OGC WMTS (via map service backend)</li>
 <li><input disabled="" type="checkbox" checked=""/>
 Parallelized seeding of raster and vector tiles</li>
 <li><input disabled="" type="checkbox" checked=""/>
-Storage Backend: S3 - optimized for tile transfer</li>
-<li><input disabled="" type="checkbox" checked=""/>
-Storage Backend: Local files</li>
+Storage backends: Files, S3, MBTiles, PMTiles</li>
 </ul>
 <h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
 <p>Run tile server with <code>bbox.toml</code> configuration:</p>
@@ -674,11 +685,6 @@ name = "mvtbenchdb"
 url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
 [[datasource]]
-name = "ne_extracts"
-[datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
-
-[[datasource]]
 name = "gebco"
 [datasource.wms_proxy]
 baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
@@ -694,7 +700,7 @@ attribution = "Natural Earth v4"
 
 [[tileset.postgis.layer]]
 name = "country-name"
-table_name = "ne_10m_admin_0_country_points"
+#table_name = "ne_10m_admin_0_country_points"
 geometry_type = "POINT"
 buffer_size = 0
 [[tileset.postgis.layer.query]]
@@ -1305,8 +1311,21 @@ node_dst = "target"
 <li><code>node_dst</code> <em>String</em> (optional): Column with destination (target) node ID</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="instrumentation"><a class="header" href="#instrumentation">Instrumentation</a></h1>
+<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
+<h3 id="prometheus-metrics"><a class="header" href="#prometheus-metrics">Prometheus metrics</a></h3>
+<pre><code class="language-toml">[metrics.prometheus]
+# Prometheus metrics endpoint
+# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
+path = "/metrics"
+</code></pre>
+<h3 id="jaeger-tracing"><a class="header" href="#jaeger-tracing">Jaeger tracing</a></h3>
+<pre><code class="language-toml">[metrics.jaeger]
+# Environment variable prefix: BBOX_METRICS__JAEGER__
+agent_endpoint = "localhost:6831"
+</code></pre>
+<h2 id="applications"><a class="header" href="#applications">Applications</a></h2>
 <h3 id="prometheus-1"><a class="header" href="#prometheus-1">Prometheus</a></h3>
-<p>https://prometheus.io/</p>
+<p><a href="https://prometheus.io/">https://prometheus.io/</a></p>
 <p>Run Prometheus:</p>
 <pre><code>docker run --rm -p 127.0.0.1:9090:9090 -v $PWD/instrumentation/prometheus.yml:/etc/prometheus/prometheus.yml:ro prom/prometheus
 </code></pre>
@@ -1316,7 +1335,7 @@ node_dst = "target"
 <p>Expression example:</p>
 <pre><code>http_requests_duration_bucket
 </code></pre>
-<h3 id="jaeger-tracing"><a class="header" href="#jaeger-tracing">Jaeger tracing</a></h3>
+<h3 id="jaeger-tracing-1"><a class="header" href="#jaeger-tracing-1">Jaeger tracing</a></h3>
 <p>Run jaeger in background:</p>
 <pre><code>docker run --rm -d -p 6831:6831/udp -p 6832:6832/udp -p 16686:16686 jaegertracing/all-in-one:latest
 </code></pre>
@@ -1324,7 +1343,7 @@ node_dst = "target"
 <pre><code>x-www-browser http://localhost:16686/
 </code></pre>
 <h3 id="grafana"><a class="header" href="#grafana">Grafana</a></h3>
-<p>https://grafana.com/docs/grafana/</p>
+<p><a href="https://grafana.com/docs/grafana/">https://grafana.com/docs/grafana/</a></p>
 <p>Run Grafana:</p>
 <pre><code>docker run -rm -p 127.0.0.1:3000:3000 grafana/grafana
 </code></pre>
@@ -1342,21 +1361,9 @@ node_dst = "target"
 <p>Request duration 90th percentile</p>
 <pre><code>histogram_quantile(0.9, rate(http_requests_duration_bucket[5m]))
 </code></pre>
-<p>https://www.robustperception.io/how-does-a-prometheus-histogram-work</p>
+<p><a href="https://www.robustperception.io/how-does-a-prometheus-histogram-work">https://www.robustperception.io/how-does-a-prometheus-histogram-work</a></p>
 <p>WMS Endpoint:</p>
 <pre><code>http_requests_duration_sum{endpoint="/qgis/{project:.+}"}
-</code></pre>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<h3 id="prometheus-metrics"><a class="header" href="#prometheus-metrics">Prometheus metrics</a></h3>
-<pre><code class="language-toml">[metrics.prometheus]
-# Prometheus metrics endpoint
-# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
-path = "/metrics"
-</code></pre>
-<h3 id="jaeger-tracing-1"><a class="header" href="#jaeger-tracing-1">Jaeger tracing</a></h3>
-<pre><code class="language-toml">[metrics.jaeger] 
-# Environment variable prefix: BBOX_METRICS__JAEGER__
-agent_endpoint = "localhost:6831"
 </code></pre>
 
                     </main>

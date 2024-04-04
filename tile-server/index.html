@@ -184,15 +184,24 @@
 <p>Features:</p>
 <ul>
 <li><input disabled="" type="checkbox" checked=""/>
-Vector tile server (Source: PostGIS)</li>
+OGC API – Tiles - Part 1: Core 1.0</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Vector tile server
+<ul>
+<li><input disabled="" type="checkbox" checked=""/>
+Vector data source: PostGIS</li>
+<li><input disabled="" type="checkbox" checked=""/>
+Tile archives: MBTiles, PMTiles</li>
+</ul>
+</li>
 <li><input disabled="" type="checkbox" checked=""/>
 Raster tile server (Backends: QGIS Server and MapServer)</li>
 <li><input disabled="" type="checkbox" checked=""/>
-Tile proxy server (Backends: WMS)</li>
+Tile proxy server (WMS backend)</li>
 <li><input disabled="" type="checkbox" checked=""/>
-OGC API - Tiles Core</li>
+XYZ tile service endpoint with TileJSON metadata</li>
 <li><input disabled="" type="checkbox" checked=""/>
-XYZ vector tiles with TileJSON metadata</li>
+Support for Custom Tile Matrix Sets</li>
 <li><input disabled="" type="checkbox"/>
 OGC WMTS (via map service backend)</li>
 </ul>
@@ -201,9 +210,7 @@ OGC WMTS (via map service backend)</li>
 <li><input disabled="" type="checkbox" checked=""/>
 Parallelized seeding of raster and vector tiles</li>
 <li><input disabled="" type="checkbox" checked=""/>
-Storage Backend: S3 - optimized for tile transfer</li>
-<li><input disabled="" type="checkbox" checked=""/>
-Storage Backend: Local files</li>
+Storage backends: Files, S3, MBTiles, PMTiles</li>
 </ul>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Run tile server with <code>bbox.toml</code> configuration:</p>
