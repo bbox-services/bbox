@@ -4,12 +4,12 @@ Asynchronous map server with FCGI backend.
 
 Features:
 - [x] OGC WMS 1.3 Server
-- [ ] OGC Map API Server
+- [ ] OGC API – Maps (Draft)
 - [x] FCGI backends:
-  - [X] QGIS Server
-  - [X] UNN Mapserver
-- [ ] Instrumentation data for WMS backends
-- [ ] Intelligent process dispatching (slow query detection)
+  - [x] QGIS Server
+  - [x] UNN Mapserver
+- [x] Instrumentation data for WMS backends
+- [x] FCGI dispatcher optimized for WMS requests
 
 
 ## Usage

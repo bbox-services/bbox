@@ -1,8 +1,29 @@
 # Instrumentation
 
+## Configuration
+
+### Prometheus metrics
+
+```toml
+[metrics.prometheus]
+# Prometheus metrics endpoint
+# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
+path = "/metrics"
+```
+
+### Jaeger tracing
+
+```toml
+[metrics.jaeger]
+# Environment variable prefix: BBOX_METRICS__JAEGER__
+agent_endpoint = "localhost:6831"
+```
+
+## Applications
+
 ### Prometheus
 
-https://prometheus.io/
+<https://prometheus.io/>
 
 Run Prometheus:
 
@@ -30,7 +51,7 @@ View spans:
 
 ### Grafana
 
-https://grafana.com/docs/grafana/
+<https://grafana.com/docs/grafana/>
 
 Run Grafana:
 
@@ -52,28 +73,8 @@ Request duration 90th percentile
         
     histogram_quantile(0.9, rate(http_requests_duration_bucket[5m]))
 
-https://www.robustperception.io/how-does-a-prometheus-histogram-work
+<https://www.robustperception.io/how-does-a-prometheus-histogram-work>
 
 WMS Endpoint:
 
     http_requests_duration_sum{endpoint="/qgis/{project:.+}"}
-
-
-## Configuration
-
-### Prometheus metrics
-
-```toml
-[metrics.prometheus]
-# Prometheus metrics endpoint
-# Environment variable prefix: BBOX_METRICS__PROMETHEUS__
-path = "/metrics"
-```
-
-### Jaeger tracing
-
-```toml
-[metrics.jaeger] 
-# Environment variable prefix: BBOX_METRICS__JAEGER__
-agent_endpoint = "localhost:6831"
-```

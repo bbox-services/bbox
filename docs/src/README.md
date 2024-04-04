@@ -17,6 +17,8 @@ Components:
 
 Features:
 * Built-in high performance HTTP server
-* QWC2 Map viewer
-* Instrumentation: Prometheus and Jaeger tracing
+* OpenAPI support with built-in UI
+* Instrumentation: Prometheus metrics and Jaeger tracing
 * Healths endpoints for Docker and Kubernetes hosting
+* Common configuration file
+* Open Source under Apache-2.0 / MIT license: <https://github.com/bbox-services/bbox/>
