@@ -1081,11 +1081,11 @@ database tables or zoom level dependent SQL queries.</p>
 <p><code>bbox-tile-server serve</code> supports reading t-rex configuration files. These are converted to
 a BBOX configuration and printed in the log output. Most features can be automatically
 translated, for others a warning message is emitted.</p>
+<p>To create an OGC conformant grid definition, follow the instructions on <a href="tile-server/guides.html#creating-a-custom-grid">Creating a custom grid</a>.</p>
 <h3 id="compatibility-options"><a class="header" href="#compatibility-options">Compatibility options</a></h3>
 <p>In case the PostGIS <code>ST_AsMvt</code> function produces unwanted results, setting <code>postgis2</code> to <code>true</code> activates
 t-rex compatible SQL queries. Other layer options like <code>simplify</code>, <code>tolerance</code>, <code>make_valid</code> and <code>shift_longitude</code> will
 then have exactly the same effect as in t-rex.</p>
-<p>To create an OGC conformant grid definition, follow the instructions on <a href="tile-server/guides.html#creating-a-custom-grid">Creating a custom grid</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-asset-server"><a class="header" href="#bbox-asset-server">BBOX Asset server</a></h1>
 <p>Serving static and templated files.</p>
 <p>Features:</p>
