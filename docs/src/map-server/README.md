@@ -14,6 +14,6 @@ Features:
 
 ## Usage
 
-Run feature server with `bbox.toml` configuration:
+Run map server with `bbox.toml` configuration:
 
     bbox-map-server serve
