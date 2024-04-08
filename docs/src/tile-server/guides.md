@@ -52,3 +52,71 @@ To create an OGC conformant grid definition, follow the instructions on [Creatin
 In case the PostGIS `ST_AsMvt` function produces unwanted results, setting `postgis2` to `true` activates
 t-rex compatible SQL queries. Other layer options like `simplify`, `tolerance`, `make_valid` and `shift_longitude` will
 then have exactly the same effect as in t-rex.
+
+
+## Troubleshooting
+
+### Inspect tiles with GDAL
+
+You can use GDAL with the [MVT driver](https://gdal.org/drivers/vector/mvt.html) to inspect and convert MVT tiles.
+
+Inspect with `ogrinfo`:
+
+```
+ogrinfo /tmp/tilecache/ne_countries/0/0/0.pbf 
+INFO: Open of `/tmp/tilecache/ne_countries/0/0/0.pbf'
+      using driver `MVT' successful.
+1: country (Multi Polygon)
+2: country-name (Point)
+3: land-border-country (Multi Line String)
+4: state
+5: diagnostics-tile (Polygon)
+6: diagnostics-label (Point)
+```
+
+Inspect a single layer:
+```
+ogrinfo /tmp/tilecache/ne_countries/0/0/0.pbf country-name
+INFO: Open of `/tmp/tilecache/ne_countries/0/0/0.pbf'
+      using driver `MVT' successful.
+
+Layer name: country-name
+Geometry: Point
+Feature Count: 298
+Extent: (-19743990.154174, -15869550.064455) - (19871181.369241, 14852020.343923)
+Layer SRS WKT:
+PROJCRS["WGS 84 / Pseudo-Mercator",
+[...]
+mvt_id: Integer64 (0.0)
+abbrev: String (0.0)
+name: String (0.0)
+OGRFeature(country-name):0
+  abbrev (String) = Indo.
+  name (String) = Indonesia
+  POINT (13051775.4537504 -244598.490512565)
+```
+
+Convert MVT geometries and properties to GeoJSON:
+```
+ogr2ogr -f GeoJSON layer.json /tmp/tilecache/ne_countries/0/0/0.pbf country
+```
+
+### Inspect tiles with QGIS
+
+QGIS is using the GDAL driver to read MVT tiles as a regular geometry source.
+
+* Open a new project
+* Drag and drop a vector tile (file ending `pbf`) into the map canvas, or open it in the QGIS Browser
+* Select layers to add
+
+### Inspect tile services with QGIS
+
+QGIS is also able to include an tile service as QGIS layer. 
+
+Vector tile services can be added via `Layer` -> `Add Layer` -> `Add Vector Tile Layer`. Add a new generic connection with an URL
+like `http://localhost:8080/xyz/ne_countries/{z}/{x}/{y}.pbf`. QGIS also supports adding a style URL.
+
+Raster tile services can be added via `Layer` -> `Add Layer` -> `Add XYZ Layer`. Add a connection with an URL like
+`http://localhost:8080/xyz/ne_extracts/{z}/{x}/{y}.png`.
+
+Remark: QGIS supports the Web Mercator tile grid only.
