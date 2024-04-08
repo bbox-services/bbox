@@ -17,13 +17,15 @@ Example:
 ```
 echo -90 -180 | cs2cs EPSG:4326 EPSG:8857
 -10216474.79    -8392927.60 0.00
+echo 0 -180 | cs2cs EPSG:4326 EPSG:8857
+-17243959.06    0.00 0.00
 ```
 
 With this parameters, you can create a JSON file with the tile grid description.
 
 Example:
 ```
-morecantile custom --epsg 8857 --extent -17243959.06 -8392927.6 17243959.06 8392927.6 --name "EqualEarthGreenwichWGS84Rect" --title "Equal Earth Greenwich WGS84" | jq . >EqualEarthGreenwichWGS84Rect.json
+morecantile custom --epsg 8857 --extent -17243959.06 -17243959.06 17243959.06 17243959.06 --name "EqualEarthGreenwichWGS84Quad" --title "Equal Earth Greenwich WGS84" | jq . >EqualEarthGreenwichWGS84Quad.json
 ```
 
 ## Migration from t-rex
