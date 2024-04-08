@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Queryables{% endblock %}
+{% block content_title %}{{ queryables.title }} Item{% endblock %}
+
+{% block content %}
+<article class="prose">
+<a href="/collections/{{queryables.title}}/queryables.json">JSON</a><br/>
+</article>
+
+<h2>Queryables</h2>
+<ul>
+    {% for prop in queryables.properties %}
+      <li>{{prop}} ({{queryables.properties[prop].type}})</li>
+    {% endfor %}
+</ul>
+{% endblock %}

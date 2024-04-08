@@ -63,6 +63,30 @@ async fn collection(
     }
 }
 
+/// describe the queryables available in the collection with id `collectionId`
+async fn queryables(
+    inventory: web::Data<Inventory>,
+    req: HttpRequest,
+    collection_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    if let Some(queryables) = inventory.collection_queryables(&collection_id).await {
+        if html_accepted(&req).await {
+            render_endpoint(
+                &TEMPLATES,
+                "queryables.html",
+                context!(cur_menu=>"Collections", queryables => &queryables),
+            )
+            .await
+        } else {
+            Ok(HttpResponse::Ok()
+                .content_type("application/geo+json")
+                .json(queryables))
+        }
+    } else {
+        Ok(HttpResponse::NotFound().finish())
+    }
+}
+
 /// fetch features
 async fn features(
     inventory: web::Data<Inventory>,
@@ -180,6 +204,14 @@ impl ServiceEndpoints for FeatureService {
                 web::resource("/collections/{collectionId}.json").route(web::get().to(collection)),
             )
             .service(web::resource("/collections/{collectionId}").route(web::get().to(collection)))
+            .service(
+                web::resource("/collections/{collectionId}/queryables.json")
+                    .route(web::get().to(queryables)),
+            )
+            .service(
+                web::resource("/collections/{collectionId}/queryables")
+                    .route(web::get().to(queryables)),
+            )
             .service(
                 web::resource("/collections/{collectionId}/items").route(web::get().to(features)),
             )

@@ -6,7 +6,7 @@ use crate::filter_params::FilterParams;
 use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::config::{DatasourceCfg, NamedDatasourceCfg};
-use bbox_core::ogcapi::{CoreExtent, CoreFeature};
+use bbox_core::ogcapi::{CoreExtent, CoreFeature, Queryables};
 use bbox_core::NamedObjectStore;
 use dyn_clone::{clone_trait_object, DynClone};
 use std::env;
@@ -32,6 +32,7 @@ pub trait AutoscanCollectionDatasource {
 pub trait CollectionSource: DynClone + Sync + Send {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult>;
     async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
+    async fn queryables(&self, collection_id: &str) -> Result<Option<Queryables>>;
 }
 
 clone_trait_object!(CollectionSource);

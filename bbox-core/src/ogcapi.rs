@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Serialize)]
 /// <http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_api_landing_page>
@@ -116,6 +117,45 @@ pub struct CoreFeature {
     pub id: Option<String>, // string or integer
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<ApiLink>,
+}
+
+#[derive(Debug, Serialize)]
+/// <https://docs.ogc.org/DRAFTS/19-079r1.html#queryables>
+pub struct Queryables {
+    #[serde(rename = "type")]
+    pub type_: String, // Feature
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(rename = "$id")]
+    pub id: String,
+    #[serde(rename = "$schema")]
+    pub schema: String,
+    pub properties: HashMap<String, QueryableProperty>,
+}
+
+#[derive(Debug, Serialize)]
+/// <https://docs.ogc.org/DRAFTS/19-079r1.html#queryables>
+pub struct QueryableProperty {
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub type_: Option<QueryableType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+/// <https://docs.ogc.org/DRAFTS/19-079r1.html#queryables>
+pub enum QueryableType {
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "integer")]
+    Integer,
+    #[serde(rename = "number")]
+    Number,
+    #[serde(rename = "boolean")]
+    Bool,
 }
 
 pub type GeoJsonProperties = serde_json::value::Value;
