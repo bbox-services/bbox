@@ -125,6 +125,7 @@ impl AutoscanCollectionDatasource for PgDatasource {
             SELECT contents.*
             FROM geometry_columns contents
               JOIN spatial_ref_sys refsys ON refsys.srid = contents.srid
+            WHERE f_table_schema = 'public'
         "#;
         let mut rows = sqlx::query(sql).fetch(&self.pool);
         while let Some(row) = rows.try_next().await? {
@@ -482,13 +483,13 @@ mod tests {
     use std::collections::HashMap;
     use test_log::test;
 
-    // docker run -p 127.0.0.1:5439:5432 -d --name trextestdb --rm sourcepole/trextestdb
+    // docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb:v1.2
 
     #[test(tokio::test)]
     #[ignore]
     async fn pg_content() {
         let mut pool =
-            PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+            PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
                 .await
                 .unwrap();
         let collections = pool.collections().await.unwrap();
@@ -502,12 +503,12 @@ mod tests {
     #[ignore]
     async fn pg_features() {
         let filter = FilterParams::default();
-        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+        let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
+            sql: "SELECT * FROM ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
@@ -529,12 +530,12 @@ mod tests {
             datetime: None,
             filters: HashMap::new(),
         };
-        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+        let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            sql: "SELECT * FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
+            sql: "SELECT * FROM ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: None,
@@ -548,12 +549,12 @@ mod tests {
     #[test(tokio::test)]
     #[ignore]
     async fn pg_datetime_filter() {
-        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+        let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne.ne_10m_rivers_lake_centerlines ORDER BY fid".to_string(),
+            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne_10m_rivers_lake_centerlines ORDER BY fid".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
@@ -565,7 +566,7 @@ mod tests {
             limit: None,
             offset: None,
             bbox: None,
-            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            datetime: Some("2021-05-09T00:00:00Z".to_string()),
             filters: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
@@ -576,7 +577,7 @@ mod tests {
             limit: None,
             offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
-            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            datetime: Some("2021-05-09T00:00:00Z".to_string()),
             filters: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
@@ -597,12 +598,12 @@ mod tests {
     #[test(tokio::test)]
     #[ignore]
     async fn pg_field_filter() {
-        let ds = PgDatasource::new_pool("postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests")
+        let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
         let source = PgCollectionSource {
             ds,
-            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne.ne_10m_rivers_lake_centerlines".to_string(),
+            sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne_10m_rivers_lake_centerlines".to_string(),
             geometry_column: "wkb_geometry".to_string(),
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
@@ -668,7 +669,7 @@ mod tests {
             limit: None,
             offset: None,
             bbox: None,
-            datetime: Some("2023-10-14T00:00:00Z".to_string()),
+            datetime: Some("2021-05-09T00:00:00Z".to_string()),
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
         };
         let items = source.items(&filter).await.unwrap();
