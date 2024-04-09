@@ -64,6 +64,10 @@ tilejson = "0.4.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 toml = "0.8.10"
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+test-log = "0.2.14"
+
 [[bin]]
 name = "bbox-tile-server"
 path = "src/main.rs"

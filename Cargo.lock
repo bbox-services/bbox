@@ -1032,6 +1032,7 @@ dependencies = [
  "serde_urlencoded",
  "sqlx",
  "tempfile",
+ "test-log",
  "thiserror",
  "tile-grid",
  "tilejson",
