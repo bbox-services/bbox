@@ -22,7 +22,7 @@ use sqlx::{
 };
 use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
-use tile_grid::{Tms, Xyz};
+use tile_grid::{BoundingBox, Tms, Xyz};
 use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
@@ -227,6 +227,57 @@ impl PgSource {
     }
 }
 
+fn layer_query<'a>(
+    layer: &'a PgMvtLayer,
+    query_info: &'a QueryInfo,
+    tile: &Xyz,
+    grid: &Tms,
+    extent: &BoundingBox,
+    filter: &'a FilterParams,
+) -> Result<sqlx::query::Query<'a, sqlx::Postgres, sqlx::postgres::PgArguments>, TileSourceError> {
+    let mut query = query_info.stmt.query();
+    for param in &query_info.params {
+        query = match *param {
+            QueryParam::Bbox => query
+                .bind(extent.left)
+                .bind(extent.bottom)
+                .bind(extent.right)
+                .bind(extent.top),
+            QueryParam::Zoom => query.bind(tile.z as i32),
+            QueryParam::X => query.bind(tile.x as i32),
+            QueryParam::Y => query.bind(tile.y as i32),
+            QueryParam::PixelWidth => {
+                if let Some(pixel_width) = grid.resolution_z(tile.z) {
+                    // TODO: grid_width = grid.tile_width_z(tile.z)
+                    let grid_width: u16 = grid.tms.tile_matrices[tile.z as usize].tile_width.into();
+                    let mvt_pixel_width = pixel_width * grid_width as f64 / layer.tile_size as f64;
+                    query.bind(mvt_pixel_width)
+                } else {
+                    info!("Undefined resolution for z={}", tile.z);
+                    return Err(TileSourceError::FilterParamError);
+                }
+            }
+            QueryParam::ScaleDenominator => {
+                if let Some(m) = grid.matrix_z(tile.z) {
+                    query.bind(m.scale_denominator)
+                } else {
+                    info!("Undefined scale_denominator for z={}", tile.z);
+                    return Err(TileSourceError::FilterParamError);
+                }
+            }
+            QueryParam::QueryField(ref field) => {
+                if let Some(value) = filter.filters.get(field) {
+                    query.bind(value)
+                } else {
+                    info!("Filter parameter `{field}` missing");
+                    return Err(TileSourceError::FilterParamError);
+                }
+            }
+        }
+    }
+    Ok(query)
+}
+
 #[async_trait]
 impl TileRead for PgSource {
     async fn xyz_request(
@@ -250,46 +301,7 @@ impl TileRead for PgSource {
             let Some(query_info) = layer.query(tile.z) else {
                 continue;
             };
-            let mut query = query_info.stmt.query();
-            for param in &query_info.params {
-                query = match *param {
-                    QueryParam::Bbox => query
-                        .bind(extent.left)
-                        .bind(extent.bottom)
-                        .bind(extent.right)
-                        .bind(extent.top),
-                    QueryParam::Zoom => query.bind(tile.z as i32),
-                    QueryParam::X => query.bind(tile.x as i32),
-                    QueryParam::Y => query.bind(tile.y as i32),
-                    QueryParam::PixelWidth => {
-                        if let Some(pixel_width) = grid.resolution_z(tile.z) {
-                            // TODO: grid_width = grid.tile_width_z(tile.z)
-                            let grid_width: u16 =
-                                grid.tms.tile_matrices[tile.z as usize].tile_width.into();
-                            let mvt_pixel_width =
-                                pixel_width * grid_width as f64 / layer.tile_size as f64;
-                            query.bind(mvt_pixel_width)
-                        } else {
-                            query
-                        }
-                    }
-                    QueryParam::ScaleDenominator => {
-                        if let Some(m) = grid.matrix_z(tile.z) {
-                            query.bind(m.scale_denominator)
-                        } else {
-                            query
-                        }
-                    }
-                    QueryParam::QueryField(ref field) => {
-                        if let Some(value) = filter.filters.get(field) {
-                            query.bind(value)
-                        } else {
-                            info!("Filter parameter `{field}` missing");
-                            return Err(TileSourceError::FilterParamError);
-                        }
-                    }
-                }
-            }
+            let query = layer_query(layer, query_info, tile, grid, extent, filter)?;
             debug!("Query layer `{id}`");
             let mut rows = query.fetch(&self.ds.pool);
             let mut mvt_layer = MvtBuilder::new_layer(id, layer.tile_size);
@@ -573,5 +585,74 @@ fn column_value(row: &PgRow, field: &FieldInfo) -> Result<Option<mvt::tile::Valu
         Ok(None)
     } else {
         Ok(Some(mvt_val))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bbox_core::config::DsPostgisCfg;
+    use bbox_core::pg_ds::PgDatasource;
+    use test_log::test;
+    use tile_grid::tms;
+
+    // docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb:v1.2
+    //
+    // For debug log output run with:
+    // RUST_LOG=debug cargo test -- --ignored --nocapture
+
+    async fn pg_source() -> PgSource {
+        let ds_cfg = DsPostgisCfg {
+            url: "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench".to_string(),
+        };
+        let layer = VectorLayerCfg {
+            name: "ne_10m_rivers_lake_centerlines".to_string(),
+            geometry_field: Some("wkb_geometry".to_string()),
+            geometry_type: None,
+            srid: Some(3857),
+            no_transform: false,
+            fid_field: None,
+            table_name: Some("ne_10m_rivers_lake_centerlines".to_string()),
+            query_limit: None,
+            queries: Vec::new(),
+            minzoom: None,
+            maxzoom: None,
+            tile_size: 256,
+            simplify: false,
+            tolerance: "!pixel_width!/2".to_string(),
+            buffer_size: None,
+            make_valid: false,
+            shift_longitude: false,
+        };
+        let pg_src_cfg = PostgisSourceParamsCfg {
+            datasource: None,
+            extent: None,
+            minzoom: None,
+            maxzoom: None,
+            center: None,
+            start_zoom: None,
+            attribution: None,
+            postgis2: false,
+            diagnostics: None,
+            layers: vec![layer],
+        };
+        let ds = PgDatasource::from_config(&ds_cfg, None).await.unwrap();
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
+        PgSource::create(&ds, &pg_src_cfg, &tms).await
+    }
+
+    #[test(tokio::test)]
+    #[ignore]
+    async fn tile_query() {
+        let pg = pg_source().await;
+        let layer = pg.layers.get("ne_10m_rivers_lake_centerlines").unwrap();
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
+        let tile = Xyz::new(0, 0, 0);
+        let query_info = layer.query(tile.z).unwrap();
+        let extent = tms.xy_bounds(&tile);
+        let filter = FilterParams::default();
+        let query = layer_query(&layer, &query_info, &tile, &tms, &extent, &filter).unwrap();
+        let rows = query.fetch_all(&pg.ds.pool).await.unwrap();
+        assert_eq!(rows.len(), 1473);
     }
 }
