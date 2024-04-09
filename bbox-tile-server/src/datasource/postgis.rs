@@ -591,6 +591,7 @@ fn column_value(row: &PgRow, field: &FieldInfo) -> Result<Option<mvt::tile::Valu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::VectorLayerQueryCfg;
     use bbox_core::config::DsPostgisCfg;
     use bbox_core::pg_ds::PgDatasource;
     use test_log::test;
@@ -601,12 +602,22 @@ mod tests {
     // For debug log output run with:
     // RUST_LOG=debug cargo test -- --ignored --nocapture
 
-    async fn pg_source() -> PgSource {
+    async fn pg_source(query: Option<String>) -> PgSource {
         let ds_cfg = DsPostgisCfg {
             url: "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench".to_string(),
         };
+        let mut queries = Vec::new();
+        if let Some(sql) = query {
+            queries.push(VectorLayerQueryCfg {
+                minzoom: 0,
+                maxzoom: None,
+                simplify: None,
+                tolerance: None,
+                sql: Some(sql),
+            });
+        }
         let layer = VectorLayerCfg {
-            name: "ne_10m_rivers_lake_centerlines".to_string(),
+            name: "layer1".to_string(),
             geometry_field: Some("wkb_geometry".to_string()),
             geometry_type: None,
             srid: Some(3857),
@@ -614,13 +625,13 @@ mod tests {
             fid_field: None,
             table_name: Some("ne_10m_rivers_lake_centerlines".to_string()),
             query_limit: None,
-            queries: Vec::new(),
+            queries,
             minzoom: None,
             maxzoom: None,
-            tile_size: 256,
+            tile_size: 4096,
             simplify: false,
             tolerance: "!pixel_width!/2".to_string(),
-            buffer_size: None,
+            buffer_size: Some(0),
             make_valid: false,
             shift_longitude: false,
         };
@@ -644,15 +655,46 @@ mod tests {
     #[test(tokio::test)]
     #[ignore]
     async fn tile_query() {
-        let pg = pg_source().await;
-        let layer = pg.layers.get("ne_10m_rivers_lake_centerlines").unwrap();
+        let pg = pg_source(None).await;
+        let layer = pg.layers.get("layer1").unwrap();
         let tms = tms().lookup("WebMercatorQuad").unwrap();
         let tile = Xyz::new(0, 0, 0);
         let query_info = layer.query(tile.z).unwrap();
         let extent = tms.xy_bounds(&tile);
         let filter = FilterParams::default();
-        let query = layer_query(&layer, &query_info, &tile, &tms, &extent, &filter).unwrap();
+        let query = layer_query(layer, query_info, &tile, &tms, &extent, &filter).unwrap();
         let rows = query.fetch_all(&pg.ds.pool).await.unwrap();
         assert_eq!(rows.len(), 1473);
+    }
+
+    #[test(tokio::test)]
+    #[ignore]
+    async fn country_geoms() {
+        // Trying to reproduce an empty ST_AsMvtGeom for 'BRA' with:
+        // SELECT ST_Summary(ST_AsMvtGeom(wkb_geometry, ST_TileEnvelope(0, 0, 0), 4096, 0, true)) AS wkb_geometry,"adm0_a3","mapcolor7"
+        //  FROM (SELECT wkb_geometry, adm0_a3, mapcolor7 FROM ne_10m_admin_0_countries WHERE sov_a3 IN ('BRA', 'ARG')) AS _q
+        //  WHERE wkb_geometry && ST_TileEnvelope(0, 0, 0);
+        // Works with same PostGIS version, but older GEOS, Proj, etc.
+        // POSTGIS="3.4.2 c19ce56" [EXTENSION] PGSQL="160" GEOS="3.12.1-CAPI-1.18.1" PROJ="9.4.0 NETWORK_ENABLED=OFF URL_ENDPOINT=https://cdn.proj.org USER_WRITABLE_DIRECTORY=/var/lib/pgsql/.local/share/proj DATABASE_PATH=/usr/share/proj/proj.db" LIBXML="2.12.5" LIBJSON="0.17" LIBPROTOBUF="1.5.0" WAGYU="0.5.0 (Internal)"
+        let pg = pg_source(Some("SELECT wkb_geometry, adm0_a3, mapcolor7 FROM ne_10m_admin_0_countries WHERE sov_a3 IN ('BRA', 'ARG')".to_string())).await;
+        let layer = pg.layers.get("layer1").unwrap();
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
+        let tile = Xyz::new(0, 0, 0);
+        let query_info = layer.query(tile.z).unwrap();
+        let extent = tms.xy_bounds(&tile);
+        let filter = FilterParams::default();
+        let query = layer_query(layer, query_info, &tile, &tms, &extent, &filter).unwrap();
+        let rows = query.fetch_all(&pg.ds.pool).await.unwrap();
+        assert_eq!(rows.len(), 2);
+        // rows.iter().for_each(|row| {
+        //     dbg!(row.get::<&str, _>("adm0_a3"));
+        // });
+        let geoms = rows
+            .iter()
+            .map(|row| row.try_get::<Option<wkb::Ewkb>, _>("wkb_geometry").unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(geoms.len(), 2);
+        assert!(geoms[0].is_some());
+        assert!(geoms[1].is_some());
     }
 }
