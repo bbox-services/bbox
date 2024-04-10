@@ -82,6 +82,17 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/ServerError'
+  /collections/{collectionId}/queryables':
+    get:
+      tags:
+        - Queryables
+      summary: the queryable properties of a feature collection in the dataset
+      operationId: getCollectionQueryables
+      responses:
+        '200':
+          $ref: '#/components/responses/Queryables'
+        '500':
+          $ref: '#/components/responses/ServerError'
   '/collections/{collectionId}/items':
     get:
       tags:
@@ -843,6 +854,20 @@ components:
                 rel: license
                 type: application/rdf+xml
                 title: CC0-1.0
+        text/html:
+          schema:
+            type: string
+    Queryables:
+      description: |-
+        Information about the queryable properties for a given feature collection with id `collectionId`.
+
+        The response contains the properties for a given collection which includes:
+
+        * A title and type for the queryable properties;
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/json_schema'
         text/html:
           schema:
             type: string
