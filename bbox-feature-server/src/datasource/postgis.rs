@@ -576,6 +576,7 @@ async fn get_column_info(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bbox_core::ogcapi::QueryableType;
     use std::collections::HashMap;
     use test_log::test;
 
@@ -609,7 +610,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: None,
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
@@ -636,7 +637,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: None,
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
@@ -655,7 +656,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
 
         let filter = FilterParams {
@@ -697,6 +698,9 @@ mod tests {
         let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
+
+        let other_columns: HashMap<String, QueryableType> =
+            [("name".to_string(), QueryableType::String)].into();
         let source = PgCollectionSource {
             ds,
             sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne_10m_rivers_lake_centerlines".to_string(),
@@ -704,7 +708,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
             temporal_end_column: None,
-            other_columns: HashSet::from([("name".to_string())]),
+            other_columns,
         };
 
         let filter = FilterParams {
