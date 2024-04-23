@@ -223,6 +223,16 @@ kbd {
     visibility: visible;
 }
 
+.chapter-item.affix::before {
+    content: url('/favicon.svg');
+}
+
+.chapter-item.affix a {
+    font-weight: bold;
+    padding-top: 2px;
+    padding-left: 2px;
+}
+
 .chapter li.part-title {
     color: var(--sidebar-fg);
     margin: 5px 0px;
