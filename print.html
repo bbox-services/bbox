@@ -1061,10 +1061,12 @@ to transform the known points.</p>
 <p>Example:</p>
 <pre><code>echo -90 -180 | cs2cs EPSG:4326 EPSG:8857
 -10216474.79    -8392927.60 0.00
+echo 0 -180 | cs2cs EPSG:4326 EPSG:8857
+-17243959.06    0.00 0.00
 </code></pre>
 <p>With this parameters, you can create a JSON file with the tile grid description.</p>
 <p>Example:</p>
-<pre><code>morecantile custom --epsg 8857 --extent -17243959.06 -8392927.6 17243959.06 8392927.6 --name "EqualEarthGreenwichWGS84Rect" --title "Equal Earth Greenwich WGS84" | jq . &gt;EqualEarthGreenwichWGS84Rect.json
+<pre><code>morecantile custom --epsg 8857 --extent -17243959.06 -17243959.06 17243959.06 17243959.06 --name "EqualEarthGreenwichWGS84Quad" --title "Equal Earth Greenwich WGS84" | jq . &gt;EqualEarthGreenwichWGS84Quad.json
 </code></pre>
 <h2 id="migration-from-t-rex"><a class="header" href="#migration-from-t-rex">Migration from t-rex</a></h2>
 <p>BBOX tile server has the same concepts as t-rex. Tile services are organized in tilesets containing layers with
@@ -1087,6 +1089,57 @@ translated, for others a warning message is emitted.</p>
 <p>In case the PostGIS <code>ST_AsMvt</code> function produces unwanted results, setting <code>postgis2</code> to <code>true</code> activates
 t-rex compatible SQL queries. Other layer options like <code>simplify</code>, <code>tolerance</code>, <code>make_valid</code> and <code>shift_longitude</code> will
 then have exactly the same effect as in t-rex.</p>
+<h2 id="troubleshooting"><a class="header" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="inspect-tiles-with-gdal"><a class="header" href="#inspect-tiles-with-gdal">Inspect tiles with GDAL</a></h3>
+<p>You can use GDAL with the <a href="https://gdal.org/drivers/vector/mvt.html">MVT driver</a> to inspect and convert MVT tiles.</p>
+<p>Inspect with <code>ogrinfo</code>:</p>
+<pre><code>ogrinfo /tmp/tilecache/ne_countries/0/0/0.pbf 
+INFO: Open of `/tmp/tilecache/ne_countries/0/0/0.pbf'
+      using driver `MVT' successful.
+1: country (Multi Polygon)
+2: country-name (Point)
+3: land-border-country (Multi Line String)
+4: state
+5: diagnostics-tile (Polygon)
+6: diagnostics-label (Point)
+</code></pre>
+<p>Inspect a single layer:</p>
+<pre><code>ogrinfo /tmp/tilecache/ne_countries/0/0/0.pbf country-name
+INFO: Open of `/tmp/tilecache/ne_countries/0/0/0.pbf'
+      using driver `MVT' successful.
+
+Layer name: country-name
+Geometry: Point
+Feature Count: 298
+Extent: (-19743990.154174, -15869550.064455) - (19871181.369241, 14852020.343923)
+Layer SRS WKT:
+PROJCRS["WGS 84 / Pseudo-Mercator",
+[...]
+mvt_id: Integer64 (0.0)
+abbrev: String (0.0)
+name: String (0.0)
+OGRFeature(country-name):0
+  abbrev (String) = Indo.
+  name (String) = Indonesia
+  POINT (13051775.4537504 -244598.490512565)
+</code></pre>
+<p>Convert MVT geometries and properties to GeoJSON:</p>
+<pre><code>ogr2ogr -f GeoJSON layer.json /tmp/tilecache/ne_countries/0/0/0.pbf country
+</code></pre>
+<h3 id="inspect-tiles-with-qgis"><a class="header" href="#inspect-tiles-with-qgis">Inspect tiles with QGIS</a></h3>
+<p>QGIS is using the GDAL driver to read MVT tiles as a regular geometry source.</p>
+<ul>
+<li>Open a new project</li>
+<li>Drag and drop a vector tile (file ending <code>pbf</code>) into the map canvas, or open it in the QGIS Browser</li>
+<li>Select layers to add</li>
+</ul>
+<h3 id="inspect-tile-services-with-qgis"><a class="header" href="#inspect-tile-services-with-qgis">Inspect tile services with QGIS</a></h3>
+<p>QGIS is also able to include an tile service as QGIS layer.</p>
+<p>Vector tile services can be added via <code>Layer</code> -&gt; <code>Add Layer</code> -&gt; <code>Add Vector Tile Layer</code>. Add a new generic connection with an URL
+like <code>http://localhost:8080/xyz/ne_countries/{z}/{x}/{y}.pbf</code>. QGIS also supports adding a style URL.</p>
+<p>Raster tile services can be added via <code>Layer</code> -&gt; <code>Add Layer</code> -&gt; <code>Add XYZ Layer</code>. Add a connection with an URL like
+<code>http://localhost:8080/xyz/ne_extracts/{z}/{x}/{y}.png</code>.</p>
+<p>Remark: QGIS supports the Web Mercator tile grid only.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bbox-asset-server"><a class="header" href="#bbox-asset-server">BBOX Asset server</a></h1>
 <p>Serving static and templated files.</p>
 <p>Features:</p>
