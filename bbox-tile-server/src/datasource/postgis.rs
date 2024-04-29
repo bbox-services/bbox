@@ -374,7 +374,7 @@ impl TileRead for PgSource {
         tj.attribution = Some(self.config.attribution());
         // Minimum zoom level for which tiles are available.
         // Optional. Default: 0. >= 0, <= 30.
-        tj.minzoom = Some(self.config.minzoom());
+        tj.minzoom = Some(self.config.minzoom.unwrap_or(0));
         // Maximum zoom level for which tiles are available.
         // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
         // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
