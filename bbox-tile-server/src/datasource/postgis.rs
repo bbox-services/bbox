@@ -29,6 +29,7 @@ use tilejson::{tilejson, TileJSON};
 pub struct PgSource {
     ds: PgDatasource,
     grid_srid: i32,
+    maxzoom: u8,
     layers: BTreeMap<String, PgMvtLayer>,
     /// Config with TileJSON metadata
     config: PostgisSourceParamsCfg,
@@ -83,10 +84,11 @@ impl PgMvtLayer {
 impl PgSource {
     pub async fn create(ds: &PgDatasource, cfg: &PostgisSourceParamsCfg, tms: &Tms) -> PgSource {
         let grid_srid = tms.crs().as_srid();
+        let maxzoom = cfg.maxzoom.unwrap_or(tms.maxzoom());
 
         let mut layers = BTreeMap::new();
         for layer in &cfg.layers {
-            match Self::setup_layer(ds, layer, grid_srid, cfg.postgis2).await {
+            match Self::setup_layer(ds, layer, grid_srid, maxzoom, cfg.postgis2).await {
                 Ok(mvt_layer) => {
                     layers.insert(layer.name.clone(), mvt_layer);
                 }
@@ -98,6 +100,7 @@ impl PgSource {
         PgSource {
             ds: ds.clone(),
             grid_srid,
+            maxzoom,
             layers,
             config: cfg.clone(),
         }
@@ -106,6 +109,7 @@ impl PgSource {
         ds: &PgDatasource,
         layer: &VectorLayerCfg,
         grid_srid: i32,
+        maxzoom: u8,
         postgis2: bool,
     ) -> Result<PgMvtLayer, TileSourceError> {
         // Configuration checks (TODO: add config_check to trait)
@@ -206,7 +210,7 @@ impl PgSource {
         // Lookup table for all zoom levels
         let zoom_steps = layer.zoom_steps();
         let mut query_zoom_steps = HashMap::new();
-        for zoom in layer.minzoom()..=layer.maxzoom(22) {
+        for zoom in layer.minzoom()..=layer.maxzoom(maxzoom) {
             let z = zoom_steps
                 .iter()
                 .rev()
@@ -254,7 +258,7 @@ fn layer_query<'a>(
                     query.bind(mvt_pixel_width)
                 } else {
                     info!("Undefined resolution for z={}", tile.z);
-                    return Err(TileSourceError::FilterParamError);
+                    return Err(TileSourceError::TileXyzError);
                 }
             }
             QueryParam::ScaleDenominator => {
@@ -374,7 +378,7 @@ impl TileRead for PgSource {
         // Maximum zoom level for which tiles are available.
         // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
         // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
-        tj.maxzoom = Some(self.config.maxzoom());
+        tj.maxzoom = Some(self.maxzoom);
         let extent = self.config.get_extent();
         tj.bounds = Some(tilejson::Bounds {
             left: extent.minx,
