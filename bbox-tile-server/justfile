@@ -8,7 +8,7 @@ start-db: start-docker-db docker-is-ready
 # Start test database
 [private]
 start-docker-db:
-    docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb
+    docker run -p 127.0.0.1:5439:5432 -d --name mvtbenchdb --rm sourcepole/mvtbenchdb:v1.2
 
 # Stop test database
 stop-db:

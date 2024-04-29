@@ -114,10 +114,9 @@ pub struct PostgisSourceParamsCfg {
     pub extent: Option<ExtentCfg>,
     /// Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.
     pub minzoom: Option<u8>,
-    /// Maximum zoom level for which tiles are available (Default: 22).
+    /// Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for `WebMercatorQuad`).
     ///
-    /// If unset, maxzoom is deduced from layer and query maxzoom limits.
-    /// Viewers use data from tiles at maxzoom when displaying the map at higher zoom levels.
+    /// Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.
     pub maxzoom: Option<u8>,
     /// Longitude, latitude of map center (in WGS84).
     ///
@@ -594,15 +593,6 @@ impl PostgisSourceParamsCfg {
     pub fn minzoom(&self) -> u8 {
         self.minzoom
             .unwrap_or(self.layers.iter().map(|l| l.minzoom()).min().unwrap_or(0))
-    }
-    pub fn maxzoom(&self) -> u8 {
-        self.maxzoom.unwrap_or(
-            self.layers
-                .iter()
-                .map(|l| l.maxzoom(22))
-                .max()
-                .unwrap_or(22),
-        )
     }
     pub fn attribution(&self) -> String {
         self.attribution.clone().unwrap_or("".to_string())
