@@ -100,6 +100,11 @@ jobs:
     name: Test
     needs: [build]
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: sourcepole/mvtbenchdb:v1.2
+        ports:
+          - 5439:5432
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -112,34 +117,12 @@ jobs:
         uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Start postgres
-      #   if: matrix.target != 'aarch64-apple-darwin'
-      #   uses: nyurik/action-setup-postgis@v1
-      #   id: pg
-      #   with:
-      #     username: test
-      #     password: test
-      #     database: test
-      #     rights: --superuser
-      # - name: Log DATABASE_URL string
-      #   shell: bash
-      #   run: |
-      #     echo "DATABASE_URL=$DATABASE_URL"
-      #     echo "And in base64 to bypass Github's obfuscation:"
-      #     echo "$DATABASE_URL" | base64
-      #   env:
-      #     DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
-      # - name: Init database
-      #   if: matrix.target != 'aarch64-apple-darwin'
-      #   shell: bash
-      #   run: tests/fixtures/initdb.sh
-      #   env:
-      #     DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
       - name: Unit Tests (Linux)
         run: |
           cargo test --all
-        # env:
-        #   DATABASE_URL: ${{ steps.pg.outputs.connection-uri }}
+      - name: DB Tests (Linux)
+        run: |
+          cargo test --all -- --ignored
 
   package:
     name: Package
