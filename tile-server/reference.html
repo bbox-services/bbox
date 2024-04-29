@@ -225,10 +225,9 @@
 <li><code>datasource</code> <em>String</em> (optional): Name of <code>postgis</code> datasource (Default: first with matching type)</li>
 <li><code>extent</code> <a href="#extent">Extent</a> (optional)</li>
 <li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.</li>
-<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available (Default: 22).</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for <code>WebMercatorQuad</code>).</li>
 </ul>
-<p>If unset, maxzoom is deduced from layer and query maxzoom limits.
-Viewers use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
+<p>Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
 <ul>
 <li><code>center</code> <em>Option</em> (optional): Longitude, latitude of map center (in WGS84).</li>
 </ul>
