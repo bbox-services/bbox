@@ -232,11 +232,15 @@ impl ServiceEndpoints for ProcessesService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::ProcessesServiceCfg;
     use actix_web::{body, dev::Service, http, test, App, Error};
 
     #[actix_web::test]
     #[ignore]
     async fn test_process_list() -> Result<(), Error> {
+        if !ProcessesServiceCfg::from_config().has_backend() {
+            return Ok(());
+        }
         let app = test::init_service(
             App::new().service(web::resource("/processes").route(web::get().to(process_list))),
         )
