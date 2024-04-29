@@ -37,6 +37,8 @@ jobs:
           rustup toolchain install stable --profile minimal
           if [[ "${{ matrix.target }}" == "x86_64-unknown-linux-gnu" ]]; then
             rustup component add clippy
+          elif [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
+            rustup target add x86_64-apple-darwin
           elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
             rustup target add aarch64-apple-darwin
           fi
