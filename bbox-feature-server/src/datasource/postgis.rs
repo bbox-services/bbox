@@ -11,7 +11,7 @@ use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
-use chrono::SecondsFormat;
+use chrono::DateTime;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
 use sqlx::postgres::PgTypeInfo;
@@ -86,6 +86,7 @@ impl CollectionDatasource for PgDatasource {
                 "TEXT" | "VARCHAR" | "CHAR" => QueryableType::String,
                 "INT4" | "INT8" => QueryableType::Integer,
                 "FLOAT4" | "FLOAT8" => QueryableType::Number,
+                "TIMESTAMP" | "TIMESTAMPTZ" => QueryableType::Datetime,
                 "BOOL" => QueryableType::Bool,
                 _ => {
                     return Err(Error::DatasourceSetupError(format!(
@@ -252,7 +253,8 @@ impl CollectionSource for PgCollectionSource {
                     if parts.len() == 1 {
                         if let TemporalType::DateTime(dt) = parts[0] {
                             builder.push(format!(" {temporal_column} = ",));
-                            builder.push_bind(dt.to_rfc3339_opts(SecondsFormat::Millis, true));
+                            builder.push_bind(dt);
+                            debug!("{temporal_column} = {}", dt);
                         }
                     } else {
                         match parts[0] {
@@ -263,26 +265,23 @@ impl CollectionSource for PgCollectionSource {
                                 }
                                 TemporalType::DateTime(dt) => {
                                     builder.push(format!(" {temporal_column} <= ",));
-                                    builder
-                                        .push_bind(dt.to_rfc3339_opts(SecondsFormat::Millis, true));
+                                    builder.push_bind(dt);
+                                    debug!("{temporal_column} <= {}", dt);
                                 }
                             },
                             TemporalType::DateTime(dt1) => match parts[1] {
                                 TemporalType::Open => {
                                     builder.push(format!(" {temporal_column} >= ",));
-                                    builder.push_bind(
-                                        dt1.to_rfc3339_opts(SecondsFormat::Millis, true),
-                                    );
+                                    builder.push_bind(dt1);
+                                    debug!("{temporal_column} >= {}", dt1);
                                 }
                                 TemporalType::DateTime(dt2) => {
                                     builder.push(format!(" {temporal_column} >= "));
-                                    builder.push_bind(
-                                        dt1.to_rfc3339_opts(SecondsFormat::Millis, true),
-                                    );
+                                    builder.push_bind(dt1);
+                                    debug!("{temporal_column} >= {}", dt1);
                                     builder.push(format!(" and {temporal_end_column} <= ",));
-                                    builder.push_bind(
-                                        dt2.to_rfc3339_opts(SecondsFormat::Millis, true),
-                                    );
+                                    builder.push_bind(dt2);
+                                    debug!("{temporal_column} <= {}", dt2);
                                 }
                             },
                         }
@@ -313,9 +312,11 @@ impl CollectionSource for PgCollectionSource {
                         if val.rfind('*').is_some() {
                             separated.push(format!("{k}::text like "));
                             let val = val.replace('*', "%");
+                            debug!("{k}::text like {val}");
                             separated.push_bind_unseparated(val);
                         } else {
                             separated.push(format!("{k}="));
+                            debug!("{k} = {val}");
                             match v {
                                 QueryableType::String => separated.push_bind_unseparated(val),
                                 QueryableType::Integer => separated.push_bind_unseparated(
@@ -326,6 +327,10 @@ impl CollectionSource for PgCollectionSource {
                                 ),
                                 QueryableType::Bool => separated.push_bind_unseparated(
                                     val.parse::<bool>().map_err(|_| Error::QueryParams)?,
+                                ),
+                                QueryableType::Datetime => separated.push_bind_unseparated(
+                                    DateTime::parse_from_rfc3339(val)
+                                        .map_err(|_| Error::QueryParams)?,
                                 ),
                             };
                         }
@@ -343,10 +348,12 @@ impl CollectionSource for PgCollectionSource {
         let limit = filter.limit_or_default();
         if limit > 0 {
             builder.push(" LIMIT ");
+            debug!("LIMIT {limit}");
             builder.push_bind(limit as i64);
         }
         if let Some(offset) = filter.offset {
             builder.push(" OFFSET ");
+            debug!("OFFSET {offset}");
             builder.push_bind(offset as i64);
         }
         debug!("SQL: {}", builder.sql());
