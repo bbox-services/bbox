@@ -11,11 +11,12 @@ use crate::inventory::FeatureCollection;
 use async_trait::async_trait;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
-use chrono::SecondsFormat;
+use chrono::DateTime;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
-use sqlx::{postgres::PgRow, Postgres, QueryBuilder, Row};
-use std::collections::HashSet;
+use sqlx::postgres::PgTypeInfo;
+use sqlx::{postgres::PgRow, Column, Postgres, QueryBuilder, Row};
+use std::collections::HashMap;
 
 pub type Datasource = PgDatasource;
 
@@ -71,7 +72,30 @@ impl CollectionDatasource for PgDatasource {
         if pk_column.is_none() {
             warn!("Datasource `{id}`: `fid_field` missing - single item queries will be ignored");
         }
-        let other_columns = srccfg.queryable_fields.clone().into_iter().collect();
+        let mut queryable_fields = srccfg.queryable_fields.clone();
+        if let Some(ref t) = temporal_column {
+            queryable_fields.push(t.clone());
+        }
+        if let Some(ref t) = temporal_end_column {
+            queryable_fields.push(t.clone());
+        }
+        let queryables_types = get_column_info(self, &sql, Some(&queryable_fields)).await?;
+        let mut other_columns = HashMap::new();
+        for (k, v) in &queryables_types {
+            let queryable_type = match v.to_string().as_str() {
+                "TEXT" | "VARCHAR" | "CHAR" => QueryableType::String,
+                "INT4" | "INT8" => QueryableType::Integer,
+                "FLOAT4" | "FLOAT8" => QueryableType::Number,
+                "TIMESTAMP" | "TIMESTAMPTZ" => QueryableType::Datetime,
+                "BOOL" => QueryableType::Bool,
+                _ => {
+                    return Err(Error::DatasourceSetupError(format!(
+                        "{k} has a postgres type {v} which is not currently handled and can't be used a queryable"
+                    )))
+                }
+            };
+            other_columns.insert(k.clone(), queryable_type);
+        }
 
         let source = PgCollectionSource {
             ds: self.clone(),
@@ -87,7 +111,8 @@ impl CollectionDatasource for PgDatasource {
             .query_bbox()
             .await
             .unwrap_or(vec![-180.0, -90.0, 180.0, 90.0]);
-        let collection = CoreCollection {
+
+        let mut collection = CoreCollection {
             id: id.clone(),
             title: Some(id.clone()),
             description: cfg.description.clone(),
@@ -109,6 +134,18 @@ impl CollectionDatasource for PgDatasource {
                 length: None,
             }],
         };
+
+        if !queryable_fields.is_empty() {
+            collection.links.push(ApiLink {
+                href: format!("/collections/{id}/queryables"),
+                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/queryables".to_string()),
+                type_: Some("application/schema+json".to_string()),
+                title: Some(id.clone()),
+                hreflang: None,
+                length: None,
+            })
+        }
+
         let fc = FeatureCollection {
             collection,
             source: Box::new(source),
@@ -158,7 +195,7 @@ pub struct PgCollectionSource {
     temporal_column: Option<String>,
     temporal_end_column: Option<String>,
     /// Queriable columns.
-    other_columns: HashSet<String>,
+    other_columns: HashMap<String, QueryableType>,
 }
 
 #[async_trait]
@@ -215,10 +252,9 @@ impl CollectionSource for PgCollectionSource {
                     }
                     if parts.len() == 1 {
                         if let TemporalType::DateTime(dt) = parts[0] {
-                            builder.push(format!(
-                                " {temporal_column} = '{}'",
-                                dt.to_rfc3339_opts(SecondsFormat::Millis, true)
-                            ));
+                            builder.push(format!(" {temporal_column} = ",));
+                            builder.push_bind(dt);
+                            debug!("{temporal_column} = {}", dt);
                         }
                     } else {
                         match parts[0] {
@@ -228,26 +264,24 @@ impl CollectionSource for PgCollectionSource {
                                     return Err(Error::QueryParams);
                                 }
                                 TemporalType::DateTime(dt) => {
-                                    builder.push(format!(
-                                        " {temporal_column} <= '{}'",
-                                        dt.to_rfc3339_opts(SecondsFormat::Millis, true)
-                                    ));
+                                    builder.push(format!(" {temporal_column} <= ",));
+                                    builder.push_bind(dt);
+                                    debug!("{temporal_column} <= {}", dt);
                                 }
                             },
                             TemporalType::DateTime(dt1) => match parts[1] {
                                 TemporalType::Open => {
-                                    builder.push(format!(
-                                        " {temporal_column} >= '{}'",
-                                        dt1.to_rfc3339_opts(SecondsFormat::Millis, true)
-                                    ));
+                                    builder.push(format!(" {temporal_column} >= ",));
+                                    builder.push_bind(dt1);
+                                    debug!("{temporal_column} >= {}", dt1);
                                 }
                                 TemporalType::DateTime(dt2) => {
-                                    builder.push(format!(
-                                        " {temporal_column} >= '{}' and {temporal_end_column} <= '{}'",
-                                            dt1.to_rfc3339_opts(SecondsFormat::Millis, true),
-                                            dt2.to_rfc3339_opts(SecondsFormat::Millis, true)
-
-                                    ));
+                                    builder.push(format!(" {temporal_column} >= "));
+                                    builder.push_bind(dt1);
+                                    debug!("{temporal_column} >= {}", dt1);
+                                    builder.push(format!(" and {temporal_end_column} <= ",));
+                                    builder.push_bind(dt2);
+                                    debug!("{temporal_column} <= {}", dt2);
                                 }
                             },
                         }
@@ -274,15 +308,32 @@ impl CollectionSource for PgCollectionSource {
                 for (key, val) in others {
                     // check if the passed in field matches queryables
                     // detect if value has wildcards
-                    if self.other_columns.get(key).is_some() {
-                        let val = if val.rfind('*').is_some() {
-                            separated.push(format!("{key}::text like "));
-                            val.replace('*', "%")
+                    if let Some((k, v)) = self.other_columns.get_key_value(key) {
+                        if val.rfind('*').is_some() {
+                            separated.push(format!("{k}::text like "));
+                            let val = val.replace('*', "%");
+                            debug!("{k}::text like {val}");
+                            separated.push_bind_unseparated(val);
                         } else {
-                            separated.push(format!("{key}::text="));
-                            val.to_string()
-                        };
-                        separated.push_bind_unseparated(val);
+                            separated.push(format!("{k}="));
+                            debug!("{k} = {val}");
+                            match v {
+                                QueryableType::String => separated.push_bind_unseparated(val),
+                                QueryableType::Integer => separated.push_bind_unseparated(
+                                    val.parse::<i64>().map_err(|_| Error::QueryParams)?,
+                                ),
+                                QueryableType::Number => separated.push_bind_unseparated(
+                                    val.parse::<f64>().map_err(|_| Error::QueryParams)?,
+                                ),
+                                QueryableType::Bool => separated.push_bind_unseparated(
+                                    val.parse::<bool>().map_err(|_| Error::QueryParams)?,
+                                ),
+                                QueryableType::Datetime => separated.push_bind_unseparated(
+                                    DateTime::parse_from_rfc3339(val)
+                                        .map_err(|_| Error::QueryParams)?,
+                                ),
+                            };
+                        }
                     } else {
                         error!("Invalid query param {key}");
                         return Err(Error::QueryParams);
@@ -297,10 +348,12 @@ impl CollectionSource for PgCollectionSource {
         let limit = filter.limit_or_default();
         if limit > 0 {
             builder.push(" LIMIT ");
+            debug!("LIMIT {limit}");
             builder.push_bind(limit as i64);
         }
         if let Some(offset) = filter.offset {
             builder.push(" OFFSET ");
+            debug!("OFFSET {offset}");
             builder.push_bind(offset as i64);
         }
         debug!("SQL: {}", builder.sql());
@@ -367,6 +420,30 @@ impl CollectionSource for PgCollectionSource {
         } else {
             Ok(None)
         }
+    }
+    async fn queryables(&self, collection_id: &str) -> Result<Option<Queryables>> {
+        let properties: HashMap<String, QueryableProperty> = self
+            .other_columns
+            .iter()
+            .map(|s| {
+                let title = s.0.to_string();
+                (
+                    title.clone(),
+                    QueryableProperty {
+                        title: Some(title),
+                        type_: Some(s.1.clone()),
+                        format: None,
+                    },
+                )
+            })
+            .collect();
+        Ok(Some(Queryables {
+            id: format!("/collections/{collection_id}/queryables"),
+            title: Some(collection_id.to_string()),
+            schema: "http://json-schema.org/draft/2019-09/schema".to_string(),
+            type_: "object".to_string(),
+            properties,
+        }))
     }
 }
 
@@ -469,7 +546,6 @@ async fn detect_geometry(ds: &PgDatasource, schema: &str, table: &str) -> Result
 
 async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
     debug!("Collection query: {sql}");
-    // TODO: prepare only
     if let Err(e) = sqlx::query(&sql).fetch_one(&ds.pool).await {
         error!("Error in collection query `{sql}`: {e}");
         return Err(e.into());
@@ -477,9 +553,37 @@ async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
     Ok(sql)
 }
 
+async fn get_column_info(
+    ds: &PgDatasource,
+    sql: &str,
+    cols: Option<&Vec<String>>,
+) -> Result<HashMap<String, PgTypeInfo>> {
+    match sqlx::query(sql).fetch_one(&ds.pool).await {
+        Ok(res) => {
+            let mut hm = HashMap::new();
+            for col in res.columns() {
+                let colname = col.name().to_string();
+                if let Some(filter_cols) = cols {
+                    if !filter_cols.contains(&colname) {
+                        continue;
+                    }
+                }
+                let type_info = col.type_info();
+                hm.insert(colname, type_info.clone());
+            }
+            Ok(hm)
+        }
+        Err(e) => {
+            error!("Error in collection query `{sql}`: {e}");
+            Err(e.into())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bbox_core::ogcapi::QueryableType;
     use std::collections::HashMap;
     use test_log::test;
 
@@ -513,7 +617,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: None,
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), filter.limit_or_default() as usize);
@@ -540,7 +644,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: None,
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 10);
@@ -559,7 +663,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
             temporal_end_column: None,
-            other_columns: HashSet::new(),
+            other_columns: HashMap::new(),
         };
 
         let filter = FilterParams {
@@ -601,6 +705,9 @@ mod tests {
         let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
             .unwrap();
+
+        let other_columns: HashMap<String, QueryableType> =
+            [("name".to_string(), QueryableType::String)].into();
         let source = PgCollectionSource {
             ds,
             sql: "SELECT *, '2024-01-01 00:00:00Z'::timestamptz - (fid-1) * INTERVAL '1 day' AS ts FROM ne_10m_rivers_lake_centerlines".to_string(),
@@ -608,7 +715,7 @@ mod tests {
             pk_column: Some("fid".to_string()),
             temporal_column: Some("ts".to_string()),
             temporal_end_column: None,
-            other_columns: HashSet::from([("name".to_string())]),
+            other_columns,
         };
 
         let filter = FilterParams {

@@ -247,6 +247,10 @@ impl CollectionSource for GpkgCollectionSource {
             Ok(None)
         }
     }
+
+    async fn queryables(&self, _collection_id: &str) -> Result<Option<Queryables>> {
+        Ok(None)
+    }
 }
 
 fn row_to_feature(row: &SqliteRow, table_info: &GpkgCollectionSource) -> Result<CoreFeature> {

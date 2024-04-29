@@ -200,6 +200,20 @@ impl Inventory {
             }
         }
     }
+
+    pub async fn collection_queryables(&self, collection_id: &str) -> Option<Queryables> {
+        let Some(fc) = self.collection(collection_id) else {
+            warn!("Ignoring error getting collection {collection_id}");
+            return None;
+        };
+        match fc.source.queryables(collection_id).await {
+            Ok(queryables) => queryables,
+            Err(e) => {
+                warn!("Ignoring error getting collection items for {collection_id}: {e}");
+                None
+            }
+        }
+    }
 }
 
 #[cfg(test)]
