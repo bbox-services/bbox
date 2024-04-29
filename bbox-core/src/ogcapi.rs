@@ -156,6 +156,8 @@ pub enum QueryableType {
     Number,
     #[serde(rename = "boolean")]
     Bool,
+    #[serde(rename = "datetime")]
+    Datetime,
 }
 
 pub type GeoJsonProperties = serde_json::value::Value;
