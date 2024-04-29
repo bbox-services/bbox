@@ -79,6 +79,12 @@ impl PgMvtLayer {
             .get(&zoom)
             .and_then(|minzoom| self.queries.get(minzoom))
     }
+    pub fn minzoom(&self) -> u8 {
+        *self.query_zoom_steps.keys().min().unwrap_or(&0)
+    }
+    pub fn maxzoom(&self) -> u8 {
+        *self.query_zoom_steps.keys().max().unwrap_or(&0)
+    }
 }
 
 impl PgSource {
@@ -431,8 +437,8 @@ impl TileRead for PgSource {
                     id: id.clone(),
                     fields,
                     description: None,
-                    maxzoom: None,
-                    minzoom: None,
+                    minzoom: Some(layer.minzoom()),
+                    maxzoom: Some(layer.maxzoom()),
                     other: BTreeMap::default(),
                 }
             })
