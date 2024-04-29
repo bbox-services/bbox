@@ -112,7 +112,7 @@ pub struct PostgisSourceParamsCfg {
     // maybe we should allow direct DS URLs?
     pub datasource: Option<String>,
     pub extent: Option<ExtentCfg>,
-    /// Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.
+    /// Minimum zoom level for which tiles are available (Default: 0).
     pub minzoom: Option<u8>,
     /// Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for `WebMercatorQuad`).
     ///
@@ -590,10 +590,6 @@ static WORLD_EXTENT: ExtentCfg = ExtentCfg {
 };
 
 impl PostgisSourceParamsCfg {
-    pub fn minzoom(&self) -> u8 {
-        self.minzoom
-            .unwrap_or(self.layers.iter().map(|l| l.minzoom()).min().unwrap_or(0))
-    }
     pub fn attribution(&self) -> String {
         self.attribution.clone().unwrap_or("".to_string())
     }
