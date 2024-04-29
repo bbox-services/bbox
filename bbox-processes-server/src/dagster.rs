@@ -746,6 +746,9 @@ mod tests {
     #[actix_web::test]
     #[ignore]
     async fn query_test() {
+        if ProcessesServiceCfg::from_config().dagster_backend.is_none() {
+            return;
+        }
         let backend = DagsterBackend::new();
         let jobs = backend.process_list().await.unwrap();
         assert_eq!(jobs[0].name, "get_gemeinde");
