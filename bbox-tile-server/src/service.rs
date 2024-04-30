@@ -15,12 +15,13 @@ use bbox_core::{Compression, Format, TileResponse};
 use clap::{ArgMatches, Args, FromArgMatches};
 use log::debug;
 use martin_mbtiles::Metadata;
+use ogcapi_types::tiles::TileMatrixSet;
 use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
 use std::num::NonZeroU16;
 use std::path::PathBuf;
-use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSet, Tms, Xyz};
+use tile_grid::{tms, BoundingBox, RegistryError, TileMatrixSetOps, Tms, Xyz};
 use tilejson::TileJSON;
 
 #[derive(Clone)]
