@@ -106,6 +106,7 @@ genref json md root title:
                       typemd = f"[{typename}](#{typename.lower()})" if iscfg else f"*{typename}*"
                       optional = ' (optional)' if fieldtypename == 'Option' or 'default' in (struct.get('attr') or '') else ''
                       docpart = f": {struct.get('docs')}" if struct.get('docs') else ''
+                      docpart = docpart.replace("\n", "\n  ")
                       print(f"* {fieldname}{typemd}{optional}{docpart}")
                       #print(f" // {entry}")
               elif struct['enums']:
