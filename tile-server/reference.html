@@ -222,22 +222,38 @@
 <h4 id="postgis"><a class="header" href="#postgis">postgis</a></h4>
 <p>PostGIS datasource</p>
 <ul>
-<li><code>datasource</code> <em>String</em> (optional): Name of <code>postgis</code> datasource (Default: first with matching type)</li>
-<li><code>extent</code> <a href="#extent">Extent</a> (optional)</li>
-<li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0). If unset, minzoom is deduced from layer and query minzoom limits.</li>
-<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for <code>WebMercatorQuad</code>).</li>
-</ul>
+<li>
+<p><code>datasource</code> <em>String</em> (optional): Name of <code>postgis</code> datasource (Default: first with matching type)</p>
+</li>
+<li>
+<p><code>extent</code> <a href="#extent">Extent</a> (optional)</p>
+</li>
+<li>
+<p><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0).</p>
+</li>
+<li>
+<p><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for <code>WebMercatorQuad</code>).</p>
 <p>Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
-<ul>
-<li><code>center</code> <em>Option</em> (optional): Longitude, latitude of map center (in WGS84).</li>
-</ul>
+</li>
+<li>
+<p><code>center</code> <em>Option</em> (optional): Longitude, latitude of map center (in WGS84).</p>
 <p>Viewers can use this value to set the default location.</p>
-<ul>
-<li><code>start_zoom</code> <em>u8</em> (optional): Start zoom level. Must be between minzoom and maxzoom.</li>
-<li><code>attribution</code> <em>String</em> (optional): Acknowledgment of ownership, authorship or copyright.</li>
-<li><code>postgis2</code> <em>bool</em> (optional): PostGIS 2 compatible query (without ST_AsMVT)</li>
-<li><code>diagnostics</code> <a href="#tilediagnostics">TileDiagnostics</a> (optional): Add diagnostics layer</li>
-<li><code>layer[]</code> <a href="#vectorlayer">VectorLayer</a>: Layer definitions</li>
+</li>
+<li>
+<p><code>start_zoom</code> <em>u8</em> (optional): Start zoom level. Must be between minzoom and maxzoom.</p>
+</li>
+<li>
+<p><code>attribution</code> <em>String</em> (optional): Acknowledgment of ownership, authorship or copyright.</p>
+</li>
+<li>
+<p><code>postgis2</code> <em>bool</em> (optional): PostGIS 2 compatible query (without ST_AsMVT)</p>
+</li>
+<li>
+<p><code>diagnostics</code> <a href="#tilediagnostics">TileDiagnostics</a> (optional): Add diagnostics layer</p>
+</li>
+<li>
+<p><code>layer[]</code> <a href="#vectorlayer">VectorLayer</a>: Layer definitions</p>
+</li>
 </ul>
 <h4 id="mbtiles"><a class="header" href="#mbtiles">mbtiles</a></h4>
 <p>Tiles from MBTile archive</p>
@@ -269,41 +285,77 @@
 <h4 id="vectorlayer"><a class="header" href="#vectorlayer">VectorLayer</a></h4>
 <p>PostGIS vector layer</p>
 <ul>
-<li><code>name</code> <em>String</em>: Layer name.</li>
-<li><code>geometry_field</code> <em>String</em> (optional): Name of geometry field.</li>
-<li><code>geometry_type</code> <em>String</em> (optional): Type of geometry in PostGIS database</li>
-</ul>
+<li>
+<p><code>name</code> <em>String</em>: Layer name.</p>
+</li>
+<li>
+<p><code>geometry_field</code> <em>String</em> (optional): Name of geometry field.</p>
+</li>
+<li>
+<p><code>geometry_type</code> <em>String</em> (optional): Type of geometry in PostGIS database</p>
 <p><code>POINT</code> | <code>MULTIPOINT</code> | <code>LINESTRING</code> | <code>MULTILINESTRING</code> | <code>POLYGON</code> | <code>MULTIPOLYGON</code> | <code>COMPOUNDCURVE</code> | <code>CURVEPOLYGON</code></p>
-<ul>
-<li><code>srid</code> <em>i32</em> (optional): Spatial reference system (PostGIS SRID)</li>
-<li><code>no_transform</code> <em>bool</em> (optional): Assume geometry is in grid SRS</li>
-<li><code>fid_field</code> <em>String</em> (optional): Name of feature ID field</li>
-<li><code>table_name</code> <em>String</em> (optional): Select all fields from table (either table or <code>query</code> is required)</li>
-<li><code>query[]</code> <a href="#vectorlayerquery">VectorLayerQuery</a> (optional): Custom queries</li>
-<li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for which tiles are available.</li>
-<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available.</li>
-<li><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile (Default: unlimited).</li>
-<li><code>tile_size</code> <em>u32</em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)</li>
-<li><code>buffer_size</code> <em>u32</em> (optional): Tile buffer size in pixels (None: no clipping)</li>
-<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons). (Default: false)</li>
-</ul>
+</li>
+<li>
+<p><code>srid</code> <em>i32</em> (optional): Spatial reference system (PostGIS SRID)</p>
+</li>
+<li>
+<p><code>no_transform</code> <em>bool</em> (optional): Assume geometry is in grid SRS</p>
+</li>
+<li>
+<p><code>fid_field</code> <em>String</em> (optional): Name of feature ID field</p>
+</li>
+<li>
+<p><code>table_name</code> <em>String</em> (optional): Select all fields from table (either table or <code>query</code> is required)</p>
+</li>
+<li>
+<p><code>query[]</code> <a href="#vectorlayerquery">VectorLayerQuery</a> (optional): Custom queries</p>
+</li>
+<li>
+<p><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for which tiles are available.</p>
+</li>
+<li>
+<p><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available.</p>
+</li>
+<li>
+<p><code>query_limit</code> <em>u32</em> (optional): Maximal number of features to read for a single tile (Default: unlimited).</p>
+</li>
+<li>
+<p><code>tile_size</code> <em>u32</em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)</p>
+</li>
+<li>
+<p><code>buffer_size</code> <em>u32</em> (optional): Tile buffer size in pixels (None: no clipping)</p>
+</li>
+<li>
+<p><code>simplify</code> <em>bool</em> (optional): Simplify geometry (lines and polygons). (Default: false)</p>
 <p>Applied to PostGIS sources only.</p>
-<ul>
-<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (defaults to <code>!pixel_width!/2</code>)</li>
-<li><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries after simplification (Default: false)</li>
-</ul>
+</li>
+<li>
+<p><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (defaults to <code>!pixel_width!/2</code>)</p>
+</li>
+<li>
+<p><code>make_valid</code> <em>bool</em> (optional): Fix invalid geometries after simplification (Default: false)</p>
 <p>Remark: Clipping step does also fix invalid geometries.</p>
-<ul>
-<li><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)</li>
+</li>
+<li>
+<p><code>shift_longitude</code> <em>bool</em> (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)</p>
+</li>
 </ul>
 <h4 id="vectorlayerquery"><a class="header" href="#vectorlayerquery">VectorLayerQuery</a></h4>
 <ul>
-<li><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for using this query.</li>
-<li><code>maxzoom</code> <em>u8</em> (optional): Maximal zoom level for using this query.</li>
-<li><code>simplify</code> <em>bool</em> (optional): Simplify geometry (override layer default setting)</li>
-<li><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (override layer default setting)</li>
-<li><code>sql</code> <em>String</em> (optional): User defined SQL query.</li>
-</ul>
+<li>
+<p><code>minzoom</code> <em>u8</em> (optional): Minimal zoom level for using this query.</p>
+</li>
+<li>
+<p><code>maxzoom</code> <em>u8</em> (optional): Maximal zoom level for using this query.</p>
+</li>
+<li>
+<p><code>simplify</code> <em>bool</em> (optional): Simplify geometry (override layer default setting)</p>
+</li>
+<li>
+<p><code>tolerance</code> <em>String</em> (optional): Simplification tolerance (override layer default setting)</p>
+</li>
+<li>
+<p><code>sql</code> <em>String</em> (optional): User defined SQL query.</p>
 <p>The following variables are replaced at runtime:</p>
 <ul>
 <li><code>!bbox!</code>: Bounding box of tile</li>
@@ -312,6 +364,8 @@
 <li><code>!scale_denominator!</code>: Map scale of tile request</li>
 <li><code>!pixel_width!</code>: Width of pixel in grid units</li>
 <li><code>!&lt;fieldname&gt;!</code>: Custom field query variable</li>
+</ul>
+</li>
 </ul>
 <h2 id="tilecacheprovider"><a class="header" href="#tilecacheprovider">TileCacheProvider</a></h2>
 <ul>
