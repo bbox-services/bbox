@@ -47,6 +47,6 @@ thiserror = "1.0.31"
 tokio = { version = "1.19.2" }
 
 [patch.crates-io]
-tile-grid = { path = "../tile-grid" }
+#tile-grid = { path = "../tile-grid" }
 #geozero = { path = "../geozero/geozero" }
 #fast_paths = { path = "../fast_paths" }

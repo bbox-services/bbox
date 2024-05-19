@@ -2,7 +2,7 @@
 
 ## Creating a custom grid
 
-BBOX expects grid definitions according to the OGC Two Dimensional Tile Matrix Set specification found in https://docs.ogc.org/is/17-083r4/17-083r4.html.
+BBOX expects grid definitions according to the OGC Two Dimensional Tile Matrix Set specification found in <https://docs.ogc.org/is/17-083r4/17-083r4.html>.
 
 Some reference grids are included in [tile-grid](https://github.com/pka/tile-grid/tree/main/data).
 
