@@ -214,7 +214,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
             };
             if let Ok(grid) = service.grid(&tileset.tms) {
                 ts_item.crs = grid.tms.crs.clone();
-                ts_item.tile_matrix_set_uri = grid.tms.uri.clone();
+                ts_item.tile_matrix_set_uri.clone_from(&grid.tms.uri);
                 if grid.tms.id == "WebMercatorQuad" {
                     ts_item.links.push(Link {
                         rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),

@@ -23,7 +23,7 @@ async fn process_list(_req: HttpRequest) -> HttpResponse {
         .iter()
         .map(|job| {
             let mut process = ProcessSummary::new(job.name.clone(), "1.0.0".to_string());
-            process.description = job.description.clone();
+            process.description.clone_from(&job.description);
             process
         })
         .collect::<Vec<_>>();
