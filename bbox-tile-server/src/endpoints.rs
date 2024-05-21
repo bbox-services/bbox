@@ -6,10 +6,10 @@ use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::ServiceEndpoints;
 use bbox_core::{Compression, Format};
 use log::error;
+use ogcapi_types::common::{Crs, Link};
+use ogcapi_types::tiles::{DataType, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords};
 use std::collections::HashMap;
-use tile_grid::{
-    Crs, DataType, Link, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords, Xyz,
-};
+use tile_grid::Xyz;
 
 /// XYZ tile endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
@@ -214,7 +214,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
             };
             if let Ok(grid) = service.grid(&tileset.tms) {
                 ts_item.crs = grid.tms.crs.clone();
-                ts_item.tile_matrix_set_uri = grid.tms.uri.clone();
+                ts_item.tile_matrix_set_uri.clone_from(&grid.tms.uri);
                 if grid.tms.id == "WebMercatorQuad" {
                     ts_item.links.push(Link {
                         rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
