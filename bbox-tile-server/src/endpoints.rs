@@ -155,8 +155,6 @@ async fn tile_request(
                 r.insert_header((key, value));
                 // TODO: use append_header for "Server-Timing" and others?
             }
-            // let cache_max_age = service.webserver.cache_control_max_age.unwrap_or(300);
-            // r.insert_header((header::CACHE_CONTROL, format!("max-age={}", cache_max_age)));
             Ok(r.streaming(tile_resp.into_stream()))
         }
         Ok(None) => Ok(HttpResponse::NoContent().finish()),
