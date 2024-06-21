@@ -897,11 +897,19 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 <ul>
 <li><code>name</code> <em>String</em>: Tileset name, visible part of endpoint</li>
 <li><code>tms</code> <em>String</em> (optional): Tile matrix set identifier (Default: <code>WebMercatorQuad</code>)</li>
+<li><code>tile_crs[]</code> <a href="tile-server/reference.html#tilecrs">TileCrs</a> (optional): Spatial reference system of tile data (override grid CRS)</li>
 <li><a href="tile-server/reference.html#source">Source</a>: Tile source</li>
 <li><code>cache</code> <em>String</em> (optional): Tile cache name (Default: no cache)</li>
 <li><code>cache_format</code> <em>String</em> (optional): Tile format in store. Defaults to <code>png</code> for raster and <code>pbf</code> for vector tiles</li>
 <li><code>cache_limits</code> <a href="tile-server/reference.html#cachelimit">CacheLimit</a> (optional): Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.</li>
 <li><code>cache_control[]</code> <a href="tile-server/reference.html#cachecontrol">CacheControl</a> (optional): HTTP cache control headers</li>
+</ul>
+<h3 id="tilecrs"><a class="header" href="#tilecrs">TileCrs</a></h3>
+<p>Spatial reference system of tile data</p>
+<ul>
+<li><code>srid</code> <em>i32</em>: Spatial reference system of tile data (PostGIS SRID)</li>
+<li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level (Default: 0).</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level.</li>
 </ul>
 <h3 id="source"><a class="header" href="#source">Source</a></h3>
 <p>Tile sources</p>
@@ -1004,7 +1012,7 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 <p><code>POINT</code> | <code>MULTIPOINT</code> | <code>LINESTRING</code> | <code>MULTILINESTRING</code> | <code>POLYGON</code> | <code>MULTIPOLYGON</code> | <code>COMPOUNDCURVE</code> | <code>CURVEPOLYGON</code></p>
 </li>
 <li>
-<p><code>srid</code> <em>i32</em> (optional): Spatial reference system (PostGIS SRID)</p>
+<p><code>srid</code> <em>i32</em> (optional): Spatial reference system of source data (PostGIS SRID)</p>
 </li>
 <li>
 <p><code>no_transform</code> <em>bool</em> (optional): Assume geometry is in grid SRS</p>
