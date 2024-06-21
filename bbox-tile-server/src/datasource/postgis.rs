@@ -133,7 +133,7 @@ impl PgSource {
 
         fn tile_srid_z(tile_crs_cfg: &[TileCrsCfg], zoom: u8) -> Option<i32> {
             let entry = tile_crs_cfg.iter().rev().find(|entry| {
-                entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(99) >= zoom
+                entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
             });
             entry.map(|e| e.srid)
         }

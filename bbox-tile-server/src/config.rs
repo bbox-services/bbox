@@ -704,7 +704,7 @@ impl VectorLayerCfg {
         let mut queries = self
             .queries
             .iter()
-            .map(|q| (q.minzoom.unwrap_or(0), q.maxzoom.unwrap_or(99), q))
+            .map(|q| (q.minzoom.unwrap_or(0), q.maxzoom.unwrap_or(255), q))
             .collect::<Vec<_>>();
         queries.sort_by_key(|t| t.0);
         // Start at highest zoom level and find first match

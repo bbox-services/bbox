@@ -57,13 +57,13 @@ impl TileSet {
             return false;
         }
         match self.cache_limits {
-            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(99) >= zoom,
+            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(255) >= zoom,
             None => true,
         }
     }
     pub fn cache_control_max_age(&self, zoom: u8) -> Option<u64> {
         let entry = self.cache_control.iter().rev().find(|entry| {
-            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(99) >= zoom
+            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
         });
         entry.map(|e| e.max_age)
     }
