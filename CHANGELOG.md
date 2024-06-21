@@ -1,35 +1,46 @@
 # Changelog
 
+## 0.5.1 (UNRELEASED)
+
+* Support tile grids with up to 255 levels
+* Add queryables endpoint to feature server
+* Return layer min-/maxzoom in Tilejson
+* Update to tile-grid 0.6 / ogcapi-types 0.2
+* Add tile SRS override config with opt. zoom level
+* Add cache control max-age config with opt. zoom levels
+* CI improvements (PostGIS tests, etc.)
+* Guides and other doc improvements
+
 ## 0.5.0 (2024-04-03)
 
 No changes since 0.5.0 beta4
 
 ## 0.5.0 beta4 (2024-04-03)
 
-- Detect compression in MBTiles
-- Fix landing page without map server feature
-- Return available tilesets in /tiles endpoint
-- Don't open QWC2 viewer with incactive feature
-- Emit error message for missing map service feature
+* Detect compression in MBTiles
+* Fix landing page without map server feature
+* Return available tilesets in /tiles endpoint
+* Don't open QWC2 viewer with inactive feature
+* Emit error message for missing map service feature
 
 ## 0.5.0 beta3 (2024-04-02)
 
-- Support reading/writing compressed tiles from/into cache
-- Add compression config for file and S3 tile stores
-- Add env var for PostGIS datasource
+* Support reading/writing compressed tiles from/into cache
+* Add compression config for file and S3 tile stores
+* Add env var for PostGIS datasource
 
 ## 0.5.0 beta2 (2024-03-29)
 
-- Support simplification in ST_AsMvt mode
-- Add loglevel to webserver config
-- Disable QWC2 viewer in default build
-- Publish deb packages
+* Support simplification in ST_AsMvt mode
+* Add loglevel to webserver config
+* Disable QWC2 viewer in default build
+* Publish deb packages
 
 ## 0.5.0 beta1 (2024-03-18)
 
-- Add x, y and custom fields to layer queries
-- Keep order of PG tile layers
-- Add bbox-tile-server release assets
+* Add x, y and custom fields to layer queries
+* Keep order of PG tile layers
+* Add bbox-tile-server release assets
 
 ## 0.5.0 alpha6 (2024-03-14)
 
