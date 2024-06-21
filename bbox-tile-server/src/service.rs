@@ -45,6 +45,7 @@ pub struct TileSet {
     config: TileSetCfg,
     cache_cfg: Option<TileStoreCfg>,
     cache_limits: Option<CacheLimitCfg>,
+    cache_control: Vec<CacheControlCfg>,
 }
 
 impl TileSet {
@@ -59,6 +60,12 @@ impl TileSet {
             Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(99) >= zoom,
             None => true,
         }
+    }
+    pub fn cache_control_max_age(&self, zoom: u8) -> Option<u64> {
+        let entry = self.cache_control.iter().rev().find(|entry| {
+            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(99) >= zoom
+        });
+        entry.map(|e| e.max_age)
     }
     pub fn cache_config(&self) -> Option<&TileStoreCfg> {
         self.cache_cfg.as_ref()
@@ -195,6 +202,7 @@ impl OgcApiService for TileService {
                 config: ts.clone(),
                 cache_cfg: cache_cfg.map(|cfg| cfg.cache),
                 cache_limits: ts.cache_limits.clone(),
+                cache_control: ts.cache_control.clone(),
             };
             tilesets.insert(ts.name.clone(), tileset);
             service_grids.insert(tms_id, tms);
@@ -376,11 +384,14 @@ impl TileService {
         }
         // Request tile and write into cache
         debug!("Request tile from source @ {xyz:?}");
-        let tiledata = tileset
+        let mut tiledata = tileset
             .source
             .xyz_request(self, &tileset.tms, xyz, filter, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
+        if let Some(cache_max_age) = tileset.cache_control_max_age(xyz.z) {
+            tiledata.insert_header(("Cache-Control", format!("max-age={}", cache_max_age)));
+        }
         if tileset.is_cachable_at(xyz.z) {
             debug!("Writing tile into cache @ {xyz:?}");
             // Read tile into memory

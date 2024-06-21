@@ -50,6 +50,9 @@ pub struct TileSetCfg {
     pub cache_format: Option<String>,
     /// Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.
     pub cache_limits: Option<CacheLimitCfg>,
+    /// HTTP cache control headers
+    #[serde(default)]
+    pub cache_control: Vec<CacheControlCfg>,
 }
 
 /// Custom grid definition
@@ -248,6 +251,18 @@ pub struct CacheLimitCfg {
     pub maxzoom: Option<u8>,
 }
 
+/// HTTP cache control headers
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct CacheControlCfg {
+    /// `max-age` value in seconds (<https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#response_directives>)
+    pub max_age: u64,
+    /// Minimum zoom level (Default: 0).
+    pub minzoom: Option<u8>,
+    /// Maximum zoom level.
+    pub maxzoom: Option<u8>,
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TileCacheProviderCfg {
@@ -396,6 +411,7 @@ impl ServiceConfig for TileServiceCfg {
                     cache: None,
                     cache_format: None,
                     cache_limits: None,
+                    cache_control: Vec::new(),
                 };
                 cfg.tilesets.push(ts);
             }
@@ -570,6 +586,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                         minzoom: l.minzoom,
                         maxzoom: l.maxzoom,
                     }),
+                    cache_control: Vec::new(), // TODO: t_rex_config.webserver.cache_control_max_age
                 }
             })
             .collect();
