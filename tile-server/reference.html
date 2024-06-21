@@ -201,6 +201,7 @@
 <li><code>cache</code> <em>String</em> (optional): Tile cache name (Default: no cache)</li>
 <li><code>cache_format</code> <em>String</em> (optional): Tile format in store. Defaults to <code>png</code> for raster and <code>pbf</code> for vector tiles</li>
 <li><code>cache_limits</code> <a href="#cachelimit">CacheLimit</a> (optional): Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.</li>
+<li><code>cache_control[]</code> <a href="#cachecontrol">CacheControl</a> (optional): HTTP cache control headers</li>
 </ul>
 <h3 id="source"><a class="header" href="#source">Source</a></h3>
 <p>Tile sources</p>
@@ -270,6 +271,13 @@
 <ul>
 <li><code>minzoom</code> <em>u8</em> (optional)</li>
 <li><code>maxzoom</code> <em>u8</em> (optional)</li>
+</ul>
+<h3 id="cachecontrol"><a class="header" href="#cachecontrol">CacheControl</a></h3>
+<p>HTTP cache control headers</p>
+<ul>
+<li><code>max_age</code> <em>u64</em>: <code>max-age</code> value in seconds (<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#response_directives">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#response_directives</a>)</li>
+<li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level (Default: 0).</li>
+<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level.</li>
 </ul>
 <h4 id="extent"><a class="header" href="#extent">Extent</a></h4>
 <ul>
