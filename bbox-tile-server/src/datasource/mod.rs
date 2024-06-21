@@ -9,7 +9,7 @@ mod postgis_queries;
 pub mod wms_fcgi;
 pub mod wms_http;
 
-use crate::config::{SourceParamCfg, TileSetCfg};
+use crate::config::{SourceParamCfg, TileCrsCfg, TileSetCfg};
 use crate::filter_params::FilterParams;
 use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
@@ -150,7 +150,12 @@ impl Datasources {
         ds_handler
     }
     /// Setup tile source instance
-    pub async fn setup_tile_source(&self, cfg: &SourceParamCfg, tms: &Tms) -> Box<dyn TileRead> {
+    pub async fn setup_tile_source(
+        &self,
+        cfg: &SourceParamCfg,
+        tms: &Tms,
+        tile_crs_cfg: &[TileCrsCfg],
+    ) -> Box<dyn TileRead> {
         // -- raster sources --
         // wms_fcgi::WmsFcgiSource,
         // wms_http::WmsHttpSource,
@@ -205,7 +210,7 @@ impl Datasources {
                                 .clone(),
                         ))
                     });
-                Box::new(postgis::PgSource::create(ds, pg_cfg, tms).await)
+                Box::new(postgis::PgSource::create(ds, pg_cfg, tms, tile_crs_cfg).await)
             }
             SourceParamCfg::Mbtiles(cfg) => Box::new(
                 MbtilesStore::from_config(cfg)

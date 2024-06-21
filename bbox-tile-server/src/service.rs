@@ -57,13 +57,13 @@ impl TileSet {
             return false;
         }
         match self.cache_limits {
-            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(99) >= zoom,
+            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(255) >= zoom,
             None => true,
         }
     }
     pub fn cache_control_max_age(&self, zoom: u8) -> Option<u64> {
         let entry = self.cache_control.iter().rev().find(|entry| {
-            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(99) >= zoom
+            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
         });
         entry.map(|e| e.max_age)
     }
@@ -149,7 +149,9 @@ impl OgcApiService for TileService {
         for ts in &config.tilesets {
             let tms_id = ts.tms.clone().unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
-            let source = datasources.setup_tile_source(&ts.source, &tms).await;
+            let source = datasources
+                .setup_tile_source(&ts.source, &tms, &ts.tile_crs)
+                .await;
             let format = ts
                 .cache_format
                 .as_ref()
