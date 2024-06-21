@@ -41,6 +41,9 @@ pub struct TileSetCfg {
     // pub format: Option<TileFormatCfg>,
     /// Tile matrix set identifier (Default: `WebMercatorQuad`)
     pub tms: Option<String>,
+    /// Spatial reference system of tile data (override grid CRS)
+    #[serde(default)]
+    pub tile_crs: Vec<TileCrsCfg>,
     /// Tile source
     #[serde(flatten)]
     pub source: SourceParamCfg,
@@ -61,6 +64,18 @@ pub struct TileSetCfg {
 pub struct GridCfg {
     /// Grid JSON file path
     pub json: String,
+}
+
+/// Spatial reference system of tile data
+#[derive(Deserialize, Serialize, Clone, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct TileCrsCfg {
+    /// Spatial reference system of tile data (PostGIS SRID)
+    pub srid: i32,
+    /// Minimum zoom level (Default: 0).
+    pub minzoom: Option<u8>,
+    /// Maximum zoom level.
+    pub maxzoom: Option<u8>,
 }
 
 /// Tile sources
@@ -167,7 +182,7 @@ pub struct VectorLayerCfg {
     ///
     /// `POINT` | `MULTIPOINT` | `LINESTRING` | `MULTILINESTRING` | `POLYGON` | `MULTIPOLYGON` | `COMPOUNDCURVE` | `CURVEPOLYGON`
     pub geometry_type: Option<String>,
-    /// Spatial reference system (PostGIS SRID)
+    /// Spatial reference system of source data (PostGIS SRID)
     pub srid: Option<i32>,
     /// Assume geometry is in grid SRS
     #[serde(default)]
@@ -222,8 +237,7 @@ fn default_tolerance() -> String {
 #[serde(deny_unknown_fields)]
 pub struct VectorLayerQueryCfg {
     /// Minimal zoom level for using this query.
-    #[serde(default)]
-    pub minzoom: u8,
+    pub minzoom: Option<u8>,
     /// Maximal zoom level for using this query.
     pub maxzoom: Option<u8>,
     /// Simplify geometry (override layer default setting)
@@ -407,6 +421,7 @@ impl ServiceConfig for TileServiceCfg {
                 let ts = TileSetCfg {
                     name,
                     tms: None,
+                    tile_crs: Vec::new(),
                     source: source_cfg,
                     cache: None,
                     cache_format: None,
@@ -513,7 +528,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                             .query
                             .into_iter()
                             .map(|q| VectorLayerQueryCfg {
-                                minzoom: q.minzoom,
+                                minzoom: Some(q.minzoom),
                                 maxzoom: q.maxzoom,
                                 simplify: q.simplify,
                                 tolerance: q.tolerance,
@@ -528,7 +543,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                                 queries.insert(
                                     0,
                                     VectorLayerQueryCfg {
-                                        minzoom: l.minzoom.unwrap_or(0),
+                                        minzoom: l.minzoom,
                                         maxzoom: None,
                                         simplify: Some(l.simplify),
                                         tolerance: Some(l.tolerance.clone()),
@@ -579,6 +594,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                 TileSetCfg {
                     name: ts.name,
                     tms: tms.clone(),
+                    tile_crs: Vec::new(),
                     source: SourceParamCfg::Postgis(pgcfg),
                     cache: cache_name.clone(),
                     cache_format: None,
@@ -631,8 +647,13 @@ impl PostgisSourceParamsCfg {
 
 impl VectorLayerCfg {
     pub fn minzoom(&self) -> u8 {
-        self.minzoom
-            .unwrap_or(self.queries.iter().map(|q| q.minzoom).min().unwrap_or(0))
+        self.minzoom.unwrap_or(
+            self.queries
+                .iter()
+                .filter_map(|q| q.minzoom)
+                .min()
+                .unwrap_or(0),
+        )
     }
     pub fn maxzoom(&self, default: u8) -> u8 {
         self.maxzoom.unwrap_or(
@@ -643,20 +664,29 @@ impl VectorLayerCfg {
                 .unwrap_or(default),
         )
     }
-    /// Collect min zoom levels with configuration
-    pub fn zoom_steps(&self) -> Vec<u8> {
-        let mut zoom_steps = self
+    /// Collect min zoom levels
+    pub fn zoom_steps(&self, tile_crs_cfg: &[TileCrsCfg]) -> Vec<u8> {
+        let mut zoom_steps: Vec<u8> = self
             .queries
             .iter()
             .filter(|q| q.sql.is_some())
-            .map(|q| q.minzoom)
-            .collect::<Vec<_>>();
+            .filter_map(|q| q.minzoom)
+            // Append tile_src minzoom levels
+            .chain(tile_crs_cfg.iter().filter_map(|crs| crs.minzoom))
+            // Append tile_src maxzoom levels
+            .chain(
+                tile_crs_cfg
+                    .iter()
+                    .filter_map(|crs| crs.maxzoom.map(|z| z + 1)),
+            )
+            .filter(|z| *z >= self.minzoom())
+            // Append layer minzoom
+            .chain([self.minzoom()])
+            // remove duplicates
+            .collect::<HashSet<u8>>()
+            .into_iter()
+            .collect();
         zoom_steps.sort();
-        if zoom_steps.is_empty() {
-            zoom_steps.push(self.minzoom());
-        } else if self.minzoom() < zoom_steps[0] {
-            zoom_steps.insert(0, self.minzoom());
-        }
         zoom_steps
     }
     /// Lookup in HashMap with zoom step key
@@ -674,7 +704,7 @@ impl VectorLayerCfg {
         let mut queries = self
             .queries
             .iter()
-            .map(|q| (q.minzoom, q.maxzoom.unwrap_or(99), q))
+            .map(|q| (q.minzoom.unwrap_or(0), q.maxzoom.unwrap_or(99), q))
             .collect::<Vec<_>>();
         queries.sort_by_key(|t| t.0);
         // Start at highest zoom level and find first match

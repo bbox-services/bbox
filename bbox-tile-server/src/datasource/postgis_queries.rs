@@ -49,16 +49,16 @@ impl SqlQuery {
         layer: &VectorLayerCfg,
         geom_name: &str,
         data_columns: &[FieldInfo],
-        grid_srid: i32,
+        tile_srid: i32,
         zoom: u8,
         user_query: Option<&String>,
         postgis2: bool,
     ) -> Self {
         let mut sqlquery;
         let geom_expr = if postgis2 {
-            build_geom_expr_postgis2(layer, geom_name, grid_srid, zoom)
+            build_geom_expr_postgis2(layer, geom_name, tile_srid, zoom)
         } else {
-            build_geom_expr(layer, geom_name, grid_srid, zoom)
+            build_geom_expr(layer, geom_name, tile_srid, zoom)
         };
         let select_list = build_select_list(geom_expr, data_columns);
         let intersect_clause = format!(" WHERE {geom_name} && !bbox!");
@@ -83,9 +83,9 @@ impl SqlQuery {
             );
         };
 
-        let bbox_expr = build_bbox_expr(layer, grid_srid, layer.buffer_size);
+        let bbox_expr = build_bbox_expr(layer, tile_srid, layer.buffer_size);
         // !bbox_unbuffered! replacement expression for ST_AsMVTGeom
-        let bbox_expr_unbuffered = format!("ST_MakeEnvelope($1,$2,$3,$4,{grid_srid})");
+        let bbox_expr_unbuffered = format!("ST_MakeEnvelope($1,$2,$3,$4,{tile_srid})");
         Self::replace_params(&sqlquery, bbox_expr, bbox_expr_unbuffered)
     }
 
@@ -161,7 +161,7 @@ impl SqlQuery {
 }
 
 /// Build geometry selection expression for feature query.
-fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, zoom: u8) -> String {
+fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, tile_srid: i32, zoom: u8) -> String {
     let layer_srid = layer.srid.unwrap_or(0);
     let mut geom_expr = String::from(geom_name as &str);
 
@@ -180,19 +180,20 @@ fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, zoom
     // Transform geometry to grid SRID
     if layer_srid <= 0 {
         warn!(
-            "Layer '{}': Unknown SRS of geometry '{geom_name}' - assuming SRID {grid_srid}",
+            "Layer '{}': Undefined SRS of geometry '{geom_name}' - assuming SRID {tile_srid}",
             layer.name
         );
-        geom_expr = format!("ST_SetSRID({geom_expr},{grid_srid})")
-    } else if layer_srid != grid_srid {
+        // TODO: Get SRS from geometry_columns instead
+        geom_expr = format!("ST_SetSRID({geom_expr},{tile_srid})")
+    } else if layer_srid != tile_srid {
         if layer.no_transform {
-            geom_expr = format!("ST_SetSRID({geom_expr},{grid_srid})");
+            geom_expr = format!("ST_SetSRID({geom_expr},{tile_srid})");
         } else {
             info!(
-                "Layer '{}': Reprojecting geometry '{geom_name}' from SRID {layer_srid} to {grid_srid}",
+                "Layer '{}' z{zoom}: Reprojecting geometry '{geom_name}' from SRID {layer_srid} to {tile_srid}",
                 layer.name
             );
-            geom_expr = format!("ST_Transform({geom_expr},{grid_srid})");
+            geom_expr = format!("ST_Transform({geom_expr},{tile_srid})");
         }
     }
 
@@ -241,7 +242,7 @@ fn build_geom_expr(layer: &VectorLayerCfg, geom_name: &str, grid_srid: i32, zoom
 fn build_geom_expr_postgis2(
     layer: &VectorLayerCfg,
     geom_name: &str,
-    grid_srid: i32,
+    tile_srid: i32,
     zoom: u8,
 ) -> String {
     let layer_srid = layer.srid.unwrap_or(0);
@@ -274,7 +275,7 @@ fn build_geom_expr_postgis2(
             "POLYGON" | "MULTIPOLYGON" | "CURVEPOLYGON" => {
                 geom_expr = format!("ST_Buffer(ST_Intersection({valid_geom},!bbox!), 0.0)");
             }
-            "POINT" if layer_srid == grid_srid => {
+            "POINT" if layer_srid == tile_srid => {
                 // ST_Intersection not necessary - bbox query in WHERE clause is sufficient
             }
             _ => {
@@ -329,19 +330,19 @@ fn build_geom_expr_postgis2(
     // Transform geometry to grid SRID
     if layer_srid <= 0 {
         warn!(
-            "Layer '{}': Unknown SRS of geometry '{geom_name}' - assuming SRID {grid_srid}",
+            "Layer '{}': Undefined SRS of geometry '{geom_name}' - assuming SRID {tile_srid}",
             layer.name
         );
-        geom_expr = format!("ST_SetSRID({geom_expr},{grid_srid})")
-    } else if layer_srid != grid_srid {
+        geom_expr = format!("ST_SetSRID({geom_expr},{tile_srid})")
+    } else if layer_srid != tile_srid {
         if layer.no_transform {
-            geom_expr = format!("ST_SetSRID({geom_expr},{grid_srid})");
+            geom_expr = format!("ST_SetSRID({geom_expr},{tile_srid})");
         } else {
             info!(
-                "Layer '{}': Reprojecting geometry '{geom_name}' from SRID {layer_srid} to {grid_srid}",
+                "Layer '{}' z{zoom}: Reprojecting geometry '{geom_name}' from SRID {layer_srid} to {tile_srid}",
                 layer.name
             );
-            geom_expr = format!("ST_Transform({geom_expr},{grid_srid})");
+            geom_expr = format!("ST_Transform({geom_expr},{tile_srid})");
         }
     }
 
@@ -376,12 +377,12 @@ fn build_select_list(geom_expr: String, data_columns: &[FieldInfo]) -> String {
 }
 
 /// Build !bbox! replacement expression for feature query.
-fn build_bbox_expr(layer: &VectorLayerCfg, grid_srid: i32, buffer_size: Option<u32>) -> String {
-    let layer_srid = layer.srid.unwrap_or(grid_srid); // we assume grid srid as default
+fn build_bbox_expr(layer: &VectorLayerCfg, tile_srid: i32, buffer_size: Option<u32>) -> String {
+    let layer_srid = layer.srid.unwrap_or(tile_srid); // we assume tile srid as default
     let env_srid = if layer_srid <= 0 || layer.no_transform {
         layer_srid
     } else {
-        grid_srid
+        tile_srid
     };
     let mut expr = format!("ST_MakeEnvelope($1,$2,$3,$4,{env_srid})");
     if let Some(pixels) = buffer_size {
@@ -588,7 +589,7 @@ mod test {
     fn test_user_queries() {
         let (mut layer, fields) = layer_cfg();
         layer.queries = vec![VectorLayerQueryCfg {
-            minzoom: 0,
+            minzoom: Some(0),
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,
@@ -600,7 +601,7 @@ mod test {
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
 
         layer.queries = vec![VectorLayerQueryCfg {
-            minzoom: 0,
+            minzoom: Some(0),
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,
@@ -617,7 +618,7 @@ mod test {
     fn test_xyz_queries() {
         let (mut layer, fields) = layer_cfg();
         layer.queries = vec![VectorLayerQueryCfg {
-            minzoom: 0,
+            minzoom: Some(0),
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,
@@ -636,7 +637,7 @@ mod test {
         let (mut layer, fields) = layer_cfg();
         let postgis2 = false;
         layer.queries = vec![VectorLayerQueryCfg {
-            minzoom: 0,
+            minzoom: Some(0),
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,
@@ -649,7 +650,7 @@ mod test {
                "SELECT ST_AsMvtGeom(geometry, ST_MakeEnvelope($1,$2,$3,$4,3857), 256, 0, false) AS geometry FROM (SELECT geometry FROM osm_place_point WHERE col1=$5 AND col2=$6) AS _q WHERE geometry && ST_MakeEnvelope($1,$2,$3,$4,3857)");
 
         layer.queries = vec![VectorLayerQueryCfg {
-            minzoom: 0,
+            minzoom: Some(0),
             maxzoom: Some(22),
             simplify: None,
             tolerance: None,

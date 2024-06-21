@@ -1,6 +1,6 @@
 //! PostGIS tile source.
 
-use crate::config::{PostgisSourceParamsCfg, VectorLayerCfg};
+use crate::config::{PostgisSourceParamsCfg, TileCrsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
@@ -45,7 +45,7 @@ pub struct PgMvtLayer {
     query_limit: Option<u32>,
     /// Queries for zoom steps
     queries: HashMap<u8, QueryInfo>,
-    /// Query zoom step for all zoom levels
+    /// Query zoom step for all zoom levels (z -> minzoom step)
     query_zoom_steps: HashMap<u8, u8>,
 }
 
@@ -88,13 +88,19 @@ impl PgMvtLayer {
 }
 
 impl PgSource {
-    pub async fn create(ds: &PgDatasource, cfg: &PostgisSourceParamsCfg, tms: &Tms) -> PgSource {
+    pub async fn create(
+        ds: &PgDatasource,
+        cfg: &PostgisSourceParamsCfg,
+        tms: &Tms,
+        tile_crs_cfg: &[TileCrsCfg],
+    ) -> PgSource {
         let grid_srid = tms.crs().as_srid();
         let maxzoom = cfg.maxzoom.unwrap_or(tms.maxzoom());
 
         let mut layers = BTreeMap::new();
         for layer in &cfg.layers {
-            match Self::setup_layer(ds, layer, grid_srid, maxzoom, cfg.postgis2).await {
+            match Self::setup_layer(ds, layer, grid_srid, tile_crs_cfg, maxzoom, cfg.postgis2).await
+            {
                 Ok(mvt_layer) => {
                     layers.insert(layer.name.clone(), mvt_layer);
                 }
@@ -115,6 +121,7 @@ impl PgSource {
         ds: &PgDatasource,
         layer: &VectorLayerCfg,
         grid_srid: i32,
+        tile_crs_cfg: &[TileCrsCfg],
         maxzoom: u8,
         postgis2: bool,
     ) -> Result<PgMvtLayer, TileSourceError> {
@@ -124,9 +131,21 @@ impl PgSource {
             return Err(TileSourceError::TypeDetectionError);
         }
 
+        fn tile_srid_z(tile_crs_cfg: &[TileCrsCfg], zoom: u8) -> Option<i32> {
+            let entry = tile_crs_cfg.iter().rev().find(|entry| {
+                entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(99) >= zoom
+            });
+            entry.map(|e| e.srid)
+        }
+
         let mut layer_queries = HashMap::new();
-        for zoom in layer.zoom_steps() {
+        let zoom_steps = layer.zoom_steps(tile_crs_cfg);
+        if zoom_steps.len() > 1 {
+            debug!("Layer `{}` zoom steps: {:?}", layer.name, zoom_steps);
+        }
+        for zoom in zoom_steps {
             let layer_query = layer.query(zoom);
+            let tile_srid = tile_srid_z(tile_crs_cfg, zoom).unwrap_or(grid_srid);
             let field_query = SqlQuery::build_field_query(layer, layer_query);
             let param_types = field_query.param_types();
             let mut geometry_field = None;
@@ -141,7 +160,7 @@ impl PgSource {
                                     geometry_field = Some(geom_col.to_string());
                                 } else {
                                     error!(
-                                        "Layer `{}`: Unsupported geometry type at zoom level {zoom}",
+                                        "Layer `{}` z{zoom}: Unsupported geometry type",
                                         layer.name
                                     );
                                     continue;
@@ -163,7 +182,7 @@ impl PgSource {
                 }
                 Err(e) => {
                     error!(
-                        "Layer `{}`: Field detection failed at zoom level {zoom} - {e}",
+                        "Layer `{}` z{zoom}: Field detection failed - {e}",
                         layer.name
                     );
                     error!(" Query: {}", field_query.sql);
@@ -179,7 +198,7 @@ impl PgSource {
                 layer,
                 geom_name,
                 &fields,
-                grid_srid,
+                tile_srid,
                 zoom,
                 layer_query,
                 postgis2,
@@ -188,10 +207,7 @@ impl PgSource {
             let stmt = match ds.pool.prepare_with(&query.sql, &param_types).await {
                 Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
                 Err(e) => {
-                    error!(
-                        "Layer `{}`: Invalid query at zoom level {zoom} - {e}",
-                        layer.name
-                    );
+                    error!("Layer `{}` z{zoom}: Invalid query - {e}", layer.name);
                     error!(" Query: {}", query.sql);
                     return Err(TileSourceError::TypeDetectionError);
                 }
@@ -214,7 +230,7 @@ impl PgSource {
         }
 
         // Lookup table for all zoom levels
-        let zoom_steps = layer.zoom_steps();
+        let zoom_steps = layer.zoom_steps(tile_crs_cfg);
         let mut query_zoom_steps = HashMap::new();
         for zoom in layer.minzoom()..=layer.maxzoom(maxzoom) {
             let z = zoom_steps
@@ -406,6 +422,7 @@ impl TileRead for PgSource {
             tj.other
                 .insert("srs".to_string(), format!("EPSG:{}", self.grid_srid).into());
         }
+        // TODO: advertise zoom level specific srids
         let mut layers: Vec<tilejson::VectorLayer> = self
             .layers
             .iter()
@@ -619,7 +636,7 @@ mod tests {
         let mut queries = Vec::new();
         if let Some(sql) = query {
             queries.push(VectorLayerQueryCfg {
-                minzoom: 0,
+                minzoom: Some(0),
                 maxzoom: None,
                 simplify: None,
                 tolerance: None,
@@ -659,7 +676,7 @@ mod tests {
         };
         let ds = PgDatasource::from_config(&ds_cfg, None).await.unwrap();
         let tms = tms().lookup("WebMercatorQuad").unwrap();
-        PgSource::create(&ds, &pg_src_cfg, &tms).await
+        PgSource::create(&ds, &pg_src_cfg, &tms, &Vec::new()).await
     }
 
     #[test(tokio::test)]

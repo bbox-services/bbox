@@ -149,7 +149,9 @@ impl OgcApiService for TileService {
         for ts in &config.tilesets {
             let tms_id = ts.tms.clone().unwrap_or("WebMercatorQuad".to_string());
             let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
-            let source = datasources.setup_tile_source(&ts.source, &tms).await;
+            let source = datasources
+                .setup_tile_source(&ts.source, &tms, &ts.tile_crs)
+                .await;
             let format = ts
                 .cache_format
                 .as_ref()
