@@ -965,3 +965,174 @@ impl VectorLayerCfg {
 //     <timeout>300</timeout>
 //   </locker>
 // </mapcache>
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use toml::Value;
+
+    fn parse_config<'a, T: Deserialize<'a>>(toml: &str) -> Result<T, String> {
+        toml.parse::<Value>()
+            .and_then(|cfg| cfg.try_into::<T>())
+            .map_err(|err| format!("{err}"))
+    }
+
+    #[test]
+    fn zoom_steps() {
+        const CONFIG: &'static str = r#"
+            [[datasource]]
+            name = "osmdb"
+            [datasource.postgis]
+            url = "postgres:///osmdb"
+
+            [[tileset]]
+            name = "osm"
+            tms = "WebMercatorQuad"
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+            #srid = 8857 / 3857
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 0
+            maxzoom = 2
+            sql = """SELECT "geom" FROM "eq"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 10
+            sql = """SELECT "id","geom" FROM "merc"."ocean""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let SourceParamCfg::Postgis(ref source) = cfg.tilesets[0].source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers.len(), 1);
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 42);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0, 3, 10]);
+    }
+
+    #[test]
+    fn zoom_min_max() {
+        const CONFIG: &'static str = r#"
+            [[tileset]]
+            name = "osm"
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 10
+            maxzoom = 24
+            sql = """SELECT "id","geom" FROM "merc"."ocean""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let SourceParamCfg::Postgis(ref source) = cfg.tilesets[0].source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 3);
+        assert_eq!(source.layers[0].maxzoom(42), 24);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![3, 10]);
+    }
+
+    #[test]
+    fn multi_crs_projected() {
+        const CONFIG: &'static str = r#"
+            [[grid]]
+            json = "EqualEarthGreenwichWGS84Quad.json"
+
+            [[tileset]]
+            name = "tracking"
+            tms = "WebMercatorQuad"
+
+            [[tileset.tile_crs]]
+            maxzoom = 2
+            srid = 8857
+
+            [tileset.postgis]
+            datasource = "tracking"
+
+            [[tileset.postgis.layer]]
+            name = "waypoints"
+            geometry_field = "geom"
+            geometry_type = "POINT"
+            srid = 4326
+
+            [[tileset.postgis.layer.query]]
+            sql = """SELECT id, ts::TEXT, ST_Point(lon, lat, 4326) AS geom FROM gps.gpslog"""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let ts = &cfg.tilesets[0];
+        let SourceParamCfg::Postgis(ref source) = ts.source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 42);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0]);
+        assert_eq!(source.layers[0].zoom_steps(&ts.tile_crs), vec![0, 3]);
+    }
+
+    #[test]
+    fn multi_crs_unprojected() {
+        const CONFIG: &'static str = r#"
+            [[grid]]
+            json = "EqualEarthGreenwichWGS84Quad.json"
+
+            [[tileset]]
+            name = "tracking"
+            tms = "WebMercatorQuad"
+
+            [[tileset.tile_crs]]
+            maxzoom = 2
+            srid = 8857
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+            #srid = 8857 / 3857
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 0
+            maxzoom = 2
+            sql = """SELECT "geom" FROM "eq"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let ts = &cfg.tilesets[0];
+        let SourceParamCfg::Postgis(ref source) = ts.source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 9);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0, 3]);
+        assert_eq!(source.layers[0].zoom_steps(&ts.tile_crs), vec![0, 3]);
+    }
+}
