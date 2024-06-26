@@ -61,10 +61,12 @@ impl TileService {
             .clone();
         let tileset_arc = Arc::new(tileset.clone());
         let tms = Arc::new(
-            tileset
-                .default_grid(0)
-                .expect("default grid missing") //FIXME: grid from args and/or zoom dependencies
-                .clone(),
+            if let Some(tms_id) = &args.tms {
+                tileset.grid(&tms_id)?
+            } else {
+                tileset.default_grid(0).expect("default grid missing")
+            }
+            .clone(),
         );
         let format = *tileset.tile_format();
 
@@ -114,8 +116,8 @@ impl TileService {
         });
         let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
             let tileset = tileset_arc.clone();
+            let tms = tms.clone(); // TODO: tileset.default_grid(xyz.z)
             let filter = FilterParams::default();
-            let tms = tms.clone();
             let compression = compression.clone();
             async move {
                 let tile = tileset

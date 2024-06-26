@@ -42,6 +42,9 @@ pub struct SeedArgs {
     /// Maximum zoom level
     #[arg(long)]
     pub maxzoom: Option<u8>,
+    /// tile matrix set id
+    #[arg(long)]
+    pub tms: Option<String>,
     /// Extent minx,miny,maxx,maxy (in grid reference system)
     #[arg(long)]
     pub extent: Option<String>,
