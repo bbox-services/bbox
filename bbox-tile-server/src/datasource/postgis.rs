@@ -5,7 +5,7 @@ use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::HttpRequestParams,
-    LayerInfo, SourceType, TileRead, TileSourceError,
+    LayerInfo, SourceType, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::service::{TileSetGrid, TmsExtensions};
@@ -308,7 +308,7 @@ fn layer_query<'a>(
 }
 
 #[async_trait]
-impl TileRead for PgSource {
+impl TileSource for PgSource {
     async fn xyz_request(
         &self,
         tms: &Tms,

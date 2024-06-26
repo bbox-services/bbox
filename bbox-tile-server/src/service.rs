@@ -1,7 +1,7 @@
 use crate::cli::Commands;
 use crate::config::*;
 use crate::datasource::wms_fcgi::{HttpRequestParams, MapService};
-use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
+use crate::datasource::{Datasources, SourceType, TileSource, TileSourceError};
 use crate::filter_params::FilterParams;
 use crate::store::{
     store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
@@ -35,7 +35,7 @@ pub struct TileSet {
     pub name: String,
     /// Tile matrix sets
     pub tms: Vec<TileSetGrid>,
-    pub source: Box<dyn TileRead>,
+    pub source: Box<dyn TileSource>,
     format: Format,
     pub store_reader: Option<Box<dyn TileReader>>,
     pub store_writer: Option<Box<dyn TileWriter>>,
@@ -75,11 +75,11 @@ pub enum ServiceError {
 impl actix_web::error::ResponseError for ServiceError {}
 
 pub trait SourceLookup {
-    fn source(&self, tileset: &str) -> Option<&dyn TileRead>;
+    fn source(&self, tileset: &str) -> Option<&dyn TileSource>;
 }
 
 impl SourceLookup for Tilesets {
-    fn source(&self, tileset: &str) -> Option<&dyn TileRead> {
+    fn source(&self, tileset: &str) -> Option<&dyn TileSource> {
         self.get(tileset).map(|ts| ts.source.as_ref())
     }
 }

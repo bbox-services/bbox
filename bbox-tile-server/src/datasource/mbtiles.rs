@@ -2,7 +2,7 @@
 
 use crate::config::TileSetCfg;
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileResponse, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::store::mbtiles::MbtilesStore;
@@ -14,7 +14,7 @@ use tile_grid::{Tms, Xyz};
 use tilejson::TileJSON;
 
 #[async_trait]
-impl TileRead for MbtilesStore {
+impl TileSource for MbtilesStore {
     async fn xyz_request(
         &self,
         _tms: &Tms,

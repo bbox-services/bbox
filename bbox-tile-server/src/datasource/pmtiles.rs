@@ -1,7 +1,7 @@
 //! PMTiles tile source.
 
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileResponse, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::store::pmtiles::PmtilesStoreReader;
@@ -14,7 +14,7 @@ use tilejson::tilejson;
 use tilejson::TileJSON;
 
 #[async_trait]
-impl TileRead for PmtilesStoreReader {
+impl TileSource for PmtilesStoreReader {
     async fn xyz_request(
         &self,
         _tms: &Tms,

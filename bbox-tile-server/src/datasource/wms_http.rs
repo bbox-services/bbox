@@ -2,7 +2,7 @@
 
 use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
 use crate::service::TmsExtensions;
@@ -70,7 +70,7 @@ impl WmsHttpSource {
 }
 
 #[async_trait]
-impl TileRead for WmsHttpSource {
+impl TileSource for WmsHttpSource {
     async fn xyz_request(
         &self,
         tms: &Tms,

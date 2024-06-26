@@ -1,7 +1,7 @@
 //! FCGI tile sources like QGIS Server or UMN Mapsever.
 
 use crate::config::WmsFcgiSourceParamsCfg;
-use crate::datasource::{LayerInfo, SourceType, TileRead, TileSourceError};
+use crate::datasource::{LayerInfo, SourceType, TileSource, TileSourceError};
 use crate::filter_params::FilterParams;
 use crate::service::{QueryExtent, TmsExtensions};
 use async_trait::async_trait;
@@ -92,7 +92,7 @@ impl WmsFcgiSource {
 }
 
 #[async_trait]
-impl TileRead for WmsFcgiSource {
+impl TileSource for WmsFcgiSource {
     async fn xyz_request(
         &self,
         tms: &Tms,

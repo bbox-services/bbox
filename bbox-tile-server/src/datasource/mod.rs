@@ -73,7 +73,7 @@ pub struct LayerInfo {
 }
 
 #[async_trait]
-pub trait TileRead: DynClone + Send + Sync {
+pub trait TileSource: DynClone + Send + Sync {
     /// Request tile from source
     async fn xyz_request(
         &self,
@@ -125,7 +125,7 @@ pub trait TileRead: DynClone + Send + Sync {
     }
 }
 
-clone_trait_object!(TileRead);
+clone_trait_object!(TileSource);
 
 /// Datasource connection pools
 #[derive(Default)]
@@ -163,7 +163,7 @@ impl Datasources {
         cfg: &SourceParamCfg,
         ts_grids: &[TileSetGrid],
         tms_cfg: &[TilesetTmsCfg],
-    ) -> Box<dyn TileRead> {
+    ) -> Box<dyn TileSource> {
         // -- raster sources --
         // wms_fcgi::WmsFcgiSource,
         // wms_http::WmsHttpSource,
