@@ -792,6 +792,7 @@ Options:
       --tileset &lt;TILESET&gt;      tile set name
       --minzoom &lt;MINZOOM&gt;      Minimum zoom level
       --maxzoom &lt;MAXZOOM&gt;      Maximum zoom level
+      --tms &lt;TMS&gt;              tile matrix set id
       --extent &lt;EXTENT&gt;        Extent minx,miny,maxx,maxy (in grid reference system)
       --tile-path &lt;TILE_PATH&gt;  Base directory for file store
       --s3-path &lt;S3_PATH&gt;      S3 path to upload to (e.g. s3://tiles)
@@ -896,20 +897,26 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 <p>Tileset configuration</p>
 <ul>
 <li><code>name</code> <em>String</em>: Tileset name, visible part of endpoint</li>
-<li><code>tms</code> <em>String</em> (optional): Tile matrix set identifier (Default: <code>WebMercatorQuad</code>)</li>
-<li><code>tile_crs[]</code> <a href="tile-server/reference.html#tilecrs">TileCrs</a> (optional): Spatial reference system of tile data (override grid CRS)</li>
+<li><code>tms[]</code> <a href="tile-server/reference.html#tilesettms">TilesetTms</a> (optional): Tile matrix set identifiers (Default: <code>["WebMercatorQuad"]</code>)</li>
 <li><a href="tile-server/reference.html#source">Source</a>: Tile source</li>
 <li><code>cache</code> <em>String</em> (optional): Tile cache name (Default: no cache)</li>
 <li><code>cache_format</code> <em>String</em> (optional): Tile format in store. Defaults to <code>png</code> for raster and <code>pbf</code> for vector tiles</li>
 <li><code>cache_limits</code> <a href="tile-server/reference.html#cachelimit">CacheLimit</a> (optional): Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.</li>
 <li><code>cache_control[]</code> <a href="tile-server/reference.html#cachecontrol">CacheControl</a> (optional): HTTP cache control headers</li>
 </ul>
-<h3 id="tilecrs"><a class="header" href="#tilecrs">TileCrs</a></h3>
-<p>Spatial reference system of tile data</p>
+<h3 id="tilesettms"><a class="header" href="#tilesettms">TilesetTms</a></h3>
+<p>Available tile grid with optional zoom levels</p>
 <ul>
-<li><code>srid</code> <em>i32</em>: Spatial reference system of tile data (PostGIS SRID)</li>
-<li><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level (Default: 0).</li>
-<li><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level.</li>
+<li>
+<p><code>id</code> <em>String</em>: Tile matrix set identifier</p>
+</li>
+<li>
+<p><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0).</p>
+</li>
+<li>
+<p><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for <code>WebMercatorQuad</code>).</p>
+<p>Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
+</li>
 </ul>
 <h3 id="source"><a class="header" href="#source">Source</a></h3>
 <p>Tile sources</p>
@@ -936,13 +943,6 @@ export AWS_SECRET_ACCESS_KEY=miniostorage
 </li>
 <li>
 <p><code>extent</code> <a href="tile-server/reference.html#extent">Extent</a> (optional)</p>
-</li>
-<li>
-<p><code>minzoom</code> <em>u8</em> (optional): Minimum zoom level for which tiles are available (Default: 0).</p>
-</li>
-<li>
-<p><code>maxzoom</code> <em>u8</em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for <code>WebMercatorQuad</code>).</p>
-<p>Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.</p>
 </li>
 <li>
 <p><code>center</code> <em>Option</em> (optional): Longitude, latitude of map center (in WGS84).</p>
