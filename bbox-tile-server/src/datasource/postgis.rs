@@ -1,14 +1,14 @@
 //! PostGIS tile source.
 
-use crate::config::{PostgisSourceParamsCfg, TileCrsCfg, VectorLayerCfg};
+use crate::config::{PostgisSourceParamsCfg, TilesetTmsCfg, VectorLayerCfg};
 use crate::datasource::{
     mvt::MvtBuilder,
     postgis_queries::{QueryParam, SqlQuery},
     wms_fcgi::HttpRequestParams,
-    LayerInfo, SourceType, TileRead, TileSourceError,
+    LayerInfo, SourceType, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::service::TileService;
+use crate::service::{TileSetGrid, TmsExtensions};
 use async_trait::async_trait;
 use bbox_core::pg_ds::PgDatasource;
 use bbox_core::{Format, TileResponse};
@@ -28,8 +28,6 @@ use tilejson::{tilejson, TileJSON};
 #[derive(Clone, Debug)]
 pub struct PgSource {
     ds: PgDatasource,
-    grid_srid: i32,
-    maxzoom: u8,
     layers: BTreeMap<String, PgMvtLayer>,
     /// Config with TileJSON metadata
     config: PostgisSourceParamsCfg,
@@ -43,8 +41,8 @@ pub struct PgMvtLayer {
     tile_size: u32,
     fid_field: Option<String>,
     query_limit: Option<u32>,
-    /// Queries for zoom steps
-    queries: HashMap<u8, QueryInfo>,
+    /// Queries for zoom steps for each grid_srid
+    queries: HashMap<i32, HashMap<u8, QueryInfo>>,
     /// Query zoom step for all zoom levels (z -> minzoom step)
     query_zoom_steps: HashMap<u8, u8>,
 }
@@ -74,10 +72,10 @@ pub type Datasource = PgDatasource;
 
 impl PgMvtLayer {
     /// Get query for zoom level
-    fn query(&self, zoom: u8) -> Option<&QueryInfo> {
+    fn query(&self, grid_srid: i32, zoom: u8) -> Option<&QueryInfo> {
         self.query_zoom_steps
             .get(&zoom)
-            .and_then(|minzoom| self.queries.get(minzoom))
+            .and_then(|minzoom| self.queries.get(&grid_srid).and_then(|gq| gq.get(minzoom)))
     }
     pub fn minzoom(&self) -> u8 {
         *self.query_zoom_steps.keys().min().unwrap_or(&0)
@@ -91,16 +89,12 @@ impl PgSource {
     pub async fn create(
         ds: &PgDatasource,
         cfg: &PostgisSourceParamsCfg,
-        tms: &Tms,
-        tile_crs_cfg: &[TileCrsCfg],
+        ts_grids: &[TileSetGrid],
+        tms_cfg: &[TilesetTmsCfg],
     ) -> PgSource {
-        let grid_srid = tms.crs().as_srid();
-        let maxzoom = cfg.maxzoom.unwrap_or(tms.maxzoom());
-
         let mut layers = BTreeMap::new();
         for layer in &cfg.layers {
-            match Self::setup_layer(ds, layer, grid_srid, tile_crs_cfg, maxzoom, cfg.postgis2).await
-            {
+            match Self::setup_layer(ds, layer, ts_grids, tms_cfg, cfg.postgis2).await {
                 Ok(mvt_layer) => {
                     layers.insert(layer.name.clone(), mvt_layer);
                 }
@@ -111,8 +105,6 @@ impl PgSource {
         }
         PgSource {
             ds: ds.clone(),
-            grid_srid,
-            maxzoom,
             layers,
             config: cfg.clone(),
         }
@@ -120,9 +112,8 @@ impl PgSource {
     async fn setup_layer(
         ds: &PgDatasource,
         layer: &VectorLayerCfg,
-        grid_srid: i32,
-        tile_crs_cfg: &[TileCrsCfg],
-        maxzoom: u8,
+        ts_grids: &[TileSetGrid],
+        tms_cfg: &[TilesetTmsCfg],
         postgis2: bool,
     ) -> Result<PgMvtLayer, TileSourceError> {
         // Configuration checks (TODO: add config_check to trait)
@@ -131,106 +122,118 @@ impl PgSource {
             return Err(TileSourceError::TypeDetectionError);
         }
 
-        fn tile_srid_z(tile_crs_cfg: &[TileCrsCfg], zoom: u8) -> Option<i32> {
-            let entry = tile_crs_cfg.iter().rev().find(|entry| {
-                entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
-            });
-            entry.map(|e| e.srid)
+        fn tile_srid_z(ts_grids: &[TileSetGrid], zoom: u8) -> Option<i32> {
+            ts_grids
+                .iter()
+                .rev()
+                .find(|entry| entry.minzoom <= zoom && entry.maxzoom >= zoom)
+                .map(|entry| entry.tms.srid())
         }
 
-        let mut layer_queries = HashMap::new();
-        let zoom_steps = layer.zoom_steps(tile_crs_cfg);
+        let zoom_steps = layer.zoom_steps(tms_cfg);
         if zoom_steps.len() > 1 {
             debug!("Layer `{}` zoom steps: {:?}", layer.name, zoom_steps);
         }
-        for zoom in zoom_steps {
-            let layer_query = layer.query(zoom);
-            let tile_srid = tile_srid_z(tile_crs_cfg, zoom).unwrap_or(grid_srid);
-            let field_query = SqlQuery::build_field_query(layer, layer_query);
-            let param_types = field_query.param_types();
-            let mut geometry_field = None;
-            let mut fields = Vec::new();
-            match ds.pool.prepare_with(&field_query.sql, &param_types).await {
-                Ok(stmt) => {
-                    for col in stmt.columns() {
-                        let info = column_info(col, &layer.name);
-                        if let Some(geom_col) = &layer.geometry_field {
-                            if col.name() == geom_col {
-                                if info == FieldTypeInfo::Geometry {
-                                    geometry_field = Some(geom_col.to_string());
-                                } else {
-                                    error!(
-                                        "Layer `{}` z{zoom}: Unsupported geometry type",
-                                        layer.name
-                                    );
-                                    continue;
+        let mut layer_queries = HashMap::new();
+        for grid in ts_grids {
+            for zs in &zoom_steps {
+                let zoom = *zs;
+                let layer_query = layer.query(zoom);
+                let tile_srid = tile_srid_z(ts_grids, zoom).unwrap_or(grid.tms.srid());
+                let field_query = SqlQuery::build_field_query(layer, layer_query);
+                let param_types = field_query.param_types();
+                let mut geometry_field = None;
+                let mut fields = Vec::new();
+                match ds.pool.prepare_with(&field_query.sql, &param_types).await {
+                    Ok(stmt) => {
+                        for col in stmt.columns() {
+                            let info = column_info(col, &layer.name);
+                            if let Some(geom_col) = &layer.geometry_field {
+                                if col.name() == geom_col {
+                                    if info == FieldTypeInfo::Geometry {
+                                        geometry_field = Some(geom_col.to_string());
+                                    } else {
+                                        error!(
+                                            "Layer `{}` z{zoom}: Unsupported geometry type",
+                                            layer.name
+                                        );
+                                        continue;
+                                    }
                                 }
+                            } else if info == FieldTypeInfo::Geometry && geometry_field.is_none() {
+                                // Default: use first geometry column
+                                geometry_field = Some(col.name().to_string());
                             }
-                        } else if info == FieldTypeInfo::Geometry && geometry_field.is_none() {
-                            // Default: use first geometry column
-                            geometry_field = Some(col.name().to_string());
+                            if info != FieldTypeInfo::Ignored {
+                                let field_info = FieldInfo {
+                                    name: col.name().to_string(),
+                                    info,
+                                };
+                                fields.push(field_info);
+                            }
                         }
-                        if info != FieldTypeInfo::Ignored {
-                            let field_info = FieldInfo {
-                                name: col.name().to_string(),
-                                info,
-                            };
-                            fields.push(field_info);
-                        }
+                        debug!("Query parameters: {:?}", stmt.parameters());
                     }
-                    debug!("Query parameters: {:?}", stmt.parameters());
-                }
-                Err(e) => {
-                    error!(
-                        "Layer `{}` z{zoom}: Field detection failed - {e}",
-                        layer.name
-                    );
-                    error!(" Query: {}", field_query.sql);
+                    Err(e) => {
+                        error!(
+                            "Layer `{}` z{zoom}: Field detection failed - {e}",
+                            layer.name
+                        );
+                        error!(" Query: {}", field_query.sql);
+                        return Err(TileSourceError::TypeDetectionError);
+                    }
+                };
+                let Some(geometry_field) = geometry_field else {
+                    error!("Layer `{}`: No geometry column found", layer.name);
                     return Err(TileSourceError::TypeDetectionError);
-                }
-            };
-            let Some(geometry_field) = geometry_field else {
-                error!("Layer `{}`: No geometry column found", layer.name);
-                return Err(TileSourceError::TypeDetectionError);
-            };
-            let geom_name = layer.geometry_field.as_ref().unwrap_or(&geometry_field);
-            let query = SqlQuery::build_tile_query(
-                layer,
-                geom_name,
-                &fields,
-                tile_srid,
-                zoom,
-                layer_query,
-                postgis2,
-            );
-            let param_types = query.param_types();
-            let stmt = match ds.pool.prepare_with(&query.sql, &param_types).await {
-                Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
-                Err(e) => {
-                    error!("Layer `{}` z{zoom}: Invalid query - {e}", layer.name);
-                    error!(" Query: {}", query.sql);
-                    return Err(TileSourceError::TypeDetectionError);
-                }
-            };
-            // Workaround for cached queries with incorrect parameter types
-            // for _ in 0..ds.pool.size() {
-            //     ds.pool.acquire().await?.clear_cached_statements().await?;
-            // }
-            debug!(
-                "Layer `{}`: Query for minzoom {zoom}: {}",
-                layer.name, query.sql
-            );
-            let query_info = QueryInfo {
-                stmt,
-                params: query.params.clone(),
-                fields: fields.clone(),
-                geometry_field: geometry_field.clone(),
-            };
-            layer_queries.insert(zoom, query_info);
+                };
+                let geom_name = layer.geometry_field.as_ref().unwrap_or(&geometry_field);
+                let query = SqlQuery::build_tile_query(
+                    layer,
+                    geom_name,
+                    &fields,
+                    tile_srid,
+                    zoom,
+                    layer_query,
+                    postgis2,
+                );
+                let param_types = query.param_types();
+                let stmt = match ds.pool.prepare_with(&query.sql, &param_types).await {
+                    Ok(stmt) => Statement::to_owned(&stmt), //stmt.to_owned()
+                    Err(e) => {
+                        error!("Layer `{}` z{zoom}: Invalid query - {e}", layer.name);
+                        error!(" Query: {}", query.sql);
+                        return Err(TileSourceError::TypeDetectionError);
+                    }
+                };
+                // Workaround for cached queries with incorrect parameter types
+                // for _ in 0..ds.pool.size() {
+                //     ds.pool.acquire().await?.clear_cached_statements().await?;
+                // }
+                debug!(
+                    "Layer `{}`: Query for minzoom {zoom}: {}",
+                    layer.name, query.sql
+                );
+                let query_info = QueryInfo {
+                    stmt,
+                    params: query.params.clone(),
+                    fields: fields.clone(),
+                    geometry_field: geometry_field.clone(),
+                };
+                layer_queries
+                    .entry(tile_srid)
+                    .or_insert(HashMap::new())
+                    .insert(zoom, query_info);
+            }
         }
 
         // Lookup table for all zoom levels
-        let zoom_steps = layer.zoom_steps(tile_crs_cfg);
+        let zoom_steps = layer.zoom_steps(tms_cfg);
+        let maxzoom = ts_grids
+            .iter()
+            .map(|g| g.tms.maxzoom())
+            .max()
+            .expect("default grid missing");
         let mut query_zoom_steps = HashMap::new();
         for zoom in layer.minzoom()..=layer.maxzoom(maxzoom) {
             let z = zoom_steps
@@ -305,29 +308,28 @@ fn layer_query<'a>(
 }
 
 #[async_trait]
-impl TileRead for PgSource {
+impl TileSource for PgSource {
     async fn xyz_request(
         &self,
-        service: &TileService,
-        tms_id: &str,
+        tms: &Tms,
         tile: &Xyz,
         filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        let grid = service.grid(tms_id)?;
-        let extent_info = service.xyz_extent(tms_id, tile)?;
+        let extent_info = tms.xyz_extent(tile)?;
         let extent = &extent_info.extent;
         debug!(
             "Query tile {}/{}/{} with {extent:?}",
             tile.z, tile.x, tile.y
         );
+        let tile_srid = tms.srid();
         let mut mvt = MvtBuilder::new();
         for (id, layer) in &self.layers {
-            let Some(query_info) = layer.query(tile.z) else {
+            let Some(query_info) = layer.query(tile_srid, tile.z) else {
                 continue;
             };
-            let query = layer_query(layer, query_info, tile, grid, extent, filter)?;
+            let query = layer_query(layer, query_info, tile, tms, extent, filter)?;
             debug!("Query layer `{id}`");
             let mut rows = query.fetch(&self.ds.pool);
             let mut mvt_layer = MvtBuilder::new_layer(id, layer.tile_size);
@@ -391,16 +393,16 @@ impl TileRead for PgSource {
     fn source_type(&self) -> SourceType {
         SourceType::Vector
     }
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.attribution = Some(self.config.attribution());
         // Minimum zoom level for which tiles are available.
         // Optional. Default: 0. >= 0, <= 30.
-        tj.minzoom = Some(self.config.minzoom.unwrap_or(0));
+        tj.minzoom = Some(tms.minzoom());
         // Maximum zoom level for which tiles are available.
         // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
         // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
-        tj.maxzoom = Some(self.maxzoom);
+        tj.maxzoom = Some(tms.maxzoom());
         let extent = self.config.get_extent();
         tj.bounds = Some(tilejson::Bounds {
             left: extent.minx,
@@ -416,11 +418,12 @@ impl TileRead for PgSource {
         });
         tj.other
             .insert("format".to_string(), format.file_suffix().into());
-        if self.grid_srid != 3857 {
+        let grid_srid = 3857; // TODO: from tileset
+        if grid_srid != 3857 {
             // TODO: add full grid information according to GDAL extension
             // https://github.com/OSGeo/gdal/blob/release/3.4/gdal/ogr/ogrsf_frmts/mvt/ogrmvtdataset.cpp#L5497
             tj.other
-                .insert("srs".to_string(), format!("EPSG:{}", self.grid_srid).into());
+                .insert("srs".to_string(), format!("EPSG:{}", grid_srid).into());
         }
         // TODO: advertise zoom level specific srids
         let mut layers: Vec<tilejson::VectorLayer> = self
@@ -430,6 +433,8 @@ impl TileRead for PgSource {
                 // Collected fields from all zoom step levels
                 let fields = layer
                     .queries
+                    .get(&grid_srid)
+                    .unwrap()
                     .clone()
                     .into_values()
                     .flat_map(|q| q.fields)
@@ -665,8 +670,6 @@ mod tests {
         let pg_src_cfg = PostgisSourceParamsCfg {
             datasource: None,
             extent: None,
-            minzoom: None,
-            maxzoom: None,
             center: None,
             start_zoom: None,
             attribution: None,
@@ -674,9 +677,14 @@ mod tests {
             diagnostics: None,
             layers: vec![layer],
         };
-        let ds = PgDatasource::from_config(&ds_cfg, None).await.unwrap();
         let tms = tms().lookup("WebMercatorQuad").unwrap();
-        PgSource::create(&ds, &pg_src_cfg, &tms, &Vec::new()).await
+        let ts_grids = vec![TileSetGrid {
+            tms,
+            minzoom: 0,
+            maxzoom: 24,
+        }];
+        let ds = PgDatasource::from_config(&ds_cfg, None).await.unwrap();
+        PgSource::create(&ds, &pg_src_cfg, &ts_grids, &Vec::new()).await
     }
 
     #[test(tokio::test)]
@@ -686,7 +694,7 @@ mod tests {
         let layer = pg.layers.get("layer1").unwrap();
         let tms = tms().lookup("WebMercatorQuad").unwrap();
         let tile = Xyz::new(0, 0, 0);
-        let query_info = layer.query(tile.z).unwrap();
+        let query_info = layer.query(tms.srid(), tile.z).unwrap();
         let extent = tms.xy_bounds(&tile);
         let filter = FilterParams::default();
         let query = layer_query(layer, query_info, &tile, &tms, &extent, &filter).unwrap();
@@ -707,7 +715,7 @@ mod tests {
         let layer = pg.layers.get("layer1").unwrap();
         let tms = tms().lookup("WebMercatorQuad").unwrap();
         let tile = Xyz::new(0, 0, 0);
-        let query_info = layer.query(tile.z).unwrap();
+        let query_info = layer.query(tms.srid(), tile.z).unwrap();
         let extent = tms.xy_bounds(&tile);
         let filter = FilterParams::default();
         let query = layer_query(layer, query_info, &tile, &tms, &extent, &filter).unwrap();

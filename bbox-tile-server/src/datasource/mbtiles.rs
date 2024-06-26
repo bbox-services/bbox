@@ -2,24 +2,22 @@
 
 use crate::config::TileSetCfg;
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileResponse, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::service::TileService;
 use crate::store::mbtiles::MbtilesStore;
 use crate::store::TileReader;
 use async_trait::async_trait;
 use bbox_core::Format;
 use martin_mbtiles::Metadata;
-use tile_grid::Xyz;
+use tile_grid::{Tms, Xyz};
 use tilejson::TileJSON;
 
 #[async_trait]
-impl TileRead for MbtilesStore {
+impl TileSource for MbtilesStore {
     async fn xyz_request(
         &self,
-        _service: &TileService,
-        _tms_id: &str,
+        _tms: &Tms,
         tile: &Xyz,
         _filter: &FilterParams,
         _format: &Format,
@@ -38,7 +36,7 @@ impl TileRead for MbtilesStore {
     fn source_type(&self) -> SourceType {
         SourceType::Vector // TODO: Support Mbtiles raster
     }
-    async fn tilejson(&self, _format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, _tms: &Tms, _format: &Format) -> Result<TileJSON, TileSourceError> {
         let metadata = self.mbt.get_metadata().await?;
         Ok(metadata.tilejson)
     }

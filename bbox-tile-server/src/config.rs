@@ -39,11 +39,9 @@ pub struct TileSetCfg {
     pub name: String,
     // Tile format (Default: Raster)
     // pub format: Option<TileFormatCfg>,
-    /// Tile matrix set identifier (Default: `WebMercatorQuad`)
-    pub tms: Option<String>,
-    /// Spatial reference system of tile data (override grid CRS)
+    /// Tile matrix set identifiers (Default: `["WebMercatorQuad"]`)
     #[serde(default)]
-    pub tile_crs: Vec<TileCrsCfg>,
+    pub tms: Vec<TilesetTmsCfg>,
     /// Tile source
     #[serde(flatten)]
     pub source: SourceParamCfg,
@@ -66,15 +64,17 @@ pub struct GridCfg {
     pub json: String,
 }
 
-/// Spatial reference system of tile data
+/// Available tile grid with optional zoom levels
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct TileCrsCfg {
-    /// Spatial reference system of tile data (PostGIS SRID)
-    pub srid: i32,
-    /// Minimum zoom level (Default: 0).
+pub struct TilesetTmsCfg {
+    /// Tile matrix set identifier
+    pub id: String,
+    /// Minimum zoom level for which tiles are available (Default: 0).
     pub minzoom: Option<u8>,
-    /// Maximum zoom level.
+    /// Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for `WebMercatorQuad`).
+    ///
+    /// Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.
     pub maxzoom: Option<u8>,
 }
 
@@ -130,12 +130,6 @@ pub struct PostgisSourceParamsCfg {
     // maybe we should allow direct DS URLs?
     pub datasource: Option<String>,
     pub extent: Option<ExtentCfg>,
-    /// Minimum zoom level for which tiles are available (Default: 0).
-    pub minzoom: Option<u8>,
-    /// Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for `WebMercatorQuad`).
-    ///
-    /// Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.
-    pub maxzoom: Option<u8>,
     /// Longitude, latitude of map center (in WGS84).
     ///
     /// Viewers can use this value to set the default location.
@@ -420,8 +414,7 @@ impl ServiceConfig for TileServiceCfg {
                 info!("Adding tileset `{name}`");
                 let ts = TileSetCfg {
                     name,
-                    tms: None,
-                    tile_crs: Vec::new(),
+                    tms: Vec::new(),
                     source: source_cfg,
                     cache: None,
                     cache_format: None,
@@ -472,12 +465,12 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
             Vec::new()
         };
         let tms = if let Some(g) = &t_rex_config.grid.user {
-            Some(format!("{}", g.srid))
+            format!("{}", g.srid)
         } else {
             match &t_rex_config.grid.predefined.as_deref() {
-                Some("wgs84") => Some("WorldCRS84Quad".to_string()),
-                Some("web_mercator") => Some("WebMercatorQuad".to_string()),
-                _ => None,
+                Some("wgs84") => "WorldCRS84Quad".to_string(),
+                Some("web_mercator") => "WebMercatorQuad".to_string(),
+                _ => "WebMercatorQuad".to_string(),
             }
         };
         let tilestore = t_rex_config
@@ -582,8 +575,6 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                         minx: ext.minx,
                         miny: ext.miny,
                     }),
-                    minzoom: ts.minzoom,
-                    maxzoom: ts.maxzoom,
                     center: ts.center,
                     start_zoom: ts.start_zoom,
                     attribution: ts.attribution,
@@ -593,8 +584,11 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                 };
                 TileSetCfg {
                     name: ts.name,
-                    tms: tms.clone(),
-                    tile_crs: Vec::new(),
+                    tms: vec![TilesetTmsCfg {
+                        id: tms.clone(),
+                        minzoom: ts.minzoom,
+                        maxzoom: ts.maxzoom,
+                    }],
                     source: SourceParamCfg::Postgis(pgcfg),
                     cache: cache_name.clone(),
                     cache_format: None,
@@ -665,20 +659,16 @@ impl VectorLayerCfg {
         )
     }
     /// Collect min zoom levels
-    pub fn zoom_steps(&self, tile_crs_cfg: &[TileCrsCfg]) -> Vec<u8> {
+    pub fn zoom_steps(&self, tms_cfg: &[TilesetTmsCfg]) -> Vec<u8> {
         let mut zoom_steps: Vec<u8> = self
             .queries
             .iter()
             .filter(|q| q.sql.is_some())
             .filter_map(|q| q.minzoom)
             // Append tile_src minzoom levels
-            .chain(tile_crs_cfg.iter().filter_map(|crs| crs.minzoom))
+            .chain(tms_cfg.iter().filter_map(|crs| crs.minzoom))
             // Append tile_src maxzoom levels
-            .chain(
-                tile_crs_cfg
-                    .iter()
-                    .filter_map(|crs| crs.maxzoom.map(|z| z + 1)),
-            )
+            .chain(tms_cfg.iter().filter_map(|crs| crs.maxzoom.map(|z| z + 1)))
             .filter(|z| *z >= self.minzoom())
             // Append layer minzoom
             .chain([self.minzoom()])
@@ -965,3 +955,179 @@ impl VectorLayerCfg {
 //     <timeout>300</timeout>
 //   </locker>
 // </mapcache>
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use toml::Value;
+
+    fn parse_config<'a, T: Deserialize<'a>>(toml: &str) -> Result<T, String> {
+        toml.parse::<Value>()
+            .and_then(|cfg| cfg.try_into::<T>())
+            .map_err(|err| format!("{err}"))
+    }
+
+    #[test]
+    fn zoom_steps() {
+        const CONFIG: &str = r#"
+            [[datasource]]
+            name = "osmdb"
+            [datasource.postgis]
+            url = "postgres:///osmdb"
+
+            [[tileset]]
+            name = "osm"
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+            #srid = 8857 / 3857
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 0
+            maxzoom = 2
+            sql = """SELECT "geom" FROM "eq"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 10
+            sql = """SELECT "id","geom" FROM "merc"."ocean""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let SourceParamCfg::Postgis(ref source) = cfg.tilesets[0].source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers.len(), 1);
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 42);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0, 3, 10]);
+    }
+
+    #[test]
+    fn zoom_min_max() {
+        const CONFIG: &str = r#"
+            [[tileset]]
+            name = "osm"
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 10
+            maxzoom = 24
+            sql = """SELECT "id","geom" FROM "merc"."ocean""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let SourceParamCfg::Postgis(ref source) = cfg.tilesets[0].source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 3);
+        assert_eq!(source.layers[0].maxzoom(42), 24);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![3, 10]);
+    }
+
+    #[test]
+    fn multi_crs_projected() {
+        const CONFIG: &str = r#"
+            [[grid]]
+            json = "EqualEarthGreenwichWGS84Quad.json"
+
+            [[tileset]]
+            name = "tracking"
+
+            [[tileset.tms]]
+            id = "EqualEarthGreenwichWGS84Quad"
+            maxzoom = 2
+
+            [[tileset.tms]]
+            id = "WebMercatorQuad"
+            minzoom = 3
+
+            [tileset.postgis]
+            datasource = "tracking"
+
+            [[tileset.postgis.layer]]
+            name = "waypoints"
+            geometry_field = "geom"
+            geometry_type = "POINT"
+            srid = 4326
+
+            [[tileset.postgis.layer.query]]
+            sql = """SELECT id, ts::TEXT, ST_Point(lon, lat, 4326) AS geom FROM gps.gpslog"""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let ts = &cfg.tilesets[0];
+        let SourceParamCfg::Postgis(ref source) = ts.source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 42);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0]);
+        assert_eq!(source.layers[0].zoom_steps(&ts.tms), vec![0, 3]);
+    }
+
+    #[test]
+    fn multi_crs_unprojected() {
+        const CONFIG: &str = r#"
+            [[grid]]
+            json = "EqualEarthGreenwichWGS84Quad.json"
+
+            [[tileset]]
+            name = "ocean"
+
+            [[tileset.tms]]
+            id = "EqualEarthGreenwichWGS84Quad"
+            maxzoom = 2
+
+            [[tileset.tms]]
+            id = "WebMercatorQuad"
+            minzoom = 3
+
+            [tileset.postgis]
+            datasource = "osmdb"
+
+            [[tileset.postgis.layer]]
+            geometry_field = "geom"
+            geometry_type = "POLYGON"
+            name = "ocean"
+            #srid = 8857 / 3857
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 0
+            maxzoom = 2
+            sql = """SELECT "geom" FROM "eq"."ocean_low""""
+
+            [[tileset.postgis.layer.query]]
+            minzoom = 3
+            maxzoom = 9
+            sql = """SELECT "id","geom" FROM "merc"."ocean_low""""
+        "#;
+        let cfg: TileServiceCfg = parse_config(CONFIG).unwrap();
+        let ts = &cfg.tilesets[0];
+        let SourceParamCfg::Postgis(ref source) = ts.source else {
+            panic!("Wrong tileset source")
+        };
+        assert_eq!(source.layers[0].minzoom(), 0);
+        assert_eq!(source.layers[0].maxzoom(42), 9);
+        assert_eq!(source.layers[0].zoom_steps(&[]), vec![0, 3]);
+        assert_eq!(source.layers[0].zoom_steps(&ts.tms), vec![0, 3]);
+    }
+}

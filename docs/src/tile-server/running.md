@@ -38,6 +38,7 @@ Options:
       --tileset <TILESET>      tile set name
       --minzoom <MINZOOM>      Minimum zoom level
       --maxzoom <MAXZOOM>      Maximum zoom level
+      --tms <TMS>              tile matrix set id
       --extent <EXTENT>        Extent minx,miny,maxx,maxy (in grid reference system)
       --tile-path <TILE_PATH>  Base directory for file store
       --s3-path <S3_PATH>      S3 path to upload to (e.g. s3://tiles)

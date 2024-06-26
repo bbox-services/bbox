@@ -2,16 +2,16 @@
 
 use crate::config::WmsHttpSourceParamsCfg;
 use crate::datasource::{
-    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileSourceError,
+    wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::service::TileService;
+use crate::service::TmsExtensions;
 use async_trait::async_trait;
 use bbox_core::config::WmsHttpSourceProviderCfg;
 use bbox_core::{Format, TileResponse};
 use log::debug;
 use std::io::Cursor;
-use tile_grid::{BoundingBox, Xyz};
+use tile_grid::{BoundingBox, Tms, Xyz};
 use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
@@ -70,23 +70,22 @@ impl WmsHttpSource {
 }
 
 #[async_trait]
-impl TileRead for WmsHttpSource {
+impl TileSource for WmsHttpSource {
     async fn xyz_request(
         &self,
-        service: &TileService,
-        tms_id: &str,
+        tms: &Tms,
         tile: &Xyz,
         _filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        let extent_info = service.xyz_extent(tms_id, tile)?;
+        let extent_info = tms.xyz_extent(tile)?;
         self.bbox_request(&extent_info.extent).await
     }
     fn source_type(&self) -> SourceType {
         SourceType::Raster
     }
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, _tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.other
             .insert("format".to_string(), format.file_suffix().into());

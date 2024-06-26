@@ -92,7 +92,6 @@ impl SqlQuery {
     /// Replace variables (!bbox!, !zoom!, etc.) in query
     // https://github.com/mapnik/mapnik/wiki/PostGIS
     fn replace_params(sqlin: &str, bbox_expr: String, bbox_expr_unbuffered: String) -> Self {
-        let re = Regex::new(r"!(\w+)!").expect("regex");
         let mut sql = sqlin.to_string();
         let mut params = Vec::new();
         let mut numvars = 0;
@@ -127,6 +126,7 @@ impl SqlQuery {
         }
         // Search and replace field query vars
         let mut unique_fields = BTreeSet::new();
+        let re = Regex::new(r"!(\w+)!").expect("regex");
         for (_, [field]) in re.captures_iter(&sql).map(|c| c.extract()) {
             unique_fields.insert(field.to_string());
         }
