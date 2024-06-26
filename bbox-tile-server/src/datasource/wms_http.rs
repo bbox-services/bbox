@@ -85,7 +85,7 @@ impl TileRead for WmsHttpSource {
     fn source_type(&self) -> SourceType {
         SourceType::Raster
     }
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, _tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.other
             .insert("format".to_string(), format.file_suffix().into());

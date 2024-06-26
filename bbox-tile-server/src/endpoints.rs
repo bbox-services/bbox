@@ -41,7 +41,8 @@ async fn tilejson(
         .tileset(&tileset)
         .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
         .unwrap();
-    if let Ok(tilejson) = ts.tilejson(&absurl).await {
+    let tms = ts.default_grid(0).expect("default grid missing");
+    if let Ok(tilejson) = ts.tilejson(tms, &absurl).await {
         HttpResponse::Ok().json(tilejson)
     } else {
         HttpResponse::InternalServerError().finish()

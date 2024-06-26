@@ -969,7 +969,7 @@ mod tests {
 
     #[test]
     fn zoom_steps() {
-        const CONFIG: &'static str = r#"
+        const CONFIG: &str = r#"
             [[datasource]]
             name = "osmdb"
             [datasource.postgis]
@@ -1013,7 +1013,7 @@ mod tests {
 
     #[test]
     fn zoom_min_max() {
-        const CONFIG: &'static str = r#"
+        const CONFIG: &str = r#"
             [[tileset]]
             name = "osm"
 
@@ -1046,7 +1046,7 @@ mod tests {
 
     #[test]
     fn multi_crs_projected() {
-        const CONFIG: &'static str = r#"
+        const CONFIG: &str = r#"
             [[grid]]
             json = "EqualEarthGreenwichWGS84Quad.json"
 
@@ -1086,7 +1086,7 @@ mod tests {
 
     #[test]
     fn multi_crs_unprojected() {
-        const CONFIG: &'static str = r#"
+        const CONFIG: &str = r#"
             [[grid]]
             json = "EqualEarthGreenwichWGS84Quad.json"
 

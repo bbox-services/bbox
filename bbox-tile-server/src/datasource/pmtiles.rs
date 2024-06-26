@@ -36,7 +36,7 @@ impl TileRead for PmtilesStoreReader {
     fn source_type(&self) -> SourceType {
         SourceType::Vector //TODO
     }
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, _tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError> {
         debug!(
             "Metadata {}: {}",
             self.path.display(),

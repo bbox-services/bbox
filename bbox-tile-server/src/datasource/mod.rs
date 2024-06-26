@@ -22,7 +22,7 @@ use geozero::error::GeozeroError;
 use martin_mbtiles::Metadata;
 use once_cell::sync::OnceCell;
 use std::env;
-use tile_grid::{RegistryError, Tms, Xyz};
+use tile_grid::{tms, RegistryError, Tms, Xyz};
 use tilejson::TileJSON;
 
 #[derive(thiserror::Error, Debug)]
@@ -100,7 +100,7 @@ pub trait TileRead: DynClone + Send + Sync {
         DUMMY_METRICS.get_or_init(wms_fcgi::WmsMetrics::default)
     }
     /// TileJSON layer metadata (<https://github.com/mapbox/tilejson-spec>)
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError>;
+    async fn tilejson(&self, tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError>;
     /// Layer metadata
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError>;
     /// MBTiles metadata.json (<https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md>)
@@ -109,6 +109,7 @@ pub trait TileRead: DynClone + Send + Sync {
         tileset: &TileSetCfg,
         format: &Format,
     ) -> Result<Metadata, TileSourceError> {
+        let tms = tms().lookup("WebMercatorQuad").unwrap();
         Ok(Metadata {
             id: tileset.name.clone(),
             tile_info: martin_tile_utils::TileInfo {
@@ -116,7 +117,7 @@ pub trait TileRead: DynClone + Send + Sync {
                     .unwrap_or(martin_tile_utils::Format::Mvt),
                 encoding: martin_tile_utils::Encoding::Uncompressed,
             },
-            tilejson: self.tilejson(format).await?,
+            tilejson: self.tilejson(&tms, format).await?,
             layer_type: None,
             json: None,
             agg_tiles_hash: None,

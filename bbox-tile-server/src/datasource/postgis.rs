@@ -393,16 +393,16 @@ impl TileRead for PgSource {
     fn source_type(&self) -> SourceType {
         SourceType::Vector
     }
-    async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, tms: &Tms, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };
         tj.attribution = Some(self.config.attribution());
         // Minimum zoom level for which tiles are available.
         // Optional. Default: 0. >= 0, <= 30.
-        // tj.minzoom = Some(self.config.minzoom.unwrap_or(0)); TODO: from grid
+        tj.minzoom = Some(tms.minzoom());
         // Maximum zoom level for which tiles are available.
         // Data from tiles at the maxzoom are used when displaying the map at higher zoom levels.
         // Optional. Default: 30. >= 0, <= 30. (Mapbox Style default: 22)
-        // tj.maxzoom = Some(self.maxzoom); TODO: from grid
+        tj.maxzoom = Some(tms.maxzoom());
         let extent = self.config.get_extent();
         tj.bounds = Some(tilejson::Bounds {
             left: extent.minx,

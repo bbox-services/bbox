@@ -36,7 +36,7 @@ impl TileRead for MbtilesStore {
     fn source_type(&self) -> SourceType {
         SourceType::Vector // TODO: Support Mbtiles raster
     }
-    async fn tilejson(&self, _format: &Format) -> Result<TileJSON, TileSourceError> {
+    async fn tilejson(&self, _tms: &Tms, _format: &Format) -> Result<TileJSON, TileSourceError> {
         let metadata = self.mbt.get_metadata().await?;
         Ok(metadata.tilejson)
     }

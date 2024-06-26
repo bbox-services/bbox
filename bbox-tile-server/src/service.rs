@@ -415,8 +415,8 @@ impl TileSet {
         }
     }
     /// TileJSON layer metadata (<https://github.com/mapbox/tilejson-spec>)
-    pub async fn tilejson(&self, base_url: &str) -> Result<TileJSON, ServiceError> {
-        let mut tilejson = self.source.tilejson(&self.format).await?;
+    pub async fn tilejson(&self, tms: &Tms, base_url: &str) -> Result<TileJSON, ServiceError> {
+        let mut tilejson = self.source.tilejson(tms, &self.format).await?;
         let suffix = tilejson
             .other
             .get("format")
