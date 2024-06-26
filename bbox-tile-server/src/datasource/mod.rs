@@ -191,7 +191,7 @@ impl Datasources {
                         "wms_proxy".to_string(),
                     ))
                 };
-                let first_srid = ts_grids.first().expect("default grid missing").tms.srid();
+                let first_srid = ts_grids.first().expect("default grid missing").tms.srid(); // TODO: Support multiple grids
                 Box::new(wms_http::WmsHttpSource::from_config(
                     provider, cfg, first_srid,
                 ))

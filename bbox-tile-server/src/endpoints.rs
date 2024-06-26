@@ -162,10 +162,7 @@ async fn tile_request(
         req_path: req.path(),
         metrics: &metrics,
     };
-    let tms = tms.unwrap_or(
-        ts.default_grid(z)
-            .expect("default grid missing or z out of range"),
-    );
+    let tms = tms.unwrap_or(ts.default_grid(z)?);
     match ts
         .tile_cached(tms, &tile, &fp, format, compression, request_params)
         .await

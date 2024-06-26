@@ -6,7 +6,7 @@
 * Add queryables endpoint to feature server
 * Return layer min-/maxzoom in Tilejson
 * Update to tile-grid 0.6 / ogcapi-types 0.2
-* Add tile SRS override config with opt. zoom level
+* Support multiple grids per tileset with opt. zoom limits
 * Add cache control max-age config with opt. zoom levels
 * CI improvements (PostGIS tests, etc.)
 * Guides and other doc improvements

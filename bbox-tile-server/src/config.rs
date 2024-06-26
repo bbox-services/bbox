@@ -1091,7 +1091,7 @@ mod tests {
             json = "EqualEarthGreenwichWGS84Quad.json"
 
             [[tileset]]
-            name = "tracking"
+            name = "ocean"
 
             [[tileset.tms]]
             id = "EqualEarthGreenwichWGS84Quad"

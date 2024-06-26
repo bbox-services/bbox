@@ -123,11 +123,11 @@ impl PgSource {
         }
 
         fn tile_srid_z(ts_grids: &[TileSetGrid], zoom: u8) -> Option<i32> {
-            let entry = ts_grids
+            ts_grids
                 .iter()
                 .rev()
-                .find(|entry| entry.minzoom <= zoom && entry.maxzoom >= zoom);
-            entry.map(|e| e.tms.srid())
+                .find(|entry| entry.minzoom <= zoom && entry.maxzoom >= zoom)
+                .map(|entry| entry.tms.srid())
         }
 
         let zoom_steps = layer.zoom_steps(tms_cfg);

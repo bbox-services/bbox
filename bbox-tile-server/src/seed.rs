@@ -62,9 +62,9 @@ impl TileService {
         let tileset_arc = Arc::new(tileset.clone());
         let tms = Arc::new(
             if let Some(tms_id) = &args.tms {
-                tileset.grid(&tms_id)?
+                tileset.grid(tms_id)?
             } else {
-                tileset.default_grid(0).expect("default grid missing")
+                tileset.default_grid(0)?
             }
             .clone(),
         );

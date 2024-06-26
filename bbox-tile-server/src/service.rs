@@ -62,6 +62,8 @@ pub enum ServiceError {
     CacheNotFound(String),
     #[error("Unknown format `{0}`")]
     UnknownFormat(String),
+    #[error("Tileset grid not found")] // default grid missing or z out of range
+    TilesetGridNotFound,
     #[error(transparent)]
     TileRegistryError(#[from] RegistryError),
     #[error(transparent)]
@@ -309,12 +311,13 @@ impl TileSet {
             .find(|tms| tms.id() == tms_id)
             .ok_or(RegistryError::TmsNotFound(tms_id.to_string()))
     }
-    pub fn default_grid(&self, zoom: u8) -> Option<&Tms> {
+    pub fn default_grid(&self, zoom: u8) -> Result<&Tms, ServiceError> {
         // TODO: guarantee grid sorted by minzoom
         self.tms
             .iter()
             .find(|grid| zoom >= grid.minzoom && zoom <= grid.maxzoom)
             .map(|grid| &grid.tms)
+            .ok_or(ServiceError::TilesetGridNotFound)
     }
     pub fn tile_format(&self) -> &Format {
         &self.format
