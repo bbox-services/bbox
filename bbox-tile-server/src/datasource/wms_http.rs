@@ -5,13 +5,13 @@ use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::service::TileService;
+use crate::service::TmsExtensions;
 use async_trait::async_trait;
 use bbox_core::config::WmsHttpSourceProviderCfg;
 use bbox_core::{Format, TileResponse};
 use log::debug;
 use std::io::Cursor;
-use tile_grid::{BoundingBox, Xyz};
+use tile_grid::{BoundingBox, Tms, Xyz};
 use tilejson::{tilejson, TileJSON};
 
 #[derive(Clone, Debug)]
@@ -73,14 +73,13 @@ impl WmsHttpSource {
 impl TileRead for WmsHttpSource {
     async fn xyz_request(
         &self,
-        service: &TileService,
-        tms_id: &str,
+        tms: &Tms,
         tile: &Xyz,
         _filter: &FilterParams,
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        let extent_info = service.xyz_extent(tms_id, tile)?;
+        let extent_info = tms.xyz_extent(tile)?;
         self.bbox_request(&extent_info.extent).await
     }
     fn source_type(&self) -> SourceType {

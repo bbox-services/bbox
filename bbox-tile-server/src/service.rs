@@ -1,6 +1,6 @@
 use crate::cli::Commands;
 use crate::config::*;
-use crate::datasource::wms_fcgi::{HttpRequestParams, MapService, WmsMetrics};
+use crate::datasource::wms_fcgi::{HttpRequestParams, MapService};
 use crate::datasource::{Datasources, SourceType, TileRead, TileSourceError};
 use crate::filter_params::FilterParams;
 use crate::store::{
@@ -16,7 +16,6 @@ use clap::{ArgMatches, Args, FromArgMatches};
 use log::debug;
 use martin_mbtiles::Metadata;
 use ogcapi_types::tiles::TileMatrixSet;
-use once_cell::sync::OnceCell;
 use serde_json::json;
 use std::collections::HashMap;
 use std::num::NonZeroU16;
@@ -27,17 +26,15 @@ use tilejson::TileJSON;
 #[derive(Clone)]
 pub struct TileService {
     pub(crate) tilesets: Tilesets,
-    grids: HashMap<String, Tms>,
-    // Map service backend
-    pub(crate) map_service: Option<MapService>,
 }
 
 pub type Tilesets = HashMap<String, TileSet>;
 
 #[derive(Clone)]
 pub struct TileSet {
-    /// Tile matrix set identifier
-    pub tms: String,
+    pub name: String,
+    /// Tile matrix sets
+    pub tms: Vec<TileSetGrid>,
     pub source: Box<dyn TileRead>,
     format: Format,
     pub store_reader: Option<Box<dyn TileReader>>,
@@ -48,34 +45,13 @@ pub struct TileSet {
     cache_control: Vec<CacheControlCfg>,
 }
 
-impl TileSet {
-    pub fn tile_format(&self) -> &Format {
-        &self.format
-    }
-    pub fn is_cachable_at(&self, zoom: u8) -> bool {
-        if self.store_reader.is_none() {
-            return false;
-        }
-        match self.cache_limits {
-            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(255) >= zoom,
-            None => true,
-        }
-    }
-    pub fn cache_control_max_age(&self, zoom: u8) -> Option<u64> {
-        let entry = self.cache_control.iter().rev().find(|entry| {
-            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
-        });
-        entry.map(|e| e.max_age)
-    }
-    pub fn cache_config(&self) -> Option<&TileStoreCfg> {
-        self.cache_cfg.as_ref()
-    }
-    pub fn cache_compression(&self) -> Compression {
-        self.store_writer
-            .as_ref()
-            .map(|s| s.compression())
-            .unwrap_or(Compression::None)
-    }
+#[derive(Clone)]
+pub struct TileSetGrid {
+    pub tms: Tms,
+    /// Minimum zoom level.
+    pub minzoom: u8,
+    /// Maximum zoom level.
+    pub maxzoom: u8,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -126,7 +102,6 @@ impl OgcApiService for TileService {
 
     async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
         let mut tilesets = HashMap::new();
-        let mut service_grids = HashMap::new();
 
         // Register custom grids
         let mut grids = tms().clone();
@@ -147,10 +122,28 @@ impl OgcApiService for TileService {
             .collect();
 
         for ts in &config.tilesets {
-            let tms_id = ts.tms.clone().unwrap_or("WebMercatorQuad".to_string());
-            let tms = grids.lookup(&tms_id).unwrap_or_else(error_exit);
+            let ts_grids_cfg = if ts.tms.is_empty() {
+                vec![TilesetTmsCfg {
+                    id: "WebMercatorQuad".to_string(),
+                    minzoom: None,
+                    maxzoom: None,
+                }]
+            } else {
+                ts.tms.clone()
+            };
+            let ts_grids = ts_grids_cfg
+                .iter()
+                .map(|cfg| {
+                    let grid = grids.lookup(&cfg.id).unwrap_or_else(error_exit);
+                    TileSetGrid {
+                        tms: grid.clone(),
+                        minzoom: cfg.minzoom.unwrap_or(grid.minzoom()),
+                        maxzoom: cfg.maxzoom.unwrap_or(grid.maxzoom()),
+                    }
+                })
+                .collect::<Vec<_>>();
             let source = datasources
-                .setup_tile_source(&ts.source, &tms, &ts.tile_crs)
+                .setup_tile_source(&ts.source, &ts_grids, &ts_grids_cfg)
                 .await;
             let format = ts
                 .cache_format
@@ -196,7 +189,8 @@ impl OgcApiService for TileService {
                 None
             };
             let tileset = TileSet {
-                tms: tms_id.clone(),
+                name: ts.name.clone(),
+                tms: ts_grids,
                 source,
                 format,
                 store_reader,
@@ -207,13 +201,8 @@ impl OgcApiService for TileService {
                 cache_control: ts.cache_control.clone(),
             };
             tilesets.insert(ts.name.clone(), tileset);
-            service_grids.insert(tms_id, tms);
         }
-        TileService {
-            tilesets,
-            grids: service_grids,
-            map_service: None, // Assigned in run_service
-        }
+        TileService { tilesets }
     }
 
     async fn cli_run(&self, cli: &ArgMatches) -> bool {
@@ -303,59 +292,77 @@ pub struct QueryExtent {
 
 impl TileService {
     pub fn set_map_service(&mut self, service: &MapService) {
-        self.map_service = Some(service.clone());
+        for (_, ts) in self.tilesets.iter_mut() {
+            ts.source.set_map_service(service);
+        }
     }
     pub fn tileset(&self, tileset: &str) -> Option<&TileSet> {
         self.tilesets.get(tileset)
     }
-    pub fn source(&self, tileset: &str) -> Option<&dyn TileRead> {
-        self.tilesets.source(tileset)
+}
+
+impl TileSet {
+    pub fn grid(&self, tms_id: &str) -> Result<&Tms, tile_grid::Error> {
+        self.tms
+            .iter()
+            .map(|g| &g.tms)
+            .find(|tms| tms.id() == tms_id)
+            .ok_or(RegistryError::TmsNotFound(tms_id.to_string()))
     }
-    pub fn grid(&self, tms: &str) -> Result<&Tms, tile_grid::Error> {
-        self.grids
-            .get(tms)
-            .ok_or(RegistryError::TmsNotFound(tms.to_string()))
+    pub fn default_grid(&self, zoom: u8) -> Option<&Tms> {
+        // TODO: guarantee grid sorted by minzoom
+        self.tms
+            .iter()
+            .find(|grid| zoom >= grid.minzoom && zoom <= grid.maxzoom)
+            .map(|grid| &grid.tms)
     }
-    pub fn xyz_extent(&self, tms_id: &str, xyz: &Xyz) -> Result<QueryExtent, TileSourceError> {
-        let tms = self.grid(tms_id)?;
-        let extent = tms.xy_bounds(xyz);
-        let srid = tms.crs().as_srid();
-        let tile_matrix = tms.matrix(xyz.z);
-        if !tms.is_valid(xyz) {
-            return Err(TileSourceError::TileXyzError);
+    pub fn tile_format(&self) -> &Format {
+        &self.format
+    }
+    pub fn is_cachable_at(&self, zoom: u8) -> bool {
+        if self.store_reader.is_none() {
+            return false;
         }
-        let tile_width = tile_matrix.as_ref().tile_width;
-        let tile_height = tile_matrix.as_ref().tile_height;
-        Ok(QueryExtent {
-            extent,
-            srid,
-            tile_width,
-            tile_height,
-        })
+        match self.cache_limits {
+            Some(ref cl) => cl.minzoom <= zoom && cl.maxzoom.unwrap_or(255) >= zoom,
+            None => true,
+        }
+    }
+    pub fn cache_control_max_age(&self, zoom: u8) -> Option<u64> {
+        let entry = self.cache_control.iter().rev().find(|entry| {
+            entry.minzoom.unwrap_or(0) <= zoom && entry.maxzoom.unwrap_or(255) >= zoom
+        });
+        entry.map(|e| e.max_age)
+    }
+    pub fn cache_config(&self) -> Option<&TileStoreCfg> {
+        self.cache_cfg.as_ref()
+    }
+    pub fn cache_compression(&self) -> Compression {
+        self.store_writer
+            .as_ref()
+            .map(|s| s.compression())
+            .unwrap_or(Compression::None)
     }
     /// Tile request
     // Used for seeding, compresses tiles according to target store
     pub async fn read_tile(
         &self,
-        tileset: &str,
+        tms: &Tms,
         xyz: &Xyz,
         filter: &FilterParams,
         format: &Format,
         compression: Compression,
     ) -> Result<Vec<u8>, ServiceError> {
-        let metrics = self.wms_metrics();
-        let ts = self
-            .tileset(tileset)
-            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        let metrics = self.source.wms_metrics();
         let request_params = HttpRequestParams {
             scheme: "http",
             host: "localhost",
             req_path: "/",
             metrics,
         };
-        let tile = ts
+        let tile = self
             .source
-            .xyz_request(self, &ts.tms, xyz, filter, format, request_params)
+            .xyz_request(tms, xyz, filter, format, request_params)
             .await?;
         let data = tile.read_bytes(&compression)?;
         Ok(data.body)
@@ -364,18 +371,17 @@ impl TileService {
     // Used for serving
     pub async fn tile_cached(
         &self,
-        tileset: &str,
+        tms: &Tms,
         xyz: &Xyz,
         filter: &FilterParams,
         format: &Format,
         compression: Compression,
         request_params: HttpRequestParams<'_>,
     ) -> Result<Option<TileResponse>, ServiceError> {
-        let tileset = self
-            .tileset(tileset)
-            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        let tileset = self;
         if let Some(cache) = &tileset.store_reader {
             if tileset.is_cachable_at(xyz.z) {
+                // TODO: support separate caches for different grids
                 if let Some(tile) = cache.get_tile(xyz).await? {
                     debug!("Delivering tile from cache @ {xyz:?}");
                     let response = tile.with_compression(&compression);
@@ -388,7 +394,7 @@ impl TileService {
         debug!("Request tile from source @ {xyz:?}");
         let mut tiledata = tileset
             .source
-            .xyz_request(self, &tileset.tms, xyz, filter, format, request_params)
+            .xyz_request(tms, xyz, filter, format, request_params)
             .await?;
         // TODO: if tiledata.empty() { return Ok(None) }
         if let Some(cache_max_age) = tileset.cache_control_max_age(xyz.z) {
@@ -409,11 +415,8 @@ impl TileService {
         }
     }
     /// TileJSON layer metadata (<https://github.com/mapbox/tilejson-spec>)
-    pub async fn tilejson(&self, tileset: &str, base_url: &str) -> Result<TileJSON, ServiceError> {
-        let ts = self
-            .tileset(tileset)
-            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
-        let mut tilejson = ts.source.tilejson(&ts.format).await?;
+    pub async fn tilejson(&self, base_url: &str) -> Result<TileJSON, ServiceError> {
+        let mut tilejson = self.source.tilejson(&self.format).await?;
         let suffix = tilejson
             .other
             .get("format")
@@ -423,29 +426,28 @@ impl TileService {
             Format::from_suffix(suffix).ok_or(ServiceError::UnknownFormat(suffix.to_string()))?;
         tilejson.tiles.push(format!(
             "{base_url}/{tileset}/{{z}}/{{x}}/{{y}}.{format}",
+            tileset = &self.name,
             format = format.file_suffix()
         ));
         Ok(tilejson)
     }
 
     /// MBTiles metadata.json
-    pub async fn mbtiles_metadata(&self, tileset: &str) -> Result<Metadata, ServiceError> {
-        let ts = self
-            .tileset(tileset)
-            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
-        Ok(ts.source.mbtiles_metadata(&ts.config, &ts.format).await?)
+    pub async fn mbtiles_metadata(&self) -> Result<Metadata, ServiceError> {
+        Ok(self
+            .source
+            .mbtiles_metadata(&self.config, &self.format)
+            .await?)
     }
 
     /// Autogenerated Style JSON (<https://www.mapbox.com/mapbox-gl-style-spec/>)
     pub async fn stylejson(
         &self,
-        tileset: &str,
         base_url: &str,
         base_path: &str,
     ) -> Result<serde_json::Value, ServiceError> {
-        let ts = self
-            .tileset(tileset)
-            .ok_or(ServiceError::TilesetNotFound(tileset.to_string()))?;
+        let ts = self;
+        let tileset = &self.name;
         let suffix = ts.tile_format().file_suffix();
         let source_type = ts.source.source_type();
         let ts_source = match source_type {
@@ -544,13 +546,35 @@ impl TileService {
         });
         Ok(stylejson)
     }
+}
 
-    fn wms_metrics(&self) -> &'static WmsMetrics {
-        static DUMMY_METRICS: OnceCell<WmsMetrics> = OnceCell::new();
-        if let Some(map_service) = &self.map_service {
-            map_service.metrics()
-        } else {
-            DUMMY_METRICS.get_or_init(WmsMetrics::default)
+pub trait TmsExtensions {
+    fn id(&self) -> &str;
+    fn srid(&self) -> i32;
+    fn xyz_extent(&self, xyz: &Xyz) -> Result<QueryExtent, TileSourceError>;
+}
+
+impl TmsExtensions for Tms {
+    fn id(&self) -> &str {
+        &self.tms.id
+    }
+    fn srid(&self) -> i32 {
+        self.crs().as_srid()
+    }
+    fn xyz_extent(&self, xyz: &Xyz) -> Result<QueryExtent, TileSourceError> {
+        if !self.is_valid(xyz) {
+            return Err(TileSourceError::TileXyzError);
         }
+        let extent = self.xy_bounds(xyz);
+        let srid = self.srid();
+        let tile_matrix = self.matrix(xyz.z);
+        let tile_width = tile_matrix.as_ref().tile_width;
+        let tile_height = tile_matrix.as_ref().tile_height;
+        Ok(QueryExtent {
+            extent,
+            srid,
+            tile_width,
+            tile_height,
+        })
     }
 }

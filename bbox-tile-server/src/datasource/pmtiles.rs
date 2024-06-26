@@ -4,13 +4,12 @@ use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileRead, TileResponse, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::service::TileService;
 use crate::store::pmtiles::PmtilesStoreReader;
 use crate::store::TileReader;
 use async_trait::async_trait;
 use bbox_core::Format;
 use log::debug;
-use tile_grid::Xyz;
+use tile_grid::{Tms, Xyz};
 use tilejson::tilejson;
 use tilejson::TileJSON;
 
@@ -18,8 +17,7 @@ use tilejson::TileJSON;
 impl TileRead for PmtilesStoreReader {
     async fn xyz_request(
         &self,
-        _service: &TileService,
-        _tms_id: &str,
+        _tms: &Tms,
         tile: &Xyz,
         _filter: &FilterParams,
         _format: &Format,

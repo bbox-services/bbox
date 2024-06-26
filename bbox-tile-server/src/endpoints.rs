@@ -1,15 +1,15 @@
 use crate::datasource::wms_fcgi::{HttpRequestParams, WmsMetrics};
 use crate::filter_params::FilterParams;
-use crate::service::{ServiceError, TileService};
+use crate::service::{ServiceError, TileService, TileSet};
 use actix_web::{guard, http::header, web, Error, FromRequest, HttpRequest, HttpResponse};
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::ServiceEndpoints;
 use bbox_core::{Compression, Format};
 use log::error;
 use ogcapi_types::common::{Crs, Link};
-use ogcapi_types::tiles::{DataType, TileSet, TileSetItem, TileSets, TitleDescriptionKeywords};
+use ogcapi_types::tiles::{DataType, TileSetItem, TileSets, TitleDescriptionKeywords};
 use std::collections::HashMap;
-use tile_grid::Xyz;
+use tile_grid::{Tms, Xyz};
 
 /// XYZ tile endpoint
 // xyz/{tileset}/{z}/{x}/{y}.{format}
@@ -23,8 +23,9 @@ async fn xyz(
     let ts = service
         .tileset(&tileset)
         .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    let tms = None;
     let format = Format::from_suffix(&format).unwrap_or(*ts.tile_format());
-    tile_request(service, &tileset, x, y, z, &format, metrics, req).await
+    tile_request(ts, tms, x, y, z, &format, metrics, req).await
 }
 
 /// XYZ tilejson endpoint
@@ -36,7 +37,11 @@ async fn tilejson(
     req: HttpRequest,
 ) -> HttpResponse {
     let absurl = format!("{}{}", abs_req_baseurl(&req), req_parent_path(&req));
-    if let Ok(tilejson) = service.tilejson(&tileset, &absurl).await {
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
+        .unwrap();
+    if let Ok(tilejson) = ts.tilejson(&absurl).await {
         HttpResponse::Ok().json(tilejson)
     } else {
         HttpResponse::InternalServerError().finish()
@@ -52,7 +57,11 @@ async fn stylejson(
 ) -> HttpResponse {
     let base_url = abs_req_baseurl(&req);
     let base_path = req_parent_path(&req);
-    if let Ok(stylejson) = service.stylejson(&tileset, &base_url, &base_path).await {
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
+        .unwrap();
+    if let Ok(stylejson) = ts.stylejson(&base_url, &base_path).await {
         HttpResponse::Ok().json(stylejson)
     } else {
         HttpResponse::InternalServerError().finish()
@@ -62,7 +71,11 @@ async fn stylejson(
 /// XYZ MBTiles metadata.json (https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md)
 // xyz/{tileset}/metadata.json
 async fn metadatajson(service: web::Data<TileService>, tileset: web::Path<String>) -> HttpResponse {
-    if let Ok(metadata) = service.mbtiles_metadata(&tileset).await {
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
+        .unwrap();
+    if let Ok(metadata) = ts.mbtiles_metadata().await {
         HttpResponse::Ok().json(metadata)
     } else {
         HttpResponse::InternalServerError().finish()
@@ -77,12 +90,18 @@ async fn map_tile(
     metrics: web::Data<WmsMetrics>,
     req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
-    let (tileset, z, x, y) = params.into_inner();
-    let source = service
-        .source(&tileset)
-        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
-    let format = format_accept_header(&req, source.default_format()).await;
-    tile_request(service, &tileset, x, y, z, &format, metrics, req).await
+    let (tms_id, z, x, y) = params.into_inner();
+    // This endpoint doesn't specify the tileset. Let's take the first dataset of the service.
+    let ts = service
+        .tilesets
+        .values()
+        .collect::<Vec<_>>()
+        .first()
+        .cloned()
+        .unwrap();
+    let tms = ts.grid(&tms_id).unwrap();
+    let format = format_accept_header(&req, ts.source.default_format()).await;
+    tile_request(ts, Some(tms), x, y, z, &format, metrics, req).await
 }
 
 async fn format_accept_header(req: &HttpRequest, default: &Format) -> Format {
@@ -103,8 +122,8 @@ async fn format_accept_header(req: &HttpRequest, default: &Format) -> Format {
 
 #[allow(clippy::too_many_arguments)]
 async fn tile_request(
-    service: web::Data<TileService>,
-    tileset: &str,
+    ts: &TileSet,
+    tms: Option<&Tms>,
     x: u64,
     y: u64,
     z: u8,
@@ -142,8 +161,12 @@ async fn tile_request(
         req_path: req.path(),
         metrics: &metrics,
     };
-    match service
-        .tile_cached(tileset, &tile, &fp, format, compression, request_params)
+    let tms = tms.unwrap_or(
+        ts.default_grid(z)
+            .expect("default grid missing or z out of range"),
+    );
+    match ts
+        .tile_cached(tms, &tile, &fp, format, compression, request_params)
         .await
     {
         Ok(Some(tile_resp)) => {
@@ -210,10 +233,11 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                     },
                 ],
             };
-            if let Ok(grid) = service.grid(&tileset.tms) {
-                ts_item.crs = grid.tms.crs.clone();
-                ts_item.tile_matrix_set_uri.clone_from(&grid.tms.uri);
-                if grid.tms.id == "WebMercatorQuad" {
+            for grid in &tileset.tms {
+                let tms = &grid.tms.tms;
+                ts_item.crs = tms.crs.clone();
+                ts_item.tile_matrix_set_uri.clone_from(&tms.uri);
+                if tms.id == "WebMercatorQuad" {
                     ts_item.links.push(Link {
                         rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
                         r#type: Some("application/json".to_string()),
@@ -240,7 +264,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
 // tiles/{tileMatrixSetId}
 async fn get_tile_set(tile_matrix_set_id: web::Path<String>) -> HttpResponse {
     // hardcoded TileSet, required for core conformance test
-    let tileset = TileSet {
+    let tileset = ogcapi_types::tiles::TileSet {
         title_description_keywords: TitleDescriptionKeywords {
             title: Some(tile_matrix_set_id.to_string()),
             description: None,

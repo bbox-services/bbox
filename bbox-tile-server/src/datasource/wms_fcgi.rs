@@ -3,19 +3,23 @@
 use crate::config::WmsFcgiSourceParamsCfg;
 use crate::datasource::{LayerInfo, SourceType, TileRead, TileSourceError};
 use crate::filter_params::FilterParams;
-use crate::service::{QueryExtent, TileService};
+use crate::service::{QueryExtent, TmsExtensions};
 use async_trait::async_trait;
+use bbox_core::service::OgcApiService;
 use bbox_core::{Format, TileResponse};
 use bbox_map_server::endpoints::wms_fcgi_req;
 pub use bbox_map_server::{
     endpoints::FcgiError, endpoints::HttpRequestParams, metrics::WmsMetrics, MapService,
 };
+use once_cell::sync::OnceCell;
 use std::num::NonZeroU16;
-use tile_grid::Xyz;
+use tile_grid::{Tms, Xyz};
 use tilejson::{tilejson, TileJSON};
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct WmsFcgiSource {
+    // Map service backend
+    map_service: Option<MapService>,
     pub project: String,
     pub suffix: String,
     pub query: String,
@@ -32,6 +36,7 @@ impl WmsFcgiSource {
             cfg.params.as_ref().unwrap_or(&"".to_string()),
         );
         WmsFcgiSource {
+            map_service: None,
             project,
             suffix,
             query,
@@ -60,15 +65,14 @@ impl WmsFcgiSource {
 
     async fn bbox_request(
         &self,
-        service: &TileService,
         extent_info: &QueryExtent,
         format: &Format,
         request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        let fcgi_dispatcher = service
+        let fcgi_dispatcher = self
             .map_service
             .as_ref()
-            .expect("map_service")
+            .expect("not initialized")
             .fcgi_dispatcher(&self.suffix)
             .ok_or(TileSourceError::SuffixNotFound(self.suffix.clone()))?;
         let fcgi_query = self.get_map_request(extent_info, format);
@@ -91,19 +95,29 @@ impl WmsFcgiSource {
 impl TileRead for WmsFcgiSource {
     async fn xyz_request(
         &self,
-        service: &TileService,
-        tms_id: &str,
+        tms: &Tms,
         tile: &Xyz,
         _filter: &FilterParams,
         format: &Format,
         request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        let extent_info = service.xyz_extent(tms_id, tile)?;
-        self.bbox_request(service, &extent_info, format, request_params)
+        let extent_info = tms.xyz_extent(tile)?;
+        self.bbox_request(&extent_info, format, request_params)
             .await
     }
     fn source_type(&self) -> SourceType {
         SourceType::Raster
+    }
+    fn set_map_service(&mut self, service: &MapService) {
+        self.map_service = Some(service.clone());
+    }
+    fn wms_metrics(&self) -> &'static WmsMetrics {
+        static DUMMY_METRICS: OnceCell<WmsMetrics> = OnceCell::new();
+        if let Some(map_service) = &self.map_service {
+            map_service.metrics()
+        } else {
+            DUMMY_METRICS.get_or_init(WmsMetrics::default)
+        }
     }
     async fn tilejson(&self, format: &Format) -> Result<TileJSON, TileSourceError> {
         let mut tj = tilejson! { tiles: vec![] };

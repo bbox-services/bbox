@@ -184,7 +184,8 @@ wms_proxy = { source = "gebco", layers = "gebco_latest" }
 
 [[tileset]]
 name = "rivers_lakes"
-tms = "LV95"
+[[tileset.tms]]
+id = "LV95"
 [tileset.map_service]
 project = "ne_extracts"
 suffix = "qgz"

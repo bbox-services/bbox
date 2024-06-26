@@ -43,7 +43,6 @@ By-Grid (Vector):
 
 By-Feature (https://github.com/onthegomap/planetiler/blob/main/ARCHITECTURE.md):
 * Iterate over features with filters
-* Slice data into grid tiles
 * Generalize for zoom levels
 * Collect data into grid tiles
 * Generate tile
@@ -56,13 +55,18 @@ impl TileService {
         let progress = progress_bar();
         let progress_main = progress.clone();
 
-        let tileset_name = Arc::new(args.tileset.clone());
         let tileset = self
             .tileset(&args.tileset)
-            .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?;
+            .ok_or(ServiceError::TilesetNotFound(args.tileset.clone()))?
+            .clone();
+        let tileset_arc = Arc::new(tileset.clone());
+        let tms = Arc::new(
+            tileset
+                .default_grid(0)
+                .expect("default grid missing") //FIXME: grid from args and/or zoom dependencies
+                .clone(),
+        );
         let format = *tileset.tile_format();
-        let service = Arc::new(self.clone());
-        let tms = self.grid(&tileset.tms)?;
 
         let bbox = if let Some(numlist) = &args.extent {
             let arr: Vec<f64> = numlist
@@ -86,6 +90,7 @@ impl TileService {
             );
         };
         let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
+        let tile_store_writer = tileset.store_writer.clone().unwrap();
         let compression = tile_writer.compression();
 
         // Number of worker threads (size >= #cores).
@@ -108,13 +113,13 @@ impl TileService {
             xyz
         });
         let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
-            let tileset = tileset_name.clone();
+            let tileset = tileset_arc.clone();
             let filter = FilterParams::default();
-            let service = service.clone();
+            let tms = tms.clone();
             let compression = compression.clone();
             async move {
-                let tile = service
-                    .read_tile(&tileset, &xyz, &filter, &format, compression)
+                let tile = tileset
+                    .read_tile(&tms, &xyz, &filter, &format, compression)
                     .await
                     .unwrap();
                 (xyz, tile)
@@ -147,7 +152,7 @@ impl TileService {
                     .await;
             }
             TileStoreCfg::Mbtiles(_) | TileStoreCfg::Pmtiles(_) => {
-                let tile_writer = tileset.store_writer.clone().unwrap();
+                let tile_writer = tile_store_writer.clone();
                 let batch_size = 200; // For MBTiles, create the largest prepared statement supported by SQLite (999 parameters)
                 par_stream
                     .stateful_batching(tile_writer, |mut tile_writer, mut stream| async move {
