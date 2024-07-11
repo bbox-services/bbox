@@ -4,7 +4,7 @@ use crate::store::{TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::{Compression, TileResponse};
 use log::info;
-use martin_mbtiles::{CopyDuplicateMode, MbtType, Metadata};
+use martin_mbtiles::{CopyDuplicateMode, Metadata};
 use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat};
 use std::ffi::OsStr;
 use std::io::Cursor;
@@ -64,8 +64,7 @@ impl TileWriter for MbtilesStore {
             .mbtiles
             .insert_tiles(
                 &mut conn,
-                MbtType::Flat,
-                //MbtType::Normalized { hash_view: false }, -> "no such function: md5_hex"
+                self.mbt.layout,
                 CopyDuplicateMode::Override,
                 &[(xyz.z, xyz.x as u32, xyz.y as u32, data)],
             )
@@ -76,7 +75,12 @@ impl TileWriter for MbtilesStore {
         let mut conn = self.mbt.pool.acquire().await?;
         self.mbt
             .mbtiles
-            .insert_tiles(&mut conn, MbtType::Flat, CopyDuplicateMode::Override, tiles)
+            .insert_tiles(
+                &mut conn,
+                self.mbt.layout,
+                CopyDuplicateMode::Override,
+                tiles,
+            )
             .await?;
         Ok(())
     }

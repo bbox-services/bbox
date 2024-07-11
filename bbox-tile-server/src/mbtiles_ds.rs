@@ -1,6 +1,6 @@
 use crate::config::MbtilesStoreCfg;
 use martin_mbtiles::{
-    create_flat_tables, create_metadata_table, MbtError, MbtResult, Mbtiles, Metadata,
+    create_flat_tables, create_metadata_table, MbtError, MbtResult, MbtType, Mbtiles, Metadata,
 };
 use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat, TileInfo};
 use serde_json::json;
@@ -23,6 +23,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct MbtilesDatasource {
     pub mbtiles: Mbtiles,
     pub format_info: TileInfo,
+    pub layout: MbtType,
     pub pool: Pool<Sqlite>,
 }
 
@@ -46,10 +47,12 @@ impl MbtilesDatasource {
             metadata.tile_info
         };
         let format_info = format_info.unwrap_or(tile_info);
+        let layout = Self::detect_layout(&mbtiles).await?;
         let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: SqliteConnectOptions::read_only(true) if metadata.is_none()
         Ok(Self {
             mbtiles,
             format_info,
+            layout,
             pool,
         })
     }
@@ -76,6 +79,11 @@ impl MbtilesDatasource {
         });
         conn.close().await?;
         Ok(tile_info)
+    }
+
+    async fn detect_layout(mbtiles: &Mbtiles) -> MbtResult<MbtType> {
+        let mut conn = mbtiles.open_readonly().await?;
+        mbtiles.detect_type(&mut conn).await
     }
 
     async fn initialize_mbtiles_db(mbtiles: &Mbtiles, metadata: Metadata) -> MbtResult<()> {
