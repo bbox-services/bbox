@@ -6,7 +6,7 @@ Services are available via the following HTTP endpoints:
 |---------------------------------------|-----------------------------|
 | `/tiles`                              | List of available tilesets  |
 | `/tiles/{tileset}`                    | Tileset metadata            |
-| `/map/tiles/{tileset}/{z}/{x}/{y}`    | Map tiles endpoint          |
+| `/map/tiles/{grid}/{z}/{x}/{y}`       | Map tiles endpoint          |
 | `/xyz/{tileset}/{z}/{x}/{y}.{format}` | XYZ tile endpoint           |
 | `/xyz/{tileset}.json`                 | Tilejson endpoint           |
 | `/xyz/{tileset}.style.json`           | Generic Style JSON endpoint |
@@ -26,7 +26,7 @@ Tile requests:
 
     curl -o /tmp/tilegz.mvt -H 'Content-Encoding: gzip' http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
 
-    curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/ne_extracts/2/2/2
+    curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/WebMercatorQuad/2/2/2
 
     curl -o /tmp/tile.mvt http://localhost:8080/xyz/liechtenstein/14/8621/5759.mvt
 
