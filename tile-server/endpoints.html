@@ -185,7 +185,7 @@
 <div class="table-wrapper"><table><thead><tr><th>URL</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>/tiles</code></td><td>List of available tilesets</td></tr>
 <tr><td><code>/tiles/{tileset}</code></td><td>Tileset metadata</td></tr>
-<tr><td><code>/map/tiles/{tileset}/{z}/{x}/{y}</code></td><td>Map tiles endpoint</td></tr>
+<tr><td><code>/map/tiles/{grid}/{z}/{x}/{y}</code></td><td>Map tiles endpoint</td></tr>
 <tr><td><code>/xyz/{tileset}/{z}/{x}/{y}.{format}</code></td><td>XYZ tile endpoint</td></tr>
 <tr><td><code>/xyz/{tileset}.json</code></td><td>Tilejson endpoint</td></tr>
 <tr><td><code>/xyz/{tileset}.style.json</code></td><td>Generic Style JSON endpoint</td></tr>
@@ -204,7 +204,7 @@ curl -o /tmp/tile.mvt http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
 
 curl -o /tmp/tilegz.mvt -H 'Content-Encoding: gzip' http://localhost:8080/xyz/mbtiles_mvt_fl/14/8621/5759.mvt
 
-curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/ne_extracts/2/2/2
+curl -o /tmp/tile.png -H 'Accept: image/png; mode=8bit' http://localhost:8080/map/tiles/WebMercatorQuad/2/2/2
 
 curl -o /tmp/tile.mvt http://localhost:8080/xyz/liechtenstein/14/8621/5759.mvt
 </code></pre>
