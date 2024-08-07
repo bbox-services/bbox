@@ -17,16 +17,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          # Raspberry Pi 3 or later: rustup target add aarch64-unknown-linux-gnu          
+          # Raspberry Pi 2: rustup target add armv7-unknown-linux-gnueabihf
+          # Raspberry Pi Zero: rustup target add arm-unknown-linux-gnueabihf
+          - x86_64-pc-windows-msvc
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-          - os: macOS-latest
-            target: x86_64-apple-darwin
-          - os: macOS-latest
-            target: aarch64-apple-darwin
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            target_rustflags: ''
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            target_rustflags: '--codegen linker=aarch64-linux-gnu-gcc'
+          # - target: armv7-unknown-linux-gnueabihf
+          #   os: ubuntu-latest
+          #   target_rustflags: '--codegen linker=arm-linux-gnueabihf-gcc'
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            target_rustflags: ''
+          - target: x86_64-apple-darwin
+            os: macOS-latest
+            # compile without debug symbols
+            target_rustflags: '-C link-arg=-s'
+          - target: aarch64-apple-darwin
+            os: macOS-latest
+            target_rustflags: ''
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,12 +57,15 @@ jobs:
         shell: bash
         run: |
           rustup toolchain install stable --profile minimal
+          rustup target add ${{ matrix.target }}
+
+          # Target specific tools
           if [[ "${{ matrix.target }}" == "x86_64-unknown-linux-gnu" ]]; then
             rustup component add clippy
-          elif [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
-            rustup target add x86_64-apple-darwin
-          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
-            rustup target add aarch64-apple-darwin
+          elif [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
+            sudo apt-get install gcc-aarch64-linux-gnu
+          elif [[ "${{ matrix.target }}" == "armv7-unknown-linux-gnueabihf" ]]; then
+            sudo apt-get install gcc-arm-linux-gnueabihf
           fi
 
       - uses: Swatinem/rust-cache@v2
@@ -53,7 +78,6 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint
         if: matrix.target == 'x86_64-unknown-linux-gnu'
-        shell: bash
         run: |
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
@@ -62,15 +86,11 @@ jobs:
         run: |
           if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
             # Skip bbox-map-server on Windows (uses Unix sockets)
-            cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,frontend
-            cargo build --release --target ${{ matrix.target }} --package bbox-tile-server --no-default-features
-          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
-            # compile without debug symbols
-            RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-server
-            RUSTFLAGS='-C link-arg=-s' cargo build --release --target ${{ matrix.target }} --package bbox-tile-server
+            RUSTFLAGS="${{ matrix.target_rustflags }}" cargo build --release --target ${{ matrix.target }} --package bbox-server --no-default-features --features=feature-server,asset-server,processes-server,tile-server,frontend
+            RUSTFLAGS="${{ matrix.target_rustflags }}" cargo build --release --target ${{ matrix.target }} --package bbox-tile-server --no-default-features
           else
-            cargo build --release --target ${{ matrix.target }} --package bbox-server
-            cargo build --release --target ${{ matrix.target }} --package bbox-tile-server
+            RUSTFLAGS="${{ matrix.target_rustflags }}" cargo build --release --target ${{ matrix.target }} --package bbox-server
+            RUSTFLAGS="${{ matrix.target_rustflags }}" cargo build --release --target ${{ matrix.target }} --package bbox-tile-server
           fi
           mkdir target_releases
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -141,6 +161,12 @@ jobs:
           name: build-x86_64-unknown-linux-gnu
           path: target/x86_64-unknown-linux-gnu
 
+      - name: Download built artifact build-aarch64-unknown-linux-gnu
+        uses: actions/download-artifact@v4
+        with:
+          name: build-aarch64-unknown-linux-gnu
+          path: target/aarch64-unknown-linux-gnu
+
       - name: Download built artifact build-x86_64-pc-windows-msvc
         uses: actions/download-artifact@v4
         with:
@@ -168,7 +194,7 @@ jobs:
 
           mv x86_64-unknown-linux-gnu/*.deb files/
 
-          for dist in x86_64-unknown-linux-gnu x86_64-apple-darwin aarch64-apple-darwin; do
+          for dist in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-apple-darwin aarch64-apple-darwin; do
             cd $dist
             chmod +x *
             tar czvf ../files/bbox-server-$dist.tar.gz bbox-server
