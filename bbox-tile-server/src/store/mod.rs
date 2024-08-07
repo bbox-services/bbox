@@ -94,9 +94,9 @@ impl CacheLayout {
         match self {
             CacheLayout::Zxy => {
                 // "{z}/{x}/{y}.{format}"
-                path.push(&xyz.z.to_string());
-                path.push(&xyz.x.to_string());
-                path.push(&xyz.y.to_string());
+                path.push(xyz.z.to_string());
+                path.push(xyz.x.to_string());
+                path.push(xyz.y.to_string());
                 path.set_extension(format.file_suffix());
             }
         }
