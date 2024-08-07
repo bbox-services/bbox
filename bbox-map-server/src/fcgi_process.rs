@@ -23,7 +23,7 @@ use bbox_core::config::Loglevel;
 use bufstream::BufStream;
 use fastcgi_client::Client;
 use log::{debug, error, info, warn};
-use std::os::unix::io::{AsRawFd, FromRawFd};
+use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -73,7 +73,7 @@ impl FcgiProcess {
             std::fs::remove_file(socket)?;
         }
         let listener = UnixListener::bind(socket)?;
-        let fd = listener.as_raw_fd();
+        let fd = listener.into_raw_fd();
         let fcgi_io = unsafe { Stdio::from_raw_fd(fd) };
 
         let mut cmd = Command::new(fcgi_bin);
