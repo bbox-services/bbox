@@ -45,10 +45,14 @@ impl FcgiBackendType for QgisFcgiBackend {
         "qgis"
     }
     fn exe_locations(&self) -> Vec<String> {
-        vec![
-            "/usr/lib/cgi-bin/qgis_mapserv.fcgi".to_string(),
-            "/usr/libexec/qgis/qgis_mapserv.fcgi".to_string(),
-        ]
+        if let Some(exe_location) = &self.config.exe_location {
+            vec![exe_location.clone()]
+        } else {
+            vec![
+                "/usr/lib/cgi-bin/qgis_mapserv.fcgi".to_string(),
+                "/usr/libexec/qgis/qgis_mapserv.fcgi".to_string(),
+            ]
+        }
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["qgs", "qgz"]
@@ -110,10 +114,14 @@ impl FcgiBackendType for UmnFcgiBackend {
         "mapserver"
     }
     fn exe_locations(&self) -> Vec<String> {
-        vec![
-            "/usr/lib/cgi-bin/mapserv".to_string(),
-            "/usr/bin/mapserv".to_string(),
-        ]
+        if let Some(exe_location) = &self.config.exe_location {
+            vec![exe_location.clone()]
+        } else {
+            vec![
+                "/usr/lib/cgi-bin/mapserv".to_string(),
+                "/usr/bin/mapserv".to_string(),
+            ]
+        }
     }
     fn project_files(&self) -> Vec<&'static str> {
         vec!["map"]
