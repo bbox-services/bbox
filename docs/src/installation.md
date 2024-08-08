@@ -5,11 +5,13 @@ You can download BBOX from [GitHub releases page](https://github.com/bbox-servic
 |  Platform |     Downloads (latest)    |
 |-----------|---------------------------|
 | Linux     | [64-bit][rl-linux-tar]    |
+| Linux ARM | [ARM64][rl-linux-arm-tar] |
 | macOS     | [64-bit][rl-macos-tar]    |
 | macOS ARM | [ARM64][rl-macos-arm-tar] |
 | Windows   | [64-bit][rl-win64-zip]    |
 
 [rl-linux-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-unknown-linux-gnu.tar.gz
+[rl-linux-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0-beta1/bbox-server-aarch64-unknown-linux-gnu.tar.gz
 [rl-macos-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-apple-darwin.tar.gz
 [rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-aarch64-apple-darwin.tar.gz
 [rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-pc-windows-msvc.zip
