@@ -55,20 +55,21 @@ impl ServiceEndpoints for AssetService {
 
         for static_dir in &service_cfg.static_ {
             let dir = app_dir(&static_dir.dir);
-            if Path::new(&dir).is_dir() {
+            if dir.is_dir() {
                 info!(
-                    "Serving static files from directory '{dir}' on '{}'",
+                    "Serving static files from directory '{}' on '{}'",
+                    dir.display(),
                     &static_dir.path
                 );
                 cfg.service(Files::new(&static_dir.path, &dir));
             } else {
-                warn!("Static file directory '{dir}' not found");
+                warn!("Static file directory '{}' not found", dir.display(),);
             }
         }
 
         let mut template_envs = RuntimeTemplates::default();
         for template_dir in &service_cfg.template {
-            let dir = app_dir(&template_dir.dir);
+            let dir = app_dir(&template_dir.dir).to_string_lossy().to_string();
             if Path::new(&dir).is_dir() {
                 let dest = &template_dir.path;
                 info!("Serving template files from directory '{dir}' on '{dest}'");
@@ -87,9 +88,12 @@ impl ServiceEndpoints for AssetService {
 
         for repo in &service_cfg.repo {
             let dir = app_dir(&repo.dir);
-            if Path::new(&dir).is_dir() {
+            if dir.is_dir() {
                 let xmldir = format!("{}/plugins.xml", repo.path);
-                info!("Serving QGIS plugin repository from directory '{dir}' on '{xmldir}'");
+                info!(
+                    "Serving QGIS plugin repository from directory '{}' on '{xmldir}'",
+                    dir.display()
+                );
                 cfg.service(Files::new(
                     &format!("{}/static", repo.path),
                     app_dir("bbox-asset-server/src/static"), // TODO: RustEmbed !

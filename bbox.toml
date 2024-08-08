@@ -88,21 +88,21 @@ fid_field = "fid"
 # Static file serving
 # Env var example: BBOX_ASSETS__STATIC='[{dir="assets",path="/assets"}]'
 # ./assets/* -> http://localhost:8080/assets/
-dir = "./assets"
+dir = "assets"
 path = "/assets"
 
 [[assets.template]]
 # Template file serving
 # Env var example: BBOX_ASSETS__TEMPLATE='[{dir="templates",path="/html"}]'
 # ./templates/name.html -> http://localhost:8080/html/name/param
-dir = "./templates"
+dir = "templates"
 path = "/html"
 
 [[assets.repo]]
 # QGIS plugin repository
 # Env var example: BBOX_ASSETS__REPO='[{dir="plugins",path="/qgisrepo"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
-dir = "./plugins"
+dir = "plugins"
 path = "/qgisrepo"
 
 [mapserver]

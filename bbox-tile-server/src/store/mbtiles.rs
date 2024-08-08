@@ -18,7 +18,7 @@ pub struct MbtilesStore {
 
 impl MbtilesStore {
     pub async fn from_config(cfg: &MbtilesStoreCfg) -> Result<Self, MbtilesDsError> {
-        info!("Creating connection pool for {}", &cfg.path.display());
+        info!("Creating connection pool for {}", &cfg.abs_path().display());
         let mbt = MbtilesDatasource::from_config(cfg, None).await?;
         //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
         Ok(MbtilesStore { mbt })
@@ -27,7 +27,7 @@ impl MbtilesStore {
         cfg: &MbtilesStoreCfg,
         metadata: Metadata,
     ) -> Result<Self, MbtilesDsError> {
-        info!("Creating connection pool for {}", &cfg.path.display());
+        info!("Creating connection pool for {}", &cfg.abs_path().display());
         let mbt = MbtilesDatasource::from_config(cfg, Some(metadata)).await?;
         Ok(MbtilesStore { mbt })
     }

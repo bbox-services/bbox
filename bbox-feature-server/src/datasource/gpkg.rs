@@ -25,7 +25,7 @@ pub struct SqliteDatasource {
 
 impl SqliteDatasource {
     pub async fn from_config(cfg: &DsGpkgCfg) -> Result<Self> {
-        Self::new_pool(cfg.path.as_os_str().to_str().unwrap()).await
+        Self::new_pool(cfg.abs_path().as_os_str().to_str().unwrap()).await
     }
     pub async fn new_pool(gpkg: &str) -> Result<Self> {
         let conn_options = SqliteConnectOptions::new().filename(gpkg).read_only(true);

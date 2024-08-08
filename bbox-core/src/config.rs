@@ -55,9 +55,14 @@ pub fn base_dir() -> PathBuf {
     }
 }
 
-/// Directory relative to application base directory
-pub fn app_dir(subdir: &str) -> String {
-    format!("{}/{subdir}", &base_dir().to_string_lossy())
+/// Full path relative to application base directory
+pub fn app_dir(path: impl Into<PathBuf>) -> PathBuf {
+    let path = path.into();
+    if path.is_relative() {
+        base_dir().join(path)
+    } else {
+        path
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -281,6 +286,12 @@ pub struct DsGpkgCfg {
     pub path: PathBuf,
     // pub pool_min_connections(0)
     // pub pool_max_connections(8)
+}
+
+impl DsGpkgCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.path)
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

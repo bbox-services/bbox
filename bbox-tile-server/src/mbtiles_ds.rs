@@ -33,7 +33,7 @@ pub fn mbtiles_from_path<P: AsRef<Path>>(filepath: P) -> Result<Mbtiles> {
 
 impl MbtilesDatasource {
     pub async fn from_config(ds: &MbtilesStoreCfg, metadata: Option<Metadata>) -> Result<Self> {
-        Self::new_pool(mbtiles_from_path(&ds.path)?, metadata).await
+        Self::new_pool(mbtiles_from_path(ds.abs_path())?, metadata).await
     }
 
     pub async fn new_pool(mbtiles: Mbtiles, metadata: Option<Metadata>) -> Result<Self> {

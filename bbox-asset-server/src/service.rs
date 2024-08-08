@@ -26,7 +26,7 @@ impl OgcApiService for AssetService {
     async fn create(service_cfg: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
         let mut plugins_index = PluginIndex::new();
         for repo in &service_cfg.repo {
-            let dir = app_dir(&repo.dir);
+            let dir = app_dir(&repo.dir).to_string_lossy().to_string();
             if Path::new(&dir).is_dir() {
                 info!("Scanning QGIS plugin repository directory '{dir}'");
                 let plugins = plugin_files(&dir);

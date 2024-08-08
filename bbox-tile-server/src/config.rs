@@ -3,7 +3,7 @@ use crate::config_t_rex as t_rex;
 use crate::datasource::source_config_from_cli_arg;
 use bbox_core::cli::CommonCommands;
 use bbox_core::config::{
-    error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, DsPostgisCfg,
+    app_dir, error_exit, from_config_root_or_exit, ConfigError, DatasourceCfg, DsPostgisCfg,
     NamedDatasourceCfg,
 };
 use bbox_core::service::ServiceConfig;
@@ -62,6 +62,12 @@ pub struct TileSetCfg {
 pub struct GridCfg {
     /// Grid JSON file path
     pub json: String,
+}
+
+impl GridCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.json)
+    }
 }
 
 /// Available tile grid with optional zoom levels
@@ -324,6 +330,12 @@ pub struct FileStoreCfg {
     pub base_dir: PathBuf,
 }
 
+impl FileStoreCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.base_dir)
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct S3StoreCfg {
@@ -339,10 +351,22 @@ pub struct MbtilesStoreCfg {
     pub path: PathBuf,
 }
 
+impl MbtilesStoreCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.path)
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PmtilesStoreCfg {
     pub path: PathBuf,
+}
+
+impl PmtilesStoreCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.path)
+    }
 }
 
 impl TileStoreCfg {

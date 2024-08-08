@@ -36,7 +36,9 @@ pub struct QgisFcgiBackend {
 
 impl QgisFcgiBackend {
     pub(crate) fn new(config: QgisBackendCfg) -> Self {
-        let plugindir = app_dir("bbox-map-server/qgis/plugins");
+        let plugindir = app_dir("bbox-map-server/qgis/plugins")
+            .to_string_lossy()
+            .to_string();
         QgisFcgiBackend { config, plugindir }
     }
 }
@@ -203,11 +205,9 @@ pub fn detect_backends(
     for backend in backends {
         if let Some(exe_path) = detect_fcgi(backend) {
             let mut wms_inventory_files = HashMap::new();
-            let base = if Path::new(backend.project_basedir()).is_relative() {
-                &app_dir(backend.project_basedir())
-            } else {
-                backend.project_basedir()
-            };
+            let base = &app_dir(backend.project_basedir())
+                .to_string_lossy()
+                .to_string();
             let basedir = if config.search_projects {
                 info!("Searching project files with project_basedir: {base}");
                 let mut all_paths = HashSet::new();
