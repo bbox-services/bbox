@@ -1,6 +1,6 @@
 [package]
 name = "bbox-processes-server"
-version = "0.5.1-beta1"
+version = "0.6.0-beta1"
 authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
 
 edition.workspace = true

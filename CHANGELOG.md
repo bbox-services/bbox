@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.1 (UNRELEASED)
+## 0.6.0 beta1 (2024-08-08)
 
 * Support tile grids with up to 255 levels
 * Add queryables endpoint to feature server
@@ -8,6 +8,8 @@
 * Update to tile-grid 0.6 / ogcapi-types 0.2
 * Support multiple grids per tileset with opt. zoom limits
 * Add cache control max-age config with opt. zoom levels
+* Detect MBTiles layout for updating
+* Use exe_location configuration for map backends
 * CI improvements (PostGIS tests, etc.)
 * Guides and other doc improvements
 
