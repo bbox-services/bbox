@@ -1,5 +1,4 @@
-use crate::app_dir;
-use crate::config::{config_error_exit, error_exit};
+use crate::config::{app_dir, config_error_exit, error_exit};
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use rustls_pemfile::{certs, pkcs8_private_keys};
 use std::{fs::File, io::BufReader};

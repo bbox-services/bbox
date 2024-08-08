@@ -1,8 +1,8 @@
 use crate::config::*;
 use crate::fcgi_process::FcgiProcessPool;
 use crate::inventory::*;
-use bbox_core::config::Loglevel;
-use bbox_core::{app_dir, file_search};
+use bbox_core::config::{app_dir, Loglevel};
+use bbox_core::file_search;
 use log::{info, warn};
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -203,7 +203,11 @@ pub fn detect_backends(
     for backend in backends {
         if let Some(exe_path) = detect_fcgi(backend) {
             let mut wms_inventory_files = HashMap::new();
-            let base = backend.project_basedir();
+            let base = if Path::new(backend.project_basedir()).is_relative() {
+                &app_dir(backend.project_basedir())
+            } else {
+                backend.project_basedir()
+            };
             let basedir = if config.search_projects {
                 info!("Searching project files with project_basedir: {base}");
                 let mut all_paths = HashSet::new();

@@ -1,9 +1,8 @@
 use crate::config::AssetServiceCfg;
 use crate::qgis_plugins::plugin_files;
 use async_trait::async_trait;
-use bbox_core::app_dir;
 use bbox_core::cli::{NoArgs, NoCommands};
-use bbox_core::config::CoreServiceCfg;
+use bbox_core::config::{app_dir, CoreServiceCfg};
 use bbox_core::metrics::{no_metrics, NoMetrics};
 use bbox_core::service::OgcApiService;
 use log::{info, warn};

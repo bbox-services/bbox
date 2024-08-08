@@ -5,7 +5,7 @@
 ```toml
 [[routing.service]]
 profile = "railway"
-gpkg = "../assets/railway-test.gpkg"
+gpkg = "assets/railway-test.gpkg"
 table = "flows"
 geom = "geom"
 ```

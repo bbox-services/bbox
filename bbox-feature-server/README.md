@@ -22,7 +22,7 @@ url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 [[datasource]]
 name = "ne_extracts"
 [datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
+path = "assets/ne_extracts.gpkg"
 ```
 
 Collections with auto detection:
@@ -31,7 +31,7 @@ Collections with auto detection:
 url = "postgresql://t_rex:t_rex@127.0.0.1:5439/t_rex_tests"
 
 [[collections.directory]]
-dir = "../assets"
+dir = "assets"
 ```
 
 Collections:

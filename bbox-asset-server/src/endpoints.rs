@@ -4,7 +4,7 @@ use crate::runtime_templates::RuntimeTemplates;
 use crate::service::{AssetService, PluginIndex};
 use actix_files::{Files, NamedFile};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
-use bbox_core::app_dir;
+use bbox_core::config::app_dir;
 use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::ServiceEndpoints;
 use log::{info, warn};
