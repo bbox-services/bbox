@@ -1,5 +1,4 @@
-BBOX frontend
-=============
+# BBOX frontend
 
 HTML frontend for BBOX services.
 

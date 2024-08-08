@@ -1,10 +1,17 @@
 [package]
 name = "bbox-server"
 version = "0.6.0-beta1"
-edition = "2021"
-rust-version = "1.65"
-repository = "https://github.com/sourcepole/bbox"
-license = "MIT OR Apache-2.0"
+readme = "README.md"
+description = "BBOX OGC API Services"
+keywords = ["maps", "tiles", "postgis"]
+categories = ["science::geo"]
+authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
+
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
 
 [features]
 default = ["feature-server", "asset-server", "map-server", "processes-server", "tile-server", "frontend"]
@@ -21,14 +28,14 @@ qwc2 = ["bbox-frontend?/qwc2"]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-asset-server = { path = "../bbox-asset-server", optional = true }
-bbox-core = { path = "../bbox-core" }
-bbox-feature-server = { path = "../bbox-feature-server", optional = true }
-bbox-frontend = { path = "../bbox-frontend", optional = true }
-bbox-map-server = { path = "../bbox-map-server", optional = true }
-bbox-processes-server = { path = "../bbox-processes-server", optional = true }
-bbox-routing-server = { path = "../bbox-routing-server", optional = true }
-bbox-tile-server = { path = "../bbox-tile-server", default-features = false, optional = true }
+bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.0-beta1", optional = true }
+bbox-core = { path = "../bbox-core", version = "0.6.0-beta1" }
+bbox-feature-server = { path = "../bbox-feature-server", version = "0.6.0-beta1", optional = true }
+bbox-frontend = { path = "../bbox-frontend", version = "0.6.0-beta1",  optional = true }
+bbox-map-server = { path = "../bbox-map-server", version = "0.6.0-beta1", optional = true }
+bbox-processes-server = { path = "../bbox-processes-server", version = "0.6.0-beta1", optional = true }
+bbox-routing-server = { path = "../bbox-routing-server", version = "0.1.0", optional = true }
+bbox-tile-server = { path = "../bbox-tile-server", version = "0.6.0-beta1", default-features = false, optional = true }
 clap = { workspace = true }
 log = { workspace = true }
 minijinja = { workspace = true }

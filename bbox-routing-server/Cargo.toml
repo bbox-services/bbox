@@ -1,15 +1,22 @@
 [package]
 name = "bbox-routing-server"
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.65"
-repository = "https://github.com/sourcepole/bbox"
-license = "MIT OR Apache-2.0"
+readme = "README.md"
+description = "BBOX Routing Service"
+keywords = ["routing"]
+categories = ["science::geo"]
+authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
+
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
 
 [dependencies]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-core = { path = "../bbox-core" }
+bbox-core = { path = "../bbox-core", version = "0.6.0-beta1" }
 bincode = "1.3.3"
 clap = { workspace = true }
 fast_paths = "0.2.0"

@@ -1,6 +1,9 @@
 [package]
 name = "bbox-frontend"
 version = "0.6.0-beta1"
+readme = "README.md"
+description = "HTML frontend for BBOX services"
+categories = ["science::geo"]
 authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
 
 edition.workspace = true
@@ -22,8 +25,8 @@ proj = []
 
 [dependencies]
 actix-web = { workspace = true }
-bbox-core = { path = "../bbox-core", features=["html"] }
-bbox-map-server = { path = "../bbox-map-server", optional = true }
+bbox-core = { path = "../bbox-core", version = "0.6.0-beta1", features=["html"] }
+bbox-map-server = { path = "../bbox-map-server", version = "0.6.0-beta1", optional = true }
 log = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
