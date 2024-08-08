@@ -23,6 +23,8 @@ pub fn app_config() -> &'static Figment {
             .merge(Env::prefixed("BBOX_").split("__"));
         if let Some(meta) = config.metadata().next() {
             if let Some(source) = &meta.source {
+                // Logger is not initialized yet
+                println!("Reading configuration from `{source}`");
                 info!("Reading configuration from `{source}`");
             }
         }
@@ -135,7 +137,7 @@ impl ServiceConfig for CoreServiceCfg {
 
 impl CoreServiceCfg {
     pub fn loglevel(&self) -> Option<Loglevel> {
-        self.webserver.clone().and_then(|cfg| cfg.loglevel)
+        self.webserver.as_ref().and_then(|cfg| cfg.loglevel.clone())
     }
 }
 
