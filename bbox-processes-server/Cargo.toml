@@ -1,6 +1,6 @@
 [package]
 name = "bbox-processes-server"
-version = "0.6.0-beta1"
+version = "0.6.0"
 readme = "README.md"
 description = "BBOX OGC API Processes Service"
 keywords = ["processes", "workflows"]
@@ -18,7 +18,7 @@ actix-files = "0.6.0"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
 awc = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0-beta1" }
+bbox-core = { path = "../bbox-core", version = "0.6.0" }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true }
 log = { workspace = true }

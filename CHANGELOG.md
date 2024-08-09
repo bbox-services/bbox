@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 (2024-08-09)
+
+* Use config file path as base directory
+* Linux ARM binaries
+* Publication on crates.io
+
 ## 0.6.0 beta1 (2024-08-08)
 
 * Support tile grids with up to 255 levels

@@ -16,7 +16,7 @@ homepage.workspace = true
 [dependencies]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0-beta1" }
+bbox-core = { path = "../bbox-core", version = "0.6.0" }
 bincode = "1.3.3"
 clap = { workspace = true }
 fast_paths = "0.2.0"

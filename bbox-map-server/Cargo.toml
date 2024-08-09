@@ -1,6 +1,6 @@
 [package]
 name = "bbox-map-server"
-version = "0.6.0-beta1"
+version = "0.6.0"
 readme = "README.md"
 description = "BBOX map server"
 keywords = ["maps", "wms", "qgis", "mapserver"]
@@ -21,7 +21,7 @@ actix-web = { workspace = true }
 async-process = "1.0.0"
 async-trait = { workspace = true }
 awc = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0-beta1" }
+bbox-core = { path = "../bbox-core", version = "0.6.0" }
 bufstream = "0.1.4"
 clap = { workspace = true }
 deadpool = { version = "0.9.2", default-features = false, features = ["managed", "rt_tokio_1"] }
