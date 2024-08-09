@@ -197,10 +197,12 @@
 <tr><td>Debian Bullseye</td><td><a href="https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-tile-server_0.6.0-bullseye_amd64.deb">x86_64</a></td></tr>
 </tbody></table>
 </div>
-<h2 id="building-with-cargo"><a class="header" href="#building-with-cargo">Building with Cargo</a></h2>
-<p>If you <a href="https://www.rust-lang.org/tools/install">install Rust</a>, you can build BBOX from source with Cargo:</p>
-<pre><code class="language-shell">cd bbox-tile-server
-cargo install --path .
+<h2 id="installing-with-cargo"><a class="header" href="#installing-with-cargo">Installing with Cargo</a></h2>
+<p>If you <a href="https://www.rust-lang.org/tools/install">install Rust</a>, you can install BBOX from crates.io:</p>
+<pre><code class="language-shell">cargo install bbox-tile-server --locked
+# or
+cargo binstall bbox-tile-server
+
 bbox-tile-server --help
 </code></pre>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
