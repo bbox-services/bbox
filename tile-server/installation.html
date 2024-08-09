@@ -206,8 +206,8 @@ cargo binstall bbox-tile-server
 bbox-tile-server --help
 </code></pre>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
-<p>BBOX tile server is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-tile-server">Docker image</a>. You could either share a configuration file from the host with the container via the <code>-v</code> param, or you can run BBOX in auto-discover mode.</p>
-<pre><code class="language-shell">docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/var/www/assets:ro sourcepole/bbox-tile-server:v0.6.0
+<p>BBOX tile server is also available as a <a href="https://hub.docker.com/r/sourcepole/bbox-tile-server">Docker image</a>. You can either share a configuration file from the host with the container via the <code>-v</code> param, or you can run BBOX in auto-discover mode.</p>
+<pre><code class="language-shell">docker run --rm --user=$UID -p 8080:8080 -v $PWD/bbox.toml:/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.0
 </code></pre>
 
                     </main>
