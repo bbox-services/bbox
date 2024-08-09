@@ -16,13 +16,15 @@ You can download BBOX from [GitHub releases page](https://github.com/bbox-servic
 [rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-aarch64-apple-darwin.tar.gz
 [rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-x86_64-pc-windows-msvc.zip
 
-## Building with Cargo
+## Installing with Cargo
 
-If you [install Rust](https://www.rust-lang.org/tools/install), you can build BBOX from source with Cargo:
+If you [install Rust](https://www.rust-lang.org/tools/install), you can install BBOX from crates.io:
 
 ```shell
-cd bbox-server
-cargo install --path .
+cargo install bbox-server --locked
+# or
+cargo binstall bbox-server
+
 bbox-server --help
 ```
 

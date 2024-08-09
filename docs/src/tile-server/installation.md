@@ -28,13 +28,15 @@ You can download BBOX tile server from [GitHub releases page](https://github.com
 [deb-bookworm]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-tile-server_0.6.0-bookworm_amd64.deb
 [deb-bullseye]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-tile-server_0.6.0-bullseye_amd64.deb
 
-## Building with Cargo
+## Installing with Cargo
 
-If you [install Rust](https://www.rust-lang.org/tools/install), you can build BBOX from source with Cargo:
+If you [install Rust](https://www.rust-lang.org/tools/install), you can install BBOX from crates.io:
 
 ```shell
-cd bbox-tile-server
-cargo install --path .
+cargo install bbox-tile-server --locked
+# or
+cargo binstall bbox-tile-server
+
 bbox-tile-server --help
 ```
 
