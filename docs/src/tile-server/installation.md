@@ -45,5 +45,5 @@ bbox-tile-server --help
 BBOX tile server is also available as a [Docker image](https://hub.docker.com/r/sourcepole/bbox-tile-server). You could either share a configuration file from the host with the container via the `-v` param, or you can run BBOX in auto-discover mode.
 
 ```shell
-docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-tile-server:v0.6.0
+docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/var/www/assets:ro sourcepole/bbox-tile-server:v0.6.0
 ```

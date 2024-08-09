@@ -33,5 +33,5 @@ bbox-server --help
 BBOX is also available as a [Docker image](https://hub.docker.com/r/sourcepole/bbox-server-qgis). You can either share a configuration file from the host with the container via the `-v` param, or run BBOX in auto-discovery mode.
 
 ```shell
-docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.0
+docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/var/www/assets:ro sourcepole/bbox-server-qgis:v0.6.0
 ```

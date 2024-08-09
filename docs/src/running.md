@@ -55,4 +55,4 @@ Serve tiles from file:
 
 Run with configuration file:
 
-    docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis
+    docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/var/www/assets:ro sourcepole/bbox-server-qgis
