@@ -10,11 +10,11 @@ You can download BBOX from [GitHub releases page](https://github.com/bbox-servic
 | macOS ARM | [ARM64][rl-macos-arm-tar] |
 | Windows   | [64-bit][rl-win64-zip]    |
 
-[rl-linux-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-unknown-linux-gnu.tar.gz
-[rl-linux-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0-beta1/bbox-server-aarch64-unknown-linux-gnu.tar.gz
-[rl-macos-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-apple-darwin.tar.gz
-[rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-aarch64-apple-darwin.tar.gz
-[rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.5.0/bbox-server-x86_64-pc-windows-msvc.zip
+[rl-linux-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-x86_64-unknown-linux-gnu.tar.gz
+[rl-linux-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-aarch64-unknown-linux-gnu.tar.gz
+[rl-macos-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-x86_64-apple-darwin.tar.gz
+[rl-macos-arm-tar]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-aarch64-apple-darwin.tar.gz
+[rl-win64-zip]: https://github.com/bbox-services/bbox/releases/download/v0.6.0/bbox-server-x86_64-pc-windows-msvc.zip
 
 ## Building with Cargo
 
@@ -31,5 +31,5 @@ bbox-server --help
 BBOX is also available as a [Docker image](https://hub.docker.com/r/sourcepole/bbox-server-qgis). You can either share a configuration file from the host with the container via the `-v` param, or run BBOX in auto-discovery mode.
 
 ```shell
-docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.5.0
+docker run -p 8080:8080 -v $PWD/bbox.toml:/var/www/bbox.toml:ro -v $PWD/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.0
 ```
