@@ -29,8 +29,7 @@ impl FileStore {
         tileset_name: &str,
         format: &Format,
     ) -> Self {
-        let base_dir =
-            PathBuf::from_iter([cfg.base_dir.clone(), PathBuf::from(tileset_name)].iter());
+        let base_dir = cfg.abs_path().join(PathBuf::from(tileset_name));
         let compression = compression.clone().unwrap_or(StoreCompressionCfg::None);
         Self::new(base_dir, compression, *format)
     }

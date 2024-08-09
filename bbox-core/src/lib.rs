@@ -2,7 +2,6 @@ pub mod api;
 pub mod auth;
 pub mod cli;
 pub mod config;
-mod dir;
 pub mod endpoints;
 pub mod file_search;
 mod formats;
@@ -18,7 +17,6 @@ pub mod templates;
 mod tile_response;
 pub mod tls;
 
-pub use dir::*;
 pub use formats::*;
 pub use service_utils::*;
 pub use tile_response::*;

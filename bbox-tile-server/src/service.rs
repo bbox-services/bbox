@@ -108,7 +108,8 @@ impl OgcApiService for TileService {
         // Register custom grids
         let mut grids = tms().clone();
         for grid in &config.grids {
-            let custom = TileMatrixSet::from_json_file(&grid.json).unwrap_or_else(error_exit);
+            let custom = TileMatrixSet::from_json_file(&grid.abs_path().to_string_lossy())
+                .unwrap_or_else(error_exit);
             grids
                 .register(vec![custom], true)
                 .unwrap_or_else(error_exit);

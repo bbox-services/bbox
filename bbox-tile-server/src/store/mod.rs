@@ -159,7 +159,10 @@ pub async fn store_reader_from_config(
                 Box::new(reader)
             } else {
                 // We continue, because for seeding into a new file, the reader cannot be created and is not needed
-                warn!("Couldn't open PmtilesStoreReader {}", cfg.path.display());
+                warn!(
+                    "Couldn't open PmtilesStoreReader {}",
+                    cfg.abs_path().display()
+                );
                 Box::new(NoStore)
             }
         }

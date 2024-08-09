@@ -50,7 +50,7 @@ impl PmtilesStoreReader {
         Ok(Self { path, reader })
     }
     pub async fn from_config(cfg: &PmtilesStoreCfg) -> Result<Self, TileStoreError> {
-        Self::create_reader(cfg.path.clone()).await
+        Self::create_reader(cfg.abs_path()).await
     }
     pub fn config_from_cli_arg(file_or_url: &str) -> Option<PmtilesStoreCfg> {
         match Path::new(file_or_url).extension().and_then(OsStr::to_str) {
@@ -172,6 +172,6 @@ impl PmtilesStoreWriter {
         }
     }
     pub fn from_config(cfg: &PmtilesStoreCfg, metadata: Metadata, format: &Format) -> Self {
-        Self::new(cfg.path.clone(), metadata, format)
+        Self::new(cfg.abs_path(), metadata, format)
     }
 }

@@ -21,13 +21,48 @@ pub fn app_config() -> &'static Figment {
                 env::var("BBOX_CONFIG").unwrap_or("bbox.toml".to_string()),
             ))
             .merge(Env::prefixed("BBOX_").split("__"));
-        if let Some(meta) = config.metadata().next() {
-            if let Some(source) = &meta.source {
-                info!("Reading configuration from `{source}`");
-            }
+        if let Some(source) = config_source(&config) {
+            // Logger is not initialized yet
+            println!("Reading configuration from `{source}`");
+            info!("Reading configuration from `{source}`");
         }
         config
     })
+}
+
+fn config_source(config: &Figment) -> &Option<figment::Source> {
+    if let Some(meta) = config.metadata().next() {
+        &meta.source
+    } else {
+        &None
+    }
+}
+
+/// Base directory for files referenced in configuration
+pub fn base_dir() -> PathBuf {
+    let config = app_config();
+    if let Some(source) = config_source(config)
+        .as_ref()
+        .and_then(|source| source.file_path())
+    {
+        source
+            .parent()
+            .expect("absolute config file path")
+            .canonicalize()
+            .expect("absolute config file path")
+    } else {
+        env::current_dir().expect("current working dir")
+    }
+}
+
+/// Full path relative to application base directory
+pub fn app_dir(path: impl Into<PathBuf>) -> PathBuf {
+    let path = path.into();
+    if path.is_relative() {
+        base_dir().join(path)
+    } else {
+        path
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -135,7 +170,7 @@ impl ServiceConfig for CoreServiceCfg {
 
 impl CoreServiceCfg {
     pub fn loglevel(&self) -> Option<Loglevel> {
-        self.webserver.clone().and_then(|cfg| cfg.loglevel)
+        self.webserver.as_ref().and_then(|cfg| cfg.loglevel.clone())
     }
 }
 
@@ -251,6 +286,12 @@ pub struct DsGpkgCfg {
     pub path: PathBuf,
     // pub pool_min_connections(0)
     // pub pool_max_connections(8)
+}
+
+impl DsGpkgCfg {
+    pub fn abs_path(&self) -> PathBuf {
+        app_dir(&self.path)
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

@@ -32,7 +32,7 @@ path = "/metrics"
 [[datasource]]
 name = "ne_extracts"
 [datasource.gpkg]
-path = "../assets/ne_extracts.gpkg"
+path = "assets/ne_extracts.gpkg"
 
 [[datasource]]
 name = "gebco"
@@ -43,7 +43,7 @@ format = "image/jpeg"
 # -- collections with auto detection --
 
 [[collections.directory]]
-dir = "../assets"
+dir = "assets"
 
 # -- collections --
 
@@ -88,21 +88,21 @@ fid_field = "fid"
 # Static file serving
 # Env var example: BBOX_ASSETS__STATIC='[{dir="assets",path="/assets"}]'
 # ./assets/* -> http://localhost:8080/assets/
-dir = "./assets"
+dir = "assets"
 path = "/assets"
 
 [[assets.template]]
 # Template file serving
 # Env var example: BBOX_ASSETS__TEMPLATE='[{dir="templates",path="/html"}]'
 # ./templates/name.html -> http://localhost:8080/html/name/param
-dir = "./templates"
+dir = "templates"
 path = "/html"
 
 [[assets.repo]]
 # QGIS plugin repository
 # Env var example: BBOX_ASSETS__REPO='[{dir="plugins",path="/qgisrepo"}]'
 # ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
-dir = "./plugins"
+dir = "plugins"
 path = "/qgisrepo"
 
 [mapserver]
@@ -115,15 +115,15 @@ path = "/qgisrepo"
 [mapserver.qgis_backend]
 # QGIS Server settings
 # Environment variable prefix: BBOX_MAPSERVER__QGIS_BACKEND__
-project_basedir = "../assets"  # Base dir for project files (.qgs, .qgz)
-qgs.path = "/qgis"             # WMS URL base path
-qgz.path = "/qgz"              # WMS URL base path
+project_basedir = "assets"   # Base dir for project files (.qgs, .qgz)
+qgs.path = "/qgis"           # WMS URL base path
+qgz.path = "/qgz"            # WMS URL base path
 
 [mapserver.umn_backend]
 # UMN MapServer settings
 # Environment variable prefix: BBOX_MAPSERVER__UMN_BACKEND__
-project_basedir = "../assets"  # Base dir for project files (.map)
-path = "/wms/map"              # WMS URL base path
+project_basedir = "assets"   # Base dir for project files (.map)
+path = "/wms/map"            # WMS URL base path
 
 #[processes.dagster_backend]
 # Dagster backend settings
@@ -134,14 +134,14 @@ path = "/wms/map"              # WMS URL base path
 
 #[[routing.service]]
 #profile = "railway"
-#gpkg = "../assets/railway-test.gpkg"
+#gpkg = "assets/railway-test.gpkg"
 #table = "flows"
 #geom = "geom"
 
 # -- custom grids --
 
 [[grid]]
-json = "../assets/custom-grid-lv95.json"
+json = "assets/custom-grid-lv95.json"
 
 # -- tile caches --
 
@@ -194,9 +194,9 @@ params = "transparent=true"
 
 [[tileset]]
 name = "mbtiles_mvt_fl"
-mbtiles = { path = "../assets/liechtenstein.mbtiles" }
+mbtiles = { path = "assets/liechtenstein.mbtiles" }
 
 #[[tileset]]
 #name = "pmtiles_firenze"
-#pmtiles = { path = "../assets/protomaps(vector)ODbL_firenze.pmtiles" }
+#pmtiles = { path = "assets/protomaps(vector)ODbL_firenze.pmtiles" }
 # curl -o /tmp/tile.mvt.gz http://localhost:8080/xyz/pmtiles_firenze/14/8621/5759.mvt

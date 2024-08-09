@@ -94,7 +94,7 @@ cache = "tilecache"
 
 ```toml
 [[grid]]
-json = "../assets/custom-grid-lv95.json"
+json = "assets/custom-grid-lv95.json"
 ```
 
 To use the custom tile grid, add the tms name to the tileset:
