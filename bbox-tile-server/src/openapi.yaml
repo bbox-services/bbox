@@ -228,29 +228,29 @@ paths:
   #         "$ref": "#/components/responses/NotAcceptable"
   #       '500':
   #         "$ref": "#/components/responses/ServerError"
-  # "/tileMatrixSets/{tileMatrixSetId}":
-  #   get:
-  #     tags:
-  #     - Tiling Schemes
-  #     summary: Retrieve the definition of the specified tiling scheme (tile matrix
-  #       set)
-  #     operationId: getTileMatrixSet
-  #     parameters:
-  #     - "$ref": "#/components/parameters/tileMatrixSetId"
-  #     - "$ref": "#/components/parameters/f-metadata"
-  #     responses:
-  #       '200':
-  #         "$ref": "#/components/responses/TileMatrixSet"
-  #       '404':
-  #         description: The requested tile matrix set id was not found
-  #         content:
-  #           application/json:
-  #             schema:
-  #               "$ref": "#/components/schemas/exception"
-  #       '406':
-  #         "$ref": "#/components/responses/NotAcceptable"
-  #       '500':
-  #         "$ref": "#/components/responses/ServerError"
+  "/tileMatrixSets/{tileMatrixSetId}":
+    get:
+      tags:
+      - Tiling Schemes
+      summary: Retrieve the definition of the specified tiling scheme (tile matrix
+        set)
+      operationId: getTileMatrixSet
+      parameters:
+      - "$ref": "#/components/parameters/tileMatrixSetId"
+      - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          "$ref": "#/components/responses/TileMatrixSet"
+        '404':
+          description: The requested tile matrix set id was not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/exception"
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
   "/tiles":
     get:
       tags:

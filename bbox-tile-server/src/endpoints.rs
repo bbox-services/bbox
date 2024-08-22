@@ -6,8 +6,10 @@ use bbox_core::endpoints::{abs_req_baseurl, req_parent_path};
 use bbox_core::service::ServiceEndpoints;
 use bbox_core::{Compression, Format};
 use log::error;
-use ogcapi_types::common::{Crs, Link};
-use ogcapi_types::tiles::{DataType, TileSetItem, TileSets, TitleDescriptionKeywords};
+use ogcapi_types::common::Link;
+use ogcapi_types::tiles::{
+    DataType, TileMatrixLimits, TileSetItem, TileSets, TitleDescriptionKeywords,
+};
 use std::collections::HashMap;
 use tile_grid::{Tms, Xyz};
 
@@ -191,7 +193,18 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
         .iter()
         .map(|(ts_name, tileset)| {
             let tms = tileset.default_grid(0).expect("default grid missing");
-            let mut ts_item = TileSetItem {
+            let tiling_scheme_links = tileset.tms.iter().map(|grid| {
+                let grid_tms = &grid.tms.tms;
+                Link {
+                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+                    r#type: Some("application/json".to_string()),
+                    title: Some("Tile Matrix Set definition (as JSON)".to_string()),
+                    href: format!("/tileMatrixSets/{}", &grid_tms.id),
+                    hreflang: None,
+                    length: None,
+                }
+            });
+            TileSetItem {
                 title: Some(ts_name.to_string()),
                 data_type: DataType::Vector,
                 crs: tms.crs().clone(),
@@ -226,20 +239,11 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                         hreflang: None,
                         length: None,
                     },
-                ],
-            };
-            for grid in &tileset.tms {
-                let tms = &grid.tms.tms;
-                ts_item.links.push(Link {
-                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
-                    r#type: Some("application/json".to_string()),
-                    title: Some("Tile Matrix Set definition (as JSON)".to_string()),
-                    href: format!("/tileMatrixSets/{}", &tms.id),
-                    hreflang: None,
-                    length: None,
-                });
+                ]
+                .into_iter()
+                .chain(tiling_scheme_links)
+                .collect(),
             }
-            ts_item
         })
         .collect();
     let tilesets = TileSets {
@@ -251,20 +255,49 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
 
 /// tileset metadata
 // tiles/{tileMatrixSetId}
-async fn get_tile_set(tile_matrix_set_id: web::Path<String>) -> HttpResponse {
-    // hardcoded TileSet, required for core conformance test
+async fn get_tile_set(
+    service: web::Data<TileService>,
+    tileset: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    let ts = service
+        .tileset(&tileset)
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    let tms = ts.default_grid(0)?;
+    let tile_matrix_set_limits = tms
+        .tms
+        .tile_matrices
+        .iter()
+        .map(|tm| TileMatrixLimits {
+            tile_matrix: tm.id.clone(),
+            min_tile_row: 0,
+            max_tile_row: tm.matrix_width.into(),
+            min_tile_col: 0,
+            max_tile_col: tm.matrix_height.into(),
+        })
+        .collect();
+
+    let tiling_scheme_links = ts.tms.iter().map(|grid| {
+        let grid_tms = &grid.tms.tms;
+        Link {
+            rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+            r#type: Some("application/json".to_string()),
+            title: Some("Tile Matrix Set definition (as JSON)".to_string()),
+            href: format!("/tileMatrixSets/{}", &grid_tms.id),
+            hreflang: None,
+            length: None,
+        }
+    });
+
     let tileset = ogcapi_types::tiles::TileSet {
         title_description_keywords: TitleDescriptionKeywords {
-            title: Some(tile_matrix_set_id.to_string()),
+            title: Some(tileset.to_string()),
             description: None,
             keywords: None,
         },
         data_type: DataType::Vector,
-        tile_matrix_set_uri: Some(
-            "http://www.opengis.net/def/tilematrixset/OGC/1.0/WebMercatorQuad".to_string(),
-        ),
-        tile_matrix_set_limits: None,
-        crs: Crs::from_epsg(3857),
+        tile_matrix_set_uri: tms.tms.uri.clone(),
+        tile_matrix_set_limits: Some(tile_matrix_set_limits),
+        crs: tms.crs().clone(),
         epoch: None,
         layers: None,
         bounding_box: None,
@@ -281,35 +314,40 @@ async fn get_tile_set(tile_matrix_set_id: web::Path<String>) -> HttpResponse {
             Link {
                 rel: "self".to_string(),
                 r#type: Some("application/json".to_string()),
-                title: Some(format!(
-                    "Tileset metadata for {tile_matrix_set_id} (as JSON)"
-                )),
-                href: format!("/tiles/{tile_matrix_set_id}"),
-                hreflang: None,
-                length: None,
-            },
-            Link {
-                rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
-                r#type: Some("application/json".to_string()),
-                title: Some("WebMercatorQuadTileMatrixSet definition (as JSON)".to_string()),
-                href: "/tileMatrixSets/WebMercatorQuad".to_string(),
+                title: Some(format!("Tileset metadata for {tileset} (as JSON)")),
+                href: format!("/tiles/{tileset}"),
                 hreflang: None,
                 length: None,
             },
             Link {
                 rel: "item".to_string(),
                 r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
-                title: Some(format!("Tiles for {tile_matrix_set_id} (as MVT)")),
-                href: format!(
-                    "/map/tiles/{tile_matrix_set_id}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}"
-                ),
+                title: Some(format!("Tiles for {tileset} (as MVT)")),
+                href: format!("/xyz/{tileset}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}.mvt"),
                 hreflang: None,
                 length: None,
-                // TODO ??: "templated": true
+                // TODO: "templated": true
             },
-        ],
+        ]
+        .into_iter()
+        .chain(tiling_scheme_links)
+        .collect(),
     };
-    HttpResponse::Ok().json(tileset)
+    Ok(HttpResponse::Ok().json(tileset))
+}
+
+/// definition of tiling scheme
+// tileMatrixSets/{tileMatrixSetId}
+async fn get_tile_matrix_set(
+    service: web::Data<TileService>,
+    tile_matrix_set_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    for ts in service.tilesets.values() {
+        if let Ok(grid) = ts.grid(&tile_matrix_set_id) {
+            return Ok(HttpResponse::Ok().json(grid.tms.clone()));
+        }
+    }
+    Err(ServiceError::TilesetGridNotFound.into())
 }
 
 impl ServiceEndpoints for TileService {
@@ -332,7 +370,11 @@ impl ServiceEndpoints for TileService {
                     .route(web::get().to(map_tile)),
             )
             .service(web::resource("/tiles/{tileMatrixSetId}").route(web::get().to(get_tile_set)))
-            .service(web::resource("/tiles").route(web::get().to(get_tile_sets_list)));
+            .service(web::resource("/tiles").route(web::get().to(get_tile_sets_list)))
+            .service(
+                web::resource("/tileMatrixSets/{tileMatrixSetId}")
+                    .route(web::get().to(get_tile_matrix_set)),
+            );
         if cfg!(not(feature = "map-server")) {
             cfg.app_data(web::Data::new(WmsMetrics::default()));
         }
