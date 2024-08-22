@@ -142,7 +142,7 @@ impl OgcApiService for TileService {
                     maxzoom: Some(254),
                 });
             }
-            let ts_grids = ts_grids_cfg
+            let mut ts_grids = ts_grids_cfg
                 .iter()
                 .map(|cfg| {
                     let grid = grids.lookup(&cfg.id).unwrap_or_else(error_exit);
@@ -153,6 +153,7 @@ impl OgcApiService for TileService {
                     }
                 })
                 .collect::<Vec<_>>();
+            ts_grids.sort_by_key(|tsg| tsg.minzoom);
             let source = datasources
                 .setup_tile_source(&ts.source, &ts_grids, &ts_grids_cfg)
                 .await;
@@ -321,7 +322,6 @@ impl TileSet {
             .ok_or(RegistryError::TmsNotFound(tms_id.to_string()).into())
     }
     pub fn default_grid(&self, zoom: u8) -> Result<&Tms, ServiceError> {
-        // TODO: guarantee grid sorted by minzoom
         self.tms
             .iter()
             .find(|grid| zoom >= grid.minzoom && zoom <= grid.maxzoom)
