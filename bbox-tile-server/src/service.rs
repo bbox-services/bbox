@@ -305,12 +305,12 @@ impl TileService {
 }
 
 impl TileSet {
-    pub fn grid(&self, tms_id: &str) -> Result<&Tms, tile_grid::Error> {
+    pub fn grid(&self, tms_id: &str) -> Result<&Tms, ServiceError> {
         self.tms
             .iter()
             .map(|g| &g.tms)
             .find(|tms| tms.id() == tms_id)
-            .ok_or(RegistryError::TmsNotFound(tms_id.to_string()))
+            .ok_or(RegistryError::TmsNotFound(tms_id.to_string()).into())
     }
     pub fn default_grid(&self, zoom: u8) -> Result<&Tms, ServiceError> {
         // TODO: guarantee grid sorted by minzoom
