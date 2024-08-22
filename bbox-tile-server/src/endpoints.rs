@@ -189,20 +189,19 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
     let tile_set_items: Vec<TileSetItem> = service
         .tilesets
         .iter()
-        .map(|(tile_matrix_set_id, tileset)| {
+        .map(|(ts_name, tileset)| {
+            let tms = tileset.default_grid(0).expect("default grid missing");
             let mut ts_item = TileSetItem {
-                title: Some(tile_matrix_set_id.to_string()),
+                title: Some(ts_name.to_string()),
                 data_type: DataType::Vector,
-                crs: Crs::from_epsg(3857),
-                tile_matrix_set_uri: None,
+                crs: tms.crs().clone(),
+                tile_matrix_set_uri: tms.tms.uri.clone(),
                 links: vec![
                     Link {
                         rel: "self".to_string(),
                         r#type: Some("application/json".to_string()),
-                        title: Some(format!(
-                            "Tileset metadata for {tile_matrix_set_id} (as JSON)"
-                        )),
-                        href: format!("/tiles/{tile_matrix_set_id}"),
+                        title: Some(format!("Tileset metadata for {ts_name} (as JSON)")),
+                        href: format!("/tiles/{ts_name}"),
                         hreflang: None,
                         length: None,
                     },
@@ -210,19 +209,20 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                         rel: "self".to_string(),
                         r#type: Some("application/json+tilejson".to_string()),
                         title: Some(format!(
-                            "Tileset metadata for {tile_matrix_set_id} (in TileJSON format)"
+                            "Tileset metadata for {ts_name} (in TileJSON format)"
                         )),
-                        href: format!("/xyz/{tile_matrix_set_id}.json"),
+                        href: format!("/xyz/{ts_name}.json"),
                         hreflang: None,
                         length: None,
                     },
                     Link {
                         rel: "item".to_string(),
                         r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
-                        title: Some(format!("Tiles for {tile_matrix_set_id} (as MVT)")),
+                        title: Some(format!("Tiles for {ts_name} (as MVT)")),
                         href: format!(
-                        "/map/tiles/{tile_matrix_set_id}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}"
-                    ),
+                            "/map/tiles/{}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}",
+                            &tms.tms.id
+                        ),
                         hreflang: None,
                         length: None,
                     },
@@ -230,20 +230,14 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
             };
             for grid in &tileset.tms {
                 let tms = &grid.tms.tms;
-                ts_item.crs = tms.crs.clone();
-                ts_item.tile_matrix_set_uri.clone_from(&tms.uri);
-                if tms.id == "WebMercatorQuad" {
-                    ts_item.links.push(Link {
-                        rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
-                        r#type: Some("application/json".to_string()),
-                        title: Some(
-                            "WebMercatorQuadTileMatrixSet definition (as JSON)".to_string(),
-                        ),
-                        href: "/tileMatrixSets/WebMercatorQuad".to_string(),
-                        hreflang: None,
-                        length: None,
-                    });
-                }
+                ts_item.links.push(Link {
+                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+                    r#type: Some("application/json".to_string()),
+                    title: Some("Tile Matrix Set definition (as JSON)".to_string()),
+                    href: format!("/tileMatrixSets/{}", &tms.id),
+                    hreflang: None,
+                    length: None,
+                });
             }
             ts_item
         })
