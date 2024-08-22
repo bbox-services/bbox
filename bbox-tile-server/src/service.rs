@@ -125,7 +125,7 @@ impl OgcApiService for TileService {
             .collect();
 
         for ts in &config.tilesets {
-            let ts_grids_cfg = if ts.tms.is_empty() {
+            let mut ts_grids_cfg = if ts.tms.is_empty() {
                 vec![TilesetTmsCfg {
                     id: "WebMercatorQuad".to_string(),
                     minzoom: None,
@@ -134,6 +134,14 @@ impl OgcApiService for TileService {
             } else {
                 ts.tms.clone()
             };
+            // Workaround for PgSource::tilejson requiring a 3857 entry
+            if !ts_grids_cfg.iter().any(|tms| tms.id == "WebMercatorQuad") {
+                ts_grids_cfg.push(TilesetTmsCfg {
+                    id: "WebMercatorQuad".to_string(),
+                    minzoom: Some(254),
+                    maxzoom: Some(254),
+                });
+            }
             let ts_grids = ts_grids_cfg
                 .iter()
                 .map(|cfg| {
