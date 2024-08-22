@@ -434,7 +434,7 @@ impl TileSource for PgSource {
                 let fields = layer
                     .queries
                     .get(&grid_srid)
-                    .expect("Grid srid not found")
+                    .expect("invalid srid lookup")
                     .clone()
                     .into_values()
                     .flat_map(|q| q.fields)
