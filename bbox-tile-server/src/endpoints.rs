@@ -100,7 +100,7 @@ async fn map_tile(
         .first()
         .cloned()
         .unwrap();
-    let tms = ts.grid(&tms_id).unwrap();
+    let tms = ts.grid(&tms_id)?;
     let format = format_accept_header(&req, ts.source.default_format()).await;
     tile_request(ts, Some(tms), x, y, z, &format, metrics, req).await
 }
