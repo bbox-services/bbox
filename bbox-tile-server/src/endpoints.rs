@@ -35,18 +35,16 @@ async fn tilejson(
     service: web::Data<TileService>,
     tileset: web::Path<String>,
     req: HttpRequest,
-) -> HttpResponse {
+) -> Result<HttpResponse, Error> {
     let absurl = format!("{}{}", abs_req_baseurl(&req), req_parent_path(&req));
     let ts = service
         .tileset(&tileset)
-        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
-        .unwrap();
-    let tms = ts.default_grid(0).expect("default grid missing");
-    if let Ok(tilejson) = ts.tilejson(tms, &absurl).await {
-        HttpResponse::Ok().json(tilejson)
-    } else {
-        HttpResponse::InternalServerError().finish()
-    }
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    let tms = ts.default_grid(0)?;
+    Ok(ts
+        .tilejson(tms, &absurl)
+        .await
+        .map(|tilejson| HttpResponse::Ok().json(tilejson))?)
 }
 
 /// XYZ style json endpoint
@@ -55,32 +53,31 @@ async fn stylejson(
     service: web::Data<TileService>,
     tileset: web::Path<String>,
     req: HttpRequest,
-) -> HttpResponse {
+) -> Result<HttpResponse, Error> {
     let base_url = abs_req_baseurl(&req);
     let base_path = req_parent_path(&req);
     let ts = service
         .tileset(&tileset)
-        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
-        .unwrap();
-    if let Ok(stylejson) = ts.stylejson(&base_url, &base_path).await {
-        HttpResponse::Ok().json(stylejson)
-    } else {
-        HttpResponse::InternalServerError().finish()
-    }
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    Ok(ts
+        .stylejson(&base_url, &base_path)
+        .await
+        .map(|stylejson| HttpResponse::Ok().json(stylejson))?)
 }
 
 /// XYZ MBTiles metadata.json (https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md)
 // xyz/{tileset}/metadata.json
-async fn metadatajson(service: web::Data<TileService>, tileset: web::Path<String>) -> HttpResponse {
+async fn metadatajson(
+    service: web::Data<TileService>,
+    tileset: web::Path<String>,
+) -> Result<HttpResponse, Error> {
     let ts = service
         .tileset(&tileset)
-        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))
-        .unwrap();
-    if let Ok(metadata) = ts.mbtiles_metadata().await {
-        HttpResponse::Ok().json(metadata)
-    } else {
-        HttpResponse::InternalServerError().finish()
-    }
+        .ok_or(ServiceError::TilesetNotFound(tileset.clone()))?;
+    Ok(ts
+        .mbtiles_metadata()
+        .await
+        .map(|metadata| HttpResponse::Ok().json(metadata))?)
 }
 
 /// Map tile endpoint
@@ -99,7 +96,7 @@ async fn map_tile(
         .collect::<Vec<_>>()
         .first()
         .cloned()
-        .unwrap();
+        .ok_or(ServiceError::TilesetNotFound("No tileset found".into()))?;
     let tms = ts.grid(&tms_id)?;
     let format = format_accept_header(&req, ts.source.default_format()).await;
     tile_request(ts, Some(tms), x, y, z, &format, metrics, req).await
