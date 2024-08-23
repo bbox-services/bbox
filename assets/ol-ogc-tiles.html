@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1.0, width=device-width">
+  <title>OpenLayers OGC tiles</title>  
+  <script src="https://cdn.jsdelivr.net/npm/ol@10/dist/ol.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/ol@10/ol.min.css" rel="stylesheet">
+</head>
+
+<body>
+  
+<h1>OpenLayers OGC tiles</h1>
+
+<div id='map' style='width: 80%; aspect-ratio: 2/1;'></div>
+
+<script type="module">
+  const {Map, View} = ol;
+  const {MVT} = ol.format;
+  const {OGCVectorTile} = ol.source;
+  const {VectorTile} = ol.layer;
+
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const layer = urlParams.get('layer');
+
+  const mvt_source = new OGCVectorTile({
+      url: location.origin + `/tiles/${layer}`,
+      format: new MVT(),
+    });
+
+  // Wait until TileGrid metadata is loaded
+  await new Promise((resolve) => {
+    mvt_source.on('change', function(evt){
+      const source = evt.target;
+      if (source.getState() === 'ready') {
+        resolve();
+      }
+    })
+  });
+
+  const center = ol.extent.getCenter(mvt_source.getTileGrid().getExtent());
+
+  const mvt = new VectorTile({
+    source: mvt_source,
+    background: '#d1d1d1',
+  });
+
+  const tileDebug = new ol.layer.Tile({
+    source: new ol.source.TileDebug({
+      projection: mvt_source.getProjection(), // always WebMercator
+      tileGrid: mvt_source.getTileGrid(),
+    })
+  });
+
+  const map = new Map({
+    target: 'map',
+    layers: [mvt, tileDebug],
+    view: new View({
+      center: center,
+      resolution: mvt_source.getTileGrid().getResolution(1),
+    }),
+  });
+</script>
+
+</html>
