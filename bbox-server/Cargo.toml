@@ -1,6 +1,6 @@
 [package]
 name = "bbox-server"
-version = "0.6.0"
+version = "0.6.1"
 readme = "README.md"
 description = "BBOX OGC API Services"
 keywords = ["maps", "tiles", "postgis"]

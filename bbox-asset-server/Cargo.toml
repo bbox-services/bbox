@@ -1,6 +1,6 @@
 [package]
 name = "bbox-asset-server"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
 readme = "README.md"
 description = "Serving static and templated files"

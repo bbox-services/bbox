@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 (2024-08-23)
+
+* New OGC endpoints /tileMatrixSets and tileMatrixSets/{id}
+* Correct metadata for non-Mercator tilesets
+* Exit when config file is not found
+* Fix exception for tilesets without Mercator grid
+
 ## 0.6.0 (2024-08-09)
 
 * Use config file path as base directory
