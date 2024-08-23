@@ -209,7 +209,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                 data_type: DataType::Vector,
                 crs: tms.crs().clone(),
                 tile_matrix_set_uri: tms.tms.uri.clone(),
-                links: vec![
+                links: [
                     Link {
                         rel: "self".to_string(),
                         r#type: Some("application/json".to_string()),
@@ -310,7 +310,7 @@ async fn get_tile_set(
         updated: None,
         point_of_contact: None,
         media_types: None,
-        links: vec![
+        links: [
             Link {
                 rel: "self".to_string(),
                 r#type: Some("application/json".to_string()),

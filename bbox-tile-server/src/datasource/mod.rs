@@ -109,7 +109,7 @@ pub trait TileSource: DynClone + Send + Sync {
         tileset: &TileSetCfg,
         format: &Format,
     ) -> Result<Metadata, TileSourceError> {
-        let tms = tms().lookup("WebMercatorQuad").unwrap();
+        let tms = tms().lookup("WebMercatorQuad").unwrap(); // FIXME: Use TMS from tilegrid
         Ok(Metadata {
             id: tileset.name.clone(),
             tile_info: martin_tile_utils::TileInfo {
