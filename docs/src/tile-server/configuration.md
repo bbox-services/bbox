@@ -102,5 +102,6 @@ To use the custom tile grid, add the tms name to the tileset:
 ```toml
 [[tileset]]
 name = "rivers_lakes"
-tms = "LV95"
+[[tileset.tms]]
+id = "LV95"
 ```
