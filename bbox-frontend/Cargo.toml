@@ -25,8 +25,8 @@ proj = []
 
 [dependencies]
 actix-web = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0", features=["html"] }
-bbox-map-server = { path = "../bbox-map-server", version = "0.6.0", optional = true }
+bbox-core = { path = "../bbox-core", version = "0.6.1", features=["html"] }
+bbox-map-server = { path = "../bbox-map-server", version = "0.6.1", optional = true }
 log = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }

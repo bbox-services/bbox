@@ -18,7 +18,7 @@ html = ["bbox-core/html"]
 [dependencies]
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0" }
+bbox-core = { path = "../bbox-core", version = "0.6.1" }
 chrono = { workspace = true }
 clap = { workspace = true }
 dyn-clone = "1.0.6"

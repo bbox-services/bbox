@@ -18,7 +18,7 @@ actix-files = "0.6.0"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
 awc = { workspace = true }
-bbox-core = { path = "../bbox-core", version = "0.6.0" }
+bbox-core = { path = "../bbox-core", version = "0.6.1" }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true }
 log = { workspace = true }
