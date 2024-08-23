@@ -418,13 +418,15 @@ impl TileSource for PgSource {
         });
         tj.other
             .insert("format".to_string(), format.file_suffix().into());
-        let grid_srid = 3857; // TODO: from tileset
+
+        let grid_srid = tms.srid();
         if grid_srid != 3857 {
             // TODO: add full grid information according to GDAL extension
             // https://github.com/OSGeo/gdal/blob/release/3.4/gdal/ogr/ogrsf_frmts/mvt/ogrmvtdataset.cpp#L5497
             tj.other
-                .insert("srs".to_string(), format!("EPSG:{}", grid_srid).into());
+                .insert("srs".to_string(), tms.crs().as_known_crs().into());
         }
+        let empty_queries = HashMap::new();
         // TODO: advertise zoom level specific srids
         let mut layers: Vec<tilejson::VectorLayer> = self
             .layers
@@ -434,6 +436,14 @@ impl TileSource for PgSource {
                 let fields = layer
                     .queries
                     .get(&grid_srid)
+                    .or({
+                        // Workaround for invalid call from TileSource::mbtiles_metadata
+                        if grid_srid == 3857 {
+                            Some(&empty_queries)
+                        } else {
+                            None
+                        }
+                    })
                     .expect("invalid srid lookup")
                     .clone()
                     .into_values()
