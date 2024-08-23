@@ -8,7 +8,8 @@ use bbox_core::{Compression, Format};
 use log::error;
 use ogcapi_types::common::Link;
 use ogcapi_types::tiles::{
-    DataType, TileMatrixLimits, TileSetItem, TileSets, TitleDescriptionKeywords,
+    DataType, TileMatrixLimits, TileMatrixSetItem, TileMatrixSets, TileSetItem, TileSets,
+    TitleDescriptionKeywords,
 };
 use std::collections::HashMap;
 use tile_grid::{Tms, Xyz};
@@ -336,18 +337,43 @@ async fn get_tile_set(
     Ok(HttpResponse::Ok().json(tileset))
 }
 
+/// list of available tiling schemes
+// tileMatrixSets
+async fn get_tile_matrix_sets_list(service: web::Data<TileService>) -> HttpResponse {
+    let grids = service.grids();
+    let sets = TileMatrixSets {
+        tile_matrix_sets: grids
+            .iter()
+            .map(|grid| TileMatrixSetItem {
+                id: Some(grid.tms.id.clone()),
+                title: None,
+                uri: grid.tms.uri.clone(),
+                crs: Some(grid.tms.crs.clone()),
+                links: vec![Link {
+                    rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
+                    r#type: Some("application/json".to_string()),
+                    title: Some("Tile Matrix Set definition (as JSON)".to_string()),
+                    href: format!("/tileMatrixSets/{}", &grid.tms.id),
+                    hreflang: None,
+                    length: None,
+                }],
+            })
+            .collect(),
+    };
+    HttpResponse::Ok().json(sets)
+}
+
 /// definition of tiling scheme
 // tileMatrixSets/{tileMatrixSetId}
 async fn get_tile_matrix_set(
     service: web::Data<TileService>,
     tile_matrix_set_id: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
-    for ts in service.tilesets.values() {
-        if let Ok(grid) = ts.grid(&tile_matrix_set_id) {
-            return Ok(HttpResponse::Ok().json(grid.tms.clone()));
-        }
+    if let Some(grid) = service.grid(&tile_matrix_set_id) {
+        Ok(HttpResponse::Ok().json(grid.tms.clone()))
+    } else {
+        Err(ServiceError::TilesetGridNotFound.into())
     }
-    Err(ServiceError::TilesetGridNotFound.into())
 }
 
 impl ServiceEndpoints for TileService {
@@ -371,6 +397,9 @@ impl ServiceEndpoints for TileService {
             )
             .service(web::resource("/tiles/{tileMatrixSetId}").route(web::get().to(get_tile_set)))
             .service(web::resource("/tiles").route(web::get().to(get_tile_sets_list)))
+            .service(
+                web::resource("/tileMatrixSets").route(web::get().to(get_tile_matrix_sets_list)),
+            )
             .service(
                 web::resource("/tileMatrixSets/{tileMatrixSetId}")
                     .route(web::get().to(get_tile_matrix_set)),
