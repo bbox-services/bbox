@@ -1,9 +1,9 @@
-use crate::config::Loglevel;
+use crate::config::{config_error_exit, Loglevel};
 use crate::service::OgcApiService;
 use clap::{ArgMatches, Args, Command, CommandFactory, FromArgMatches, Parser, Subcommand};
 use log::warn;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Args, Debug)]
 pub struct GlobalArgs {
@@ -69,7 +69,11 @@ impl CliArgs {
             return;
         };
         if let Some(config) = args.config {
-            env::set_var("BBOX_CONFIG", config);
+            if Path::new(&config).exists() {
+                env::set_var("BBOX_CONFIG", config);
+            } else {
+                config_error_exit(format!("Config file {config:?} not found."));
+            }
         }
     }
 }
