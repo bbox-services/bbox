@@ -303,6 +303,24 @@ impl TileService {
     pub fn tileset(&self, tileset: &str) -> Option<&TileSet> {
         self.tilesets.get(tileset)
     }
+    pub fn grids(&self) -> Vec<&Tms> {
+        self.tilesets
+            .values()
+            .flat_map(|ts| &ts.tms)
+            // remove duplicates
+            .map(|grid| (&grid.tms.tms.id, &grid.tms))
+            .collect::<HashMap<&String, &Tms>>()
+            .into_values()
+            .collect()
+    }
+    pub fn grid(&self, tms_id: &str) -> Option<&Tms> {
+        for ts in self.tilesets.values() {
+            if let Ok(grid) = ts.grid(tms_id) {
+                return Some(grid);
+            }
+        }
+        None
+    }
 }
 
 impl TileSet {

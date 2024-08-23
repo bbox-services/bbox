@@ -213,21 +213,21 @@ paths:
   #     responses:
   #       '200':
   #         "$ref": "#/components/responses/Collection"
-  # "/tileMatrixSets":
-  #   get:
-  #     tags:
-  #     - Tiling Schemes
-  #     summary: Retrieve the list of available tiling schemes (tile matrix sets)
-  #     operationId: getTileMatrixSetsList
-  #     parameters:
-  #     - "$ref": "#/components/parameters/f-metadata"
-  #     responses:
-  #       '200':
-  #         "$ref": "#/components/responses/TileMatrixSetsList"
-  #       '406':
-  #         "$ref": "#/components/responses/NotAcceptable"
-  #       '500':
-  #         "$ref": "#/components/responses/ServerError"
+  "/tileMatrixSets":
+    get:
+      tags:
+      - Tiling Schemes
+      summary: Retrieve the list of available tiling schemes (tile matrix sets)
+      operationId: getTileMatrixSetsList
+      parameters:
+      - "$ref": "#/components/parameters/f-metadata"
+      responses:
+        '200':
+          "$ref": "#/components/responses/TileMatrixSetsList"
+        '406':
+          "$ref": "#/components/responses/NotAcceptable"
+        '500':
+          "$ref": "#/components/responses/ServerError"
   "/tileMatrixSets/{tileMatrixSetId}":
     get:
       tags:
