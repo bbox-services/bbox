@@ -16,7 +16,7 @@ use geozero::{geojson, wkb};
 use log::{debug, error, info, warn};
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions, SqliteRow};
-use sqlx::{Column, Row, TypeInfo};
+use sqlx::{Column, Executor, Row, TypeInfo};
 
 #[derive(Clone, Debug)]
 pub struct SqliteDatasource {
@@ -154,8 +154,9 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
                 title: Some(title),
                 description: row.try_get("description")?,
             };
-            let fc = self.setup_collection(&coll_cfg, Some(extent)).await?;
-            collections.push(fc);
+            if let Ok(fc) = self.setup_collection(&coll_cfg, Some(extent)).await {
+                collections.push(fc);
+            }
         }
         Ok(collections)
     }
@@ -334,8 +335,7 @@ async fn detect_geometry(ds: &SqliteDatasource, table: &str) -> Result<String> {
 
 async fn check_query(ds: &SqliteDatasource, sql: String) -> Result<String> {
     debug!("Collection query: {sql}");
-    // TODO: prepare only
-    if let Err(e) = sqlx::query(&sql).fetch_one(&ds.pool).await {
+    if let Err(e) = ds.pool.acquire().await?.prepare(&sql).await {
         error!("Error in collection query `{sql}`: {e}");
         return Err(e.into());
     }

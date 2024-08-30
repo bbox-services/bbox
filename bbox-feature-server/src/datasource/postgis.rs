@@ -14,8 +14,8 @@ use bbox_core::pg_ds::PgDatasource;
 use chrono::DateTime;
 use futures::TryStreamExt;
 use log::{debug, error, info, warn};
-use sqlx::postgres::PgTypeInfo;
-use sqlx::{postgres::PgRow, Column, Postgres, QueryBuilder, Row};
+use sqlx::postgres::{PgRow, PgTypeInfo};
+use sqlx::{Column, Executor, Postgres, QueryBuilder, Row, Statement};
 use std::collections::HashMap;
 
 pub type Datasource = PgDatasource;
@@ -178,8 +178,9 @@ impl AutoscanCollectionDatasource for PgDatasource {
                 title: Some(table_name),
                 description: None,
             };
-            let fc = self.setup_collection(&coll_cfg, None).await?;
-            collections.push(fc);
+            if let Ok(fc) = self.setup_collection(&coll_cfg, None).await {
+                collections.push(fc);
+            }
         }
         Ok(collections)
     }
@@ -507,7 +508,7 @@ async fn detect_pk(ds: &PgDatasource, schema: &str, table: &str) -> Result<Optio
             FROM   pg_index i
             JOIN   pg_attribute a ON a.attrelid = i.indrelid
                                  AND a.attnum = ANY(i.indkey)
-            WHERE  i.indrelid = '{schema}.{table}'::regclass
+            WHERE  i.indrelid = '"{schema}"."{table}"'::regclass
             AND    i.indisprimary
         )
         SELECT
@@ -546,7 +547,7 @@ async fn detect_geometry(ds: &PgDatasource, schema: &str, table: &str) -> Result
 
 async fn check_query(ds: &PgDatasource, sql: String) -> Result<String> {
     debug!("Collection query: {sql}");
-    if let Err(e) = sqlx::query(&sql).fetch_one(&ds.pool).await {
+    if let Err(e) = ds.pool.acquire().await?.prepare(&sql).await {
         error!("Error in collection query `{sql}`: {e}");
         return Err(e.into());
     }
@@ -558,7 +559,7 @@ async fn get_column_info(
     sql: &str,
     cols: Option<&Vec<String>>,
 ) -> Result<HashMap<String, PgTypeInfo>> {
-    match sqlx::query(sql).fetch_one(&ds.pool).await {
+    match ds.pool.acquire().await?.prepare(sql).await {
         Ok(res) => {
             let mut hm = HashMap::new();
             for col in res.columns() {
