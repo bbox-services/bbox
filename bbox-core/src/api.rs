@@ -79,26 +79,25 @@ fn merge_level(yaml: &mut serde_yaml::Value, rhs_yaml: &serde_yaml::Value, key: 
 mod test {
     use super::*;
 
-    const YAML_BASE: &str = r##"---
-openapi: 3.0.2
+    const YAML_BASE: &str = r##"openapi: 3.0.2
 info:
   title: BBOX OGC API
 servers:
-  - url: "http://bbox:8080/"
-    description: Production server
+- url: http://bbox:8080/
+  description: Production server
 paths:
   /conformance:
     get:
       operationId: getConformance
       responses:
-        "333":
-          $ref: "#/components/schemas/confClasses"
+        '333':
+          $ref: '#/components/schemas/confClasses'
 components:
   schemas:
     confClasses:
       type: object
       required:
-        - conformsTo
+      - conformsTo
       properties:
         conformsTo:
           type: array
@@ -117,8 +116,7 @@ components:
         let mut doc = OpenApiDoc::from_yaml(YAML_BASE, "");
         assert_eq!(doc.as_yaml("http://bbox:8080/"), YAML_BASE);
 
-        let yaml = r##"---
-openapi: 3.0.0
+        let yaml = r##"openapi: 3.0.0
 info:
   title: New Title
 "##;
@@ -128,31 +126,30 @@ info:
 
     #[test]
     fn yaml_add_path() {
-        let yaml = r#"---
+        let yaml = r#"
 paths:
   /newpath: ""
 "#;
-        let yamlout = r##"---
-openapi: 3.0.2
+        let yamlout = r##"openapi: 3.0.2
 info:
   title: BBOX OGC API
 servers:
-  - url: "http://bbox:8080/"
-    description: Production server
+- url: http://bbox:8080/
+  description: Production server
 paths:
   /conformance:
     get:
       operationId: getConformance
       responses:
-        "333":
-          $ref: "#/components/schemas/confClasses"
-  /newpath: ""
+        '333':
+          $ref: '#/components/schemas/confClasses'
+  /newpath: ''
 components:
   schemas:
     confClasses:
       type: object
       required:
-        - conformsTo
+      - conformsTo
       properties:
         conformsTo:
           type: array
@@ -166,8 +163,7 @@ components:
 
     #[test]
     fn yaml_update_path() {
-        let yaml = r##"---
-paths:
+        let yaml = r##"paths:
   /conformance:
     get:
       operationId: getConformance
@@ -182,7 +178,7 @@ paths:
 
     #[test]
     fn yaml_change_path() {
-        let yaml = r##"---
+        let yaml = r##"
 paths:
   /conformance:
     post:
@@ -191,26 +187,25 @@ paths:
         "333":
           $ref: "#/components/schemas/confClasses"
 "##;
-        let yamlout = r##"---
-openapi: 3.0.2
+        let yamlout = r##"openapi: 3.0.2
 info:
   title: BBOX OGC API
 servers:
-  - url: "http://bbox:8080/"
-    description: Production server
+- url: http://bbox:8080/
+  description: Production server
 paths:
   /conformance:
     post:
       operationId: postConformance
       responses:
-        "333":
-          $ref: "#/components/schemas/confClasses"
+        '333':
+          $ref: '#/components/schemas/confClasses'
 components:
   schemas:
     confClasses:
       type: object
       required:
-        - conformsTo
+      - conformsTo
       properties:
         conformsTo:
           type: array
@@ -224,7 +219,7 @@ components:
 
     #[test]
     fn yaml_add_component() {
-        let yaml = r##"---
+        let yaml = r##"
 components:
   schemas:
     link:
@@ -239,26 +234,25 @@ components:
           items:
             type: string
 "##;
-        let yamlout = r##"---
-openapi: 3.0.2
+        let yamlout = r##"openapi: 3.0.2
 info:
   title: BBOX OGC API
 servers:
-  - url: "http://bbox:8080/"
-    description: Production server
+- url: http://bbox:8080/
+  description: Production server
 paths:
   /conformance:
     get:
       operationId: getConformance
       responses:
-        "333":
-          $ref: "#/components/schemas/confClasses"
+        '333':
+          $ref: '#/components/schemas/confClasses'
 components:
   schemas:
     confClasses:
       type: object
       required:
-        - conformsTo
+      - conformsTo
       properties:
         conformsTo:
           type: array
@@ -274,32 +268,31 @@ components:
 
     #[test]
     fn yaml_add_new_component() {
-        let yaml = r##"---
+        let yaml = r##"
 components:
   responses:
     NotFound:
       description: The requested resource does not exist.
 "##;
-        let yamlout = r##"---
-openapi: 3.0.2
+        let yamlout = r##"openapi: 3.0.2
 info:
   title: BBOX OGC API
 servers:
-  - url: "http://bbox:8080/"
-    description: Production server
+- url: http://bbox:8080/
+  description: Production server
 paths:
   /conformance:
     get:
       operationId: getConformance
       responses:
-        "333":
-          $ref: "#/components/schemas/confClasses"
+        '333':
+          $ref: '#/components/schemas/confClasses'
 components:
   schemas:
     confClasses:
       type: object
       required:
-        - conformsTo
+      - conformsTo
       properties:
         conformsTo:
           type: array
