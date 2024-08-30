@@ -17,14 +17,14 @@ html = []
 oidc = ["openidconnect", "reqwest"]
 
 [dependencies]
-actix-cors = "0.7.0"
+actix-cors = "0.6.4"
 actix-session = { version = "0.7", features = ["cookie-session"] }
 actix-web = { workspace = true }
 actix-web-opentelemetry = { version = "0.13", features = ["metrics-prometheus"] }
 async-stream = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true }
-env_logger = "0.9.0"
+env_logger = "0.10.2"
 figment = { version = "0.10.6", features = ["env", "toml"] }
 flate2 = "1.0.28"
 futures-core = "0.3.28"
@@ -47,7 +47,7 @@ rustls = "0.20.8" # Same as actix-tls -> tokio-rustls
 rustls-pemfile = "1.0.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_yaml = "0.8.24"
+serde_yaml = "0.9.34"
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 

@@ -44,7 +44,7 @@ impl OpenApiDoc {
         if let Some(servers) = self.0.get_mut("servers") {
             if let Some(server) = servers.get_mut(0) {
                 if let Some(server) = server.as_mapping_mut() {
-                    server[&"url".to_string().into()] = url.to_string().into();
+                    server[&"url".to_string()] = url.to_string().into();
                 }
             }
         }
