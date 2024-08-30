@@ -11,8 +11,8 @@
 <table class="table table-zebra table-xs">
   <thead>
     <tr>
-    {% set first_feature = features.features | first %}
-    {% if first_feature %}
+    {% if features.features %}
+      {% set first_feature = features.features | first %}
       <th>id</th>
       {% for prop in first_feature.properties %}
       <th>{{prop}}</th>
