@@ -30,7 +30,7 @@ bbox-map-server = { path = "../bbox-map-server", version = "0.6.1", optional = t
 log = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
-rand = "0.7.3"
+rand = "0.8.5"
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

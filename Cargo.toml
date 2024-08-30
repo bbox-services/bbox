@@ -31,7 +31,7 @@ chrono = "0.4"
 futures = "0.3.21"
 geozero = { version = "0.11.0" }
 log = "0.4.17"
-minijinja = { version = "1.0.0", features = ["loader"] }
+minijinja = { version = "2.2.0", features = ["loader"] }
 num_cpus = "1.13.1"
 once_cell = "1.12.0"
 opentelemetry = { version = "0.18", default-features = false, features = ["trace", "metrics", "rt-tokio"] }

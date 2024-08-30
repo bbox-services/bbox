@@ -24,7 +24,7 @@ projtransform = ["tile-grid/projtransform"]
 [dependencies]
 actix-web = { workspace = true }
 anyhow = "1.0.52"
-async-channel = "1.6.1"
+async-channel = "2.3.1"
 async-trait = { workspace = true }
 bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.1", optional = true }
 bbox-core = { path = "../bbox-core", version = "0.6.1" }
@@ -36,7 +36,7 @@ crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
 futures = "0.3"
 futures-util = "0.3.21"
-geo-types = "0.7.13"
+geo-types = "0.7.12"
 geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
 indicatif = "0.16.2"
 log = { workspace = true }
@@ -51,8 +51,8 @@ pmtiles2 = { version = "0.2.2", default-features = false }
 prometheus = { workspace = true }
 regex = "1.10.3"
 reqwest = { workspace = true }
-rusoto_core = { version = "0.47.0", default-features = false, features = ["rustls"] }
-rusoto_s3 = { version = "0.47.0", default-features = false, features = ["rustls"] }
+rusoto_core = { version = "0.48.0", default-features = false, features = ["rustls"] }
+rusoto_s3 = { version = "0.48.0", default-features = false, features = ["rustls"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_urlencoded = { workspace = true }

@@ -40,7 +40,7 @@ clap = { workspace = true }
 log = { workspace = true }
 minijinja = { workspace = true }
 once_cell = { workspace = true }
-open = "4.1.0"
+open = "5.3.0"
 rust-embed = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
