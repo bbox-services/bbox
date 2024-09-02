@@ -426,7 +426,6 @@ impl TileSource for PgSource {
             tj.other
                 .insert("srs".to_string(), tms.crs().as_known_crs().into());
         }
-        let empty_queries = HashMap::new();
         // TODO: advertise zoom level specific srids
         let mut layers: Vec<tilejson::VectorLayer> = self
             .layers
@@ -435,19 +434,9 @@ impl TileSource for PgSource {
                 // Collected fields from all zoom step levels
                 let fields = layer
                     .queries
-                    .get(&grid_srid)
-                    .or({
-                        // Workaround for invalid call from TileSource::mbtiles_metadata
-                        if grid_srid == 3857 {
-                            Some(&empty_queries)
-                        } else {
-                            None
-                        }
-                    })
-                    .expect("invalid srid lookup")
-                    .clone()
-                    .into_values()
-                    .flat_map(|q| q.fields)
+                    .values()
+                    .flatten()
+                    .flat_map(|(_z, q)| q.fields.clone())
                     .map(|f| (f.name.clone(), f))
                     .collect::<HashMap<_, _>>()
                     .values()
