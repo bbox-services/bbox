@@ -1,0 +1,127 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>BBOX Server – </title>
+    <link>https://www.bbox.earth/docs/core/</link>
+    <description>Recent content on BBOX Server</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="https://www.bbox.earth/docs/core/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title></title>
+      <link>https://www.bbox.earth/docs/core/configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://www.bbox.earth/docs/core/configuration/</guid>
+      <description>
+        
+        
+        &lt;h1&gt;Core Configuration&lt;/h1&gt;&lt;p&gt;Configuration is read from &lt;code&gt;bbox.toml&lt;/code&gt; and environment variables.&lt;/p&gt;
+&lt;h2&gt;Webserver&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;webserver&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#webserver&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
+  
+
+&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;webserver&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Web server settings&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Environment variable prefix: BBOX_WEBSERVER__&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# server_addr = &amp;#34;127.0.0.1:8080&amp;#34;  # Default: 127.0.0.1:8080&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# worker_threads = 4  # Default: number of CPU cores&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
+  &lt;button
+    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
+    title=&#34;Copy code&#34;
+  &gt;
+    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
+  &lt;/button&gt;
+&lt;/div&gt;
+
+  
+&lt;/div&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://www.bbox.earth/docs/core/reference/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://www.bbox.earth/docs/core/reference/</guid>
+      <description>
+        
+        
+        &lt;h1&gt;Core Reference&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;webserver&lt;/code&gt; &lt;a href=&#34;#webserver&#34; &gt;Webserver&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;metrics&lt;/code&gt; &lt;a href=&#34;#metrics&#34; &gt;Metrics&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;datasource[]&lt;/code&gt; &lt;a href=&#34;#nameddatasource&#34; &gt;NamedDatasource&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;auth&lt;/code&gt; &lt;a href=&#34;#auth&#34; &gt;Auth&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Webserver&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;webserver&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#webserver&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;server_addr&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;loglevel&lt;/code&gt; &lt;em&gt;Loglevel&lt;/em&gt; (optional): Log level (Default: info)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tls_cert&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;tls_key&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cors&lt;/code&gt; &lt;a href=&#34;#cors&#34; &gt;Cors&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Loglevel&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;loglevel&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#loglevel&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;h4&gt;Error&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;error&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#error&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h4&gt;Warn&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;warn&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#warn&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h4&gt;Info&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;info&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#info&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h4&gt;Debug&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;debug&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#debug&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h4&gt;Trace&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;trace&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#trace&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h3&gt;Cors&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;cors&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#cors&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;allow_all_origins&lt;/code&gt; &lt;em&gt;bool&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Metrics&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;metrics&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#metrics&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;prometheus&lt;/code&gt; &lt;a href=&#34;#prometheus&#34; &gt;Prometheus&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;jaeger&lt;/code&gt; &lt;a href=&#34;#jaeger&#34; &gt;Jaeger&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Prometheus&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;prometheus&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#prometheus&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Jaeger&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;jaeger&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#jaeger&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;agent_endpoint&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;NamedDatasource&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;nameddatasource&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#nameddatasource&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;name&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;#datasource&#34; &gt;Datasource&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Datasource&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;datasource&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#datasource&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;h4&gt;postgis&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;postgis&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#postgis&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;url&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;gpkg&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;gpkg&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#gpkg&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;Path&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;WmsFcgi&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;wmsfcgi&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#wmsfcgi&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h4&gt;wms_proxy&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;wms_proxy&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#wms_proxy&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;baseurl&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;format&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4&gt;mbtiles&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;mbtiles&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#mbtiles&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h4&gt;&lt;h2&gt;Auth&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;auth&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#auth&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;oidc&lt;/code&gt; &lt;a href=&#34;#oidcauth&#34; &gt;OidcAuth&lt;/a&gt; (optional)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;OidcAuth&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;oidcauth&#34;&gt;&lt;/span&gt;
+    &lt;a href=&#34;#oidcauth&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;
+      </description>
+    </item>
+    
+  </channel>
+</rss>
