@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=League+Gothic&display=swap');
+
+:root {
+    font-family: "Lato", sans-serif;
+    /* geopole orange */
+    --primary-hue: 45deg;
+    --primary-saturation: 100%;
+
+    --geopole-red: #cc0000; 
+    --geopole-orange: #ffbf00; 
+    --geopole-light-olive: #e4e7d7; 
+    --geopole-green: #43bc06; 
+    --geopole-olive: #babfa7; 
+    --geopole-blue: #0e5174; 
+    --geopole-list-divider: #707463; 
+    --geopole-grey: #cccccc; 
+    --geopole-black: #424535; 
+}
+
+body {
+    background-color: var(--geopole-light-olive);
+}
+
+/*  Title bar */
+.nav-container-blur {
+    background-color: hsl(45deg 100% 45% / 1);
+}
+.nav-container .hx-font-extrabold {
+    font-family: "League Gothic", sans-serif;
+    font-size: 1.55em;
+}
+
+/* Menu hover background */
+aside.sidebar-container .hover\:hx-bg-gray-100:hover {
+    background-color: hsl(45deg 100% 39% / 0.2);
+}
+
+aside.sidebar-container .sidebar-active-item.hx-bg-primary-100 {
+    background-color: hsl(45deg 100% 39% / 0.1);
+}
+
+/* background for theme switcher */
+html:not(.dark) aside.sidebar-container .hx-sticky {
+    background-color: var(--geopole-light-olive);
+    --tw-shadow: none;
+}
+
+/* background for "Edit this page" */
+nav .hx-bg-white {
+    background-color: var(--geopole-light-olive);
+    --tw-shadow: none;
+}
+
+.content h1, h2, h3 {
+    font-family: "League Gothic", sans-serif;
+    letter-spacing: normal;
+}
+
+.content h1 {
+    font-size: 3.77em;
+}
+.content h2 {
+    font-size: 2.11em;
+}
+.content h3 {
+    font-size: 1.55em;
+}
+
+/* Table rows */
+.content :where(table):not(:where(.hextra-code-block table, [class~="not-prose"], [class~="not-prose"] *)) tr:nth-child(2n) {
+    background-color: hsl(45deg 100% 39% / 0.05);
+}
+
+html:not(.dark) footer.hextra-footer.hx-bg-gray-100 {
+    background-color: hsl(45deg 100% 45% / 1);
+}
+
+/* Reduce footer height */
+footer .hx-py-12 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+footer .hx-mt-6 {
+    margin-top: 0;
+}

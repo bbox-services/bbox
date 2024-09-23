@@ -23,6 +23,11 @@ pageRef = "/docs"
 weight = 1
 
 [[menu.main]]
+name = "Changelog"
+weight = 2
+url = "https://github.com/bbox-services/bbox/blob/main/CHANGELOG.md"
+
+[[menu.main]]
 name = "Search"
 weight = 5
 [menu.main.params]
@@ -36,7 +41,7 @@ url = "https://github.com/bbox-services/bbox"
 icon = "github"
 
 [params]
-description = "A free & simple Vector Tile schema for OpenStreetMap"
+description = "Composable spatial services"
 displayUpdatedDate = false
 dateFormat = "January 2, 2006"
 
@@ -48,12 +53,13 @@ dateFormat = "January 2, 2006"
     [params.navbar.logo]
     path = "/favicon.svg"
     dark = "/favicon.svg"
+    width = 30
 
   [params.page]
   width = "normal"
 
   [params.theme]
-  default = "system"
+  default = "light"
   displayToggle = true
 
   [params.footer]
