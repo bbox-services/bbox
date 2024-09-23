@@ -52,7 +52,7 @@ dateFormat = "January 2, 2006"
 
     [params.navbar.logo]
     path = "/favicon.svg"
-    dark = "/favicon.svg"
+    dark = "/favicon-dark.svg"
     width = 30
 
   [params.page]
