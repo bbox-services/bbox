@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Install just
         uses: taiki-e/install-action@v2
@@ -30,21 +32,22 @@ jobs:
       - name: Install Python build dependencies
         run: python -m pip install jmespath
 
-      - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v1
+      - name: Install Hugo
+        uses: peaceiris/actions-hugo@v3
         with:
-          mdbook-version: 'latest'
+          hugo-version: '0.111.3'
+          # extended: true
 
       - name: Generate reference documentation
-        run: cd docs && just refdoc
+        run: cd website && just refdoc
 
-      - name: Build mdBook
-        run: cd docs && just build
+      - name: Build site
+        run: cd website && just build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/book
+          publish_dir: ./website/public
           cname: www.bbox.earth
