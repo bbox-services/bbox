@@ -1,0 +1,79 @@
+baseURL = "https://www.bbox.earth/"
+title = "BBOX Server"
+theme = "hextra"
+enableRobotsTXT = false
+enableGitInfo = true
+enableInlineShortcodes = true
+
+[languages.en]
+languageName = "English"
+weight = 1
+#title = "BBOX Server"
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup.highlight]
+noClasses = false
+
+[[menu.main]]
+identifier = "documentation"
+name = "Documentation"
+pageRef = "/docs"
+weight = 1
+
+[[menu.main]]
+name = "Search"
+weight = 5
+[menu.main.params]
+type = "search"
+
+[[menu.main]]
+name = "GitHub"
+weight = 6
+url = "https://github.com/bbox-services/bbox"
+[menu.main.params]
+icon = "github"
+
+[params]
+description = "A free & simple Vector Tile schema for OpenStreetMap"
+displayUpdatedDate = false
+dateFormat = "January 2, 2006"
+
+  [params.navbar]
+  displayTitle = true
+  displayLogo = true
+  width = "normal"
+
+    [params.navbar.logo]
+    path = "/favicon.svg"
+    dark = "/favicon.svg"
+
+  [params.page]
+  width = "normal"
+
+  [params.theme]
+  default = "system"
+  displayToggle = true
+
+  [params.footer]
+  enable = true
+  displayCopyright = true
+  displayPoweredBy = false
+  width = "normal"
+
+  [params.search]
+  enable = true
+  type = "flexsearch"
+
+    [params.search.flexsearch]
+    index = "content"
+    tokenize = "forward"
+
+  [params.editURL]
+  enable = true
+  base = "https://github.com/bbox-services/bbox/edit/main/website/content"
+
+[params.highlight.copy]
+enable = true
+display = "hover"
