@@ -108,11 +108,10 @@ impl TileService {
         // map service source -> tile store writer
         // map service source -> batch collector -> mbtiles store writer
 
-        let iter = griditer.map(move |xyz| {
-            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), &xyz, &format);
+        let iter = griditer.inspect(move |xyz| {
+            let path = CacheLayout::Zxy.path_string(&PathBuf::new(), xyz, &format);
             progress.set_message(path.clone());
             progress.inc(1);
-            xyz
         });
         let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
             let tileset = tileset_arc.clone();
