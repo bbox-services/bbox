@@ -1,17 +1,1 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>BBOX Server – Categories</title>
-    <link>https://www.bbox.earth/categories/</link>
-    <description>Recent content in Categories on BBOX Server</description>
-    <generator>Hugo -- gohugo.io</generator>
-    
-	  <atom:link href="https://www.bbox.earth/categories/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-        
-      
-    
-    
-  </channel>
-</rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>BBOX Server – Categories</title><link>https://www.bbox.earth/categories/</link><description>Recent content in Categories on BBOX Server</description><generator>Hugo -- gohugo.io</generator><atom:link href="https://www.bbox.earth/categories/index.xml" rel="self" type="application/rss+xml"/></channel></rss>

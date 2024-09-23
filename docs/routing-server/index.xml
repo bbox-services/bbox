@@ -1,177 +1,114 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>BBOX Server – </title>
-    <link>https://www.bbox.earth/docs/routing-server/</link>
-    <description>Recent content on BBOX Server</description>
-    <generator>Hugo -- gohugo.io</generator>
-    
-	  <atom:link href="https://www.bbox.earth/docs/routing-server/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-        
-      
-    
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/routing-server/configuration/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/routing-server/configuration/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Routing Service Configuration&lt;/h1&gt;&lt;h2&gt;GeoPackage line geometry table&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;geopackage-line-geometry-table&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#geopackage-line-geometry-table&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;routing&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;profile&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;railway&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;gpkg&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;assets/railway-test.gpkg&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;table&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;flows&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;geom&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;geom&amp;#34;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-&lt;h2&gt;PostGIS Edge/Vertices tables&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;postgis-edgevertices-tables&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#postgis-edgevertices-tables&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Node search distance&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;search_dist&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;mf&#34;&gt;0.01&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Edge table&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;table&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;rail_arcs&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Node/Vertices table&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;node_table&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;rail_arcs_vertices_pgr&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Geometry column&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;geom&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;geom&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Node ID column in node table&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;node_id&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Cost column&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;cost&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;cost&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Column with source node ID&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;node_src&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;source&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# Column with destination (target) node ID&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;node_dst&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;target&amp;#34;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-&lt;p&gt;This assumes tables created e.g. with PgRouting &lt;code&gt;pgr_createTopology&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;The contraction hierarchy is created on first startup and stored as cache files named &lt;code&gt;.graph.bin&lt;/code&gt; and  &lt;code&gt;.nodes.bin&lt;/code&gt;&lt;/p&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/routing-server/endpoints/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/routing-server/endpoints/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;BBOX API Endpoints&lt;/h1&gt;&lt;p&gt;Services are available via the following HTTP endpoints:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;URL&lt;/th&gt;
-&lt;th&gt;Description&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/routes&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;OGC API endpoint&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/routes/basic&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Basic from/to API endpoint&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/routes/valhalla&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Valhalla compatible endpoint&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h2&gt;Request examples&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;request-examples&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#request-examples&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;h3&gt;OGC API&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;ogc-api&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#ogc-api&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;pre&gt;&lt;code&gt;curl -s -X &#39;POST&#39; \
-  &#39;http://localhost:8080/routes?mode=sync&#39; \
-  -H &#39;accept: application/geo+json&#39; \
-  -H &#39;Content-Type: application/json&#39; \
-  -d &#39;{
-  &amp;quot;name&amp;quot;: &amp;quot;Route from A to B&amp;quot;,
-  &amp;quot;waypoints&amp;quot;: {
-    &amp;quot;type&amp;quot;: &amp;quot;MultiPoint&amp;quot;,
-    &amp;quot;coordinates&amp;quot;: [
-      [9.35213353, 47.0935012],
-      [9.3422712, 47.1011887]
-    ]
-  },
-  &amp;quot;preference&amp;quot;: &amp;quot;fastest&amp;quot;,
-  &amp;quot;dataset&amp;quot;: &amp;quot;OSM&amp;quot;
-}&#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3&gt;Basic from/to request:&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;basic-fromto-request&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#basic-fromto-request&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;pre&gt;&lt;code&gt;curl -s &#39;http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=9.35213353,47.0935012&amp;amp;to_pos=9.3422712,47.1011887&#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Zurich - Munich:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -s &#39;http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=8.53636,47.37726&amp;amp;to_pos=11.56096,48.14019&#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;h3&gt;Valhalla endpoint&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;valhalla-endpoint&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#valhalla-endpoint&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;p&gt;Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/routing-server/reference/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/routing-server/reference/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Routing Server Reference&lt;/h1&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;service[]&lt;/code&gt; &lt;a href=&#34;#routing&#34; &gt;Routing&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;Routing&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;routing&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#routing&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Routing service configuration&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;profile&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;search_dist&lt;/code&gt; &lt;em&gt;f64&lt;/em&gt; (optional): Node search distance&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;gpkg&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;postgis&lt;/code&gt; &lt;a href=&#34;#dspostgis&#34; &gt;DsPostgis&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;table&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: Edge table&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;node_table&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional): Node/Vertices table&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;geom&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: Geometry column&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;node_id&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional): Node ID column in node table&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;cost&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional): Cost column (default: geodesic line length)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;node_src&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional): Column with source node ID&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;node_dst&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional): Column with destination (target) node ID&lt;/li&gt;
-&lt;/ul&gt;
-
-      </description>
-    </item>
-    
-  </channel>
-</rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>BBOX Server –</title><link>https://www.bbox.earth/docs/routing-server/</link><description>Recent content on BBOX Server</description><generator>Hugo -- gohugo.io</generator><atom:link href="https://www.bbox.earth/docs/routing-server/index.xml" rel="self" type="application/rss+xml"/><item><title/><link>https://www.bbox.earth/docs/routing-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/configuration/</guid><description>
+&lt;h1>Routing Service Configuration&lt;/h1>&lt;h2>GeoPackage line geometry table&lt;span class="hx-absolute -hx-mt-20" id="geopackage-line-geometry-table">&lt;/span>
+&lt;a href="#geopackage-line-geometry-table" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[[&lt;/span>&lt;span class="nx">routing&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">service&lt;/span>&lt;span class="p">]]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">profile&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;railway&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">gpkg&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;assets/railway-test.gpkg&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">table&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;flows&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">geom&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;geom&amp;#34;&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;h2>PostGIS Edge/Vertices tables&lt;span class="hx-absolute -hx-mt-20" id="postgis-edgevertices-tables">&lt;/span>
+&lt;a href="#postgis-edgevertices-tables" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Node search distance&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">search_dist&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="mf">0.01&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Edge table&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">table&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;rail_arcs&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Node/Vertices table&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">node_table&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;rail_arcs_vertices_pgr&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Geometry column&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">geom&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;geom&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Node ID column in node table&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">node_id&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;id&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Cost column&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">cost&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;cost&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Column with source node ID&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">node_src&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;source&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># Column with destination (target) node ID&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">node_dst&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;target&amp;#34;&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;p>This assumes tables created e.g. with PgRouting &lt;code>pgr_createTopology&lt;/code>.&lt;/p>
+&lt;p>The contraction hierarchy is created on first startup and stored as cache files named &lt;code>.graph.bin&lt;/code> and &lt;code>.nodes.bin&lt;/code>&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/endpoints/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/endpoints/</guid><description>
+&lt;h1>BBOX API Endpoints&lt;/h1>&lt;p>Services are available via the following HTTP endpoints:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>URL&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>/routes&lt;/code>&lt;/td>
+&lt;td>OGC API endpoint&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/routes/basic&lt;/code>&lt;/td>
+&lt;td>Basic from/to API endpoint&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/routes/valhalla&lt;/code>&lt;/td>
+&lt;td>Valhalla compatible endpoint&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2>Request examples&lt;span class="hx-absolute -hx-mt-20" id="request-examples">&lt;/span>
+&lt;a href="#request-examples" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;h3>OGC API&lt;span class="hx-absolute -hx-mt-20" id="ogc-api">&lt;/span>
+&lt;a href="#ogc-api" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;pre>&lt;code>curl -s -X 'POST' \
+'http://localhost:8080/routes?mode=sync' \
+-H 'accept: application/geo+json' \
+-H 'Content-Type: application/json' \
+-d '{
+&amp;quot;name&amp;quot;: &amp;quot;Route from A to B&amp;quot;,
+&amp;quot;waypoints&amp;quot;: {
+&amp;quot;type&amp;quot;: &amp;quot;MultiPoint&amp;quot;,
+&amp;quot;coordinates&amp;quot;: [
+[9.35213353, 47.0935012],
+[9.3422712, 47.1011887]
+]
+},
+&amp;quot;preference&amp;quot;: &amp;quot;fastest&amp;quot;,
+&amp;quot;dataset&amp;quot;: &amp;quot;OSM&amp;quot;
+}'
+&lt;/code>&lt;/pre>
+&lt;h3>Basic from/to request:&lt;span class="hx-absolute -hx-mt-20" id="basic-fromto-request">&lt;/span>
+&lt;a href="#basic-fromto-request" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;pre>&lt;code>curl -s 'http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=9.35213353,47.0935012&amp;amp;to_pos=9.3422712,47.1011887'
+&lt;/code>&lt;/pre>
+&lt;p>Zurich - Munich:&lt;/p>
+&lt;pre>&lt;code>curl -s 'http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=8.53636,47.37726&amp;amp;to_pos=11.56096,48.14019'
+&lt;/code>&lt;/pre>
+&lt;h3>Valhalla endpoint&lt;span class="hx-absolute -hx-mt-20" id="valhalla-endpoint">&lt;/span>
+&lt;a href="#valhalla-endpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/reference/</guid><description>
+&lt;h1>Routing Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>service[]&lt;/code> &lt;a href="#routing" >Routing&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Routing&lt;span class="hx-absolute -hx-mt-20" id="routing">&lt;/span>
+&lt;a href="#routing" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Routing service configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>profile&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>search_dist&lt;/code> &lt;em>f64&lt;/em> (optional): Node search distance&lt;/li>
+&lt;li>&lt;code>gpkg&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>postgis&lt;/code> &lt;a href="#dspostgis" >DsPostgis&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>table&lt;/code> &lt;em>String&lt;/em>: Edge table&lt;/li>
+&lt;li>&lt;code>node_table&lt;/code> &lt;em>String&lt;/em> (optional): Node/Vertices table&lt;/li>
+&lt;li>&lt;code>geom&lt;/code> &lt;em>String&lt;/em>: Geometry column&lt;/li>
+&lt;li>&lt;code>node_id&lt;/code> &lt;em>String&lt;/em> (optional): Node ID column in node table&lt;/li>
+&lt;li>&lt;code>cost&lt;/code> &lt;em>String&lt;/em> (optional): Cost column (default: geodesic line length)&lt;/li>
+&lt;li>&lt;code>node_src&lt;/code> &lt;em>String&lt;/em> (optional): Column with source node ID&lt;/li>
+&lt;li>&lt;code>node_dst&lt;/code> &lt;em>String&lt;/em> (optional): Column with destination (target) node ID&lt;/li>
+&lt;/ul></description></item></channel></rss>

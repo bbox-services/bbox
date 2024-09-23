@@ -1,212 +1,138 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>BBOX Server – </title>
-    <link>https://www.bbox.earth/docs/map-server/</link>
-    <description>Recent content on BBOX Server</description>
-    <generator>Hugo -- gohugo.io</generator>
-    
-	  <atom:link href="https://www.bbox.earth/docs/map-server/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-        
-      
-    
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/map-server/configuration/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/map-server/configuration/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Map Server Configuration&lt;/h1&gt;&lt;h2&gt;Map server settings&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;map-server-settings&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#map-server-settings&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mapserver&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# num_fcgi_processes = 4     # Default: number of CPU cores&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# wait_timeout = 30000       # FCGI wait timeout in ms. Default: 90s&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;# search_projects = false    # Scan directories and build inventory&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-&lt;h2&gt;QGIS Server settings&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;qgis-server-settings&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#qgis-server-settings&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mapserver&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;qgis_backend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;project_basedir&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;./projects&amp;#34;&lt;/span&gt;  &lt;span class=&#34;c&#34;&gt;# Base dir for project files (.qgs, .qgz)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;qgs&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;path&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/qgis&amp;#34;&lt;/span&gt;              &lt;span class=&#34;c&#34;&gt;# URL base path *.qgs&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;qgz&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;path&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/qgz&amp;#34;&lt;/span&gt;               &lt;span class=&#34;c&#34;&gt;# URL base path *.qgz&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-&lt;h2&gt;UMN MapServer settings&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;umn-mapserver-settings&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#umn-mapserver-settings&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;mapserver&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;umn_backend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;project_basedir&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;./maps&amp;#34;&lt;/span&gt;    &lt;span class=&#34;c&#34;&gt;# Base dir for project files (.map)&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;path&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;/wms/map&amp;#34;&lt;/span&gt;             &lt;span class=&#34;c&#34;&gt;# URL base path&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/map-server/endpoints/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/map-server/endpoints/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;BBOX API Endpoints&lt;/h1&gt;&lt;p&gt;Services are available via the following HTTP endpoints:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;URL&lt;/th&gt;
-&lt;th&gt;Description&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/{prefix}/{project}&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;WMS map endpoint with configurable prefix per backend&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;Example configurations:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;URL&lt;/th&gt;
-&lt;th&gt;Description&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/qgis/{project}&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;QGIS Server backend with *.qgs project files&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/qgz/{project}&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;QGIS Server backend with *.qgz project files&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/map/{project}&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;UMN Mapserver backend&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;p&gt;WMS request examples:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -s &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;REQUEST=GetCapabilities&#39;
-
-curl -o /tmp/map.png &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetMap&amp;amp;BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&amp;amp;CRS=EPSG:900913&amp;amp;WIDTH=1399&amp;amp;HEIGHT=824&amp;amp;LAYERS=country&amp;amp;STYLES=&amp;amp;FORMAT=image/png;%20mode%3D8bit&#39;
-
-curl -o /tmp/legend.png &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetLegendGraphic&amp;amp;LAYER=country&amp;amp;FORMAT=image/png&amp;amp;STYLE=default&amp;amp;TRANSPARENT=true&#39;
-
-curl -s &#39;http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&amp;amp;REQUEST=GetProjectSettings&#39;
-
-curl -o /tmp/print.pdf &#39;http://127.0.0.1:8080/qgis/helloworld&#39; -X POST \
-     -d &#39;SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetPrint&amp;amp;FORMAT=pdf&#39; \
-     -d &#39;TEMPLATE=Composer 1&amp;amp;DPI=300&amp;amp;CRS=EPSG:4326&#39; \
-     -d &#39;map0:LAYERS=Country,Hello&amp;amp;map0:extent=-92.8913,-185.227,121.09,191.872&#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;UMN Mapserver:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -s &#39;http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;REQUEST=GetCapabilities&#39;
-
-curl -o /tmp/map.png &#39;http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetMap&amp;amp;BBOX=40.83354209954528358,0.542981257600549938,49.84069885574058389,15.5221558872974672&amp;amp;CRS=epsg:4326&amp;amp;WIDTH=1372&amp;amp;HEIGHT=825&amp;amp;LAYERS=country&amp;amp;STYLES=&amp;amp;FORMAT=image%2Fpng%3B%20mode%3D8bit&#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;WFS request examples:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl -s &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetCapabilities&#39;
-
-curl -s &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetFeature&amp;amp;VERSION=1.1.0&amp;amp;TYPENAME=country&amp;amp;SRSNAME=EPSG:3857&amp;amp;BBOX=1059483.34824404888786376,5959680.16110791172832251,1061700.73825845750980079,5962445.67000228632241488,EPSG:3857&#39;
-
-curl -s --data @wfsadd.xml &#39;http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=Transaction&#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/map-server/reference/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/map-server/reference/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Map Server Reference&lt;/h1&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;fcgi_client_pool_size&lt;/code&gt; &lt;em&gt;usize&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;wait_timeout&lt;/code&gt; &lt;em&gt;u64&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;create_timeout&lt;/code&gt; &lt;em&gt;u64&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;recycle_timeout&lt;/code&gt; &lt;em&gt;u64&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;qgis_backend&lt;/code&gt; &lt;a href=&#34;#qgisbackend&#34; &gt;QgisBackend&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;umn_backend&lt;/code&gt; &lt;a href=&#34;#umnbackend&#34; &gt;UmnBackend&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;mock_backend&lt;/code&gt; &lt;a href=&#34;#mockbackend&#34; &gt;MockBackend&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;search_projects&lt;/code&gt; &lt;em&gt;bool&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;default_project&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;QgisBackend&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;qgisbackend&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#qgisbackend&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;exe_location&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;project_basedir&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;qgs&lt;/code&gt; &lt;a href=&#34;#qgisbackendsuffix&#34; &gt;QgisBackendSuffix&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;qgz&lt;/code&gt; &lt;a href=&#34;#qgisbackendsuffix&#34; &gt;QgisBackendSuffix&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;QgisBackendSuffix&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;qgisbackendsuffix&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#qgisbackendsuffix&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;QgisBackendSuffix&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;qgisbackendsuffix-1&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#qgisbackendsuffix-1&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h3&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;UmnBackend&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;umnbackend&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#umnbackend&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;exe_location&lt;/code&gt; &lt;em&gt;String&lt;/em&gt; (optional)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;project_basedir&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;MockBackend&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;mockbackend&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#mockbackend&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;path&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-      </description>
-    </item>
-    
-  </channel>
-</rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>BBOX Server –</title><link>https://www.bbox.earth/docs/map-server/</link><description>Recent content on BBOX Server</description><generator>Hugo -- gohugo.io</generator><atom:link href="https://www.bbox.earth/docs/map-server/index.xml" rel="self" type="application/rss+xml"/><item><title/><link>https://www.bbox.earth/docs/map-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/configuration/</guid><description>
+&lt;h1>Map Server Configuration&lt;/h1>&lt;h2>Map server settings&lt;span class="hx-absolute -hx-mt-20" id="map-server-settings">&lt;/span>
+&lt;a href="#map-server-settings" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">mapserver&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># num_fcgi_processes = 4 # Default: number of CPU cores&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># wait_timeout = 30000 # FCGI wait timeout in ms. Default: 90s&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c"># search_projects = false # Scan directories and build inventory&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;h2>QGIS Server settings&lt;span class="hx-absolute -hx-mt-20" id="qgis-server-settings">&lt;/span>
+&lt;a href="#qgis-server-settings" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">mapserver&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">qgis_backend&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">project_basedir&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;./projects&amp;#34;&lt;/span> &lt;span class="c"># Base dir for project files (.qgs, .qgz)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">qgs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">path&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;/qgis&amp;#34;&lt;/span> &lt;span class="c"># URL base path *.qgs&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">qgz&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">path&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;/qgz&amp;#34;&lt;/span> &lt;span class="c"># URL base path *.qgz&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div>
+&lt;h2>UMN MapServer settings&lt;span class="hx-absolute -hx-mt-20" id="umn-mapserver-settings">&lt;/span>
+&lt;a href="#umn-mapserver-settings" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">mapserver&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">umn_backend&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">project_basedir&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;./maps&amp;#34;&lt;/span> &lt;span class="c"># Base dir for project files (.map)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">path&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;/wms/map&amp;#34;&lt;/span> &lt;span class="c"># URL base path&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/endpoints/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/endpoints/</guid><description>
+&lt;h1>BBOX API Endpoints&lt;/h1>&lt;p>Services are available via the following HTTP endpoints:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>URL&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>/{prefix}/{project}&lt;/code>&lt;/td>
+&lt;td>WMS map endpoint with configurable prefix per backend&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>Example configurations:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>URL&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>/qgis/{project}&lt;/code>&lt;/td>
+&lt;td>QGIS Server backend with *.qgs project files&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/qgz/{project}&lt;/code>&lt;/td>
+&lt;td>QGIS Server backend with *.qgz project files&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/map/{project}&lt;/code>&lt;/td>
+&lt;td>UMN Mapserver backend&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>WMS request examples:&lt;/p>
+&lt;pre>&lt;code>curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;REQUEST=GetCapabilities'
+curl -o /tmp/map.png 'http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetMap&amp;amp;BBOX=-20037508.34278924391,-5966981.031407224014,19750246.20310878009,17477263.06060761213&amp;amp;CRS=EPSG:900913&amp;amp;WIDTH=1399&amp;amp;HEIGHT=824&amp;amp;LAYERS=country&amp;amp;STYLES=&amp;amp;FORMAT=image/png;%20mode%3D8bit'
+curl -o /tmp/legend.png 'http://127.0.0.1:8080/qgis/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetLegendGraphic&amp;amp;LAYER=country&amp;amp;FORMAT=image/png&amp;amp;STYLE=default&amp;amp;TRANSPARENT=true'
+curl -s 'http://127.0.0.1:8080/qgis/helloworld?SERVICE=WMS&amp;amp;REQUEST=GetProjectSettings'
+curl -o /tmp/print.pdf 'http://127.0.0.1:8080/qgis/helloworld' -X POST \
+-d 'SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetPrint&amp;amp;FORMAT=pdf' \
+-d 'TEMPLATE=Composer 1&amp;amp;DPI=300&amp;amp;CRS=EPSG:4326' \
+-d 'map0:LAYERS=Country,Hello&amp;amp;map0:extent=-92.8913,-185.227,121.09,191.872'
+&lt;/code>&lt;/pre>
+&lt;p>UMN Mapserver:&lt;/p>
+&lt;pre>&lt;code>curl -s 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;REQUEST=GetCapabilities'
+curl -o /tmp/map.png 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;VERSION=1.3.0&amp;amp;REQUEST=GetMap&amp;amp;BBOX=40.83354209954528358,0.542981257600549938,49.84069885574058389,15.5221558872974672&amp;amp;CRS=epsg:4326&amp;amp;WIDTH=1372&amp;amp;HEIGHT=825&amp;amp;LAYERS=country&amp;amp;STYLES=&amp;amp;FORMAT=image%2Fpng%3B%20mode%3D8bit'
+&lt;/code>&lt;/pre>
+&lt;p>WFS request examples:&lt;/p>
+&lt;pre>&lt;code>curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetCapabilities'
+curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetFeature&amp;amp;VERSION=1.1.0&amp;amp;TYPENAME=country&amp;amp;SRSNAME=EPSG:3857&amp;amp;BBOX=1059483.34824404888786376,5959680.16110791172832251,1061700.73825845750980079,5962445.67000228632241488,EPSG:3857'
+curl -s --data @wfsadd.xml 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=Transaction'
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/reference/</guid><description>
+&lt;h1>Map Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>fcgi_client_pool_size&lt;/code> &lt;em>usize&lt;/em>&lt;/li>
+&lt;li>&lt;code>wait_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>create_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>recycle_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>qgis_backend&lt;/code> &lt;a href="#qgisbackend" >QgisBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>umn_backend&lt;/code> &lt;a href="#umnbackend" >UmnBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>mock_backend&lt;/code> &lt;a href="#mockbackend" >MockBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>search_projects&lt;/code> &lt;em>bool&lt;/em>&lt;/li>
+&lt;li>&lt;code>default_project&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>QgisBackend&lt;span class="hx-absolute -hx-mt-20" id="qgisbackend">&lt;/span>
+&lt;a href="#qgisbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>qgs&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>qgz&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix">&lt;/span>
+&lt;a href="#qgisbackendsuffix" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix-1">&lt;/span>
+&lt;a href="#qgisbackendsuffix-1" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>UmnBackend&lt;span class="hx-absolute -hx-mt-20" id="umnbackend">&lt;/span>
+&lt;a href="#umnbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>MockBackend&lt;span class="hx-absolute -hx-mt-20" id="mockbackend">&lt;/span>
+&lt;a href="#mockbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul></description></item></channel></rss>

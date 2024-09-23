@@ -1,135 +1,75 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>BBOX Server – </title>
-    <link>https://www.bbox.earth/docs/processes-server/</link>
-    <description>Recent content on BBOX Server</description>
-    <generator>Hugo -- gohugo.io</generator>
-    
-	  <atom:link href="https://www.bbox.earth/docs/processes-server/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-      
-        
-      
-    
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/processes-server/configuration/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/processes-server/configuration/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Processes Service configuration&lt;/h1&gt;&lt;h2&gt;Dagster Backend&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;dagster-backend&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#dagster-backend&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;div class=&#34;hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code&#34;&gt;
-  
-
-&lt;div&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-toml&#34; data-lang=&#34;toml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;processes&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;dagster_backend&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;graphql_url&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;http://localhost:3000/graphql&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;repository_name&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;the_repository&amp;#34;&lt;/span&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nx&#34;&gt;repository_location_name&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;the.repos&amp;#34;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&#34;hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0&#34;&gt;
-  &lt;button
-    class=&#34;hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50&#34;
-    title=&#34;Copy code&#34;
-  &gt;
-    &lt;div class=&#34;copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-    &lt;div class=&#34;success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4&#34;&gt;&lt;/div&gt;
-  &lt;/button&gt;
-&lt;/div&gt;
-
-  
-&lt;/div&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/processes-server/endpoints/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/processes-server/endpoints/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;BBOX API Endpoints&lt;/h1&gt;&lt;p&gt;Services are available via the following HTTP endpoints:&lt;/p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;URL&lt;/th&gt;
-&lt;th&gt;Description&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/processes&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;List of available processes&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/processes/{name}/execution&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Execute processes&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/processes/jobs/{jobid}&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Job status&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;/processes/{jobid}/results&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Job results&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-&lt;h2&gt;Request examples&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;request-examples&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#request-examples&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Execute process:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl --header &amp;quot;Content-Type: application/json&amp;quot; \
-     --request POST \
-     --data &#39;{&amp;quot;inputs&amp;quot;: {&amp;quot;ops&amp;quot;: {&amp;quot;pos_info_query&amp;quot;: {&amp;quot;inputs&amp;quot;: {&amp;quot;pos_x&amp;quot;: 2607545, &amp;quot;pos_y&amp;quot;: 1171421}}}}}&#39; \
-  http://localhost:8080/processes/pos_info/execution
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Execute process asynchronous:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl --header &amp;quot;Content-Type: application/json&amp;quot; \
-     --header &amp;quot;Prefer: respond-async&amp;quot; \
-     --request POST \
-     --data &#39;{&amp;quot;inputs&amp;quot;: {&amp;quot;ops&amp;quot;: {&amp;quot;export_fpds2&amp;quot;: {&amp;quot;inputs&amp;quot;: {&amp;quot;fixpunkte&amp;quot;: [&amp;quot;12575280&amp;quot;, &amp;quot;12575100&amp;quot;], &amp;quot;in_bearbeitung&amp;quot;: false }}}}}&#39; \
-  http://localhost:8080/processes/export_fpds2_to_csv/execution
-
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>BBOX Server –</title><link>https://www.bbox.earth/docs/processes-server/</link><description>Recent content on BBOX Server</description><generator>Hugo -- gohugo.io</generator><atom:link href="https://www.bbox.earth/docs/processes-server/index.xml" rel="self" type="application/rss+xml"/><item><title/><link>https://www.bbox.earth/docs/processes-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/configuration/</guid><description>
+&lt;h1>Processes Service configuration&lt;/h1>&lt;h2>Dagster Backend&lt;span class="hx-absolute -hx-mt-20" id="dagster-backend">&lt;/span>
+&lt;a href="#dagster-backend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">processes&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">dagster_backend&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">graphql_url&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;http://localhost:3000/graphql&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">repository_name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;the_repository&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nx">repository_location_name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s2">&amp;#34;the.repos&amp;#34;&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;button
+class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
+title="Copy code"
+>
+&lt;div class="copy-icon group-[.copied]/copybtn:hx-hidden hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
+&lt;/button>
+&lt;/div>
+&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/endpoints/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/endpoints/</guid><description>
+&lt;h1>BBOX API Endpoints&lt;/h1>&lt;p>Services are available via the following HTTP endpoints:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>URL&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>/processes&lt;/code>&lt;/td>
+&lt;td>List of available processes&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/processes/{name}/execution&lt;/code>&lt;/td>
+&lt;td>Execute processes&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/processes/jobs/{jobid}&lt;/code>&lt;/td>
+&lt;td>Job status&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/processes/{jobid}/results&lt;/code>&lt;/td>
+&lt;td>Job results&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2>Request examples&lt;span class="hx-absolute -hx-mt-20" id="request-examples">&lt;/span>
+&lt;a href="#request-examples" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Execute process:&lt;/p>
+&lt;pre>&lt;code>curl --header &amp;quot;Content-Type: application/json&amp;quot; \
+--request POST \
+--data '{&amp;quot;inputs&amp;quot;: {&amp;quot;ops&amp;quot;: {&amp;quot;pos_info_query&amp;quot;: {&amp;quot;inputs&amp;quot;: {&amp;quot;pos_x&amp;quot;: 2607545, &amp;quot;pos_y&amp;quot;: 1171421}}}}}' \
+http://localhost:8080/processes/pos_info/execution
+&lt;/code>&lt;/pre>
+&lt;p>Execute process asynchronous:&lt;/p>
+&lt;pre>&lt;code>curl --header &amp;quot;Content-Type: application/json&amp;quot; \
+--header &amp;quot;Prefer: respond-async&amp;quot; \
+--request POST \
+--data '{&amp;quot;inputs&amp;quot;: {&amp;quot;ops&amp;quot;: {&amp;quot;export_fpds2&amp;quot;: {&amp;quot;inputs&amp;quot;: {&amp;quot;fixpunkte&amp;quot;: [&amp;quot;12575280&amp;quot;, &amp;quot;12575100&amp;quot;], &amp;quot;in_bearbeitung&amp;quot;: false }}}}}' \
+http://localhost:8080/processes/export_fpds2_to_csv/execution
 JOBID=386f6c55-d718-4160-b4df-afc5ad5c7a73
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Get job status:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl http://localhost:8080/jobs/$JOBID
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Return result of a job:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;curl http://localhost:8080/jobs/$JOBID/results
-&lt;/code&gt;&lt;/pre&gt;
-
-      </description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>https://www.bbox.earth/docs/processes-server/reference/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://www.bbox.earth/docs/processes-server/reference/</guid>
-      <description>
-        
-        
-        &lt;h1&gt;Processes Server Reference&lt;/h1&gt;&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;dagster_backend&lt;/code&gt; &lt;a href=&#34;#dagsterbackend&#34; &gt;DagsterBackend&lt;/a&gt; (optional)&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2&gt;DagsterBackend&lt;span class=&#34;hx-absolute -hx-mt-20&#34; id=&#34;dagsterbackend&#34;&gt;&lt;/span&gt;
-    &lt;a href=&#34;#dagsterbackend&#34; class=&#34;subheading-anchor&#34; aria-label=&#34;Permalink for this section&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Dagster backend configuration&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;graphql_url&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: GraphQL URL (e.g. &lt;code&gt;http://localhost:3000/graphql&lt;/code&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;repository_name&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: Dagster repository (e.g. &lt;code&gt;fpds2_processing_repository&lt;/code&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;repository_location_name&lt;/code&gt; &lt;em&gt;String&lt;/em&gt;: Dagster repository location (e.g. &lt;code&gt;fpds2_processing.repos&lt;/code&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;request_timeout&lt;/code&gt; &lt;em&gt;u64&lt;/em&gt; (optional): Backend request timeout (ms) (Default: 10s)&lt;/li&gt;
-&lt;/ul&gt;
-
-      </description>
-    </item>
-    
-  </channel>
-</rss>
+&lt;/code>&lt;/pre>
+&lt;p>Get job status:&lt;/p>
+&lt;pre>&lt;code>curl http://localhost:8080/jobs/$JOBID
+&lt;/code>&lt;/pre>
+&lt;p>Return result of a job:&lt;/p>
+&lt;pre>&lt;code>curl http://localhost:8080/jobs/$JOBID/results
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/reference/</guid><description>
+&lt;h1>Processes Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>dagster_backend&lt;/code> &lt;a href="#dagsterbackend" >DagsterBackend&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>DagsterBackend&lt;span class="hx-absolute -hx-mt-20" id="dagsterbackend">&lt;/span>
+&lt;a href="#dagsterbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Dagster backend configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>graphql_url&lt;/code> &lt;em>String&lt;/em>: GraphQL URL (e.g. &lt;code>http://localhost:3000/graphql&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository (e.g. &lt;code>fpds2_processing_repository&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_location_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository location (e.g. &lt;code>fpds2_processing.repos&lt;/code>)&lt;/li>
+&lt;li>&lt;code>request_timeout&lt;/code> &lt;em>u64&lt;/em> (optional): Backend request timeout (ms) (Default: 10s)&lt;/li>
+&lt;/ul></description></item></channel></rss>
