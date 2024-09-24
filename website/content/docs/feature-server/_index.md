@@ -1,5 +1,6 @@
 ---
 weight: 6
+next: docs/feature-server/configuration
 ---
 
 # BBOX OGC API Features Service

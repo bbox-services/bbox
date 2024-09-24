@@ -1,5 +1,6 @@
 ---
 weight: 9
+next: docs/asset-server/configuration
 ---
 
 # BBOX Asset server

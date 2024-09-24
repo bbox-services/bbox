@@ -1,5 +1,6 @@
 ---
 weight: 11
+next: docs/routing-server/configuration
 ---
 
 # BBOX Routing Service (EXPERIMENTAL)

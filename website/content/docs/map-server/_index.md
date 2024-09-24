@@ -1,5 +1,6 @@
 ---
 weight: 7
+next: docs/map-server/configuration
 ---
 
 # BBOX map server

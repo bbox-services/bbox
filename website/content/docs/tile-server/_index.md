@@ -1,5 +1,6 @@
 ---
 weight: 8
+next: docs/tile-server/installation
 ---
 
 # BBOX tile server

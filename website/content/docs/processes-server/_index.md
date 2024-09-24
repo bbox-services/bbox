@@ -1,5 +1,6 @@
 ---
 weight: 10
+next: docs/processes-server/configuration
 ---
 
 # BBOX Processes Service
