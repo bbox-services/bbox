@@ -28,6 +28,7 @@ body {
 .nav-container .hx-font-extrabold {
     font-family: "League Gothic", sans-serif;
     font-size: 1.55em;
+    font-weight: 400;
 }
 
 /* Menu hover background */
@@ -53,17 +54,22 @@ nav .hx-bg-white {
 
 .content h1, h2, h3 {
     font-family: "League Gothic", sans-serif;
-    letter-spacing: normal;
 }
 
 .content h1 {
     font-size: 3.77em;
+    font-weight: 400;
+    letter-spacing: normal;
 }
 .content h2 {
     font-size: 2.11em;
+    font-weight: 400;
+    letter-spacing: normal;
 }
 .content h3 {
     font-size: 1.55em;
+    font-weight: 400;
+    letter-spacing: normal;
 }
 
 /* Table rows */
