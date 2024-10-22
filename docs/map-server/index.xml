@@ -99,4 +99,40 @@ curl -o /tmp/map.png 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;VERSI
 &lt;pre>&lt;code>curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetCapabilities'
 curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetFeature&amp;amp;VERSION=1.1.0&amp;amp;TYPENAME=country&amp;amp;SRSNAME=EPSG:3857&amp;amp;BBOX=1059483.34824404888786376,5959680.16110791172832251,1061700.73825845750980079,5962445.67000228632241488,EPSG:3857'
 curl -s --data @wfsadd.xml 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=Transaction'
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/reference/</guid><description/></item></channel></rss>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/reference/</guid><description>
+&lt;h1>Map Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>fcgi_client_pool_size&lt;/code> &lt;em>usize&lt;/em>&lt;/li>
+&lt;li>&lt;code>wait_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>create_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>recycle_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>qgis_backend&lt;/code> &lt;a href="#qgisbackend" >QgisBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>umn_backend&lt;/code> &lt;a href="#umnbackend" >UmnBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>mock_backend&lt;/code> &lt;a href="#mockbackend" >MockBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>search_projects&lt;/code> &lt;em>bool&lt;/em>&lt;/li>
+&lt;li>&lt;code>default_project&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>QgisBackend&lt;span class="hx-absolute -hx-mt-20" id="qgisbackend">&lt;/span>
+&lt;a href="#qgisbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>qgs&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>qgz&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix">&lt;/span>
+&lt;a href="#qgisbackendsuffix" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix-1">&lt;/span>
+&lt;a href="#qgisbackendsuffix-1" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>UmnBackend&lt;span class="hx-absolute -hx-mt-20" id="umnbackend">&lt;/span>
+&lt;a href="#umnbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>MockBackend&lt;span class="hx-absolute -hx-mt-20" id="mockbackend">&lt;/span>
+&lt;a href="#mockbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul></description></item></channel></rss>

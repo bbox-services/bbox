@@ -93,4 +93,22 @@ title="Copy code"
 &lt;pre>&lt;code>curl -s 'http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=8.53636,47.37726&amp;amp;to_pos=11.56096,48.14019'
 &lt;/code>&lt;/pre>
 &lt;h3>Valhalla endpoint&lt;span class="hx-absolute -hx-mt-20" id="valhalla-endpoint">&lt;/span>
-&lt;a href="#valhalla-endpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/reference/</guid><description/></item></channel></rss>
+&lt;a href="#valhalla-endpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/reference/</guid><description>
+&lt;h1>Routing Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>service[]&lt;/code> &lt;a href="#routing" >Routing&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Routing&lt;span class="hx-absolute -hx-mt-20" id="routing">&lt;/span>
+&lt;a href="#routing" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Routing service configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>profile&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>search_dist&lt;/code> &lt;em>f64&lt;/em> (optional): Node search distance&lt;/li>
+&lt;li>&lt;code>gpkg&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>postgis&lt;/code> &lt;a href="#dspostgis" >DsPostgis&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>table&lt;/code> &lt;em>String&lt;/em>: Edge table&lt;/li>
+&lt;li>&lt;code>node_table&lt;/code> &lt;em>String&lt;/em> (optional): Node/Vertices table&lt;/li>
+&lt;li>&lt;code>geom&lt;/code> &lt;em>String&lt;/em>: Geometry column&lt;/li>
+&lt;li>&lt;code>node_id&lt;/code> &lt;em>String&lt;/em> (optional): Node ID column in node table&lt;/li>
+&lt;li>&lt;code>cost&lt;/code> &lt;em>String&lt;/em> (optional): Cost column (default: geodesic line length)&lt;/li>
+&lt;li>&lt;code>node_src&lt;/code> &lt;em>String&lt;/em> (optional): Column with source node ID&lt;/li>
+&lt;li>&lt;code>node_dst&lt;/code> &lt;em>String&lt;/em> (optional): Column with destination (target) node ID&lt;/li>
+&lt;/ul></description></item></channel></rss>

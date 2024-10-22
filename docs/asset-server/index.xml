@@ -43,4 +43,24 @@ title="Copy code"
 &lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
 &lt;/button>
 &lt;/div>
-&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/asset-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/asset-server/reference/</guid><description/></item></channel></rss>
+&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/asset-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/asset-server/reference/</guid><description>
+&lt;h1>Asset Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>static[]&lt;/code> &lt;a href="#staticdir" >StaticDir&lt;/a>&lt;/li>
+&lt;li>&lt;code>template[]&lt;/code> &lt;a href="#templatedir" >TemplateDir&lt;/a>&lt;/li>
+&lt;li>&lt;code>repo[]&lt;/code> &lt;a href="#qgispluginrepo" >QgisPluginRepo&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>StaticDir&lt;span class="hx-absolute -hx-mt-20" id="staticdir">&lt;/span>
+&lt;a href="#staticdir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: file directory&lt;/li>
+&lt;/ul>
+&lt;h2>TemplateDir&lt;span class="hx-absolute -hx-mt-20" id="templatedir">&lt;/span>
+&lt;a href="#templatedir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: template file directory&lt;/li>
+&lt;/ul>
+&lt;h2>QgisPluginRepo&lt;span class="hx-absolute -hx-mt-20" id="qgispluginrepo">&lt;/span>
+&lt;a href="#qgispluginrepo" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: template file directory&lt;/li>
+&lt;/ul></description></item></channel></rss>

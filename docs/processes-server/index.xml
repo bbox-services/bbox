@@ -61,4 +61,15 @@ JOBID=386f6c55-d718-4160-b4df-afc5ad5c7a73
 &lt;/code>&lt;/pre>
 &lt;p>Return result of a job:&lt;/p>
 &lt;pre>&lt;code>curl http://localhost:8080/jobs/$JOBID/results
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/reference/</guid><description/></item></channel></rss>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/reference/</guid><description>
+&lt;h1>Processes Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>dagster_backend&lt;/code> &lt;a href="#dagsterbackend" >DagsterBackend&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>DagsterBackend&lt;span class="hx-absolute -hx-mt-20" id="dagsterbackend">&lt;/span>
+&lt;a href="#dagsterbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Dagster backend configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>graphql_url&lt;/code> &lt;em>String&lt;/em>: GraphQL URL (e.g. &lt;code>http://localhost:3000/graphql&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository (e.g. &lt;code>fpds2_processing_repository&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_location_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository location (e.g. &lt;code>fpds2_processing.repos&lt;/code>)&lt;/li>
+&lt;li>&lt;code>request_timeout&lt;/code> &lt;em>u64&lt;/em> (optional): Backend request timeout (ms) (Default: 10s)&lt;/li>
+&lt;/ul></description></item></channel></rss>

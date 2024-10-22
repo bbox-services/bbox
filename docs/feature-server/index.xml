@@ -103,4 +103,48 @@ title="Copy code"
 &lt;p>Feature requests:&lt;/p>
 &lt;pre>&lt;code>curl -s http://127.0.0.1:8080/collections/populated_places/items | jq .
 curl -s http://127.0.0.1:8080/collections/populated_places_names/items/2 | jq .
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/feature-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/reference/</guid><description/></item></channel></rss>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/feature-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/reference/</guid><description>
+&lt;h1>Feature Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>datasource[]&lt;/code> &lt;a href="#nameddatasource" >NamedDatasource&lt;/a>&lt;/li>
+&lt;li>&lt;code>collections&lt;/code> &lt;a href="#collections" >Collections&lt;/a>&lt;/li>
+&lt;li>&lt;code>collection[]&lt;/code> &lt;a href="#configuredcollection" >ConfiguredCollection&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Collections&lt;span class="hx-absolute -hx-mt-20" id="collections">&lt;/span>
+&lt;a href="#collections" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Collections with auto-detection&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>directory[]&lt;/code> &lt;a href="#dsfiledir" >DsFiledir&lt;/a>&lt;/li>
+&lt;li>&lt;code>postgis[]&lt;/code> &lt;a href="#dspostgis" >DsPostgis&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3>DsFiledir&lt;span class="hx-absolute -hx-mt-20" id="dsfiledir">&lt;/span>
+&lt;a href="#dsfiledir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>ConfiguredCollection&lt;span class="hx-absolute -hx-mt-20" id="configuredcollection">&lt;/span>
+&lt;a href="#configuredcollection" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>name&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>title&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>description&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;a href="#collectionsource" >CollectionSource&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3>CollectionSource&lt;span class="hx-absolute -hx-mt-20" id="collectionsource">&lt;/span>
+&lt;a href="#collectionsource" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Collections with configuration&lt;/p>
+&lt;h4>postgis&lt;span class="hx-absolute -hx-mt-20" id="postgis">&lt;/span>
+&lt;a href="#postgis" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>datasource&lt;/code> &lt;em>String&lt;/em> (optional): Name of datasource.postgis config (Default: first with matching type)&lt;/li>
+&lt;li>&lt;code>table_schema&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>table_name&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>sql&lt;/code> &lt;em>String&lt;/em> (optional): Custom SQL query&lt;/li>
+&lt;li>&lt;code>fid_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>geometry_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>temporal_field&lt;/code> &lt;em>String&lt;/em> (optional): Field used for temporal filter expressions&lt;/li>
+&lt;li>&lt;code>temporal_end_field&lt;/code> &lt;em>String&lt;/em> (optional): Field used for temporal end filter expressions&lt;/li>
+&lt;li>&lt;code>queryable_fields[]&lt;/code> &lt;em>String&lt;/em> (optional): Fields which can be used in filter expressions&lt;/li>
+&lt;/ul>
+&lt;h4>gpkg&lt;span class="hx-absolute -hx-mt-20" id="gpkg">&lt;/span>
+&lt;a href="#gpkg" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>datasource&lt;/code> &lt;em>String&lt;/em> (optional): Name of datasource.gpkg config (Default: first with matching type)&lt;/li>
+&lt;li>&lt;code>table_name&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>sql&lt;/code> &lt;em>String&lt;/em> (optional): Custom SQL query&lt;/li>
+&lt;li>&lt;code>fid_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>geometry_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;/ul></description></item></channel></rss>

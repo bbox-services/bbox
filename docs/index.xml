@@ -855,7 +855,27 @@ title="Copy code"
 &lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
 &lt;/button>
 &lt;/div>
-&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/asset-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/asset-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/core/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/core/configuration/</guid><description>
+&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/asset-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/asset-server/reference/</guid><description>
+&lt;h1>Asset Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>static[]&lt;/code> &lt;a href="#staticdir" >StaticDir&lt;/a>&lt;/li>
+&lt;li>&lt;code>template[]&lt;/code> &lt;a href="#templatedir" >TemplateDir&lt;/a>&lt;/li>
+&lt;li>&lt;code>repo[]&lt;/code> &lt;a href="#qgispluginrepo" >QgisPluginRepo&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>StaticDir&lt;span class="hx-absolute -hx-mt-20" id="staticdir">&lt;/span>
+&lt;a href="#staticdir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: file directory&lt;/li>
+&lt;/ul>
+&lt;h2>TemplateDir&lt;span class="hx-absolute -hx-mt-20" id="templatedir">&lt;/span>
+&lt;a href="#templatedir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: template file directory&lt;/li>
+&lt;/ul>
+&lt;h2>QgisPluginRepo&lt;span class="hx-absolute -hx-mt-20" id="qgispluginrepo">&lt;/span>
+&lt;a href="#qgispluginrepo" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>: endpoint path for publishing&lt;/li>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>: template file directory&lt;/li>
+&lt;/ul></description></item><item><title/><link>https://www.bbox.earth/docs/core/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/core/configuration/</guid><description>
 &lt;h1>Core Configuration&lt;/h1>&lt;p>Configuration is read from &lt;code>bbox.toml&lt;/code> and environment variables.&lt;/p>
 &lt;h2>Webserver&lt;span class="hx-absolute -hx-mt-20" id="webserver">&lt;/span>
 &lt;a href="#webserver" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
@@ -873,7 +893,71 @@ title="Copy code"
 &lt;div class="success-icon hx-hidden group-[.copied]/copybtn:hx-block hx-pointer-events-none hx-h-4 hx-w-4">&lt;/div>
 &lt;/button>
 &lt;/div>
-&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/core/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/core/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/feature-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/configuration/</guid><description>
+&lt;/div></description></item><item><title/><link>https://www.bbox.earth/docs/core/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/core/reference/</guid><description>
+&lt;h1>Core Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>webserver&lt;/code> &lt;a href="#webserver" >Webserver&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>metrics&lt;/code> &lt;a href="#metrics" >Metrics&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>datasource[]&lt;/code> &lt;a href="#nameddatasource" >NamedDatasource&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>auth&lt;/code> &lt;a href="#auth" >Auth&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>Webserver&lt;span class="hx-absolute -hx-mt-20" id="webserver">&lt;/span>
+&lt;a href="#webserver" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>server_addr&lt;/code> &lt;em>String&lt;/em>: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)&lt;/li>
+&lt;li>&lt;code>loglevel&lt;/code> &lt;em>Loglevel&lt;/em> (optional): Log level (Default: info)&lt;/li>
+&lt;li>&lt;code>tls_cert&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>tls_key&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>cors&lt;/code> &lt;a href="#cors" >Cors&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>Loglevel&lt;span class="hx-absolute -hx-mt-20" id="loglevel">&lt;/span>
+&lt;a href="#loglevel" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;h4>Error&lt;span class="hx-absolute -hx-mt-20" id="error">&lt;/span>
+&lt;a href="#error" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>Warn&lt;span class="hx-absolute -hx-mt-20" id="warn">&lt;/span>
+&lt;a href="#warn" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>Info&lt;span class="hx-absolute -hx-mt-20" id="info">&lt;/span>
+&lt;a href="#info" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>Debug&lt;span class="hx-absolute -hx-mt-20" id="debug">&lt;/span>
+&lt;a href="#debug" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>Trace&lt;span class="hx-absolute -hx-mt-20" id="trace">&lt;/span>
+&lt;a href="#trace" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h3>Cors&lt;span class="hx-absolute -hx-mt-20" id="cors">&lt;/span>
+&lt;a href="#cors" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>allow_all_origins&lt;/code> &lt;em>bool&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>Metrics&lt;span class="hx-absolute -hx-mt-20" id="metrics">&lt;/span>
+&lt;a href="#metrics" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>prometheus&lt;/code> &lt;a href="#prometheus" >Prometheus&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>jaeger&lt;/code> &lt;a href="#jaeger" >Jaeger&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>Prometheus&lt;span class="hx-absolute -hx-mt-20" id="prometheus">&lt;/span>
+&lt;a href="#prometheus" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h3>Jaeger&lt;span class="hx-absolute -hx-mt-20" id="jaeger">&lt;/span>
+&lt;a href="#jaeger" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>agent_endpoint&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>NamedDatasource&lt;span class="hx-absolute -hx-mt-20" id="nameddatasource">&lt;/span>
+&lt;a href="#nameddatasource" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>name&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;a href="#datasource" >Datasource&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3>Datasource&lt;span class="hx-absolute -hx-mt-20" id="datasource">&lt;/span>
+&lt;a href="#datasource" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;h4>postgis&lt;span class="hx-absolute -hx-mt-20" id="postgis">&lt;/span>
+&lt;a href="#postgis" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>url&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>gpkg&lt;span class="hx-absolute -hx-mt-20" id="gpkg">&lt;/span>
+&lt;a href="#gpkg" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>WmsFcgi&lt;span class="hx-absolute -hx-mt-20" id="wmsfcgi">&lt;/span>
+&lt;a href="#wmsfcgi" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>wms_proxy&lt;span class="hx-absolute -hx-mt-20" id="wms_proxy">&lt;/span>
+&lt;a href="#wms_proxy" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>baseurl&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>format&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>mbtiles&lt;span class="hx-absolute -hx-mt-20" id="mbtiles">&lt;/span>
+&lt;a href="#mbtiles" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h2>Auth&lt;span class="hx-absolute -hx-mt-20" id="auth">&lt;/span>
+&lt;a href="#auth" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>oidc&lt;/code> &lt;a href="#oidcauth" >OidcAuth&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>OidcAuth&lt;span class="hx-absolute -hx-mt-20" id="oidcauth">&lt;/span>
+&lt;a href="#oidcauth" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3></description></item><item><title/><link>https://www.bbox.earth/docs/feature-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/configuration/</guid><description>
 &lt;h1>Feature server configuration&lt;/h1>&lt;h2>Datasources&lt;span class="hx-absolute -hx-mt-20" id="datasources">&lt;/span>
 &lt;a href="#datasources" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
 &lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[[&lt;/span>&lt;span class="nx">datasource&lt;/span>&lt;span class="p">]]&lt;/span>
@@ -978,7 +1062,51 @@ title="Copy code"
 &lt;p>Feature requests:&lt;/p>
 &lt;pre>&lt;code>curl -s http://127.0.0.1:8080/collections/populated_places/items | jq .
 curl -s http://127.0.0.1:8080/collections/populated_places_names/items/2 | jq .
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/feature-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/map-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/configuration/</guid><description>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/feature-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/feature-server/reference/</guid><description>
+&lt;h1>Feature Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>datasource[]&lt;/code> &lt;a href="#nameddatasource" >NamedDatasource&lt;/a>&lt;/li>
+&lt;li>&lt;code>collections&lt;/code> &lt;a href="#collections" >Collections&lt;/a>&lt;/li>
+&lt;li>&lt;code>collection[]&lt;/code> &lt;a href="#configuredcollection" >ConfiguredCollection&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Collections&lt;span class="hx-absolute -hx-mt-20" id="collections">&lt;/span>
+&lt;a href="#collections" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Collections with auto-detection&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>directory[]&lt;/code> &lt;a href="#dsfiledir" >DsFiledir&lt;/a>&lt;/li>
+&lt;li>&lt;code>postgis[]&lt;/code> &lt;a href="#dspostgis" >DsPostgis&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3>DsFiledir&lt;span class="hx-absolute -hx-mt-20" id="dsfiledir">&lt;/span>
+&lt;a href="#dsfiledir" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>dir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>ConfiguredCollection&lt;span class="hx-absolute -hx-mt-20" id="configuredcollection">&lt;/span>
+&lt;a href="#configuredcollection" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>name&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>title&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>description&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;a href="#collectionsource" >CollectionSource&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3>CollectionSource&lt;span class="hx-absolute -hx-mt-20" id="collectionsource">&lt;/span>
+&lt;a href="#collectionsource" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Collections with configuration&lt;/p>
+&lt;h4>postgis&lt;span class="hx-absolute -hx-mt-20" id="postgis">&lt;/span>
+&lt;a href="#postgis" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>datasource&lt;/code> &lt;em>String&lt;/em> (optional): Name of datasource.postgis config (Default: first with matching type)&lt;/li>
+&lt;li>&lt;code>table_schema&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>table_name&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>sql&lt;/code> &lt;em>String&lt;/em> (optional): Custom SQL query&lt;/li>
+&lt;li>&lt;code>fid_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>geometry_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>temporal_field&lt;/code> &lt;em>String&lt;/em> (optional): Field used for temporal filter expressions&lt;/li>
+&lt;li>&lt;code>temporal_end_field&lt;/code> &lt;em>String&lt;/em> (optional): Field used for temporal end filter expressions&lt;/li>
+&lt;li>&lt;code>queryable_fields[]&lt;/code> &lt;em>String&lt;/em> (optional): Fields which can be used in filter expressions&lt;/li>
+&lt;/ul>
+&lt;h4>gpkg&lt;span class="hx-absolute -hx-mt-20" id="gpkg">&lt;/span>
+&lt;a href="#gpkg" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>datasource&lt;/code> &lt;em>String&lt;/em> (optional): Name of datasource.gpkg config (Default: first with matching type)&lt;/li>
+&lt;li>&lt;code>table_name&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>sql&lt;/code> &lt;em>String&lt;/em> (optional): Custom SQL query&lt;/li>
+&lt;li>&lt;code>fid_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>geometry_field&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;/ul></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/configuration/</guid><description>
 &lt;h1>Map Server Configuration&lt;/h1>&lt;h2>Map server settings&lt;span class="hx-absolute -hx-mt-20" id="map-server-settings">&lt;/span>
 &lt;a href="#map-server-settings" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
 &lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">mapserver&lt;/span>&lt;span class="p">]&lt;/span>
@@ -1079,7 +1207,43 @@ curl -o /tmp/map.png 'http://127.0.0.1:8080/wms/map/ne?SERVICE=WMS&amp;amp;VERSI
 &lt;pre>&lt;code>curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetCapabilities'
 curl -s 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=GetFeature&amp;amp;VERSION=1.1.0&amp;amp;TYPENAME=country&amp;amp;SRSNAME=EPSG:3857&amp;amp;BBOX=1059483.34824404888786376,5959680.16110791172832251,1061700.73825845750980079,5962445.67000228632241488,EPSG:3857'
 curl -s --data @wfsadd.xml 'http://127.0.0.1:8080/qgis/ne?SERVICE=WFS&amp;amp;REQUEST=Transaction'
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/processes-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/configuration/</guid><description>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/map-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/map-server/reference/</guid><description>
+&lt;h1>Map Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>fcgi_client_pool_size&lt;/code> &lt;em>usize&lt;/em>&lt;/li>
+&lt;li>&lt;code>wait_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>create_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>recycle_timeout&lt;/code> &lt;em>u64&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>qgis_backend&lt;/code> &lt;a href="#qgisbackend" >QgisBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>umn_backend&lt;/code> &lt;a href="#umnbackend" >UmnBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>mock_backend&lt;/code> &lt;a href="#mockbackend" >MockBackend&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>search_projects&lt;/code> &lt;em>bool&lt;/em>&lt;/li>
+&lt;li>&lt;code>default_project&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>QgisBackend&lt;span class="hx-absolute -hx-mt-20" id="qgisbackend">&lt;/span>
+&lt;a href="#qgisbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>qgs&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>qgz&lt;/code> &lt;a href="#qgisbackendsuffix" >QgisBackendSuffix&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix">&lt;/span>
+&lt;a href="#qgisbackendsuffix" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h3>QgisBackendSuffix&lt;span class="hx-absolute -hx-mt-20" id="qgisbackendsuffix-1">&lt;/span>
+&lt;a href="#qgisbackendsuffix-1" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>UmnBackend&lt;span class="hx-absolute -hx-mt-20" id="umnbackend">&lt;/span>
+&lt;a href="#umnbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>exe_location&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>project_basedir&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h2>MockBackend&lt;span class="hx-absolute -hx-mt-20" id="mockbackend">&lt;/span>
+&lt;a href="#mockbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/configuration/</guid><description>
 &lt;h1>Processes Service configuration&lt;/h1>&lt;h2>Dagster Backend&lt;span class="hx-absolute -hx-mt-20" id="dagster-backend">&lt;/span>
 &lt;a href="#dagster-backend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
 &lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[&lt;/span>&lt;span class="nx">processes&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">dagster_backend&lt;/span>&lt;span class="p">]&lt;/span>
@@ -1142,7 +1306,18 @@ JOBID=386f6c55-d718-4160-b4df-afc5ad5c7a73
 &lt;/code>&lt;/pre>
 &lt;p>Return result of a job:&lt;/p>
 &lt;pre>&lt;code>curl http://localhost:8080/jobs/$JOBID/results
-&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/routing-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/configuration/</guid><description>
+&lt;/code>&lt;/pre></description></item><item><title/><link>https://www.bbox.earth/docs/processes-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/processes-server/reference/</guid><description>
+&lt;h1>Processes Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>dagster_backend&lt;/code> &lt;a href="#dagsterbackend" >DagsterBackend&lt;/a> (optional)&lt;/li>
+&lt;/ul>
+&lt;h2>DagsterBackend&lt;span class="hx-absolute -hx-mt-20" id="dagsterbackend">&lt;/span>
+&lt;a href="#dagsterbackend" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Dagster backend configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>graphql_url&lt;/code> &lt;em>String&lt;/em>: GraphQL URL (e.g. &lt;code>http://localhost:3000/graphql&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository (e.g. &lt;code>fpds2_processing_repository&lt;/code>)&lt;/li>
+&lt;li>&lt;code>repository_location_name&lt;/code> &lt;em>String&lt;/em>: Dagster repository location (e.g. &lt;code>fpds2_processing.repos&lt;/code>)&lt;/li>
+&lt;li>&lt;code>request_timeout&lt;/code> &lt;em>u64&lt;/em> (optional): Backend request timeout (ms) (Default: 10s)&lt;/li>
+&lt;/ul></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/configuration/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/configuration/</guid><description>
 &lt;h1>Routing Service Configuration&lt;/h1>&lt;h2>GeoPackage line geometry table&lt;span class="hx-absolute -hx-mt-20" id="geopackage-line-geometry-table">&lt;/span>
 &lt;a href="#geopackage-line-geometry-table" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
 &lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-toml" data-lang="toml">&lt;span class="line">&lt;span class="cl">&lt;span class="p">[[&lt;/span>&lt;span class="nx">routing&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">service&lt;/span>&lt;span class="p">]]&lt;/span>
@@ -1237,7 +1412,262 @@ title="Copy code"
 &lt;pre>&lt;code>curl -s 'http://localhost:8080/routes/basic?profile=railway&amp;amp;from_pos=8.53636,47.37726&amp;amp;to_pos=11.56096,48.14019'
 &lt;/code>&lt;/pre>
 &lt;h3>Valhalla endpoint&lt;span class="hx-absolute -hx-mt-20" id="valhalla-endpoint">&lt;/span>
-&lt;a href="#valhalla-endpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/tile-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/reference/</guid><description/></item><item><title/><link>https://www.bbox.earth/docs/tile-server/styling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/styling/</guid><description>
+&lt;a href="#valhalla-endpoint" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Base URL example for Valhalla QGIS Plugin: http://localhost:8080/routes/valhalla&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/routing-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/routing-server/reference/</guid><description>
+&lt;h1>Routing Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>service[]&lt;/code> &lt;a href="#routing" >Routing&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Routing&lt;span class="hx-absolute -hx-mt-20" id="routing">&lt;/span>
+&lt;a href="#routing" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Routing service configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>profile&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>search_dist&lt;/code> &lt;em>f64&lt;/em> (optional): Node search distance&lt;/li>
+&lt;li>&lt;code>gpkg&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>postgis&lt;/code> &lt;a href="#dspostgis" >DsPostgis&lt;/a> (optional)&lt;/li>
+&lt;li>&lt;code>table&lt;/code> &lt;em>String&lt;/em>: Edge table&lt;/li>
+&lt;li>&lt;code>node_table&lt;/code> &lt;em>String&lt;/em> (optional): Node/Vertices table&lt;/li>
+&lt;li>&lt;code>geom&lt;/code> &lt;em>String&lt;/em>: Geometry column&lt;/li>
+&lt;li>&lt;code>node_id&lt;/code> &lt;em>String&lt;/em> (optional): Node ID column in node table&lt;/li>
+&lt;li>&lt;code>cost&lt;/code> &lt;em>String&lt;/em> (optional): Cost column (default: geodesic line length)&lt;/li>
+&lt;li>&lt;code>node_src&lt;/code> &lt;em>String&lt;/em> (optional): Column with source node ID&lt;/li>
+&lt;li>&lt;code>node_dst&lt;/code> &lt;em>String&lt;/em> (optional): Column with destination (target) node ID&lt;/li>
+&lt;/ul></description></item><item><title/><link>https://www.bbox.earth/docs/tile-server/reference/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/reference/</guid><description>
+&lt;h1>Tile Server Reference&lt;/h1>&lt;ul>
+&lt;li>&lt;code>grid[]&lt;/code> &lt;a href="#grid" >Grid&lt;/a>: Custom grid definitions&lt;/li>
+&lt;li>&lt;code>datasource[]&lt;/code> &lt;a href="#nameddatasource" >NamedDatasource&lt;/a>&lt;/li>
+&lt;li>&lt;code>tileset[]&lt;/code> &lt;a href="#tileset" >TileSet&lt;/a>: Tileset configurations&lt;/li>
+&lt;li>&lt;code>tilestore[]&lt;/code> &lt;a href="#tilecacheprovider" >TileCacheProvider&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2>Grid&lt;span class="hx-absolute -hx-mt-20" id="grid">&lt;/span>
+&lt;a href="#grid" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Custom grid definition&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>json&lt;/code> &lt;em>String&lt;/em>: Grid JSON file path&lt;/li>
+&lt;/ul>
+&lt;h2>TileSet&lt;span class="hx-absolute -hx-mt-20" id="tileset">&lt;/span>
+&lt;a href="#tileset" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>Tileset configuration&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>name&lt;/code> &lt;em>String&lt;/em>: Tileset name, visible part of endpoint&lt;/li>
+&lt;li>&lt;code>tms[]&lt;/code> &lt;a href="#tilesettms" >TilesetTms&lt;/a> (optional): Tile matrix set identifiers (Default: &lt;code>[&amp;quot;WebMercatorQuad&amp;quot;]&lt;/code>)&lt;/li>
+&lt;li>&lt;a href="#source" >Source&lt;/a>: Tile source&lt;/li>
+&lt;li>&lt;code>cache&lt;/code> &lt;em>String&lt;/em> (optional): Tile cache name (Default: no cache)&lt;/li>
+&lt;li>&lt;code>cache_format&lt;/code> &lt;em>String&lt;/em> (optional): Tile format in store. Defaults to &lt;code>png&lt;/code> for raster and &lt;code>pbf&lt;/code> for vector tiles&lt;/li>
+&lt;li>&lt;code>cache_limits&lt;/code> &lt;a href="#cachelimit" >CacheLimit&lt;/a> (optional): Optional limits of zoom levels which should be cached. Tiles in other zoom levels are served from live data.&lt;/li>
+&lt;li>&lt;code>cache_control[]&lt;/code> &lt;a href="#cachecontrol" >CacheControl&lt;/a> (optional): HTTP cache control headers&lt;/li>
+&lt;/ul>
+&lt;h3>TilesetTms&lt;span class="hx-absolute -hx-mt-20" id="tilesettms">&lt;/span>
+&lt;a href="#tilesettms" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Available tile grid with optional zoom levels&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>id&lt;/code> &lt;em>String&lt;/em>: Tile matrix set identifier&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>minzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Minimum zoom level for which tiles are available (Default: 0).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>maxzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Maximum zoom level for which tiles are available. Defaults to grid maxzoom (24 for &lt;code>WebMercatorQuad&lt;/code>).&lt;/p>
+&lt;p>Viewers should use data from tiles at maxzoom when displaying the map at higher zoom levels.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h3>Source&lt;span class="hx-absolute -hx-mt-20" id="source">&lt;/span>
+&lt;a href="#source" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Tile sources&lt;/p>
+&lt;h4>wms_proxy&lt;span class="hx-absolute -hx-mt-20" id="wms_proxy">&lt;/span>
+&lt;a href="#wms_proxy" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Raster tiles from external WMS&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>source&lt;/code> &lt;em>String&lt;/em>: Name of &lt;code>wms_proxy&lt;/code> datasource&lt;/li>
+&lt;li>&lt;code>layers&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>map_service&lt;span class="hx-absolute -hx-mt-20" id="map_service">&lt;/span>
+&lt;a href="#map_service" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Raster tiles from map service&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>project&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>suffix&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>layers&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;li>&lt;code>params&lt;/code> &lt;em>String&lt;/em> (optional): Additional WMS params like transparent=true&lt;/li>
+&lt;li>&lt;code>tile_size&lt;/code> &lt;em>u16&lt;/em> (optional): Width and height of tile. Defaults to grid tile size (usually 256x256)&lt;/li>
+&lt;/ul>
+&lt;h4>postgis&lt;span class="hx-absolute -hx-mt-20" id="postgis">&lt;/span>
+&lt;a href="#postgis" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>PostGIS datasource&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>datasource&lt;/code> &lt;em>String&lt;/em> (optional): Name of &lt;code>postgis&lt;/code> datasource (Default: first with matching type)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>extent&lt;/code> &lt;a href="#extent" >Extent&lt;/a> (optional)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>center&lt;/code> &lt;em>Option&lt;/em> (optional): Longitude, latitude of map center (in WGS84).&lt;/p>
+&lt;p>Viewers can use this value to set the default location.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>start_zoom&lt;/code> &lt;em>u8&lt;/em> (optional): Start zoom level. Must be between minzoom and maxzoom.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>attribution&lt;/code> &lt;em>String&lt;/em> (optional): Acknowledgment of ownership, authorship or copyright.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>postgis2&lt;/code> &lt;em>bool&lt;/em> (optional): PostGIS 2 compatible query (without ST_AsMVT)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>diagnostics&lt;/code> &lt;a href="#tilediagnostics" >TileDiagnostics&lt;/a> (optional): Add diagnostics layer&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>layer[]&lt;/code> &lt;a href="#vectorlayer" >VectorLayer&lt;/a>: Layer definitions&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h4>mbtiles&lt;span class="hx-absolute -hx-mt-20" id="mbtiles">&lt;/span>
+&lt;a href="#mbtiles" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Tiles from MBTile archive&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>pmtiles&lt;span class="hx-absolute -hx-mt-20" id="pmtiles">&lt;/span>
+&lt;a href="#pmtiles" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Tiles from PMTile archive&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h3>CacheLimit&lt;span class="hx-absolute -hx-mt-20" id="cachelimit">&lt;/span>
+&lt;a href="#cachelimit" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Tile cache limits&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>minzoom&lt;/code> &lt;em>u8&lt;/em> (optional)&lt;/li>
+&lt;li>&lt;code>maxzoom&lt;/code> &lt;em>u8&lt;/em> (optional)&lt;/li>
+&lt;/ul>
+&lt;h3>CacheControl&lt;span class="hx-absolute -hx-mt-20" id="cachecontrol">&lt;/span>
+&lt;a href="#cachecontrol" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>HTTP cache control headers&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>max_age&lt;/code> &lt;em>u64&lt;/em>: &lt;code>max-age&lt;/code> value in seconds (&lt;a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#response_directives" target="_blank" rel="noopener">https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#response_directives&lt;/a>)&lt;/li>
+&lt;li>&lt;code>minzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Minimum zoom level (Default: 0).&lt;/li>
+&lt;li>&lt;code>maxzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Maximum zoom level.&lt;/li>
+&lt;/ul>
+&lt;h4>Extent&lt;span class="hx-absolute -hx-mt-20" id="extent">&lt;/span>
+&lt;a href="#extent" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>minx&lt;/code> &lt;em>f64&lt;/em>&lt;/li>
+&lt;li>&lt;code>miny&lt;/code> &lt;em>f64&lt;/em>&lt;/li>
+&lt;li>&lt;code>maxx&lt;/code> &lt;em>f64&lt;/em>&lt;/li>
+&lt;li>&lt;code>maxy&lt;/code> &lt;em>f64&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>TileDiagnostics&lt;span class="hx-absolute -hx-mt-20" id="tilediagnostics">&lt;/span>
+&lt;a href="#tilediagnostics" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>&lt;code>reference_size&lt;/code> &lt;em>u64&lt;/em> (optional): Maximal tile size (uncompressed)&lt;/li>
+&lt;/ul>
+&lt;h4>VectorLayer&lt;span class="hx-absolute -hx-mt-20" id="vectorlayer">&lt;/span>
+&lt;a href="#vectorlayer" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>PostGIS vector layer&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;code>name&lt;/code> &lt;em>String&lt;/em>: Layer name.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>geometry_field&lt;/code> &lt;em>String&lt;/em> (optional): Name of geometry field.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>geometry_type&lt;/code> &lt;em>String&lt;/em> (optional): Type of geometry in PostGIS database&lt;/p>
+&lt;p>&lt;code>POINT&lt;/code> | &lt;code>MULTIPOINT&lt;/code> | &lt;code>LINESTRING&lt;/code> | &lt;code>MULTILINESTRING&lt;/code> | &lt;code>POLYGON&lt;/code> | &lt;code>MULTIPOLYGON&lt;/code> | &lt;code>COMPOUNDCURVE&lt;/code> | &lt;code>CURVEPOLYGON&lt;/code>&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>srid&lt;/code> &lt;em>i32&lt;/em> (optional): Spatial reference system of source data (PostGIS SRID)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>no_transform&lt;/code> &lt;em>bool&lt;/em> (optional): Assume geometry is in grid SRS&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>fid_field&lt;/code> &lt;em>String&lt;/em> (optional): Name of feature ID field&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>table_name&lt;/code> &lt;em>String&lt;/em> (optional): Select all fields from table (either table or &lt;code>query&lt;/code> is required)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>query[]&lt;/code> &lt;a href="#vectorlayerquery" >VectorLayerQuery&lt;/a> (optional): Custom queries&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>minzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Minimal zoom level for which tiles are available.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>maxzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Maximum zoom level for which tiles are available.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>query_limit&lt;/code> &lt;em>u32&lt;/em> (optional): Maximal number of features to read for a single tile (Default: unlimited).&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>tile_size&lt;/code> &lt;em>u32&lt;/em> (optional): Width and height of the tile (Default: 4096. Grid default size is 256)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>buffer_size&lt;/code> &lt;em>u32&lt;/em> (optional): Tile buffer size in pixels (None: no clipping)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>simplify&lt;/code> &lt;em>bool&lt;/em> (optional): Simplify geometry (lines and polygons). (Default: false)&lt;/p>
+&lt;p>Applied to PostGIS sources only.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>tolerance&lt;/code> &lt;em>String&lt;/em> (optional): Simplification tolerance (defaults to &lt;code>!pixel_width!/2&lt;/code>)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>make_valid&lt;/code> &lt;em>bool&lt;/em> (optional): Fix invalid geometries after simplification (Default: false)&lt;/p>
+&lt;p>Remark: Clipping step does also fix invalid geometries.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>shift_longitude&lt;/code> &lt;em>bool&lt;/em> (optional): Apply ST_Shift_Longitude to (transformed) bbox. (Default: false)&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h4>VectorLayerQuery&lt;span class="hx-absolute -hx-mt-20" id="vectorlayerquery">&lt;/span>
+&lt;a href="#vectorlayerquery" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;ul>
+&lt;li>
+&lt;p>&lt;code>minzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Minimal zoom level for using this query.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>maxzoom&lt;/code> &lt;em>u8&lt;/em> (optional): Maximal zoom level for using this query.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>simplify&lt;/code> &lt;em>bool&lt;/em> (optional): Simplify geometry (override layer default setting)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>tolerance&lt;/code> &lt;em>String&lt;/em> (optional): Simplification tolerance (override layer default setting)&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>sql&lt;/code> &lt;em>String&lt;/em> (optional): User defined SQL query.&lt;/p>
+&lt;p>The following variables are replaced at runtime:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>!bbox!&lt;/code>: Bounding box of tile&lt;/li>
+&lt;li>&lt;code>!zoom!&lt;/code>: Zoom level of tile request&lt;/li>
+&lt;li>&lt;code>!x!&lt;/code>, &lt;code>!y!&lt;/code>: x, y of tile request (disables geometry filter)&lt;/li>
+&lt;li>&lt;code>!scale_denominator!&lt;/code>: Map scale of tile request&lt;/li>
+&lt;li>&lt;code>!pixel_width!&lt;/code>: Width of pixel in grid units&lt;/li>
+&lt;li>&lt;code>!&amp;lt;fieldname&amp;gt;!&lt;/code>: Custom field query variable&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h2>TileCacheProvider&lt;span class="hx-absolute -hx-mt-20" id="tilecacheprovider">&lt;/span>
+&lt;a href="#tilecacheprovider" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
+&lt;li>&lt;code>name&lt;/code> &lt;em>String&lt;/em>: Name of tile cache&lt;/li>
+&lt;li>&lt;code>compression&lt;/code> &lt;a href="#storecompression" >StoreCompression&lt;/a> (optional): Tile compression method. Default is store type dependent.&lt;/li>
+&lt;li>&lt;a href="#tilestore" >TileStore&lt;/a>: Tile store&lt;/li>
+&lt;/ul>
+&lt;h3>StoreCompression&lt;span class="hx-absolute -hx-mt-20" id="storecompression">&lt;/span>
+&lt;a href="#storecompression" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Tile data compression&lt;/p>
+&lt;h4>None&lt;span class="hx-absolute -hx-mt-20" id="none">&lt;/span>
+&lt;a href="#none" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>No compression&lt;/p>
+&lt;h4>Gzip&lt;span class="hx-absolute -hx-mt-20" id="gzip">&lt;/span>
+&lt;a href="#gzip" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Gzip compression. Default for MBTiles and PMTiles.&lt;/p>
+&lt;h3>TileStore&lt;span class="hx-absolute -hx-mt-20" id="tilestore">&lt;/span>
+&lt;a href="#tilestore" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;p>Tile stores&lt;/p>
+&lt;h4>files&lt;span class="hx-absolute -hx-mt-20" id="files">&lt;/span>
+&lt;a href="#files" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>File system tiles store&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>base_dir&lt;/code> &lt;em>Path&lt;/em>: Base directory, tileset name will be appended&lt;/li>
+&lt;/ul>
+&lt;h4>s3&lt;span class="hx-absolute -hx-mt-20" id="s3">&lt;/span>
+&lt;a href="#s3" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>S3 tile store&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>String&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>mbtiles&lt;span class="hx-absolute -hx-mt-20" id="mbtiles-1">&lt;/span>
+&lt;a href="#mbtiles-1" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>MBTile archive&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>pmtiles&lt;span class="hx-absolute -hx-mt-20" id="pmtiles-1">&lt;/span>
+&lt;a href="#pmtiles-1" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>PMTile archive&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
+&lt;/ul>
+&lt;h4>nostore&lt;span class="hx-absolute -hx-mt-20" id="nostore">&lt;/span>
+&lt;a href="#nostore" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Disable tile cache&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/tile-server/styling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/styling/</guid><description>
 &lt;h1>Vector Tile styling&lt;/h1>&lt;h3>Using Maputnik for MVT styling&lt;span class="hx-absolute -hx-mt-20" id="using-maputnik-for-mvt-styling">&lt;/span>
 &lt;a href="#using-maputnik-for-mvt-styling" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
 &lt;li>Download latest public.zip from &lt;a href="https://github.com/maputnik/editor/releases" target="_blank" rel="noopener">https://github.com/maputnik/editor/releases&lt;/a>&lt;/li>
