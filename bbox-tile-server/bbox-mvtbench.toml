@@ -1,37 +1,20 @@
+[webserver]
+loglevel = "Warn"
+
 [[datasource]]
-name = "pg"   
+name = "pg"
 [datasource.postgis]
 #url = "postgresql://mvtbench:mvtbench@mvtbenchdb/mvtbench"
 url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 
-[[assets.static]]
-dir = "./assets"
-path = "/assets"
-
-[[tilestore]]
-name = "tilecache"    
-#compression = "Gzip"
-[tilestore.files]
-#base_dir = "../tiles"
-base_dir = "/tmp/mvtbench"
-
-[[tilestore]]
-name = "mbtilecache"
-[tilestore.mbtiles]
-path = "/tmp/tilecache.mbtiles"
-
-[[tilestore]]
-name = "pmtilecache"
-[tilestore.pmtiles]
-path = "/tmp/tilecache.pmtiles"
-
 [[tileset]]
 name = "ne_countries"
-tms = "WebMercatorQuad"
-cache = "tilecache"
-[tileset.postgis]
+# No tile cache for HTTP tile server testing. Enabled for seeding tests via CLI options.
+[[tileset.tms]]
+id = "WebMercatorQuad"
 minzoom = 0
 maxzoom = 6
+[tileset.postgis]
 attribution = "Natural Earth v4"
 postgis2 = false
 [tileset.postgis.extent]
@@ -40,8 +23,8 @@ miny = -83.05457
 maxx = 179.99366
 maxy = 83.23559
 
-[tileset.postgis.diagnostics]
-reference_size = 800_000
+#[tileset.postgis.diagnostics]
+#reference_size = 800_000
 
 [[tileset.postgis.layer]]
 name = "country"
