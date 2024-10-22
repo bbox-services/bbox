@@ -2,7 +2,7 @@ name: Documentation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 permissions:
@@ -22,7 +22,9 @@ jobs:
         with: { tool: just }
 
       - name: Install nightly toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-09-23
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -35,7 +37,7 @@ jobs:
       - name: Install Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: '0.111.3'
+          hugo-version: "0.111.3"
           # extended: true
 
       - name: Generate reference documentation
