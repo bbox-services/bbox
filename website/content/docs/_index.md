@@ -2,9 +2,9 @@
 next: docs/installation
 ---
 
-# BBOX Server
+# BBOX Server Documentation
 
-## Documentation
+## Core
 
 * [Installation](installation)
 * [Configuration](core/configuration)
