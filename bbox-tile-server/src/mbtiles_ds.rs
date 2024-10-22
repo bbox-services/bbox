@@ -1,10 +1,8 @@
 use crate::config::MbtilesStoreCfg;
-use martin_mbtiles::{
-    create_flat_tables, create_metadata_table, MbtError, MbtResult, MbtType, Mbtiles, Metadata,
-};
+use martin_mbtiles::{init_mbtiles_schema, MbtError, MbtResult, MbtType, Mbtiles, Metadata};
 use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat, TileInfo};
 use serde_json::json;
-use sqlx::{Connection, Pool, Row, Sqlite, SqlitePool};
+use sqlx::{sqlite::SqliteConnectOptions, Connection, Pool, Row, Sqlite, SqlitePool};
 use std::path::Path;
 use thiserror::Error;
 
@@ -37,6 +35,7 @@ impl MbtilesDatasource {
     }
 
     pub async fn new_pool(mbtiles: Mbtiles, metadata: Option<Metadata>) -> Result<Self> {
+        let read_only = metadata.is_none();
         let format_info = Self::detect_tile_format(&mbtiles).await.ok().flatten();
         let tile_info = if let Some(metadata) = metadata {
             let tile_info = metadata.tile_info;
@@ -48,7 +47,10 @@ impl MbtilesDatasource {
         };
         let format_info = format_info.unwrap_or(tile_info);
         let layout = Self::detect_layout(&mbtiles).await?;
-        let pool = SqlitePool::connect(mbtiles.filepath()).await?; // TODO: SqliteConnectOptions::read_only(true) if metadata.is_none()
+        let options = SqliteConnectOptions::new()
+            .filename(mbtiles.filepath())
+            .read_only(read_only);
+        let pool = SqlitePool::connect_with(options).await?;
         Ok(Self {
             mbtiles,
             format_info,
@@ -95,9 +97,9 @@ impl MbtilesDatasource {
             // PRAGMA page_size = 512
             // PRAGMA encoding = 'UTF-8'
             // VACUUM
-            create_flat_tables(&mut conn).await?; // create_normalized_tables(&mut conn).await?;
-            create_metadata_table(&mut conn).await?;
-
+            init_mbtiles_schema(&mut conn, MbtType::Flat).await?;
+            // MbtType::Normalized { hash_view: true } does not work because extension functions are
+            // registered only when using Mbtiles::open but not via SqlitePool.
             // metadata content example:
             // ('name','Tilemaker to OpenTileMaps schema');
             // ('type','baselayer');

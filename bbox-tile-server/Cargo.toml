@@ -37,11 +37,11 @@ dyn-clone = "1.0.6"
 futures = "0.3"
 futures-util = "0.3.21"
 geo-types = "0.7.12"
-geozero = { workspace = true, features = [ "with-mvt", "with-postgis-sqlx" ] }
+geozero = { workspace = true, features = ["with-mvt", "with-postgis-sqlx"] }
 indicatif = "0.16.2"
 log = { workspace = true }
-martin-mbtiles = { package = "mbtiles", version = "0.9.1", default-features = false }
-martin-tile-utils = "0.4.1"
+martin-mbtiles = { package = "mbtiles", version = "0.11.1", default-features = false }
+martin-tile-utils = "0.5.1"
 num_cpus = { workspace = true }
 ogcapi-types = { version = "0.2.0", default-features = false }
 once_cell = { workspace = true }
@@ -51,8 +51,12 @@ pmtiles2 = { version = "0.2.2", default-features = false }
 prometheus = { workspace = true }
 regex = "1.10.3"
 reqwest = { workspace = true }
-rusoto_core = { version = "0.48.0", default-features = false, features = ["rustls"] }
-rusoto_s3 = { version = "0.48.0", default-features = false, features = ["rustls"] }
+rusoto_core = { version = "0.48.0", default-features = false, features = [
+    "rustls",
+] }
+rusoto_s3 = { version = "0.48.0", default-features = false, features = [
+    "rustls",
+] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_urlencoded = { workspace = true }
@@ -86,8 +90,16 @@ priority = "optional"
 revision = ""
 depends = "$auto"
 assets = [
-    ["../target/release/bbox-tile-server", "/usr/bin/bbox-tile-server", "755"],
-    ["README.md", "/usr/share/doc/bbox-tile-server/README.md", "644"],
+    [
+        "../target/release/bbox-tile-server",
+        "/usr/bin/bbox-tile-server",
+        "755",
+    ],
+    [
+        "README.md",
+        "/usr/share/doc/bbox-tile-server/README.md",
+        "644",
+    ],
 ]
 
 [package.metadata.deb.variants.bookworm]
