@@ -39,7 +39,7 @@ pub enum TileStoreError {
     #[error(transparent)]
     MbtError(#[from] MbtError),
     #[error(transparent)]
-    PmtilesError(#[from] ::pmtiles::error::Error),
+    PmtilesError(#[from] ::pmtiles::PmtError),
 }
 
 #[async_trait]

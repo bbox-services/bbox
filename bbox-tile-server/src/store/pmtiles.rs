@@ -2,11 +2,12 @@ use crate::config::PmtilesStoreCfg;
 use crate::store::{TileReader, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
-use log::{debug, info};
+use log::{info, warn};
 use martin_mbtiles::Metadata;
-use pmtiles::async_reader::AsyncPmTilesReader;
-use pmtiles::mmap::MmapBackend;
-use pmtiles2::{util::tile_id, Compression as PmCompression, PMTiles, TileType};
+use pmtiles::{
+    async_reader::AsyncPmTilesReader, tile_id, MmapBackend, PmTilesStreamWriter, PmTilesWriter,
+    TileType,
+};
 use serde_json::json;
 use std::ffi::OsStr;
 use std::fs::File;
@@ -19,13 +20,15 @@ pub struct PmtilesStoreReader {
     reader: AsyncPmTilesReader<MmapBackend>,
 }
 
-#[derive(Debug)]
 pub struct PmtilesStoreWriter {
+    // used for cloning
     path: PathBuf,
     format: Format,
     metadata: Metadata,
+    // ---
+    tile_compression: Compression,
     // We need an option for consuming PMTiles when finalizing
-    archive: Option<PMTiles<Cursor<Vec<u8>>>>,
+    archive: Option<PmTilesStreamWriter<File>>,
 }
 
 // Custom impl because `Clone` is not implemented for `AsyncPmTilesReader`
@@ -37,9 +40,10 @@ impl Clone for PmtilesStoreReader {
     }
 }
 
-// Custom impl because `Clone` is not implemented for `PMTiles`
+// Custom impl because `Clone` is not implemented for `PmTilesStreamWriter`
 impl Clone for PmtilesStoreWriter {
     fn clone(&self) -> Self {
+        warn!("PmtilesStoreWriter should not be clone!");
         Self::new(self.path.clone(), self.metadata.clone(), &self.format)
     }
 }
@@ -63,7 +67,7 @@ impl PmtilesStoreReader {
             _ => None,
         }
     }
-    pub async fn get_metadata(&self) -> Result<String, ::pmtiles::error::Error> {
+    pub async fn get_metadata(&self) -> Result<String, ::pmtiles::PmtError> {
         self.reader.get_metadata().await
     }
 }
@@ -71,13 +75,14 @@ impl PmtilesStoreReader {
 #[async_trait]
 impl TileReader for PmtilesStoreReader {
     async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
-        let resp = if let Some(tile) = self.reader.get_tile(xyz.z, xyz.x, xyz.y).await {
+        let resp = if let Ok(Some(tile)) = self.reader.get_tile(xyz.z, xyz.x, xyz.y).await {
             let mut response = TileResponse::new();
-            response.set_content_type(tile.tile_type.content_type());
-            if let Some(encoding) = tile.tile_compression.content_encoding() {
-                response.insert_header(("Content-Encoding", encoding.to_lowercase()));
-            }
-            Some(response.with_body(Box::new(Cursor::new(tile.data))))
+            // response.set_content_type(tile.tile_type.content_type());
+            // if let Some(encoding) = tile.tile_compression.content_encoding() {
+            //     response.insert_header(("Content-Encoding", encoding.to_lowercase()));
+            // }
+            response.insert_header(("Content-Encoding", "gzip"));
+            Some(response.with_body(Box::new(Cursor::new(tile))))
         } else {
             None
         };
@@ -88,10 +93,7 @@ impl TileReader for PmtilesStoreReader {
 #[async_trait]
 impl TileWriter for PmtilesStoreWriter {
     fn compression(&self) -> Compression {
-        match self.archive.as_ref().expect("initialized").tile_compression {
-            PmCompression::GZip => Compression::Gzip,
-            _ => Compression::None,
-        }
+        self.tile_compression.clone()
     }
     async fn exists(&self, _xyz: &Xyz) -> bool {
         // self.archive.get_tile(xyz.x, xyz.y, xyz.z)?.is_some()
@@ -104,22 +106,13 @@ impl TileWriter for PmtilesStoreWriter {
         self.archive
             .as_mut()
             .expect("initialized")
-            .add_tile(tile_id(xyz.z, xyz.x, xyz.y), data);
-        debug!(
-            "put_tile_mut - num_tiles: {}",
-            self.archive.as_ref().expect("initialized").num_tiles()
-        );
+            .add_tile(tile_id(xyz.z, xyz.x, xyz.y), &data)?;
         Ok(())
     }
     fn finalize(&mut self) -> Result<(), TileStoreError> {
-        info!("Writing {}", self.path.display());
-        let mut file = File::create(&self.path)
-            .map_err(|e| TileStoreError::FileError(self.path.clone(), e))?;
         if let Some(archive) = self.archive.take() {
-            info!("Number of tiles: {}", archive.num_tiles(),);
-            archive
-                .to_writer(&mut file)
-                .map_err(|e| TileStoreError::FileError(self.path.clone(), e))?;
+            // info!("Number of tiles: {}", archive.num_tiles(),);
+            archive.finalize()?;
         }
         Ok(())
     }
@@ -127,35 +120,33 @@ impl TileWriter for PmtilesStoreWriter {
 
 impl PmtilesStoreWriter {
     pub fn new(path: PathBuf, metadata: Metadata, format: &Format) -> Self {
-        let mut archive = PMTiles::default();
-        archive.tile_type = match format {
+        let tile_type = match format {
             Format::Jpeg => TileType::Jpeg,
             Format::Mvt => TileType::Mvt,
             Format::Png => TileType::Png,
-            Format::Webp => TileType::WebP,
+            Format::Webp => TileType::Webp,
             _ => TileType::Unknown,
         };
-        archive.tile_compression = if *format == Format::Mvt {
-            PmCompression::GZip
-        } else {
-            PmCompression::None
-        };
+        let mut pmtiles = PmTilesWriter::new(tile_type);
+
         if let Some(minzoom) = metadata.tilejson.minzoom {
-            archive.min_zoom = minzoom;
+            pmtiles = pmtiles.min_zoom(minzoom);
         }
         if let Some(maxzoom) = metadata.tilejson.maxzoom {
-            archive.max_zoom = maxzoom;
+            pmtiles = pmtiles.max_zoom(maxzoom);
         }
         if let Some(bounds) = metadata.tilejson.bounds {
-            archive.min_longitude = bounds.left;
-            archive.min_latitude = bounds.bottom;
-            archive.max_longitude = bounds.right;
-            archive.max_latitude = bounds.top;
+            pmtiles = pmtiles.bounds(
+                bounds.left as f32,
+                bounds.bottom as f32,
+                bounds.right as f32,
+                bounds.top as f32,
+            );
         }
         if let Some(center) = metadata.tilejson.center {
-            archive.center_longitude = center.longitude;
-            archive.center_latitude = center.latitude;
-            archive.center_zoom = center.zoom;
+            pmtiles = pmtiles
+                .center(center.longitude as f32, center.latitude as f32)
+                .center_zoom(center.zoom);
         }
         let mut meta_data = json!({
             "name": &metadata.id, "description": &metadata.tilejson.description, "attribution": &metadata.tilejson.attribution
@@ -163,12 +154,21 @@ impl PmtilesStoreWriter {
         if let Some(vector_layers) = &metadata.tilejson.vector_layers {
             meta_data["vector_layers"] = json!(vector_layers);
         }
-        archive.meta_data = Some(meta_data);
+        pmtiles = pmtiles.metadata(&meta_data.to_string());
+
+        info!("Writing {}", path.display());
+        let tile_compression = match tile_type {
+            TileType::Mvt => Compression::Gzip,
+            _ => Compression::None,
+        };
+        let file = File::create(&path).unwrap(); //.map_err(|e| TileStoreError::FileError(path.clone(), e))?;
+        let archive = Some(pmtiles.create(file).unwrap());
         Self {
             path,
             metadata,
             format: *format,
-            archive: Some(archive),
+            tile_compression,
+            archive,
         }
     }
     pub fn from_config(cfg: &PmtilesStoreCfg, metadata: Metadata, format: &Format) -> Self {

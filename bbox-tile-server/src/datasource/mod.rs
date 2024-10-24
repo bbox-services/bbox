@@ -56,7 +56,7 @@ pub enum TileSourceError {
     #[error(transparent)]
     MbtilesError(#[from] martin_mbtiles::MbtError),
     #[error(transparent)]
-    PmtilesError(#[from] ::pmtiles::error::Error),
+    PmtilesError(#[from] ::pmtiles::PmtError),
 }
 
 #[derive(PartialEq, Clone, Debug)]

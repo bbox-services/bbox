@@ -81,9 +81,9 @@ impl TileService {
             if arr.len() != 4 {
                 anyhow::bail!("Invalid extent (minx,miny,maxx,maxy)");
             }
-            BoundingBox::new(arr[0], arr[1], arr[2], arr[3])
+            Some(BoundingBox::new(arr[0], arr[1], arr[2], arr[3]))
         } else {
-            tms.xy_bbox()
+            None // tms.xy_bbox()
         };
 
         let Some(cache_cfg) = tileset.cache_config() else {
@@ -100,7 +100,16 @@ impl TileService {
 
         let minzoom = args.minzoom.unwrap_or(0);
         let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
-        let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
+        // let griditer: Box<dyn TileIterator> = if let Some(bbox) = bbox {
+        //     Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
+        // } else {
+        //     Box::new(tms.hilbert_iterator(minzoom, maxzoom))
+        // };
+        if bbox.is_some() {
+            anyhow::bail!("Seeding with bbox is currently not supported.");
+            // Box<dyn TileIterator> does not work with pariter (is not Send))
+        }
+        let griditer = tms.hilbert_iterator(minzoom, maxzoom);
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
 
         // We setup different pipelines for certain scenarios.
