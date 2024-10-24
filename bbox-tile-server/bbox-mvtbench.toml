@@ -1,6 +1,9 @@
 [webserver]
 loglevel = "Warn"
 
+[mapserver]
+num_fcgi_processes = 0
+
 [[datasource]]
 name = "pg"
 [datasource.postgis]
