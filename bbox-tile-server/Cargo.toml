@@ -45,12 +45,12 @@ martin-tile-utils = "0.5.1"
 num_cpus = { workspace = true }
 ogcapi-types = { version = "0.2.0", default-features = false }
 once_cell = { workspace = true }
-par-stream = { version = "0.10.2", features = ["runtime-tokio"] }
 #pmtiles = { version = "0.3.1", features = ["mmap-async-tokio"] }
 pmtiles = { git = "https://github.com/pka/pmtiles-rs.git", branch = "writer", features = [
     "mmap-async-tokio",
 ] }
 prometheus = { workspace = true }
+pumps = "0.0.2"
 regex = "1.10.3"
 reqwest = { workspace = true }
 rusoto_core = { version = "0.48.0", default-features = false, features = [

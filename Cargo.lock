@@ -980,9 +980,9 @@ dependencies = [
  "num_cpus",
  "ogcapi-types",
  "once_cell",
- "par-stream",
  "pmtiles",
  "prometheus",
+ "pumps",
  "regex",
  "reqwest",
  "rusoto_core",
@@ -1126,12 +1126,6 @@ name = "bumpalo"
 version = "3.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79296716171880943b8470b5f8d03aa55eb2e645a4874bdbb28adb49162e012c"
-
-[[package]]
-name = "by_address"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64fa3c856b712db6612c019f14756e64e4bcea13337a6b33b696333a9eaa2d06"
 
 [[package]]
 name = "bytemuck"
@@ -1631,17 +1625,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derivative"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "derive_arbitrary"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2102,19 +2085,6 @@ name = "float_next_after"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
-
-[[package]]
-name = "flume"
-version = "0.10.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1657b4441c3403d9f7b3409e47575237dac27b1b5726df654a6ecbf92f0f7577"
-dependencies = [
- "futures-core",
- "futures-sink",
- "nanorand",
- "pin-project",
- "spin 0.9.8",
-]
 
 [[package]]
 name = "flume"
@@ -3170,7 +3140,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2778c9023c97295f9686e2f4a24b8388fe6e0f054c8b234ecfae28a8383eb8bd"
 dependencies = [
  "enum-display",
- "flume 0.11.1",
+ "flume",
  "futures",
  "itertools 0.13.0",
  "log",
@@ -3736,25 +3706,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "par-stream"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ef8c7bc0cbc89c3d02fb0cce36f609e8707150bd38c1cbce79c6b7906f4099a"
-dependencies = [
- "by_address",
- "crossbeam",
- "dashmap",
- "derivative",
- "flume 0.10.14",
- "futures",
- "num_cpus",
- "once_cell",
- "parking_lot",
- "pin-project",
- "tokio",
-]
-
-[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4200,6 +4151,16 @@ name = "protobuf"
 version = "2.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
+
+[[package]]
+name = "pumps"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eca7fac580f801a720a2929843361e010c504fd9e96eac2cd8ecf1ad72ae079d"
+dependencies = [
+ "futures",
+ "tokio",
+]
 
 [[package]]
 name = "quote"
@@ -5372,7 +5333,7 @@ checksum = "b244ef0a8414da0bed4bb1910426e890b19e5e9bccc27ada6b797d05c55ae0aa"
 dependencies = [
  "atoi",
  "chrono",
- "flume 0.11.1",
+ "flume",
  "futures-channel",
  "futures-core",
  "futures-executor",
