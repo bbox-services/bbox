@@ -2,13 +2,17 @@ use crate::cli::*;
 use crate::config::TileStoreCfg;
 use crate::filter_params::FilterParams;
 use crate::service::{ServiceError, TileService};
-use crate::store::{s3putfiles, CacheLayout};
+use crate::store::{s3putfiles, CacheLayout, TileWriter};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::info;
-use pumps::Concurrency;
+use pumps::{Concurrency, Pump};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tile_grid::BoundingBox;
+use tile_grid::{BoundingBox, Xyz};
+use tokio::{
+    sync::mpsc::{self, Receiver},
+    task::JoinHandle,
+};
 
 fn progress_bar() -> ProgressBar {
     let progress = ProgressBar::new_spinner();
@@ -122,22 +126,54 @@ impl TileService {
             progress.set_message(path.clone());
             progress.inc(1);
         });
-        let pipeline = pumps::Pipeline::from_iter(iter).map(
-            move |xyz| {
-                let tileset = tileset_arc.clone();
-                let tms = tms.clone(); // TODO: tileset.default_grid(xyz.z)
-                let filter = FilterParams::default();
-                let compression = compression.clone();
-                async move {
-                    let tile = tileset
-                        .read_tile(&tms, &xyz, &filter, &format, compression)
-                        .await
-                        .unwrap();
-                    (xyz, tile)
-                }
-            },
-            Concurrency::concurrent_unordered(threads).backpressure(100),
-        );
+        let pipeline = pumps::Pipeline::from_iter(iter)
+            .map(
+                move |xyz| {
+                    let tileset = tileset_arc.clone();
+                    let tms = tms.clone(); // TODO: tileset.default_grid(xyz.z)
+                    let filter = FilterParams::default();
+                    let compression = compression.clone();
+                    async move {
+                        let tile = tileset
+                            .read_tile(&tms, &xyz, &filter, &format, compression)
+                            .await
+                            .unwrap();
+                        (xyz, tile)
+                    }
+                },
+                Concurrency::concurrent_unordered(threads),
+            )
+            .backpressure(100);
+
+        pub struct TileBatchWriterPump {
+            writer: Arc<Box<dyn TileWriter>>,
+        }
+
+        impl Pump<Vec<(Xyz, Vec<u8>)>, ()> for TileBatchWriterPump {
+            fn spawn(
+                mut self,
+                mut input_receiver: Receiver<Vec<(Xyz, Vec<u8>)>>,
+            ) -> (Receiver<()>, JoinHandle<()>) {
+                let (output_sender, output_receiver) = mpsc::channel(1);
+
+                let h = tokio::spawn(async move {
+                    let writer = Arc::get_mut(&mut self.writer).unwrap();
+                    while let Some(batch) = input_receiver.recv().await {
+                        let batch = batch
+                            .into_iter()
+                            .map(|(xyz, tile)| (xyz.z, xyz.x as u32, xyz.y as u32, tile))
+                            .collect::<Vec<_>>();
+                        let _ = writer.put_tiles(&batch).await;
+                        if let Err(_e) = output_sender.send(()).await {
+                            break;
+                        }
+                    }
+                    let _ = writer.finalize();
+                });
+
+                (output_receiver, h)
+            }
+        }
 
         let pipeline = match cache_cfg {
             TileStoreCfg::Files(_cfg) => pipeline.map(
@@ -163,37 +199,14 @@ impl TileService {
                 )
             }
             TileStoreCfg::Mbtiles(_) => {
-                let _batch_size = 200; // For MBTiles, create the largest prepared statement supported by SQLite (999 parameters)
-                pipeline.map(
-                    move |(xyz, tile)| {
-                        let tile_writer = tile_writer.clone();
-                        // let mut batch = Vec::with_capacity(batch_size);
-                        // batch.push((xyz.z, xyz.x as u32, xyz.y as u32, tile));
-                        // // let _ = tile_writer.put_tile_mut(&xyz, tile).await;
-                        // // batch.push((xyz.z, xyz.x as u32, xyz.y as u32, Vec::<u8>::new()));
-                        // if batch.len() < batch.capacity() {
-                        //     return;
-                        // }
-                        async move {
-                            // let _ = tile_writer.put_tiles(&batch).await;
-                            // if empty {
-                            //     let _ = tile_writer.finalize();
-                            // }
-                            let _ = tile_writer.put_tile(&xyz, tile).await;
-                        }
-                    },
-                    Concurrency::serial(),
-                )
+                let batch_size = 200; // For MBTiles, create the largest prepared statement supported by SQLite (999 parameters)
+                pipeline.batch(batch_size).pump(TileBatchWriterPump {
+                    writer: tile_writer,
+                })
             }
-            TileStoreCfg::Pmtiles(_) => pipeline.map(
-                move |(xyz, tile)| {
-                    let tile_writer = tile_writer.clone();
-                    async move {
-                        let _ = tile_writer.put_tile(&xyz, tile).await;
-                    }
-                },
-                Concurrency::serial(),
-            ),
+            TileStoreCfg::Pmtiles(_) => pipeline.batch(50).pump(TileBatchWriterPump {
+                writer: tile_writer,
+            }),
             TileStoreCfg::NoStore => pipeline.map(|_| async {}, Concurrency::serial()),
         };
 

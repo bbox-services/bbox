@@ -4154,9 +4154,9 @@ checksum = "106dd99e98437432fed6519dedecfade6a06a73bb7b2a1e019fdd2bee5778d94"
 
 [[package]]
 name = "pumps"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eca7fac580f801a720a2929843361e010c504fd9e96eac2cd8ecf1ad72ae079d"
+checksum = "731e40501bb04893dc8e359b0e55725b2cea9cb0b50d00d15f50e3f12cade2ec"
 dependencies = [
  "futures",
  "tokio",

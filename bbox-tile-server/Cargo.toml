@@ -50,7 +50,7 @@ pmtiles = { git = "https://github.com/pka/pmtiles-rs.git", branch = "writer", fe
     "mmap-async-tokio",
 ] }
 prometheus = { workspace = true }
-pumps = "0.0.2"
+pumps = "0.0.3"
 regex = "1.10.3"
 reqwest = { workspace = true }
 rusoto_core = { version = "0.48.0", default-features = false, features = [
