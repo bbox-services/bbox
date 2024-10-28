@@ -38,7 +38,7 @@ pub enum TileStoreError {
 }
 
 pub trait StoreFromConfig {
-    fn into_store(
+    fn to_store(
         &self,
         tileset_name: &str,
         format: &Format,
@@ -169,10 +169,10 @@ pub async fn tile_store_from_config(
     metadata: Metadata,
 ) -> Box<dyn TileStore> {
     match &config {
-        TileStoreCfg::Files(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
-        TileStoreCfg::S3(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
-        TileStoreCfg::Mbtiles(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
-        TileStoreCfg::Pmtiles(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::Files(cfg) => cfg.to_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::S3(cfg) => cfg.to_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::Mbtiles(cfg) => cfg.to_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::Pmtiles(cfg) => cfg.to_store(tileset_name, format, compression, metadata),
         TileStoreCfg::NoStore => Box::new(NoStore),
     }
 }

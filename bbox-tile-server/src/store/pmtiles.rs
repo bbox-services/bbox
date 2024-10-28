@@ -23,7 +23,7 @@ pub struct PmtilesStore {
 }
 
 impl StoreFromConfig for PmtilesStoreCfg {
-    fn into_store(
+    fn to_store(
         &self,
         _tileset_name: &str,
         format: &Format,

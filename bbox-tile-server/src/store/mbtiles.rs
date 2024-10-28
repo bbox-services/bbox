@@ -18,7 +18,7 @@ pub struct MbtilesStore {
 }
 
 impl StoreFromConfig for MbtilesStoreCfg {
-    fn into_store(
+    fn to_store(
         &self,
         _tileset_name: &str,
         _format: &Format,

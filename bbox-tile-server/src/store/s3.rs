@@ -33,7 +33,7 @@ pub enum S3StoreError {
 }
 
 impl StoreFromConfig for S3StoreCfg {
-    fn into_store(
+    fn to_store(
         &self,
         _tileset_name: &str,
         format: &Format,

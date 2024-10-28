@@ -19,7 +19,7 @@ pub struct FileStore {
 }
 
 impl StoreFromConfig for FileStoreCfg {
-    fn into_store(
+    fn to_store(
         &self,
         tileset_name: &str,
         format: &Format,
