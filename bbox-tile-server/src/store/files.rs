@@ -1,8 +1,11 @@
 use crate::config::{FileStoreCfg, StoreCompressionCfg};
-use crate::store::{CacheLayout, TileReader, TileStoreError, TileWriter};
+use crate::store::{
+    CacheLayout, StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter,
+};
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
 use log::debug;
+use martin_mbtiles::Metadata;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
 use std::path::PathBuf;
@@ -15,6 +18,20 @@ pub struct FileStore {
     format: Format,
 }
 
+impl StoreFromConfig for FileStoreCfg {
+    fn into_store(
+        &self,
+        tileset_name: &str,
+        format: &Format,
+        compression: &Option<StoreCompressionCfg>,
+        _metadata: Metadata,
+    ) -> Box<dyn TileStore> {
+        let base_dir = self.abs_path().join(PathBuf::from(tileset_name));
+        let compression = compression.clone().unwrap_or(StoreCompressionCfg::None);
+        Box::new(FileStore::new(base_dir, compression, *format))
+    }
+}
+
 impl FileStore {
     pub fn new(base_dir: PathBuf, compression: StoreCompressionCfg, format: Format) -> Self {
         FileStore {
@@ -23,16 +40,6 @@ impl FileStore {
             format,
         }
     }
-    pub fn from_config(
-        cfg: &FileStoreCfg,
-        compression: &Option<StoreCompressionCfg>,
-        tileset_name: &str,
-        format: &Format,
-    ) -> Self {
-        let base_dir = cfg.abs_path().join(PathBuf::from(tileset_name));
-        let compression = compression.clone().unwrap_or(StoreCompressionCfg::None);
-        Self::new(base_dir, compression, *format)
-    }
     #[allow(dead_code)]
     pub fn remove_dir_all(&self) -> std::io::Result<()> {
         fs::remove_dir_all(self.base_dir.as_path())
@@ -40,13 +47,23 @@ impl FileStore {
 }
 
 #[async_trait]
-impl TileWriter for FileStore {
+impl TileStore for FileStore {
     fn compression(&self) -> Compression {
         match self.compression {
             StoreCompressionCfg::Gzip => Compression::Gzip,
             StoreCompressionCfg::None => Compression::None,
         }
     }
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+}
+
+#[async_trait]
+impl TileWriter for FileStore {
     async fn exists(&self, xyz: &Xyz) -> bool {
         let p = CacheLayout::Zxy.path(&self.base_dir, xyz, &self.format);
         p.exists()

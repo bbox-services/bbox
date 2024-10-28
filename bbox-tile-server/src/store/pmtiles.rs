@@ -1,5 +1,5 @@
-use crate::config::PmtilesStoreCfg;
-use crate::store::{TileReader, TileStoreError, TileWriter};
+use crate::config::{PmtilesStoreCfg, StoreCompressionCfg};
+use crate::store::{NoStore, StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
 use log::{info, warn};
@@ -15,18 +15,102 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
 
+#[derive(Clone)]
+pub struct PmtilesStore {
+    path: PathBuf,
+    format: Format,
+    metadata: Metadata,
+}
+
+impl StoreFromConfig for PmtilesStoreCfg {
+    fn into_store(
+        &self,
+        _tileset_name: &str,
+        format: &Format,
+        _compression: &Option<StoreCompressionCfg>,
+        metadata: Metadata,
+    ) -> Box<dyn TileStore> {
+        Box::new(PmtilesStore {
+            path: self.abs_path(),
+            format: *format,
+            metadata,
+        })
+    }
+}
+
+#[async_trait]
+impl TileStore for PmtilesStore {
+    fn compression(&self) -> Compression {
+        match self.format {
+            Format::Mvt => Compression::Gzip,
+            _ => Compression::None,
+        }
+    }
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+        let reader: Box<dyn TileReader> =
+            if let Ok(reader) = AsyncPmTilesReader::new_with_path(&self.path).await {
+                Box::new(PmtilesStoreReader {
+                    path: self.path.clone(),
+                    reader,
+                })
+            } else {
+                // We continue, because for seeding into a new file, the reader cannot be created and is not needed
+                warn!("Couldn't open PmtilesStoreReader {}", self.path.display());
+                Box::new(NoStore)
+            };
+        Ok(reader)
+    }
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        let tile_type = match self.format {
+            Format::Jpeg => TileType::Jpeg,
+            Format::Mvt => TileType::Mvt,
+            Format::Png => TileType::Png,
+            Format::Webp => TileType::Webp,
+            _ => TileType::Unknown,
+        };
+        let mut pmtiles = PmTilesWriter::new(tile_type);
+
+        if let Some(minzoom) = self.metadata.tilejson.minzoom {
+            pmtiles = pmtiles.min_zoom(minzoom);
+        }
+        if let Some(maxzoom) = self.metadata.tilejson.maxzoom {
+            pmtiles = pmtiles.max_zoom(maxzoom);
+        }
+        if let Some(bounds) = self.metadata.tilejson.bounds {
+            pmtiles = pmtiles.bounds(
+                bounds.left as f32,
+                bounds.bottom as f32,
+                bounds.right as f32,
+                bounds.top as f32,
+            );
+        }
+        if let Some(center) = self.metadata.tilejson.center {
+            pmtiles = pmtiles
+                .center(center.longitude as f32, center.latitude as f32)
+                .center_zoom(center.zoom);
+        }
+        let mut meta_data = json!({
+            "name": &self.metadata.id, "description": &self.metadata.tilejson.description, "attribution": &self.metadata.tilejson.attribution
+        });
+        if let Some(vector_layers) = &self.metadata.tilejson.vector_layers {
+            meta_data["vector_layers"] = json!(vector_layers);
+        }
+        pmtiles = pmtiles.metadata(&meta_data.to_string());
+
+        info!("Writing {}", self.path.display());
+        let file = File::create(&self.path)
+            .map_err(|e| TileStoreError::FileError(self.path.clone(), e))?;
+        let archive = Some(pmtiles.create(file)?);
+        Ok(Box::new(PmtilesStoreWriter { archive }))
+    }
+}
+
 pub struct PmtilesStoreReader {
     pub path: PathBuf,
     reader: AsyncPmTilesReader<MmapBackend>,
 }
 
 pub struct PmtilesStoreWriter {
-    // used for cloning
-    path: PathBuf,
-    format: Format,
-    metadata: Metadata,
-    // ---
-    tile_compression: Compression,
     // We need an option for consuming PMTiles when finalizing
     archive: Option<PmTilesStreamWriter<File>>,
 }
@@ -43,8 +127,7 @@ impl Clone for PmtilesStoreReader {
 // Custom impl because `Clone` is not implemented for `PmTilesStreamWriter`
 impl Clone for PmtilesStoreWriter {
     fn clone(&self) -> Self {
-        warn!("PmtilesStoreWriter should not be clone!");
-        Self::new(self.path.clone(), self.metadata.clone(), &self.format)
+        unimplemented!();
     }
 }
 
@@ -92,9 +175,6 @@ impl TileReader for PmtilesStoreReader {
 
 #[async_trait]
 impl TileWriter for PmtilesStoreWriter {
-    fn compression(&self) -> Compression {
-        self.tile_compression.clone()
-    }
     async fn exists(&self, _xyz: &Xyz) -> bool {
         // self.archive.get_tile(xyz.x, xyz.y, xyz.z)?.is_some()
         false
@@ -115,63 +195,5 @@ impl TileWriter for PmtilesStoreWriter {
             archive.finalize()?;
         }
         Ok(())
-    }
-}
-
-impl PmtilesStoreWriter {
-    pub fn new(path: PathBuf, metadata: Metadata, format: &Format) -> Self {
-        let tile_type = match format {
-            Format::Jpeg => TileType::Jpeg,
-            Format::Mvt => TileType::Mvt,
-            Format::Png => TileType::Png,
-            Format::Webp => TileType::Webp,
-            _ => TileType::Unknown,
-        };
-        let mut pmtiles = PmTilesWriter::new(tile_type);
-
-        if let Some(minzoom) = metadata.tilejson.minzoom {
-            pmtiles = pmtiles.min_zoom(minzoom);
-        }
-        if let Some(maxzoom) = metadata.tilejson.maxzoom {
-            pmtiles = pmtiles.max_zoom(maxzoom);
-        }
-        if let Some(bounds) = metadata.tilejson.bounds {
-            pmtiles = pmtiles.bounds(
-                bounds.left as f32,
-                bounds.bottom as f32,
-                bounds.right as f32,
-                bounds.top as f32,
-            );
-        }
-        if let Some(center) = metadata.tilejson.center {
-            pmtiles = pmtiles
-                .center(center.longitude as f32, center.latitude as f32)
-                .center_zoom(center.zoom);
-        }
-        let mut meta_data = json!({
-            "name": &metadata.id, "description": &metadata.tilejson.description, "attribution": &metadata.tilejson.attribution
-        });
-        if let Some(vector_layers) = &metadata.tilejson.vector_layers {
-            meta_data["vector_layers"] = json!(vector_layers);
-        }
-        pmtiles = pmtiles.metadata(&meta_data.to_string());
-
-        info!("Writing {}", path.display());
-        let tile_compression = match tile_type {
-            TileType::Mvt => Compression::Gzip,
-            _ => Compression::None,
-        };
-        let file = File::create(&path).unwrap(); //.map_err(|e| TileStoreError::FileError(path.clone(), e))?;
-        let archive = Some(pmtiles.create(file).unwrap());
-        Self {
-            path,
-            metadata,
-            format: *format,
-            tile_compression,
-            archive,
-        }
-    }
-    pub fn from_config(cfg: &PmtilesStoreCfg, metadata: Metadata, format: &Format) -> Self {
-        Self::new(cfg.abs_path(), metadata, format)
     }
 }

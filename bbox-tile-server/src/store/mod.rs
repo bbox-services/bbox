@@ -7,15 +7,10 @@ pub mod s3putfiles;
 
 use crate::config::{StoreCompressionCfg, TileStoreCfg};
 use crate::mbtiles_ds::Error as MbtilesDsError;
-use crate::store::files::FileStore;
-use crate::store::mbtiles::MbtilesStore;
-use crate::store::pmtiles::{PmtilesStoreReader, PmtilesStoreWriter};
-use crate::store::s3::{S3Store, S3StoreError};
+use crate::store::s3::S3StoreError;
 use async_trait::async_trait;
-use bbox_core::config::error_exit;
 use bbox_core::{Compression, Format, TileResponse};
 use dyn_clone::{clone_trait_object, DynClone};
-use log::warn;
 use martin_mbtiles::{MbtError, Metadata};
 use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
@@ -42,11 +37,34 @@ pub enum TileStoreError {
     PmtilesError(#[from] ::pmtiles::PmtError),
 }
 
+pub trait StoreFromConfig {
+    fn into_store(
+        &self,
+        tileset_name: &str,
+        format: &Format,
+        compression: &Option<StoreCompressionCfg>,
+        metadata: Metadata,
+    ) -> Box<dyn TileStore>;
+}
+
+#[async_trait]
+pub trait TileStore: DynClone + Send + Sync {
+    /// Compression of stored tiles
+    fn compression(&self) -> Compression;
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError>;
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError>;
+    // fn capabilities(&self) -> HashSet<TileStoreCapabilities>;
+}
+
+clone_trait_object!(TileStore);
+
+// pub enum TileStoreCapabilities {
+//     Cloneable,
+//     RandomWrite,
+// }
+
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
-    /// Tile storage compression
-    // TODO: move into common store trait?
-    fn compression(&self) -> Compression;
     /// Check for existing tile
     /// Must not be implemented for cases where generating a tile is less expensive than checking
     // Method should probably return date of last change if known
@@ -114,10 +132,20 @@ impl CacheLayout {
 pub struct NoStore;
 
 #[async_trait]
-impl TileWriter for NoStore {
+impl TileStore for NoStore {
     fn compression(&self) -> Compression {
         Compression::None
     }
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+}
+
+#[async_trait]
+impl TileWriter for NoStore {
     async fn exists(&self, _xyz: &Xyz) -> bool {
         false
     }
@@ -133,68 +161,18 @@ impl TileReader for NoStore {
     }
 }
 
-pub async fn store_reader_from_config(
+pub async fn tile_store_from_config(
     config: &TileStoreCfg,
-    compression: &Option<StoreCompressionCfg>,
     tileset_name: &str,
     format: &Format,
-) -> Box<dyn TileReader> {
-    match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(
-            cfg,
-            compression,
-            tileset_name,
-            format,
-        )),
-        TileStoreCfg::S3(cfg) => {
-            Box::new(S3Store::from_config(cfg, compression, format).unwrap_or_else(error_exit))
-        }
-        TileStoreCfg::Mbtiles(cfg) => Box::new(
-            MbtilesStore::from_config(cfg)
-                .await
-                .unwrap_or_else(error_exit),
-        ),
-        TileStoreCfg::Pmtiles(cfg) => {
-            if let Ok(reader) = PmtilesStoreReader::from_config(cfg).await {
-                Box::new(reader)
-            } else {
-                // We continue, because for seeding into a new file, the reader cannot be created and is not needed
-                warn!(
-                    "Couldn't open PmtilesStoreReader {}",
-                    cfg.abs_path().display()
-                );
-                Box::new(NoStore)
-            }
-        }
-        TileStoreCfg::NoStore => Box::new(NoStore),
-    }
-}
-
-pub async fn store_writer_from_config(
-    config: &TileStoreCfg,
     compression: &Option<StoreCompressionCfg>,
-    tileset_name: &str,
-    format: &Format,
     metadata: Metadata,
-) -> Box<dyn TileWriter> {
+) -> Box<dyn TileStore> {
     match &config {
-        TileStoreCfg::Files(cfg) => Box::new(FileStore::from_config(
-            cfg,
-            compression,
-            tileset_name,
-            format,
-        )),
-        TileStoreCfg::S3(cfg) => {
-            Box::new(S3Store::from_config(cfg, compression, format).unwrap_or_else(error_exit))
-        }
-        TileStoreCfg::Mbtiles(cfg) => Box::new(
-            MbtilesStore::from_config_writable(cfg, metadata)
-                .await
-                .unwrap_or_else(error_exit),
-        ),
-        TileStoreCfg::Pmtiles(cfg) => {
-            Box::new(PmtilesStoreWriter::from_config(cfg, metadata, format))
-        }
+        TileStoreCfg::Files(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::S3(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::Mbtiles(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
+        TileStoreCfg::Pmtiles(cfg) => cfg.into_store(tileset_name, format, compression, metadata),
         TileStoreCfg::NoStore => Box::new(NoStore),
     }
 }

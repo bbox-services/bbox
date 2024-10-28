@@ -90,14 +90,20 @@ impl TileService {
         };
 
         let ts = tileset.clone();
-        let Some(cache_cfg) = ts.cache_config() else {
+        let Some(cache_cfg) = &ts.cache_config() else {
             return Err(
                 ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
             );
         };
+        let Some(tile_store) = tileset.tile_store else {
+            return Err(ServiceError::TilesetNotFound(
+                "Tile store configuration not found".to_string(),
+            )
+            .into());
+        };
         info!("Preparing pipeline");
-        let tile_writer = Arc::new(tileset.store_writer.unwrap());
-        let compression = tile_writer.compression();
+        let compression = tile_store.compression();
+        let tile_writer = Arc::new(tile_store.setup_writer().await?);
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
@@ -190,7 +196,7 @@ impl TileService {
                 let s3_writer_thread_count = args.tasks.unwrap_or(256);
                 pipeline.map(
                     move |(xyz, tile)| {
-                        let s3_writer = tile_writer.clone();
+                        let s3_writer = tile_writer.clone(); // TODO: init once per thread
                         async move {
                             let _ = s3_writer.put_tile(&xyz, tile).await;
                         }
