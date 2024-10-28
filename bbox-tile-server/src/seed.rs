@@ -8,7 +8,7 @@ use log::info;
 use pumps::{Concurrency, Pump};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tile_grid::{BoundingBox, Xyz};
+use tile_grid::{BoundingBox, TileIterator, Xyz};
 use tokio::{
     sync::mpsc::{self, Receiver},
     task::JoinHandle,
@@ -101,7 +101,6 @@ impl TileService {
             )
             .into());
         };
-        info!("Preparing pipeline");
         let compression = tile_store.compression();
         let tile_writer = Arc::new(tile_store.setup_writer().await?);
 
@@ -110,16 +109,11 @@ impl TileService {
 
         let minzoom = args.minzoom.unwrap_or(0);
         let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
-        // let griditer: Box<dyn TileIterator> = if let Some(bbox) = bbox {
-        //     Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
-        // } else {
-        //     Box::new(tms.hilbert_iterator(minzoom, maxzoom))
-        // };
-        if bbox.is_some() {
-            anyhow::bail!("Seeding with bbox is currently not supported.");
-            // Box<dyn TileIterator> does not work with pariter (is not Send))
-        }
-        let griditer = tms.hilbert_iterator(minzoom, maxzoom);
+        let griditer: Box<dyn TileIterator + Send> = if let Some(bbox) = bbox {
+            Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
+        } else {
+            Box::new(tms.hilbert_iterator(minzoom, maxzoom))
+        };
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
 
         // We setup different pipelines for certain scenarios.
@@ -127,6 +121,10 @@ impl TileService {
         // map service source -> tile store writer
         // map service source -> batch collector -> mbtiles store writer
 
+        let read_concurrency = match cache_cfg {
+            TileStoreCfg::Pmtiles { .. } => Concurrency::serial(),
+            _ => Concurrency::concurrent_unordered(threads),
+        };
         let iter = griditer.inspect(move |xyz| {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), xyz, &format);
             progress.set_message(path.clone());
@@ -147,7 +145,7 @@ impl TileService {
                         (xyz, tile)
                     }
                 },
-                Concurrency::concurrent_unordered(threads),
+                read_concurrency,
             )
             .backpressure(100);
 
@@ -184,7 +182,7 @@ impl TileService {
         let pipeline = match cache_cfg {
             TileStoreCfg::Files(_cfg) => pipeline.map(
                 move |(xyz, tile)| {
-                    let tile_writer = tile_writer.clone();
+                    let tile_writer = tile_writer.clone(); // TODO: init once per thread
                     async move {
                         let _ = tile_writer.put_tile(&xyz, tile).await;
                     }
