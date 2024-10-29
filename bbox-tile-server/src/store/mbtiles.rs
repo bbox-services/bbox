@@ -4,8 +4,9 @@ use crate::store::{StoreFromConfig, TileReader, TileStore, TileStoreError, TileW
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
 use log::info;
-use martin_mbtiles::{CopyDuplicateMode, Metadata};
+use martin_mbtiles::{invert_y_value, CopyDuplicateMode, Metadata};
 use martin_tile_utils::Format as TileFormat;
+use sqlx::{Acquire, Executor, Statement};
 use std::ffi::OsStr;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
@@ -92,9 +93,44 @@ impl TileWriter for MbtilesDatasource {
     }
     async fn put_tiles(&mut self, tiles: &[(u8, u32, u32, Vec<u8>)]) -> Result<(), TileStoreError> {
         let mut conn = self.pool.acquire().await?;
-        self.mbtiles
-            .insert_tiles(&mut conn, self.layout, CopyDuplicateMode::Override, tiles)
+        // Why have to use our own SQL functions with a precomputed hash,
+        // because extension functions (md5) are registered only when using
+        // Mbtiles::open but not via SqlitePool.
+        // self.mbtiles
+        //     .insert_tiles(&mut conn, self.layout, CopyDuplicateMode::Override, tiles)
+        //     .await?;
+        let mut tx = conn.begin().await?;
+        let sql2 = tx
+            .prepare(
+                "INSERT OR REPLACE INTO images (tile_id, tile_data)
+                VALUES (?1, ?2);",
+            )
             .await?;
+        let sql1 = tx
+            .prepare(
+                "INSERT OR REPLACE INTO map (zoom_level, tile_column, tile_row, tile_id)
+                VALUES (?1, ?2, ?3, ?4);",
+            )
+            .await?;
+        for (z, x, y, tile_data) in tiles {
+            let hash = blake3::hash(tile_data);
+            sql2.query()
+                .bind(hash.to_hex().as_str())
+                .bind(tile_data)
+                .execute(&mut *tx)
+                .await?;
+
+            let y = invert_y_value(*z, *y);
+            sql1.query()
+                .bind(z)
+                .bind(x)
+                .bind(y)
+                .bind(hash.to_hex().as_str())
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+
         Ok(())
     }
 }
