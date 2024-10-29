@@ -65,8 +65,7 @@ serde_urlencoded = { workspace = true }
 sqlx = { workspace = true }
 tempfile = { workspace = true }
 thiserror = { workspace = true }
-# tile-grid = "0.6.1"
-tile-grid = { git = "https://github.com/pka/tile-grid.git", branch = "hilbert-iter" }
+tile-grid = "0.6.2"
 tilejson = "0.4.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 toml = "0.8.10"
