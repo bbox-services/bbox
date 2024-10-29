@@ -45,10 +45,12 @@ martin-tile-utils = "0.5.1"
 num_cpus = { workspace = true }
 ogcapi-types = { version = "0.2.0", default-features = false }
 once_cell = { workspace = true }
-par-stream = { version = "0.10.2", features = ["runtime-tokio"] }
-pmtiles = { version = "0.3.1", features = ["mmap-async-tokio"] }
-pmtiles2 = { version = "0.2.2", default-features = false }
+#pmtiles = { version = "0.3.1", features = ["mmap-async-tokio"] }
+pmtiles = { git = "https://github.com/pka/pmtiles-rs.git", branch = "writer", features = [
+    "mmap-async-tokio",
+] }
 prometheus = { workspace = true }
+pumps = "0.0.3"
 regex = "1.10.3"
 reqwest = { workspace = true }
 rusoto_core = { version = "0.48.0", default-features = false, features = [
@@ -63,7 +65,7 @@ serde_urlencoded = { workspace = true }
 sqlx = { workspace = true }
 tempfile = { workspace = true }
 thiserror = { workspace = true }
-tile-grid = "0.6.1"
+tile-grid = "0.6.2"
 tilejson = "0.4.1"
 tokio = { version = "1.17.0", features = ["rt-multi-thread", "fs", "sync"] }
 toml = "0.8.10"

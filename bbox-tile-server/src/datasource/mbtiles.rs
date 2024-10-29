@@ -5,7 +5,7 @@ use crate::datasource::{
     wms_fcgi::HttpRequestParams, LayerInfo, SourceType, TileResponse, TileSource, TileSourceError,
 };
 use crate::filter_params::FilterParams;
-use crate::store::mbtiles::MbtilesStore;
+use crate::mbtiles_ds::MbtilesDatasource;
 use crate::store::TileReader;
 use async_trait::async_trait;
 use bbox_core::Format;
@@ -14,7 +14,7 @@ use tile_grid::{Tms, Xyz};
 use tilejson::TileJSON;
 
 #[async_trait]
-impl TileSource for MbtilesStore {
+impl TileSource for MbtilesDatasource {
     async fn xyz_request(
         &self,
         _tms: &Tms,
@@ -23,7 +23,7 @@ impl TileSource for MbtilesStore {
         _format: &Format,
         _request_params: HttpRequestParams<'_>,
     ) -> Result<TileResponse, TileSourceError> {
-        if let Some(tile) = self
+        if let Some(tile) = (self as &dyn TileReader)
             .get_tile(tile)
             .await
             .map_err(|_| TileSourceError::TileXyzError)?
@@ -37,11 +37,11 @@ impl TileSource for MbtilesStore {
         SourceType::Vector // TODO: Support Mbtiles raster
     }
     async fn tilejson(&self, _tms: &Tms, _format: &Format) -> Result<TileJSON, TileSourceError> {
-        let metadata = self.mbt.get_metadata().await?;
+        let metadata = self.get_metadata().await?;
         Ok(metadata.tilejson)
     }
     async fn layers(&self) -> Result<Vec<LayerInfo>, TileSourceError> {
-        let metadata = self.mbt.get_metadata().await?;
+        let metadata = self.get_metadata().await?;
         let layers = metadata
             .tilejson
             .vector_layers
@@ -60,6 +60,6 @@ impl TileSource for MbtilesStore {
         _tileset: &TileSetCfg,
         _format: &Format,
     ) -> Result<Metadata, TileSourceError> {
-        Ok(self.mbt.get_metadata().await?)
+        Ok(self.get_metadata().await?)
     }
 }

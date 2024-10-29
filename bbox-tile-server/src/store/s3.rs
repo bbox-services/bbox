@@ -1,8 +1,11 @@
 use crate::config::{S3StoreCfg, StoreCompressionCfg};
-use crate::store::{CacheLayout, TileReader, TileStoreError, TileWriter};
+use crate::store::{
+    CacheLayout, StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter,
+};
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
 use log::debug;
+use martin_mbtiles::Metadata;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use std::env;
 use std::fs::{self, File};
@@ -27,6 +30,19 @@ pub enum S3StoreError {
     ReadInputError(#[source] std::io::Error),
     #[error("Upload failed: {0}")]
     UploadFailed(#[source] rusoto_core::RusotoError<PutObjectError>),
+}
+
+impl StoreFromConfig for S3StoreCfg {
+    fn to_store(
+        &self,
+        _tileset_name: &str,
+        format: &Format,
+        compression: &Option<StoreCompressionCfg>,
+        _metadata: Metadata,
+    ) -> Box<dyn TileStore> {
+        let store = S3Store::from_s3_path(&self.path, compression, *format).unwrap();
+        Box::new(store)
+    }
 }
 
 impl S3Store {
@@ -61,23 +77,26 @@ impl S3Store {
             format,
         })
     }
-    pub fn from_config(
-        cfg: &S3StoreCfg,
-        compression: &Option<StoreCompressionCfg>,
-        format: &Format,
-    ) -> Result<Self, TileStoreError> {
-        Self::from_s3_path(&cfg.path, compression, *format).map_err(Into::into)
-    }
 }
 
 #[async_trait]
-impl TileWriter for S3Store {
+impl TileStore for S3Store {
     fn compression(&self) -> Compression {
         match self.compression {
             StoreCompressionCfg::Gzip => Compression::Gzip,
             StoreCompressionCfg::None => Compression::None,
         }
     }
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        Ok(Box::new(self.clone()))
+    }
+}
+
+#[async_trait]
+impl TileWriter for S3Store {
     async fn exists(&self, _xyz: &Xyz) -> bool {
         // 2nd level cache lookup is not supported
         false

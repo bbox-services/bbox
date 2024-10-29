@@ -69,19 +69,19 @@ bench-db-seed-pmtiles: docker-is-ready
 bench-pm-seed-files:
     rm -rf /tmp/writebench
     cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+    BBOX_MAPSERVER__NUM_FCGI_PROCESSES=0 ../target/release/bbox-tile-server --config=/dev/null seed --tile-path=/tmp/writebench --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # Seed mbtiles from pmtiles
 bench-pm-seed-mbtiles:
     rm -f /tmp/writebench.mbtiles
     cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null seed --mb-path=/tmp/writebench.mbtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+    BBOX_MAPSERVER__NUM_FCGI_PROCESSES=0 ../target/release/bbox-tile-server --config=/dev/null seed --mb-path=/tmp/writebench.mbtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # Seed pmtiles from pmtiles
 bench-pm-seed-pmtiles:
     rm -f /tmp/writebench.pmtiles
     cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null seed --pm-path=/tmp/writebench.pmtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+    BBOX_MAPSERVER__NUM_FCGI_PROCESSES=0 ../target/release/bbox-tile-server --config=/dev/null seed --pm-path=/tmp/writebench.pmtiles --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # PG read bench
 bench-read-pg: docker-is-ready
@@ -91,12 +91,12 @@ bench-read-pg: docker-is-ready
 # MBTiles read bench
 bench-read-mbtiles:
     cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null seed --no-store --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.mbtiles
+    BBOX_MAPSERVER__NUM_FCGI_PROCESSES=0 ../target/release/bbox-tile-server --config=/dev/null seed --no-store --tileset=mvtbench --maxzoom=6 /tmp/mvtbench.mbtiles
 
 # PMTiles read bench
 bench-read-pmtiles:
     cargo build --release
-    ../target/release/bbox-tile-server --config=/dev/null seed --no-store --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
+    BBOX_MAPSERVER__NUM_FCGI_PROCESSES=0 ../target/release/bbox-tile-server --config=/dev/null seed --no-store --tileset=mvtbench --maxzoom=6 ../assets/mvtbench.pmtiles
 
 # Run all seeding benchmarks
 bench-seed-all: bench-db-seed-files bench-db-seed-mbtiles bench-db-seed-pmtiles bench-pm-seed-files bench-pm-seed-mbtiles bench-pm-seed-pmtiles bench-read-pg bench-read-mbtiles bench-read-pmtiles

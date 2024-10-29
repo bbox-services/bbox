@@ -3,9 +3,7 @@ use crate::config::*;
 use crate::datasource::wms_fcgi::{HttpRequestParams, MapService};
 use crate::datasource::{Datasources, SourceType, TileSource, TileSourceError};
 use crate::filter_params::FilterParams;
-use crate::store::{
-    store_reader_from_config, store_writer_from_config, TileReader, TileStoreError, TileWriter,
-};
+use crate::store::{tile_store_from_config, TileReader, TileStore, TileStoreError, TileWriter};
 use async_trait::async_trait;
 use bbox_core::config::{error_exit, CoreServiceCfg};
 use bbox_core::metrics::{no_metrics, NoMetrics};
@@ -37,8 +35,11 @@ pub struct TileSet {
     pub tms: Vec<TileSetGrid>,
     pub source: Box<dyn TileSource>,
     format: Format,
-    pub store_reader: Option<Box<dyn TileReader>>,
-    pub store_writer: Option<Box<dyn TileWriter>>,
+    pub(crate) tile_store: Option<Box<dyn TileStore>>,
+    /// Store reader for web service
+    cache_reader: Option<Box<dyn TileReader>>,
+    /// Store writer for web service
+    cache_writer: Option<Box<dyn TileWriter>>,
     config: TileSetCfg,
     cache_cfg: Option<TileStoreCfg>,
     cache_limits: Option<CacheLimitCfg>,
@@ -170,24 +171,16 @@ impl OgcApiService for TileService {
                     })
                     .as_ref())
                 .cloned();
-            let store_writer = if let Some(config) = &cache_cfg {
+            let tile_store = if let Some(config) = &cache_cfg {
                 Some(
-                    store_writer_from_config(
+                    tile_store_from_config(
                         &config.cache,
-                        &config.compression,
                         &ts.name,
                         &format,
+                        &config.compression,
                         metadata,
                     )
                     .await,
-                )
-            } else {
-                None
-            };
-            let store_reader = if let Some(config) = &cache_cfg {
-                Some(
-                    store_reader_from_config(&config.cache, &config.compression, &ts.name, &format)
-                        .await,
                 )
             } else {
                 None
@@ -197,8 +190,9 @@ impl OgcApiService for TileService {
                 tms: ts_grids,
                 source,
                 format,
-                store_reader,
-                store_writer,
+                tile_store,
+                cache_reader: None,
+                cache_writer: None,
                 config: ts.clone(),
                 cache_cfg: cache_cfg.map(|cfg| cfg.cache),
                 cache_limits: ts.cache_limits.clone(),
@@ -300,6 +294,12 @@ impl TileService {
             ts.source.set_map_service(service);
         }
     }
+    pub async fn setup_tile_stores(&mut self) -> Result<(), TileStoreError> {
+        for (_, ts) in self.tilesets.iter_mut() {
+            ts.setup_tile_store().await?;
+        }
+        Ok(())
+    }
     pub fn tileset(&self, tileset: &str) -> Option<&TileSet> {
         self.tilesets.get(tileset)
     }
@@ -324,6 +324,13 @@ impl TileService {
 }
 
 impl TileSet {
+    pub async fn setup_tile_store(&mut self) -> Result<(), TileStoreError> {
+        if let Some(ts) = &self.tile_store {
+            self.cache_reader = Some(ts.setup_reader().await?);
+            self.cache_writer = Some(ts.setup_writer().await?);
+        }
+        Ok(())
+    }
     pub fn grid(&self, tms_id: &str) -> Result<&Tms, ServiceError> {
         self.tms
             .iter()
@@ -342,7 +349,7 @@ impl TileSet {
         &self.format
     }
     pub fn is_cachable_at(&self, zoom: u8) -> bool {
-        if self.store_reader.is_none() {
+        if self.cache_reader.is_none() {
             return false;
         }
         match self.cache_limits {
@@ -359,8 +366,9 @@ impl TileSet {
     pub fn cache_config(&self) -> Option<&TileStoreCfg> {
         self.cache_cfg.as_ref()
     }
+    /// Compression of stored tiles
     pub fn cache_compression(&self) -> Compression {
-        self.store_writer
+        self.tile_store
             .as_ref()
             .map(|s| s.compression())
             .unwrap_or(Compression::None)
@@ -401,7 +409,7 @@ impl TileSet {
         request_params: HttpRequestParams<'_>,
     ) -> Result<Option<TileResponse>, ServiceError> {
         let tileset = self;
-        if let Some(cache) = &tileset.store_reader {
+        if let Some(cache) = &tileset.cache_reader {
             if tileset.is_cachable_at(xyz.z) {
                 // TODO: support separate caches for different grids
                 if let Some(tile) = cache.get_tile(xyz).await? {
@@ -426,7 +434,7 @@ impl TileSet {
             debug!("Writing tile into cache @ {xyz:?}");
             // Read tile into memory
             let response_data = tiledata.read_bytes(&tileset.cache_compression())?;
-            if let Some(cache) = &tileset.store_writer {
+            if let Some(cache) = &tileset.cache_writer {
                 cache.put_tile(xyz, response_data.body.clone()).await?;
             }
             let response = response_data.as_response(&compression);

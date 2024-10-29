@@ -1,36 +1,38 @@
-use crate::config::MbtilesStoreCfg;
-use crate::mbtiles_ds::{Error as MbtilesDsError, MbtilesDatasource};
-use crate::store::{TileReader, TileStoreError, TileWriter};
+use crate::config::{MbtilesStoreCfg, StoreCompressionCfg};
+use crate::mbtiles_ds::{mbtiles_from_path, MbtilesDatasource};
+use crate::store::{StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter};
 use async_trait::async_trait;
-use bbox_core::{Compression, TileResponse};
+use bbox_core::{Compression, Format, TileResponse};
 use log::info;
 use martin_mbtiles::{CopyDuplicateMode, Metadata};
-use martin_tile_utils::{Encoding as TileEncoding, Format as TileFormat};
+use martin_tile_utils::Format as TileFormat;
 use std::ffi::OsStr;
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tile_grid::Xyz;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct MbtilesStore {
-    pub(crate) mbt: MbtilesDatasource,
+    path: PathBuf,
+    metadata: Metadata,
+}
+
+impl StoreFromConfig for MbtilesStoreCfg {
+    fn to_store(
+        &self,
+        _tileset_name: &str,
+        _format: &Format,
+        _compression: &Option<StoreCompressionCfg>,
+        metadata: Metadata,
+    ) -> Box<dyn TileStore> {
+        Box::new(MbtilesStore {
+            path: self.abs_path(),
+            metadata: metadata.clone(),
+        })
+    }
 }
 
 impl MbtilesStore {
-    pub async fn from_config(cfg: &MbtilesStoreCfg) -> Result<Self, MbtilesDsError> {
-        info!("Creating connection pool for {}", &cfg.abs_path().display());
-        let mbt = MbtilesDatasource::from_config(cfg, None).await?;
-        //let opt = SqliteConnectOptions::new().filename(file).read_only(true);
-        Ok(MbtilesStore { mbt })
-    }
-    pub async fn from_config_writable(
-        cfg: &MbtilesStoreCfg,
-        metadata: Metadata,
-    ) -> Result<Self, MbtilesDsError> {
-        info!("Creating connection pool for {}", &cfg.abs_path().display());
-        let mbt = MbtilesDatasource::from_config(cfg, Some(metadata)).await?;
-        Ok(MbtilesStore { mbt })
-    }
     pub fn config_from_cli_arg(file_or_url: &str) -> Option<MbtilesStoreCfg> {
         match Path::new(file_or_url).extension().and_then(OsStr::to_str) {
             Some("mbtiles") => {
@@ -45,26 +47,43 @@ impl MbtilesStore {
 }
 
 #[async_trait]
-impl TileWriter for MbtilesStore {
+impl TileStore for MbtilesStore {
     fn compression(&self) -> Compression {
-        match self.mbt.format_info.encoding {
-            TileEncoding::Gzip => Compression::Gzip,
+        match self.metadata.tile_info.format {
+            TileFormat::Mvt => Compression::Gzip,
             _ => Compression::None,
         }
     }
+    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+        info!("Creating connection pool for {}", &self.path.display());
+        let mbt = MbtilesDatasource::new_pool(mbtiles_from_path(self.path.clone())?, None).await?;
+        Ok(Box::new(mbt))
+    }
+    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        info!("Creating connection pool for {}", &self.path.display());
+        let mbt = MbtilesDatasource::new_pool(
+            mbtiles_from_path(self.path.clone())?,
+            Some(self.metadata.clone()),
+        )
+        .await?;
+        Ok(Box::new(mbt))
+    }
+}
+
+#[async_trait]
+impl TileWriter for MbtilesDatasource {
     async fn exists(&self, xyz: &Xyz) -> bool {
-        match self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await {
+        match self.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await {
             Ok(None) | Err(_) => false,
             Ok(_) => true,
         }
     }
     async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
-        let mut conn = self.mbt.pool.acquire().await?;
-        self.mbt
-            .mbtiles
+        let mut conn = self.pool.acquire().await?;
+        self.mbtiles
             .insert_tiles(
                 &mut conn,
-                self.mbt.layout,
+                self.layout,
                 CopyDuplicateMode::Override,
                 &[(xyz.z, xyz.x as u32, xyz.y as u32, data)],
             )
@@ -72,37 +91,30 @@ impl TileWriter for MbtilesStore {
         Ok(())
     }
     async fn put_tiles(&mut self, tiles: &[(u8, u32, u32, Vec<u8>)]) -> Result<(), TileStoreError> {
-        let mut conn = self.mbt.pool.acquire().await?;
-        self.mbt
-            .mbtiles
-            .insert_tiles(
-                &mut conn,
-                self.mbt.layout,
-                CopyDuplicateMode::Override,
-                tiles,
-            )
+        let mut conn = self.pool.acquire().await?;
+        self.mbtiles
+            .insert_tiles(&mut conn, self.layout, CopyDuplicateMode::Override, tiles)
             .await?;
         Ok(())
     }
 }
 
 #[async_trait]
-impl TileReader for MbtilesStore {
+impl TileReader for MbtilesDatasource {
     async fn get_tile(&self, xyz: &Xyz) -> Result<Option<TileResponse>, TileStoreError> {
-        let resp =
-            if let Some(content) = self.mbt.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
-                let mut response = TileResponse::new();
-                if self.mbt.format_info.format == TileFormat::Mvt {
-                    response.set_content_type("application/x-protobuf");
-                }
-                if let Some(encoding) = self.mbt.format_info.encoding.content_encoding() {
-                    response.insert_header(("Content-Encoding", encoding));
-                }
-                let body = Box::new(Cursor::new(content));
-                Some(response.with_body(body))
-            } else {
-                None
-            };
+        let resp = if let Some(content) = self.get_tile(xyz.z, xyz.x as u32, xyz.y as u32).await? {
+            let mut response = TileResponse::new();
+            if self.format_info.format == TileFormat::Mvt {
+                response.set_content_type("application/x-protobuf");
+            }
+            if let Some(encoding) = self.format_info.encoding.content_encoding() {
+                response.insert_header(("Content-Encoding", encoding));
+            }
+            let body = Box::new(Cursor::new(content));
+            Some(response.with_body(body))
+        } else {
+            None
+        };
         Ok(resp)
     }
 }

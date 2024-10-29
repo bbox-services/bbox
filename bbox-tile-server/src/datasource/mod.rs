@@ -11,6 +11,7 @@ pub mod wms_http;
 
 use crate::config::{SourceParamCfg, TileSetCfg, TilesetTmsCfg};
 use crate::filter_params::FilterParams;
+use crate::mbtiles_ds::MbtilesDatasource;
 use crate::service::{TileSetGrid, TmsExtensions};
 use crate::store::mbtiles::MbtilesStore;
 use crate::store::pmtiles::PmtilesStoreReader;
@@ -56,7 +57,7 @@ pub enum TileSourceError {
     #[error(transparent)]
     MbtilesError(#[from] martin_mbtiles::MbtError),
     #[error(transparent)]
-    PmtilesError(#[from] ::pmtiles::error::Error),
+    PmtilesError(#[from] ::pmtiles::PmtError),
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -220,7 +221,7 @@ impl Datasources {
                 Box::new(postgis::PgSource::create(ds, pg_cfg, ts_grids, tms_cfg).await)
             }
             SourceParamCfg::Mbtiles(cfg) => Box::new(
-                MbtilesStore::from_config(cfg)
+                MbtilesDatasource::from_config(cfg, None)
                     .await
                     .unwrap_or_else(error_exit),
             ),

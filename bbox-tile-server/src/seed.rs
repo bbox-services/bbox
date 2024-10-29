@@ -2,14 +2,17 @@ use crate::cli::*;
 use crate::config::TileStoreCfg;
 use crate::filter_params::FilterParams;
 use crate::service::{ServiceError, TileService};
-use crate::store::{s3putfiles, CacheLayout};
-use futures::{prelude::*, stream};
+use crate::store::{s3putfiles, CacheLayout, TileWriter};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::info;
-use par_stream::prelude::*;
+use pumps::{Concurrency, Pump};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tile_grid::BoundingBox;
+use tile_grid::{BoundingBox, TileIterator, Xyz};
+use tokio::{
+    sync::mpsc::{self, Receiver},
+    task::JoinHandle,
+};
 
 fn progress_bar() -> ProgressBar {
     let progress = ProgressBar::new_spinner();
@@ -81,26 +84,36 @@ impl TileService {
             if arr.len() != 4 {
                 anyhow::bail!("Invalid extent (minx,miny,maxx,maxy)");
             }
-            BoundingBox::new(arr[0], arr[1], arr[2], arr[3])
+            Some(BoundingBox::new(arr[0], arr[1], arr[2], arr[3]))
         } else {
-            tms.xy_bbox()
+            None // tms.xy_bbox()
         };
 
-        let Some(cache_cfg) = tileset.cache_config() else {
+        let ts = tileset.clone();
+        let Some(cache_cfg) = &ts.cache_config() else {
             return Err(
                 ServiceError::TilesetNotFound("Cache configuration not found".to_string()).into(),
             );
         };
-        let tile_writer = Arc::new(tileset.store_writer.clone().unwrap());
-        let tile_store_writer = tileset.store_writer.clone().unwrap();
-        let compression = tile_writer.compression();
+        let Some(tile_store) = tileset.tile_store else {
+            return Err(ServiceError::TilesetNotFound(
+                "Tile store configuration not found".to_string(),
+            )
+            .into());
+        };
+        let compression = tile_store.compression();
+        let tile_writer = Arc::new(tile_store.setup_writer().await?);
 
         // Number of worker threads (size >= #cores).
         let threads = args.threads.unwrap_or(num_cpus::get());
 
         let minzoom = args.minzoom.unwrap_or(0);
         let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
-        let griditer = tms.xyz_iterator(&bbox, minzoom, maxzoom);
+        let griditer: Box<dyn TileIterator + Send> = if let Some(bbox) = bbox {
+            Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
+        } else {
+            Box::new(tms.hilbert_iterator(minzoom, maxzoom))
+        };
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
 
         // We setup different pipelines for certain scenarios.
@@ -108,78 +121,101 @@ impl TileService {
         // map service source -> tile store writer
         // map service source -> batch collector -> mbtiles store writer
 
+        let read_concurrency = match cache_cfg {
+            TileStoreCfg::Pmtiles { .. } => Concurrency::serial(),
+            _ => Concurrency::concurrent_unordered(threads),
+        };
         let iter = griditer.inspect(move |xyz| {
             let path = CacheLayout::Zxy.path_string(&PathBuf::new(), xyz, &format);
             progress.set_message(path.clone());
             progress.inc(1);
         });
-        let par_stream = stream::iter(iter).par_then(threads, move |xyz| {
-            let tileset = tileset_arc.clone();
-            let tms = tms.clone(); // TODO: tileset.default_grid(xyz.z)
-            let filter = FilterParams::default();
-            let compression = compression.clone();
-            async move {
-                let tile = tileset
-                    .read_tile(&tms, &xyz, &filter, &format, compression)
-                    .await
-                    .unwrap();
-                (xyz, tile)
-            }
-        });
+        let pipeline = pumps::Pipeline::from_iter(iter)
+            .map(
+                move |xyz| {
+                    let tileset = tileset_arc.clone();
+                    let tms = tms.clone(); // TODO: tileset.default_grid(xyz.z)
+                    let filter = FilterParams::default();
+                    let compression = compression.clone();
+                    async move {
+                        let tile = tileset
+                            .read_tile(&tms, &xyz, &filter, &format, compression)
+                            .await
+                            .unwrap();
+                        (xyz, tile)
+                    }
+                },
+                read_concurrency,
+            )
+            .backpressure(100);
 
-        match cache_cfg {
-            TileStoreCfg::Files(_cfg) => {
-                par_stream
-                    .par_then(threads, move |(xyz, tile)| {
-                        let tile_writer = tile_writer.clone();
-                        async move {
-                            let _ = tile_writer.put_tile(&xyz, tile).await;
+        pub struct TileBatchWriterPump {
+            writer: Arc<Box<dyn TileWriter>>,
+        }
+
+        impl Pump<Vec<(Xyz, Vec<u8>)>, ()> for TileBatchWriterPump {
+            fn spawn(
+                mut self,
+                mut input_receiver: Receiver<Vec<(Xyz, Vec<u8>)>>,
+            ) -> (Receiver<()>, JoinHandle<()>) {
+                let (output_sender, output_receiver) = mpsc::channel(1);
+
+                let h = tokio::spawn(async move {
+                    let writer = Arc::get_mut(&mut self.writer).unwrap();
+                    while let Some(batch) = input_receiver.recv().await {
+                        let batch = batch
+                            .into_iter()
+                            .map(|(xyz, tile)| (xyz.z, xyz.x as u32, xyz.y as u32, tile))
+                            .collect::<Vec<_>>();
+                        let _ = writer.put_tiles(&batch).await;
+                        if let Err(_e) = output_sender.send(()).await {
+                            break;
                         }
-                    })
-                    .count()
-                    .await;
+                    }
+                    let _ = writer.finalize();
+                });
+
+                (output_receiver, h)
             }
+        }
+
+        let pipeline = match cache_cfg {
+            TileStoreCfg::Files(_cfg) => pipeline.map(
+                move |(xyz, tile)| {
+                    let tile_writer = tile_writer.clone(); // TODO: init once per thread
+                    async move {
+                        let _ = tile_writer.put_tile(&xyz, tile).await;
+                    }
+                },
+                Concurrency::concurrent_unordered(threads),
+            ),
             TileStoreCfg::S3(cfg) => {
                 info!("Writing tiles to {}", &cfg.path);
                 let s3_writer_thread_count = args.tasks.unwrap_or(256);
-                par_stream
-                    .par_then(s3_writer_thread_count, move |(xyz, tile)| {
-                        let s3_writer = tile_writer.clone();
+                pipeline.map(
+                    move |(xyz, tile)| {
+                        let s3_writer = tile_writer.clone(); // TODO: init once per thread
                         async move {
                             let _ = s3_writer.put_tile(&xyz, tile).await;
                         }
-                    })
-                    .count()
-                    .await;
+                    },
+                    Concurrency::concurrent_unordered(s3_writer_thread_count),
+                )
             }
-            TileStoreCfg::Mbtiles(_) | TileStoreCfg::Pmtiles(_) => {
-                let tile_writer = tile_store_writer.clone();
+            TileStoreCfg::Mbtiles(_) => {
                 let batch_size = 200; // For MBTiles, create the largest prepared statement supported by SQLite (999 parameters)
-                par_stream
-                    .stateful_batching(tile_writer, |mut tile_writer, mut stream| async move {
-                        let mut batch = Vec::with_capacity(batch_size);
-                        while let Some((xyz, tile)) = stream.next().await {
-                            batch.push((xyz.z, xyz.x as u32, xyz.y as u32, tile));
-                            // let _ = tile_writer.put_tile_mut(&xyz, tile).await;
-                            // batch.push((xyz.z, xyz.x as u32, xyz.y as u32, Vec::<u8>::new()));
-                            if batch.len() >= batch.capacity() {
-                                break;
-                            }
-                        }
-                        let empty = batch.is_empty();
-                        let _ = tile_writer.put_tiles(&batch).await;
-                        if empty {
-                            let _ = tile_writer.finalize();
-                        }
-                        (!empty).then_some(((), tile_writer, stream))
-                    })
-                    .count()
-                    .await;
+                pipeline.batch(batch_size).pump(TileBatchWriterPump {
+                    writer: tile_writer,
+                })
             }
-            TileStoreCfg::NoStore => {
-                par_stream.count().await;
-            }
+            TileStoreCfg::Pmtiles(_) => pipeline.batch(50).pump(TileBatchWriterPump {
+                writer: tile_writer,
+            }),
+            TileStoreCfg::NoStore => pipeline.map(|_| async {}, Concurrency::serial()),
         };
+
+        let (mut output_receiver, _join_handle) = pipeline.build();
+        while let Some(_output) = output_receiver.recv().await {}
 
         progress_main.set_style(
             ProgressStyle::default_spinner().template("{elapsed_precise} ({per_sec}) {msg}"),
