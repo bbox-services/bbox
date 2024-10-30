@@ -89,6 +89,17 @@ impl TileService {
             None // tms.xy_bbox()
         };
 
+        // Number of worker threads (size >= #cores).
+        let threads = args.threads.unwrap_or(num_cpus::get());
+
+        let minzoom = args.minzoom.unwrap_or(0);
+        let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
+        let griditer: Box<dyn TileIterator + Send> = if let Some(bbox) = bbox {
+            Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
+        } else {
+            Box::new(tms.hilbert_iterator(minzoom, maxzoom))
+        };
+
         let ts = tileset.clone();
         let Some(cache_cfg) = &ts.cache_config() else {
             return Err(
@@ -102,18 +113,9 @@ impl TileService {
             .into());
         };
         let compression = tile_store.compression();
-        let tile_writer = Arc::new(tile_store.setup_writer().await?);
+        let n_tiles = ((1 << maxzoom) as usize).pow(2);
+        let tile_writer = Arc::new(tile_store.setup_writer(true, Some(n_tiles)).await?);
 
-        // Number of worker threads (size >= #cores).
-        let threads = args.threads.unwrap_or(num_cpus::get());
-
-        let minzoom = args.minzoom.unwrap_or(0);
-        let maxzoom = args.maxzoom.unwrap_or(tms.maxzoom());
-        let griditer: Box<dyn TileIterator + Send> = if let Some(bbox) = bbox {
-            Box::new(tms.xyz_iterator(&bbox, minzoom, maxzoom))
-        } else {
-            Box::new(tms.hilbert_iterator(minzoom, maxzoom))
-        };
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
 
         // We setup different pipelines for certain scenarios.

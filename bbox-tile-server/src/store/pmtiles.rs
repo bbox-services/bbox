@@ -46,7 +46,7 @@ impl TileStore for PmtilesStore {
             _ => Compression::None,
         }
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+    async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
         let reader: Box<dyn TileReader> =
             if let Ok(reader) = AsyncPmTilesReader::new_with_path(&self.path).await {
                 Box::new(PmtilesStoreReader {
@@ -60,7 +60,12 @@ impl TileStore for PmtilesStore {
             };
         Ok(reader)
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(
+        &self,
+        _seeding: bool,
+        _size_hint: Option<usize>,
+    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        // TODO: Return error in non-seeding mode
         let tile_type = match self.format {
             Format::Jpeg => TileType::Jpeg,
             Format::Mvt => TileType::Mvt,

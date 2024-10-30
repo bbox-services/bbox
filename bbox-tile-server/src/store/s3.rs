@@ -87,10 +87,16 @@ impl TileStore for S3Store {
             StoreCompressionCfg::None => Compression::None,
         }
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+    async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
+        // TODO: we should probably return NoCache in non-seeding mode
         Ok(Box::new(self.clone()))
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(
+        &self,
+        _seeding: bool,
+        _size_hint: Option<usize>,
+    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        // TODO: maybe we should not support this in non-seeding mode?
         Ok(Box::new(self.clone()))
     }
 }

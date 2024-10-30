@@ -51,17 +51,15 @@ pub trait StoreFromConfig {
 pub trait TileStore: DynClone + Send + Sync {
     /// Compression of stored tiles
     fn compression(&self) -> Compression;
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError>;
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError>;
-    // fn capabilities(&self) -> HashSet<TileStoreCapabilities>;
+    async fn setup_reader(&self, seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError>;
+    async fn setup_writer(
+        &self,
+        seeding: bool,
+        size_hint: Option<usize>,
+    ) -> Result<Box<dyn TileWriter>, TileStoreError>;
 }
 
 clone_trait_object!(TileStore);
-
-// pub enum TileStoreCapabilities {
-//     Cloneable,
-//     RandomWrite,
-// }
 
 #[async_trait]
 pub trait TileWriter: DynClone + Send + Sync {
@@ -120,6 +118,16 @@ impl CacheLayout {
         }
         path
     }
+    pub fn shared_path(&self, base_dir: &Path) -> PathBuf {
+        let mut path = base_dir.to_path_buf();
+        path.push("shared");
+        path
+    }
+    // pub fn initialize(&self, base_dir: &Path) -> Result<(), TileStoreError> {
+    //     let path = self.shared_path(base_dir);
+    //     fs::create_dir_all(&path).map_err(|e| TileStoreError::FileError(path, e))?;
+    //     Ok(())
+    // }
     pub fn path_string(&self, base_dir: &Path, xyz: &Xyz, format: &Format) -> String {
         self.path(base_dir, xyz, format)
             .into_os_string()
@@ -136,10 +144,14 @@ impl TileStore for NoStore {
     fn compression(&self) -> Compression {
         Compression::None
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+    async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
         Ok(Box::new(self.clone()))
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(
+        &self,
+        _seeding: bool,
+        _size_hint: Option<usize>,
+    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
         Ok(Box::new(self.clone()))
     }
 }

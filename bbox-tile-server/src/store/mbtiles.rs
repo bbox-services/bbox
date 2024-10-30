@@ -55,12 +55,16 @@ impl TileStore for MbtilesStore {
             _ => Compression::None,
         }
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+    async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
         info!("Creating connection pool for {}", &self.path.display());
         let mbt = MbtilesDatasource::new_pool(mbtiles_from_path(self.path.clone())?, None).await?;
         Ok(Box::new(mbt))
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(
+        &self,
+        _seeding: bool,
+        _size_hint: Option<usize>,
+    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
         info!("Creating connection pool for {}", &self.path.display());
         let mbt = MbtilesDatasource::new_pool(
             mbtiles_from_path(self.path.clone())?,
@@ -113,9 +117,9 @@ impl TileWriter for MbtilesDatasource {
             )
             .await?;
         for (z, x, y, tile_data) in tiles {
-            let hash = blake3::hash(tile_data);
+            let hash = blake3::hash(tile_data).to_hex();
             sql2.query()
-                .bind(hash.to_hex().as_str())
+                .bind(hash.as_str())
                 .bind(tile_data)
                 .execute(&mut *tx)
                 .await?;
@@ -125,7 +129,7 @@ impl TileWriter for MbtilesDatasource {
                 .bind(z)
                 .bind(x)
                 .bind(y)
-                .bind(hash.to_hex().as_str())
+                .bind(hash.as_str())
                 .execute(&mut *tx)
                 .await?;
         }

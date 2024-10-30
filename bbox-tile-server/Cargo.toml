@@ -35,6 +35,7 @@ chrono = { workspace = true }
 clap = { workspace = true }
 crossbeam = "0.8.1"
 dyn-clone = "1.0.6"
+fastbloom = "0.7.1"
 futures = "0.3"
 futures-util = "0.3.21"
 geo-types = "0.7.12"
