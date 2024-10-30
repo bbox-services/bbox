@@ -102,7 +102,7 @@ impl TileWriter for MbtilesDatasource {
         let mut tx = conn.begin().await?;
         let sql2 = tx
             .prepare(
-                "INSERT OR REPLACE INTO images (tile_id, tile_data)
+                "INSERT OR IGNORE INTO images (tile_id, tile_data)
                 VALUES (?1, ?2);",
             )
             .await?;
