@@ -91,11 +91,7 @@ impl TileStore for S3Store {
         // TODO: we should probably return NoCache in non-seeding mode
         Ok(Box::new(self.clone()))
     }
-    async fn setup_writer(
-        &self,
-        _seeding: bool,
-        _size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, _seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
         // TODO: maybe we should not support this in non-seeding mode?
         Ok(Box::new(self.clone()))
     }

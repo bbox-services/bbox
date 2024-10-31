@@ -4,9 +4,9 @@ use crate::store::{
 };
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
-use fastbloom::BloomFilter;
 use log::debug;
 use martin_mbtiles::Metadata;
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter};
 use std::path::PathBuf;
@@ -32,29 +32,48 @@ pub struct FileStoreReaderWriter {
 
 #[derive(Clone)]
 struct Deduplicator {
-    bloom_filter: Arc<Mutex<BloomFilter>>,
+    dup_counter: Arc<Mutex<HashMap<blake3::Hash, usize>>>,
 }
 
 impl Deduplicator {
-    fn new(expected_num_items: usize) -> Self {
-        dbg!(
-            BloomFilter::with_false_pos(0.001)
-                .expected_items(expected_num_items)
-                .num_bits()
-                * 8
-        );
+    const MAX_ENTRIES: usize = 100;
+    fn new() -> Self {
         Self {
-            bloom_filter: Arc::new(Mutex::new(
-                // False positives for z19 (274.9 billion tiles): 274.9 million tiles
-                // RAM usage for z16: 460 GB (memory allocation failure for z17!)
-                BloomFilter::with_false_pos(0.001).expected_items(expected_num_items),
-            )),
+            // planetiler creates Shortbread tiles from z0-z14.
+            // z14: 2^14*2^14 = 268'435'456 tiles.
+            // planetiler:
+            // # of addressed tiles:  264'707'723
+            // # of tile entries (after RLE):  45'367'481
+            // # of tile contents:  37'068'264
+            dup_counter: Arc::new(Mutex::new(HashMap::with_capacity(Self::MAX_ENTRIES))),
+            // Alternatives:
+            // Bloom filter with false postive rate of 0.001 (fastbloom):
+            // False positives for z19 (274.9 billion tiles): 274.9 million tiles
+            // RAM usage for z16: 460 GB (memory allocation failure for z17!)
+            // CuckooFilter:
+            // RAM usage for z16: 4GB (memory allocation failure for z18!)
+            // planetiler:
+            // Uses LongLongMap with FNV-1a 64-bit hash for a subset of all tiles.
+            // > Current understanding is, that for the whole planet, there are 267m total tiles and 38m unique tiles. The
+            // > containsOnlyFillsOrEdges() heuristic catches >99.9% of repeated tiles and cuts down the number of tile
+            // > hashes we need to track by 98% (38m to 735k). So it is considered a good tradeoff.
         }
     }
     fn check(&self, data: &[u8]) -> Option<blake3::Hash> {
         let hash = blake3::hash(data);
-        let is_dup = self.bloom_filter.lock().unwrap().insert(&hash);
-        if is_dup {
+        let mut dup_counter = self.dup_counter.lock().unwrap();
+        let count = *dup_counter
+            .entry(hash)
+            .and_modify(|cnt| *cnt += 1)
+            .or_insert(1);
+        if dup_counter.len() >= Self::MAX_ENTRIES {
+            // Remove 20% of entries with lowest count (not very sophisticated)
+            let mut counts = dup_counter.values().cloned().collect::<Vec<_>>();
+            counts.sort();
+            let limit = counts[Self::MAX_ENTRIES / 10 * 2];
+            dup_counter.retain(|_, v| *v > limit);
+        }
+        if count > 1 {
             Some(hash)
         } else {
             None
@@ -106,18 +125,13 @@ impl TileStore for FileStore {
         };
         Ok(Box::new(reader))
     }
-    async fn setup_writer(
-        &self,
-        seeding: bool,
-        size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
         let dedup = if seeding
             && !matches!(
                 self.dedup.as_ref().unwrap_or(&FileDedupCfg::Hardlink),
                 &FileDedupCfg::Off
             ) {
-            let size_hint = size_hint.unwrap_or(4096);
-            Some(Deduplicator::new(size_hint))
+            Some(Deduplicator::new())
         } else {
             None
         };
@@ -171,13 +185,13 @@ impl TileWriter for FileStoreReaderWriter {
 }
 
 fn create_file_with_dir(fullpath: &PathBuf) -> Result<File, io::Error> {
-    match File::create(&fullpath) {
+    match File::create(fullpath) {
         Ok(f) => Ok(f),
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
             // Create parent directories
             let p = fullpath.as_path();
             fs::create_dir_all(p.parent().unwrap())?;
-            File::create(&fullpath)
+            File::create(fullpath)
         }
         Err(e) => Err(e),
     }

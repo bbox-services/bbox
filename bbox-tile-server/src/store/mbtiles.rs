@@ -60,11 +60,7 @@ impl TileStore for MbtilesStore {
         let mbt = MbtilesDatasource::new_pool(mbtiles_from_path(self.path.clone())?, None).await?;
         Ok(Box::new(mbt))
     }
-    async fn setup_writer(
-        &self,
-        _seeding: bool,
-        _size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, _seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
         info!("Creating connection pool for {}", &self.path.display());
         let mbt = MbtilesDatasource::new_pool(
             mbtiles_from_path(self.path.clone())?,

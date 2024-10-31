@@ -52,11 +52,7 @@ pub trait TileStore: DynClone + Send + Sync {
     /// Compression of stored tiles
     fn compression(&self) -> Compression;
     async fn setup_reader(&self, seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError>;
-    async fn setup_writer(
-        &self,
-        seeding: bool,
-        size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError>;
+    async fn setup_writer(&self, seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError>;
 }
 
 clone_trait_object!(TileStore);
@@ -147,11 +143,7 @@ impl TileStore for NoStore {
     async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
         Ok(Box::new(self.clone()))
     }
-    async fn setup_writer(
-        &self,
-        _seeding: bool,
-        _size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, _seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
         Ok(Box::new(self.clone()))
     }
 }

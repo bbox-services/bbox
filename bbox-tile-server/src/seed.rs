@@ -113,8 +113,8 @@ impl TileService {
             .into());
         };
         let compression = tile_store.compression();
-        let n_tiles = ((1 << maxzoom) as usize).pow(2);
-        let tile_writer = Arc::new(tile_store.setup_writer(true, Some(n_tiles)).await?);
+        // let n_tiles = ((1 << maxzoom) as usize).pow(2);
+        let tile_writer = Arc::new(tile_store.setup_writer(true).await?);
 
         info!("Seeding tiles from level {minzoom} to {maxzoom}");
 

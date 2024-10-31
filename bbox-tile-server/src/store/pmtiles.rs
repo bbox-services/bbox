@@ -60,11 +60,7 @@ impl TileStore for PmtilesStore {
             };
         Ok(reader)
     }
-    async fn setup_writer(
-        &self,
-        _seeding: bool,
-        _size_hint: Option<usize>,
-    ) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, _seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
         // TODO: Return error in non-seeding mode
         let tile_type = match self.format {
             Format::Jpeg => TileType::Jpeg,
