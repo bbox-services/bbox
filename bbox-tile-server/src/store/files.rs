@@ -36,7 +36,7 @@ struct Deduplicator {
 }
 
 impl Deduplicator {
-    const MAX_ENTRIES: usize = 100;
+    const MAX_ENTRIES: usize = 1000;
     fn new() -> Self {
         Self {
             // planetiler creates Shortbread tiles from z0-z14.
@@ -46,19 +46,23 @@ impl Deduplicator {
             // # of tile entries (after RLE):  45'367'481
             // # of tile contents:  37'068'264
             dup_counter: Arc::new(Mutex::new(HashMap::with_capacity(Self::MAX_ENTRIES))),
-            // Alternatives:
-            // Bloom filter with false postive rate of 0.001 (fastbloom):
+            // # Alternatives
+            // ## fastbloom
+            // Bloom filter with false postive rate of 0.001:
             // False positives for z19 (274.9 billion tiles): 274.9 million tiles
             // RAM usage for z16: 460 GB (memory allocation failure for z17!)
-            // CuckooFilter:
+            // ## CuckooFilter
             // RAM usage for z16: 4GB (memory allocation failure for z18!)
-            // planetiler:
+            // ## planetiler
             // Uses LongLongMap with FNV-1a 64-bit hash for a subset of all tiles.
             // > Current understanding is, that for the whole planet, there are 267m total tiles and 38m unique tiles. The
             // > containsOnlyFillsOrEdges() heuristic catches >99.9% of repeated tiles and cuts down the number of tile
             // > hashes we need to track by 98% (38m to 735k). So it is considered a good tradeoff.
+            // ## go-pmtiles
+            // 128-bit FNV-1a hash for all tiles.
         }
     }
+    /// Check if the data is a duplicate.
     fn check(&self, data: &[u8]) -> Option<blake3::Hash> {
         let hash = blake3::hash(data);
         let mut dup_counter = self.dup_counter.lock().unwrap();
@@ -67,11 +71,11 @@ impl Deduplicator {
             .and_modify(|cnt| *cnt += 1)
             .or_insert(1);
         if dup_counter.len() >= Self::MAX_ENTRIES {
-            // Remove 20% of entries with lowest count (not very sophisticated)
+            // Remove 90% of entries with lowest count
             let mut counts = dup_counter.values().cloned().collect::<Vec<_>>();
             counts.sort();
-            let limit = counts[Self::MAX_ENTRIES / 10 * 2];
-            dup_counter.retain(|_, v| *v > limit);
+            let mincount = counts[Self::MAX_ENTRIES / 10 * 9 - 1];
+            dup_counter.retain(|_, v| *v > mincount);
         }
         if count > 1 {
             Some(hash)
