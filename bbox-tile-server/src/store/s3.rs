@@ -1,6 +1,6 @@
 use crate::config::{S3StoreCfg, StoreCompressionCfg};
 use crate::store::{
-    CacheLayout, StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter,
+    CacheLayout, NoStore, StoreFromConfig, TileReader, TileStore, TileStoreError, TileWriter,
 };
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
@@ -87,11 +87,19 @@ impl TileStore for S3Store {
             StoreCompressionCfg::None => Compression::None,
         }
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
-        Ok(Box::new(self.clone()))
+    async fn setup_reader(&self, seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
+        if seeding {
+            Ok(Box::new(self.clone()))
+        } else {
+            Ok(Box::new(NoStore))
+        }
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
-        Ok(Box::new(self.clone()))
+    async fn setup_writer(&self, seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        if seeding {
+            Ok(Box::new(self.clone()))
+        } else {
+            Ok(Box::new(NoStore))
+        }
     }
 }
 

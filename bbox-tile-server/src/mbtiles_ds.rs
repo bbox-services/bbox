@@ -97,9 +97,7 @@ impl MbtilesDatasource {
             // PRAGMA page_size = 512
             // PRAGMA encoding = 'UTF-8'
             // VACUUM
-            init_mbtiles_schema(&mut conn, MbtType::Flat).await?;
-            // MbtType::Normalized { hash_view: true } does not work because extension functions are
-            // registered only when using Mbtiles::open but not via SqlitePool.
+            init_mbtiles_schema(&mut conn, MbtType::Normalized { hash_view: true }).await?;
             // metadata content example:
             // ('name','Tilemaker to OpenTileMaps schema');
             // ('type','baselayer');

@@ -328,6 +328,18 @@ pub enum TileStoreCfg {
 pub struct FileStoreCfg {
     /// Base directory, tileset name will be appended
     pub base_dir: PathBuf,
+    /// Tile deduplication method.
+    ///
+    /// Defaults to `Hardlink` for seeding and `None` for serving.
+    pub deduplication: Option<FileDedupCfg>,
+}
+
+/// Tile deduplication method.
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub enum FileDedupCfg {
+    Off,
+    Hardlink,
+    // Softlink,
 }
 
 impl FileStoreCfg {
@@ -377,6 +389,7 @@ impl TileStoreCfg {
         if let Some(path) = &args.tile_path {
             let cache_cfg = TileStoreCfg::Files(FileStoreCfg {
                 base_dir: path.into(),
+                deduplication: None,
             });
             Some(cache_cfg)
         } else if let Some(s3_path) = &args.s3_path {
@@ -503,6 +516,7 @@ impl From<t_rex::ApplicationCfg> for TileServiceCfg {
                 if let Some(fcache) = cache.file {
                     Some(TileStoreCfg::Files(FileStoreCfg {
                         base_dir: fcache.base.into(),
+                        deduplication: None,
                     }))
                 } else {
                     None

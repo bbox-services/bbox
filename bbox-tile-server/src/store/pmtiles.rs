@@ -46,7 +46,7 @@ impl TileStore for PmtilesStore {
             _ => Compression::None,
         }
     }
-    async fn setup_reader(&self) -> Result<Box<dyn TileReader>, TileStoreError> {
+    async fn setup_reader(&self, _seeding: bool) -> Result<Box<dyn TileReader>, TileStoreError> {
         let reader: Box<dyn TileReader> =
             if let Ok(reader) = AsyncPmTilesReader::new_with_path(&self.path).await {
                 Box::new(PmtilesStoreReader {
@@ -60,7 +60,11 @@ impl TileStore for PmtilesStore {
             };
         Ok(reader)
     }
-    async fn setup_writer(&self) -> Result<Box<dyn TileWriter>, TileStoreError> {
+    async fn setup_writer(&self, seeding: bool) -> Result<Box<dyn TileWriter>, TileStoreError> {
+        if !seeding {
+            // PMTiles doesn't support random access writing.
+            return Ok(Box::new(NoStore));
+        }
         let tile_type = match self.format {
             Format::Jpeg => TileType::Jpeg,
             Format::Mvt => TileType::Mvt,
