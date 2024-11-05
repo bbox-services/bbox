@@ -19,19 +19,25 @@ pub trait CollectionDatasource {
     async fn setup_collection(
         &mut self,
         cfg: &ConfiguredCollectionCfg,
+        base_url: &str,
         extent: Option<CoreExtent>,
     ) -> Result<FeatureCollection>;
 }
 
 #[async_trait]
 pub trait AutoscanCollectionDatasource {
-    async fn collections(&mut self) -> Result<Vec<FeatureCollection>>;
+    async fn collections(&mut self, base_url: &str) -> Result<Vec<FeatureCollection>>;
 }
 
 #[async_trait]
 pub trait CollectionSource: DynClone + Sync + Send {
     async fn items(&self, filter: &FilterParams) -> Result<ItemsResult>;
-    async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>>;
+    async fn item(
+        &self,
+        base_url: &str,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Result<Option<CoreFeature>>;
     async fn queryables(&self, collection_id: &str) -> Result<Option<Queryables>>;
 }
 
@@ -71,6 +77,7 @@ impl Datasources {
     pub async fn setup_collection(
         &mut self,
         collection: &ConfiguredCollectionCfg,
+        base_url: &str,
     ) -> Result<FeatureCollection> {
         match &collection.source {
             CollectionSourceCfg::Postgis(cfg) => {
@@ -83,7 +90,7 @@ impl Datasources {
                             .unwrap_or(&"(default)".to_string())
                             .clone(),
                     ))?;
-                source.setup_collection(collection, None).await
+                source.setup_collection(collection, base_url, None).await
             }
             CollectionSourceCfg::Gpkg(ref cfg) => {
                 let source = self
@@ -95,7 +102,7 @@ impl Datasources {
                             .unwrap_or(&"(default)".to_string())
                             .clone(),
                     ))?;
-                source.setup_collection(collection, None).await
+                source.setup_collection(collection, base_url, None).await
             }
         }
     }

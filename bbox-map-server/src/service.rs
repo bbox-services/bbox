@@ -34,9 +34,11 @@ impl OgcApiService for MapService {
 
     async fn create(config: &Self::Config, core_cfg: &CoreServiceCfg) -> Self {
         let loglevel = core_cfg.loglevel();
+        let public_server_url = core_cfg.public_server_url();
         let num_fcgi_processes = config.num_fcgi_processes();
         let default_project = config.default_project.clone();
-        let (process_pools, inventory) = detect_backends(config, &loglevel).unwrap();
+        let (process_pools, inventory) =
+            detect_backends(config, public_server_url, &loglevel).unwrap();
         let fcgi_clients = process_pools
             .iter()
             .map(|process_pool| web::Data::new(process_pool.client_dispatcher(config)))

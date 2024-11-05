@@ -5,6 +5,7 @@ use serde_xml_rs::from_reader;
 #[derive(Serialize, Clone, Default, Debug)]
 pub struct Inventory {
     pub wms_services: Vec<WmsService>,
+    pub public_server_url: Option<String>,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -19,6 +20,12 @@ pub struct WmsService {
 pub enum CapType {
     Ogc,
     Qgis,
+}
+
+impl Inventory {
+    pub fn base_url(&self) -> &str {
+        self.public_server_url.as_deref().unwrap_or("/")
+    }
 }
 
 impl WmsService {

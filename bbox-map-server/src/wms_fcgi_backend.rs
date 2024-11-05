@@ -184,6 +184,7 @@ fn find_exe(locations: Vec<String>) -> Option<String> {
 
 pub fn detect_backends(
     config: &MapServiceCfg,
+    public_server_url: Option<String>,
     loglevel: &Option<Loglevel>,
 ) -> std::io::Result<(Vec<FcgiProcessPool>, Inventory)> {
     let num_fcgi_processes = config.num_fcgi_processes();
@@ -302,6 +303,7 @@ pub fn detect_backends(
     }
     let inventory = Inventory {
         wms_services: wms_inventory,
+        public_server_url,
     };
     Ok((pools, inventory))
 }

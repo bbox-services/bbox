@@ -5,7 +5,7 @@
 
 {% block content %}
 <article class="prose">
-<a href="/collections/{{collection.id}}/items.json">JSON</a><br/>
+<a href="collections/{{collection.id}}/items.json">JSON</a><br/>
 </article>
 
 <table class="table table-zebra table-xs">
@@ -23,7 +23,7 @@
   <tbody>
   {% for feature in features.features %}
     <tr>
-      <td><a href="/collections/{{collection.id}}/items/{{ feature.id }}">{{ feature.id }}</a></td>
+      <td><a href="collections/{{collection.id}}/items/{{ feature.id }}">{{ feature.id }}</a></td>
       {% for prop in first_feature.properties %}
       <td>{{feature.properties[prop]}}</td>
       {% endfor %}

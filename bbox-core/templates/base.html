@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=devide-width, initial-scale=1.0" />
     <title>BBOX - {% block title %}Home{% endblock %}</title>
-    <link href="/frontend/bbox.css" rel="stylesheet">
+    <base href="{{base_url | safe}}" />
+    <link href="frontend/bbox.css" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.0.7/css/boxicons.min.css" rel="stylesheet" />
     {% block head %} {% endblock %}
 </head>
@@ -29,12 +30,12 @@
 
                 <ul class="menu bg-base-200 w-56 h-full rounded-box">
                     <li>
-                        <a href="/" {% if cur_menu=="Home" %}class="active" {% endif %}>
+                        <a href="./" {% if cur_menu=="Home" %}class="active" {% endif %}>
                             <i class="bx bx-grid-alt"></i> Home
                         </a>
                     </li>
                     <li>
-                        <a href="/collections" {% if cur_menu=="Collections" %}class="active" {% endif %}>
+                        <a href="collections" {% if cur_menu=="Collections" %}class="active" {% endif %}>
                             <i class="bx bx-list-ul"></i> Collections
                         </a>
                     </li>
@@ -44,7 +45,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/redoc.html" {% if cur_menu=="API" %}class="active" {% endif %}>
+                        <a href="redoc.html" {% if cur_menu=="API" %}class="active" {% endif %}>
                             <i class="bx bx-code-alt"></i> API
                         </a>
                     </li>
