@@ -329,8 +329,7 @@ pub struct FileStoreCfg {
     /// Base directory, tileset name will be appended
     pub base_dir: PathBuf,
     /// Tile deduplication method.
-    ///
-    /// Defaults to `Hardlink` for seeding and `None` for serving.
+    /// Defaults to `Hardlink` for seeding and `Off` for serving.
     pub deduplication: Option<FileDedupCfg>,
 }
 
