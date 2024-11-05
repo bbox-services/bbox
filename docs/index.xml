@@ -1649,13 +1649,9 @@ title="Copy code"
 &lt;h4>files&lt;span class="hx-absolute -hx-mt-20" id="files">&lt;/span>
 &lt;a href="#files" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>File system tiles store&lt;/p>
 &lt;ul>
-&lt;li>
-&lt;p>&lt;code>base_dir&lt;/code> &lt;em>Path&lt;/em>: Base directory, tileset name will be appended&lt;/p>
-&lt;/li>
-&lt;li>
-&lt;p>&lt;code>deduplication&lt;/code> &lt;a href="#filededup" >FileDedup&lt;/a> (optional): Tile deduplication method.&lt;/p>
-&lt;p>Defaults to &lt;code>Hardlink&lt;/code> for seeding and &lt;code>None&lt;/code> for serving.&lt;/p>
-&lt;/li>
+&lt;li>&lt;code>base_dir&lt;/code> &lt;em>Path&lt;/em>: Base directory, tileset name will be appended&lt;/li>
+&lt;li>&lt;code>deduplication&lt;/code> &lt;a href="#filededup" >FileDedup&lt;/a> (optional): Tile deduplication method.
+Defaults to &lt;code>Hardlink&lt;/code> for seeding and &lt;code>Off&lt;/code> for serving.&lt;/li>
 &lt;/ul>
 &lt;h4>s3&lt;span class="hx-absolute -hx-mt-20" id="s3">&lt;/span>
 &lt;a href="#s3" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>S3 tile store&lt;/p>
