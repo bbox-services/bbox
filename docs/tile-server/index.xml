@@ -762,7 +762,13 @@ like &lt;code>http://localhost:8080/xyz/ne_countries/{z}/{x}/{y}.pbf&lt;/code>. 
 &lt;h4>files&lt;span class="hx-absolute -hx-mt-20" id="files">&lt;/span>
 &lt;a href="#files" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>File system tiles store&lt;/p>
 &lt;ul>
-&lt;li>&lt;code>base_dir&lt;/code> &lt;em>Path&lt;/em>: Base directory, tileset name will be appended&lt;/li>
+&lt;li>
+&lt;p>&lt;code>base_dir&lt;/code> &lt;em>Path&lt;/em>: Base directory, tileset name will be appended&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;code>deduplication&lt;/code> &lt;a href="#filededup" >FileDedup&lt;/a> (optional): Tile deduplication method.&lt;/p>
+&lt;p>Defaults to &lt;code>Hardlink&lt;/code> for seeding and &lt;code>None&lt;/code> for serving.&lt;/p>
+&lt;/li>
 &lt;/ul>
 &lt;h4>s3&lt;span class="hx-absolute -hx-mt-20" id="s3">&lt;/span>
 &lt;a href="#s3" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>S3 tile store&lt;/p>
@@ -780,7 +786,12 @@ like &lt;code>http://localhost:8080/xyz/ne_countries/{z}/{x}/{y}.pbf&lt;/code>. 
 &lt;li>&lt;code>path&lt;/code> &lt;em>Path&lt;/em>&lt;/li>
 &lt;/ul>
 &lt;h4>nostore&lt;span class="hx-absolute -hx-mt-20" id="nostore">&lt;/span>
-&lt;a href="#nostore" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Disable tile cache&lt;/p></description></item><item><title/><link>https://www.bbox.earth/docs/tile-server/styling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/styling/</guid><description>
+&lt;a href="#nostore" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Disable tile cache&lt;/p>
+&lt;h4>FileDedup&lt;span class="hx-absolute -hx-mt-20" id="filededup">&lt;/span>
+&lt;a href="#filededup" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;p>Tile deduplication method.&lt;/p>
+&lt;h4>Off&lt;span class="hx-absolute -hx-mt-20" id="off">&lt;/span>
+&lt;a href="#off" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4>&lt;h4>Hardlink&lt;span class="hx-absolute -hx-mt-20" id="hardlink">&lt;/span>
+&lt;a href="#hardlink" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h4></description></item><item><title/><link>https://www.bbox.earth/docs/tile-server/styling/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://www.bbox.earth/docs/tile-server/styling/</guid><description>
 &lt;h1>Vector Tile styling&lt;/h1>&lt;h3>Using Maputnik for MVT styling&lt;span class="hx-absolute -hx-mt-20" id="using-maputnik-for-mvt-styling">&lt;/span>
 &lt;a href="#using-maputnik-for-mvt-styling" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h3>&lt;ul>
 &lt;li>Download latest public.zip from &lt;a href="https://github.com/maputnik/editor/releases" target="_blank" rel="noopener">https://github.com/maputnik/editor/releases&lt;/a>&lt;/li>
