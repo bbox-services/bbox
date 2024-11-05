@@ -326,8 +326,8 @@ impl TileService {
 impl TileSet {
     pub async fn setup_tile_store(&mut self) -> Result<(), TileStoreError> {
         if let Some(ts) = &self.tile_store {
-            self.cache_reader = Some(ts.setup_reader(false).await?);
             self.cache_writer = Some(ts.setup_writer(false).await?);
+            self.cache_reader = Some(ts.setup_reader(false).await?);
         }
         Ok(())
     }
