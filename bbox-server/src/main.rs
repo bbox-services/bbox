@@ -80,6 +80,9 @@ async fn run_service() -> std::io::Result<()> {
     }
     if tile_service.cli_run(&matches).await {
         return Ok(());
+    } else {
+        #[cfg(feature = "tile-server")]
+        tile_service.setup_tile_stores().await.unwrap();
     }
     if asset_service.cli_run(&matches).await {
         return Ok(());
