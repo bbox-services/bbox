@@ -113,8 +113,7 @@ mod tests {
             limit: Some(10),
             offset: Some(20),
             bbox: Some("1.0,2.2,3.33,4.444".to_string()),
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert_eq!(
             filter.as_args(),
@@ -122,40 +121,25 @@ mod tests {
         );
 
         let filter = FilterParams {
-            limit: None,
             offset: Some(20),
-            bbox: None,
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert_eq!(filter.as_args(), "?offset=20");
 
-        let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
-            datetime: None,
-            filters: HashMap::new(),
-        };
+        let filter = FilterParams::default();
         assert_eq!(filter.as_args(), "");
 
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
             datetime: Some("2024-01-01T00:00:00Z".to_string()),
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert_eq!(filter.as_args(), "?datetime=2024-01-01T00:00:00Z");
 
         let mut hm = HashMap::new();
         hm.insert("ArbitraryField".to_string(), "Something".to_string());
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
-            datetime: None,
             filters: hm,
+            ..Default::default()
         };
         assert_eq!(filter.as_args(), "?ArbitraryField=Something");
     }
@@ -165,9 +149,7 @@ mod tests {
         let filter = FilterParams {
             limit: Some(10),
             offset: Some(20),
-            bbox: None,
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert_eq!(filter.prev().unwrap().offset, Some(10));
         assert_eq!(filter.next(35).unwrap().offset, Some(30));
@@ -177,19 +159,14 @@ mod tests {
         let filter = FilterParams {
             limit: Some(10),
             offset: Some(10),
-            bbox: None,
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert_eq!(filter.prev().unwrap().offset, Some(0));
         assert_eq!(filter.next(35).unwrap().offset, Some(20));
 
         let filter = FilterParams {
             limit: Some(10),
-            offset: None,
-            bbox: None,
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         assert!(filter.prev().is_none());
         assert_eq!(filter.next(35).unwrap().offset, Some(10));
@@ -199,11 +176,8 @@ mod tests {
     fn bbox_parse() {
         assert_eq!(
             FilterParams {
-                limit: None,
-                offset: None,
                 bbox: Some("1.0,2.2,3.33,4.444".to_string()),
-                datetime: None,
-                filters: HashMap::new(),
+                ..Default::default()
             }
             .bbox()
             .unwrap(),
@@ -212,11 +186,8 @@ mod tests {
 
         assert_eq!(
             FilterParams {
-                limit: None,
-                offset: None,
                 bbox: Some("1.0,2.2,3.33,4.444,5,6".to_string()),
-                datetime: None,
-                filters: HashMap::new(),
+                ..Default::default()
             }
             .bbox()
             .unwrap(),
@@ -224,22 +195,16 @@ mod tests {
         );
 
         assert!(FilterParams {
-            limit: None,
-            offset: None,
             bbox: Some("1.0, 2.2, 3.33, 4.444".to_string()),
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         }
         .bbox()
         .is_err());
 
         assert_eq!(
             FilterParams {
-                limit: None,
-                offset: None,
                 bbox: Some("1,2,3".to_string()),
-                datetime: None,
-                filters: HashMap::new(),
+                ..Default::default()
             }
             .bbox()
             .unwrap(),

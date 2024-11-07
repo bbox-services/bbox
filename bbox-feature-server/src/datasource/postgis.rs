@@ -210,7 +210,7 @@ impl CollectionSource for PgCollectionSource {
             format!(
                 r#"SELECT to_jsonb(t.*)-'{geometry_column}'-'{pk}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
                     "{pk}"::varchar AS pk,
-                      count(*) OVER () AS __total_cnt 
+                      count(*) OVER () AS __total_cnt
                    FROM query t"#,
             )
         } else {
@@ -218,7 +218,7 @@ impl CollectionSource for PgCollectionSource {
                 r#"SELECT to_jsonb(t.*)-'{geometry_column}' AS properties, ST_AsGeoJSON({geometry_column})::jsonb AS geometry,
                       NULL AS pk,
                       --row_number() OVER () ::varchar AS pk,
-                      count(*) OVER () AS __total_cnt 
+                      count(*) OVER () AS __total_cnt
                FROM query t"#,
             )
         };
@@ -629,11 +629,9 @@ mod tests {
     async fn pg_bbox_filter() {
         let filter = FilterParams {
             limit: Some(50),
-            offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             // WGS84: 5.690918,45.890008,10.964355,47.665387
-            datetime: None,
-            filters: HashMap::new(),
+            ..Default::default()
         };
         let ds = PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
             .await
@@ -668,33 +666,26 @@ mod tests {
         };
 
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
             datetime: Some("2021-05-09T00:00:00Z".to_string()),
-            filters: HashMap::new(),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 1);
 
         // Combined with bbox
         let filter = FilterParams {
-            limit: None,
-            offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             datetime: Some("2021-05-09T00:00:00Z".to_string()),
-            filters: HashMap::new(),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 1);
 
         // Outside of bbox
         let filter = FilterParams {
-            limit: None,
-            offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             datetime: Some("2024-01-01T00:00:00Z".to_string()),
-            filters: HashMap::new(),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 0);
@@ -720,76 +711,59 @@ mod tests {
         };
 
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
-            datetime: None,
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 2);
 
         // Existing filter column, but not queriable
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
-            datetime: None,
             filters: HashMap::from([("scalerank".to_string(), "4".to_string())]),
+            ..Default::default()
         };
         assert!(source.items(&filter).await.is_err());
 
-        // Existing filter column, but not queriable
+        // Non-existing filter column
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
-            datetime: None,
             filters: HashMap::from([("foo".to_string(), "bar".to_string())]),
+            ..Default::default()
         };
         assert!(source.items(&filter).await.is_err());
 
         // Combined with bbox
         let filter = FilterParams {
-            limit: None,
-            offset: None,
             bbox: Some("633510.0904,5762740.4365,1220546.4677,6051366.6553".to_string()),
             // WGS84: 5.690918,45.890008,10.964355,47.665387
-            datetime: None,
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 2);
 
         // outside bbox
         let filter = FilterParams {
-            limit: None,
-            offset: None,
             bbox: Some("633510.0904,5762740.4365,633511,5762741".to_string()),
-            datetime: None,
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 0);
 
         // Combined with datetime
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
             datetime: Some("2021-05-09T00:00:00Z".to_string()),
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 1);
 
         // Other datetime
         let filter = FilterParams {
-            limit: None,
-            offset: None,
-            bbox: None,
             datetime: Some("2023-10-01T00:00:00Z".to_string()),
             filters: HashMap::from([("name".to_string(), "Rhein".to_string())]),
+            ..Default::default()
         };
         let items = source.items(&filter).await.unwrap();
         assert_eq!(items.features.len(), 0);
