@@ -19,7 +19,7 @@ Tile seeder features:
 
 ## Configuration
 
-See [Documentation](https://www.bbox.earth/tile-server/configuration.html) for examples.
+See [Documentation](https://www.bbox.earth/docs/tile-server/configuration/) for examples.
 
 ## Usage
 

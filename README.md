@@ -9,7 +9,7 @@ Composable spatial services.
 ```
  ___ ___  _____  __
 | _ ) _ )/ _ \ \/ /
-| _ \ _ \ (_) >  < 
+| _ \ _ \ (_) >  <
 |___/___/\___/_/\_\
 ```
 
@@ -32,7 +32,7 @@ See [Documentation](https://www.bbox.earth/) for detailed information.
 
 ## Installation
 
-See [Documentation](https://www.bbox.earth/installation.html) for instructions.
+See [Documentation](https://www.bbox.earth/docs/installation/) for instructions.
 
 ## Docker
 
