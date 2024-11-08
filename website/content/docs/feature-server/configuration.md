@@ -33,7 +33,7 @@ title = "populated places"
 description = "Natural Earth populated places"
 [collection.gpkg]
 datasource = "ne_extracts"
-table = "ne_10m_populated_places"
+table_name = "ne_10m_populated_places"
 ```
 
 With custom SQL query:
@@ -53,7 +53,7 @@ Collections with a PostGIS datasource:
 ```toml
 [[collection]]
 name = "states_provinces_lines"
-title = "states states/provinces borders"
+title = "States/provinces borders"
 description = "Natural Earth states/provinces borders"
 [collection.postgis]
 datasource = "mvtbenchdb"
