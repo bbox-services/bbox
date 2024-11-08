@@ -33,10 +33,21 @@ attribution = "Natural Earth v4"
 name = "country-name"
 #table_name = "ne_10m_admin_0_country_points"
 geometry_type = "POINT"
-buffer_size = 0
 [[tileset.postgis.layer.query]]
 sql = """SELECT wkb_geometry, abbrev, name FROM ne_10m_admin_0_country_points"""
 ```
+
+Query with a custom runtime parameter:
+```toml
+sql = """
+SELECT id, date, ST_Point(lon, lat, 4326) AS geom
+FROM gpslog
+WHERE date = !date!
+"""
+```
+
+A custom parameter is passed by name: `/xyz/gpstracks/0/0/0.mvt?date=2024-11-08`
+
 
 ## Raster tiles from map service
 

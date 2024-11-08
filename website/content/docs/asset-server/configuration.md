@@ -4,7 +4,7 @@ Static file serving:
 ```toml
 [[assets.static]]
 # ./assets/* -> http://localhost:8080/assets/
-dir = "./assets"
+dir = "assets" # Relative to configuration file
 path = "/assets"
 ```
 
@@ -12,7 +12,7 @@ Template file serving:
 ```toml
 [[assets.template]]
 # ./templates/name.html -> http://localhost:8080/html/name/param
-dir = "./templates"
+dir = "templates"
 path = "/html"
 ```
 
@@ -20,6 +20,6 @@ QGIS plugin repository:
 ```toml
 [[assets.repo]]
 # ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
-dir = "./plugins"
+dir = "plugins"
 path = "/qgisrepo"
 ```

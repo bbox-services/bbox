@@ -5,32 +5,11 @@ Serving static and templated files.
 Features:
 - [x] Configurable base directories and endpoints
 - [x] Serve fonts and other assets for Tile services
+- [ ] Serve MVT sprites from SVG images
 - [x] QGIS plugin repository
 - [ ] Templates with inputs from path, arguments and configuration
 
 
 ## Configuration
 
-Static file serving:
-```toml
-[[assets.static]]
-# ./assets/* -> http://localhost:8080/assets/
-dir = "./assets"
-path = "/assets"
-```
-
-Template file serving:
-```toml
-[[assets.template]]
-# ./templates/name.html -> http://localhost:8080/html/name/param
-dir = "./templates"
-path = "/html"
-```
-
-QGIS plugin repository:
-```toml
-[[assets.repo]]
-# ./plugins/*.zip -> http://localhost:8080/qgisrepo/plugins.xml
-dir = "./plugins"
-path = "/qgisrepo"
-```
+See [Documentation](https://www.bbox.earth/docs/asset-server/configuration/) for examples.

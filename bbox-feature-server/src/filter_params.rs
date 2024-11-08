@@ -135,10 +135,8 @@ mod tests {
         };
         assert_eq!(filter.as_args(), "?datetime=2024-01-01T00:00:00Z");
 
-        let mut hm = HashMap::new();
-        hm.insert("ArbitraryField".to_string(), "Something".to_string());
         let filter = FilterParams {
-            filters: hm,
+            filters: HashMap::from([("ArbitraryField".to_string(), "Something".to_string())]),
             ..Default::default()
         };
         assert_eq!(filter.as_args(), "?ArbitraryField=Something");

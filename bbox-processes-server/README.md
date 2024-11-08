@@ -15,13 +15,7 @@ Features:
 
 ## Configuration
 
-Dagster Backend:
-```toml
-[processes.dagster_backend]
-graphql_url = "http://localhost:3000/graphql"
-repository_name = "the_repository"
-repository_location_name = "the.repos"
-```
+See [Documentation](https://www.bbox.earth/docs/processes-server/configuration/) for examples.
 
 ## Usage
 
