@@ -5,7 +5,7 @@ use serde_xml_rs::from_reader;
 #[derive(Serialize, Clone, Default, Debug)]
 pub struct Inventory {
     pub wms_services: Vec<WmsService>,
-    pub public_server_url: Option<String>,
+    base_url: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -23,8 +23,22 @@ pub enum CapType {
 }
 
 impl Inventory {
+    pub fn new(wms_services: Vec<WmsService>, public_server_url: Option<String>) -> Self {
+        let base_url = format!(
+            "{}/",
+            public_server_url
+                .as_deref()
+                .unwrap_or("")
+                .trim_end_matches('/')
+        );
+        Inventory {
+            wms_services,
+            base_url,
+        }
+    }
+
     pub fn base_url(&self) -> &str {
-        self.public_server_url.as_deref().unwrap_or("/")
+        &self.base_url
     }
 }
 

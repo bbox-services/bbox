@@ -301,9 +301,6 @@ pub fn detect_backends(
             );
         }
     }
-    let inventory = Inventory {
-        wms_services: wms_inventory,
-        public_server_url,
-    };
+    let inventory = Inventory::new(wms_inventory, public_server_url);
     Ok((pools, inventory))
 }

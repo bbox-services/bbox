@@ -25,7 +25,7 @@ use std::collections::HashMap;
 pub struct Inventory {
     // Key: collection_id
     feat_collections: HashMap<String, FeatureCollection>,
-    public_server_url: Option<String>,
+    base_url: String,
 }
 
 #[derive(Clone)]
@@ -37,18 +37,25 @@ pub struct FeatureCollection {
 
 impl Inventory {
     pub fn new(public_server_url: Option<String>) -> Self {
+        let base_url = format!(
+            "{}/",
+            public_server_url
+                .as_deref()
+                .unwrap_or("")
+                .trim_end_matches('/')
+        );
         Inventory {
             feat_collections: HashMap::new(),
-            public_server_url,
+            base_url,
         }
     }
 
     pub fn base_url(&self) -> &str {
-        self.public_server_url.as_deref().unwrap_or("/")
+        &self.base_url
     }
 
     pub fn href_prefix(&self) -> &str {
-        self.public_server_url.as_deref().unwrap_or("")
+        self.base_url.trim_end_matches('/')
     }
 
     pub async fn scan(config: &CollectionsCfg, public_server_url: Option<String>) -> Inventory {
