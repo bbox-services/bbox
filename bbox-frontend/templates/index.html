@@ -11,7 +11,7 @@
       <ul class="list-disc">
       {% for entry in wms_services %}
         <li>{{ entry.wms_path }}: <a href="{{ entry.wms_path }}?SERVICE=WMS&REQUEST=GetCapabilities">Capabilities</a>
-                                  <!-- <a href="/qwc2_map/{{ entry.id }}/">Viewer</a> -->
+                                  <!-- <a href="qwc2_map/{{ entry.id }}/">Viewer</a> -->
         </li>
       {% endfor %}
       </ul>
@@ -31,9 +31,9 @@
     <div class="card-body">
       <h2 class="card-title">OGC API endpoints</h2>
       <ul class="list-disc">
-        <!-- <li><a href="/ogcapi/">OGC API landing page (JSON)</a></li> -->
-        <li><a href="/openapi.json">OpenAPI spec (JSON)</a></li>
-        <!-- <li><a href="/redoc.html">Redoc OpenAPI Docs</a></li> -->
+        <!-- <li><a href="ogcapi/">OGC API landing page (JSON)</a></li> -->
+        <li><a href="openapi.json">OpenAPI spec (JSON)</a></li>
+        <!-- <li><a href="redoc.html">Redoc OpenAPI Docs</a></li> -->
       </ul>
     </div>
   </div>
@@ -41,7 +41,7 @@
     <div class="card-body">
       <h2 class="card-title">Links</h2>
       <ul class="list-disc">
-        <li><a href="/metrics">Metrics endpoint</a></li>
+        <li><a href="metrics">Metrics endpoint</a></li>
       </ul>
     </div>
   </div>

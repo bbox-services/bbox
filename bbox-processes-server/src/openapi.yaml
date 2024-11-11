@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: 'OGC API - Processes - Part 1: Core'
+  title: "OGC API - Processes - Part 1: Core"
   version: 1.0.0
   description: |-
     The OGC API - Processes
@@ -15,10 +15,10 @@ info:
   contact:
     name: Open Geospatial Consortium (OGC)
     email: standards-team@ogc.org
-    url: 'https://www.ogc.org/contacts'
+    url: "https://www.ogc.org/contacts"
   license:
     name: OGC license
-    url: 'http://www.ogc.org/legal/'
+    url: "http://www.ogc.org/legal/"
 paths:
   # /:
   #   get:
@@ -76,9 +76,9 @@ paths:
       tags:
         - Processes
       responses:
-        '200':
-          $ref: '#/components/responses/ProcessList'
-  '/processes/{processID}':
+        "200":
+          $ref: "#/components/responses/ProcessList"
+  "/processes/{processID}":
     get:
       summary: retrieve a process description
       description: |
@@ -91,12 +91,12 @@ paths:
       tags:
         - Processes
       parameters:
-        - $ref: '#/components/parameters/processIdPathParam'
+        - $ref: "#/components/parameters/processIdPathParam"
       responses:
-        '200':
-          $ref: '#/components/responses/ProcessDescription'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "200":
+          $ref: "#/components/responses/ProcessDescription"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /jobs:
     get:
       summary: retrieve the list of jobs.
@@ -108,11 +108,11 @@ paths:
       tags:
         - Processes
       responses:
-        '200':
-          $ref: '#/components/responses/JobList'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  '/processes/{processID}/execution':
+        "200":
+          $ref: "#/components/responses/JobList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  "/processes/{processID}/execution":
     post:
       summary: execute a process.
       description: |
@@ -123,36 +123,36 @@ paths:
       tags:
         - Processes
       parameters:
-        - $ref: '#/components/parameters/processIdPathParam'
+        - $ref: "#/components/parameters/processIdPathParam"
       requestBody:
         description: Mandatory execute request JSON
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/execute'
+              $ref: "#/components/schemas/execute"
       responses:
-        '200':
-          $ref: '#/components/responses/ExecuteSync'
-        '201':
-          $ref: '#/components/responses/ExecuteAsync'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/ExecuteSync"
+        "201":
+          $ref: "#/components/responses/ExecuteAsync"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
       callbacks:
         jobCompleted:
-          '{$request.body#/subscriber/successUri}':
+          "{$request.body#/subscriber/successUri}":
             post:
               requestBody:
                 content:
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/results'
+                      $ref: "#/components/schemas/results"
               responses:
-                '200':
+                "200":
                   description: Results received successfully
-  '/jobs/{jobId}':
+  "/jobs/{jobId}":
     get:
       summary: retrieve the status of a job
       description: |
@@ -163,16 +163,16 @@ paths:
       tags:
         - Processes
       parameters:
-        - $ref: '#/components/parameters/jobId'
+        - $ref: "#/components/parameters/jobId"
       responses:
-        '200':
-          $ref: '#/components/responses/Status'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/Status"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
     delete:
-      summary: 'cancel a job execution, remove a finished job'
+      summary: "cancel a job execution, remove a finished job"
       description: |
         Cancel a job execution and remove it from the jobs list.
 
@@ -181,15 +181,15 @@ paths:
       tags:
         - Processes
       parameters:
-        - $ref: '#/components/parameters/jobId'
+        - $ref: "#/components/parameters/jobId"
       responses:
-        '200':
-          $ref: '#/components/responses/Status'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/jobs/{jobId}/results':
+        "200":
+          $ref: "#/components/responses/Status"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/jobs/{jobId}/results":
     get:
       summary: retrieve the result(s) of a job
       description: |
@@ -200,17 +200,17 @@ paths:
       tags:
         - Processes
       parameters:
-        - $ref: '#/components/parameters/jobId'
+        - $ref: "#/components/parameters/jobId"
       responses:
-        '200':
-          $ref: '#/components/responses/Results'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/Results"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
 servers:
   - description: Example server
-    url: 'http://example.org/ogcapi'
+    url: "http://example.org/ogcapi"
 components:
   responses:
     Status:
@@ -218,13 +218,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/statusInfo'
+            $ref: "#/components/schemas/statusInfo"
     NotFound:
       description: The requested URI was not found.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -233,13 +233,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/results'
+            $ref: "#/components/schemas/results"
     JobList:
       description: A list of jobs for this process.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/jobList'
+            $ref: "#/components/schemas/jobList"
     LandingPage:
       description: |-
         The landing page provides links to the API definition
@@ -249,7 +249,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/landingPage'
+            $ref: "#/components/schemas/landingPage"
         text/html:
           schema:
             type: string
@@ -258,7 +258,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -267,7 +267,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -276,7 +276,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/processList'
+            $ref: "#/components/schemas/processList"
     ExecuteSync:
       description: Result of synchronous execution
       content:
@@ -292,19 +292,19 @@ components:
               - type: boolean
               - type: string
                 format: binary
-              - $ref: '#/components/schemas/results'
-                description: 'Negotiate synchronous execution, response=document,any txMode and no. outputs'
+              - $ref: "#/components/schemas/results"
+                description: "Negotiate synchronous execution, response=document,any txMode and no. outputs"
     NotSupported:
       description: None of the requested media types is supported at the path.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
     ExecuteSyncRawRef:
-      description: 'Response when negotiate synchronous execution, response=raw, transmissionMode=reference and for any number of output values.'
+      description: "Response when negotiate synchronous execution, response=raw, transmissionMode=reference and for any number of output values."
       headers:
         Link:
           schema:
@@ -324,14 +324,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/statusInfo'
+            $ref: "#/components/schemas/statusInfo"
     swagger:
       ProcessDescription:
         description: A process description.
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/swagger/process'
+              $ref: "#/components/schemas/swagger/process"
             examples:
               processDecription:
                 summary: A Process Description example
@@ -341,7 +341,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -350,7 +350,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/process'
+            $ref: "#/components/schemas/process"
           examples:
             processDecription:
               summary: A Process Description example
@@ -366,10 +366,10 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/confClasses'
+            $ref: "#/components/schemas/confClasses"
           example:
             conformsTo:
-              - 'http://www.opengis.net/spec/ogcapi-processes/1.0/conf/core'
+              - "http://www.opengis.net/spec/ogcapi-processes/1.0/conf/core"
         text/html:
           schema:
             type: string
@@ -391,10 +391,10 @@ components:
         crs:
           type: string
           format: uri
-          default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+          default: "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
           enum:
-            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-            - 'http://www.opengis.net/def/crs/OGC/0/CRS84h'
+            - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+            - "http://www.opengis.net/def/crs/OGC/0/CRS84h"
     confClasses:
       type: object
       required:
@@ -404,7 +404,7 @@ components:
           type: array
           items:
             type: string
-            example: 'http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core'
+            example: "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/core"
     statusCode:
       type: string
       nullable: false
@@ -416,12 +416,12 @@ components:
         - dismissed
     inlineOrRefData:
       oneOf:
-        - $ref: '#/components/schemas/inputValueNoObject'
-        - $ref: '#/components/schemas/qualifiedInputValue'
-        - $ref: '#/components/schemas/link'
+        - $ref: "#/components/schemas/inputValueNoObject"
+        - $ref: "#/components/schemas/qualifiedInputValue"
+        - $ref: "#/components/schemas/link"
     schema:
       oneOf:
-        - $ref: '#/components/schemas/reference'
+        - $ref: "#/components/schemas/reference"
         - type: object
           properties:
             title:
@@ -489,40 +489,40 @@ components:
                 - string
             not:
               oneOf:
-                - $ref: '#/components/schemas/schema'
-                - $ref: '#/components/schemas/reference'
+                - $ref: "#/components/schemas/schema"
+                - $ref: "#/components/schemas/reference"
             allOf:
               type: array
               items:
                 oneOf:
-                  - $ref: '#/components/schemas/schema'
-                  - $ref: '#/components/schemas/reference'
+                  - $ref: "#/components/schemas/schema"
+                  - $ref: "#/components/schemas/reference"
             oneOf:
               type: array
               items:
                 oneOf:
-                  - $ref: '#/components/schemas/schema'
-                  - $ref: '#/components/schemas/reference'
+                  - $ref: "#/components/schemas/schema"
+                  - $ref: "#/components/schemas/reference"
             anyOf:
               type: array
               items:
                 oneOf:
-                  - $ref: '#/components/schemas/schema'
-                  - $ref: '#/components/schemas/reference'
+                  - $ref: "#/components/schemas/schema"
+                  - $ref: "#/components/schemas/reference"
             items:
               oneOf:
-                - $ref: '#/components/schemas/schema'
-                - $ref: '#/components/schemas/reference'
+                - $ref: "#/components/schemas/schema"
+                - $ref: "#/components/schemas/reference"
             properties:
               type: object
               additionalProperties:
                 oneOf:
-                  - $ref: '#/components/schemas/schema'
-                  - $ref: '#/components/schemas/reference'
+                  - $ref: "#/components/schemas/schema"
+                  - $ref: "#/components/schemas/reference"
             additionalProperties:
               oneOf:
-                - $ref: '#/components/schemas/schema'
-                - $ref: '#/components/schemas/reference'
+                - $ref: "#/components/schemas/schema"
+                - $ref: "#/components/schemas/reference"
                 - type: boolean
               default: true
             description:
@@ -555,13 +555,13 @@ components:
       format: byte
     outputDescription:
       allOf:
-        - $ref: '#/components/schemas/descriptionType'
+        - $ref: "#/components/schemas/descriptionType"
         - type: object
           required:
             - schema
           properties:
             schema:
-              $ref: '#/components/schemas/schema'
+              $ref: "#/components/schemas/schema"
     jobList:
       type: object
       required:
@@ -571,11 +571,11 @@ components:
         jobs:
           type: array
           items:
-            $ref: '#/components/schemas/statusInfo'
+            $ref: "#/components/schemas/statusInfo"
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     descriptionType:
       type: object
       properties:
@@ -590,19 +590,19 @@ components:
         metadata:
           type: array
           items:
-            $ref: '#/components/schemas/metadata'
+            $ref: "#/components/schemas/metadata"
         additionalParameters:
           allOf:
-            - $ref: '#/components/schemas/metadata'
+            - $ref: "#/components/schemas/metadata"
             - type: object
               properties:
                 parameters:
                   type: array
                   items:
-                    $ref: '#/components/schemas/additionalParameter'
+                    $ref: "#/components/schemas/additionalParameter"
     inputValue:
       oneOf:
-        - $ref: '#/components/schemas/inputValueNoObject'
+        - $ref: "#/components/schemas/inputValueNoObject"
         - type: object
     jobControlOptions:
       type: string
@@ -636,11 +636,11 @@ components:
         processes:
           type: array
           items:
-            $ref: '#/components/schemas/processSummary'
+            $ref: "#/components/schemas/processSummary"
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     link:
       type: object
       required:
@@ -661,13 +661,13 @@ components:
           type: string
     qualifiedInputValue:
       allOf:
-        - $ref: '#/components/schemas/format'
+        - $ref: "#/components/schemas/format"
         - type: object
           required:
             - value
           properties:
             value:
-              $ref: '#/components/schemas/inputValue'
+              $ref: "#/components/schemas/inputValue"
     transmissionMode:
       type: string
       enum:
@@ -677,7 +677,7 @@ components:
         - value
     inputDescription:
       allOf:
-        - $ref: '#/components/schemas/descriptionType'
+        - $ref: "#/components/schemas/descriptionType"
         - type: object
           required:
             - schema
@@ -693,20 +693,20 @@ components:
                   enum:
                     - unbounded
             schema:
-              $ref: '#/components/schemas/schema'
+              $ref: "#/components/schemas/schema"
     execute:
       type: object
       properties:
         inputs:
           additionalProperties:
             oneOf:
-              - $ref: '#/components/schemas/inlineOrRefData'
+              - $ref: "#/components/schemas/inlineOrRefData"
               - type: array
                 items:
-                  $ref: '#/components/schemas/inlineOrRefData'
+                  $ref: "#/components/schemas/inlineOrRefData"
         outputs:
           additionalProperties:
-            $ref: '#/components/schemas/output'
+            $ref: "#/components/schemas/output"
         response:
           type: string
           enum:
@@ -715,7 +715,7 @@ components:
           default:
             - raw
         subscriber:
-          $ref: '#/components/schemas/subscriber'
+          $ref: "#/components/schemas/subscriber"
     format:
       type: object
       properties:
@@ -730,7 +730,7 @@ components:
             - type: object
     processSummary:
       allOf:
-        - $ref: '#/components/schemas/descriptionType'
+        - $ref: "#/components/schemas/descriptionType"
         - type: object
           required:
             - id
@@ -743,15 +743,15 @@ components:
             jobControlOptions:
               type: array
               items:
-                $ref: '#/components/schemas/jobControlOptions'
+                $ref: "#/components/schemas/jobControlOptions"
             outputTransmission:
               type: array
               items:
-                $ref: '#/components/schemas/transmissionMode'
+                $ref: "#/components/schemas/transmissionMode"
             links:
               type: array
               items:
-                $ref: '#/components/schemas/link'
+                $ref: "#/components/schemas/link"
     inputValueNoObject:
       oneOf:
         - type: string
@@ -759,8 +759,8 @@ components:
         - type: integer
         - type: boolean
         - type: array
-        - $ref: '#/components/schemas/binaryInputValue'
-        - $ref: '#/components/schemas/bbox'
+        - $ref: "#/components/schemas/binaryInputValue"
+        - $ref: "#/components/schemas/bbox"
     statusInfo:
       type: object
       required:
@@ -777,7 +777,7 @@ components:
         jobID:
           type: string
         status:
-          $ref: '#/components/schemas/statusCode'
+          $ref: "#/components/schemas/statusCode"
         message:
           type: string
         created:
@@ -799,10 +799,10 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     results:
       additionalProperties:
-        $ref: '#/components/schemas/inlineOrRefData'
+        $ref: "#/components/schemas/inlineOrRefData"
     landingPage:
       type: object
       required:
@@ -817,7 +817,7 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     exception:
       title: Exception Schema
       description: JSON schema for exceptions based on RFC 7807
@@ -859,7 +859,7 @@ components:
     swagger:
       schema:
         oneOf:
-          - $ref: '#/components/schemas/reference'
+          - $ref: "#/components/schemas/reference"
           - type: object
             properties:
               title:
@@ -960,16 +960,16 @@ components:
             additionalProperties: false
       outputDescription:
         allOf:
-          - $ref: '#/components/schemas/descriptionType'
+          - $ref: "#/components/schemas/descriptionType"
           - type: object
             required:
               - schema
             properties:
               schema:
-                $ref: '#/components/schemas/schema'
+                $ref: "#/components/schemas/schema"
       inputDescription:
         allOf:
-          - $ref: '#/components/schemas/descriptionType'
+          - $ref: "#/components/schemas/descriptionType"
           - type: object
             required:
               - schema
@@ -985,36 +985,36 @@ components:
                     enum:
                       - unbounded
               schema:
-                $ref: '#/components/schemas/schema'
+                $ref: "#/components/schemas/schema"
       process:
         allOf:
-          - $ref: '#/components/schemas/processSummary'
+          - $ref: "#/components/schemas/processSummary"
           - type: object
             properties:
               inputs:
                 additionalProperties:
-                  $ref: '#/components/schemas/inputDescription'
+                  $ref: "#/components/schemas/inputDescription"
               outputs:
                 additionalProperties:
-                  $ref: '#/components/schemas/outputDescription'
+                  $ref: "#/components/schemas/outputDescription"
     process:
       allOf:
-        - $ref: '#/components/schemas/processSummary'
+        - $ref: "#/components/schemas/processSummary"
         - type: object
           properties:
             inputs:
               additionalProperties:
-                $ref: '#/components/schemas/inputDescription'
+                $ref: "#/components/schemas/inputDescription"
             outputs:
               additionalProperties:
-                $ref: '#/components/schemas/outputDescription'
+                $ref: "#/components/schemas/outputDescription"
     output:
       type: object
       properties:
         format:
-          $ref: '#/components/schemas/format'
+          $ref: "#/components/schemas/format"
         transmissionMode:
-          $ref: '#/components/schemas/transmissionMode'
+          $ref: "#/components/schemas/transmissionMode"
     additionalParameter:
       type: object
       required:
@@ -1089,7 +1089,7 @@ components:
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/statusCode'
+          $ref: "#/components/schemas/statusCode"
     processIdPathParam:
       name: processID
       in: path

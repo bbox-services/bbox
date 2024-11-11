@@ -33,7 +33,7 @@ async fn collections(
         render_endpoint(
             &TEMPLATES,
             "collections.html",
-            context!(cur_menu=>"Collections", collections => &collections),
+            context!(cur_menu=>"Collections", base_url => inventory.base_url(), collections => &collections),
         )
         .await
     } else {
@@ -52,7 +52,7 @@ async fn collection(
             render_endpoint(
                 &TEMPLATES,
                 "collection.html",
-                context!(cur_menu=>"Collections", collection => &collection),
+                context!(cur_menu=>"Collections", base_url => inventory.base_url(), collection => &collection),
             )
             .await
         } else {
@@ -74,7 +74,7 @@ async fn queryables(
             render_endpoint(
                 &TEMPLATES,
                 "queryables.html",
-                context!(cur_menu=>"Collections", queryables => &queryables),
+                context!(cur_menu=>"Collections", base_url => inventory.base_url(), queryables => &queryables),
             )
             .await
         } else {
@@ -142,7 +142,7 @@ async fn features(
                 render_endpoint(
                     &TEMPLATES,
                     "features.html",
-                    context!(cur_menu=>"Collections", collection => &collection, features => &features),
+                    context!(cur_menu=>"Collections", base_url => inventory.base_url(), collection => &collection, features => &features),
                 ).await
             } else {
                 Ok(HttpResponse::Ok()
@@ -165,12 +165,15 @@ async fn feature(
 ) -> Result<HttpResponse, Error> {
     let (collection_id, feature_id) = path.into_inner();
     if let Some(collection) = inventory.core_collection(&collection_id) {
-        if let Some(feature) = inventory.collection_item(&collection_id, &feature_id).await {
+        if let Some(feature) = inventory
+            .collection_item(inventory.href_prefix(), &collection_id, &feature_id)
+            .await
+        {
             if html_accepted(&req).await {
                 render_endpoint(
                     &TEMPLATES,
                     "feature.html",
-                    context!(cur_menu=>"Collections", collection => &collection, feature => &feature),
+                    context!(cur_menu=>"Collections", base_url => inventory.base_url(), collection => &collection, feature => &feature),
                 ).await
             } else {
                 Ok(HttpResponse::Ok()

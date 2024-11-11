@@ -18,6 +18,12 @@ mod dummy_inventory {
         pub wms_services: Vec<WmsService>,
     }
 
+    impl MapInventory {
+        pub fn base_url(&self) -> &str {
+            "/"
+        }
+    }
+
     pub async fn themes_json(_: &Vec<WmsService>, _: String, _: Option<&str>) -> String {
         unimplemented!()
     }

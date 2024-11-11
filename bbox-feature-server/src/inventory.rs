@@ -25,6 +25,7 @@ use std::collections::HashMap;
 pub struct Inventory {
     // Key: collection_id
     feat_collections: HashMap<String, FeatureCollection>,
+    base_url: String,
 }
 
 #[derive(Clone)]
@@ -35,14 +36,30 @@ pub struct FeatureCollection {
 }
 
 impl Inventory {
-    pub fn new() -> Self {
+    pub fn new(public_server_url: Option<String>) -> Self {
+        let base_url = format!(
+            "{}/",
+            public_server_url
+                .as_deref()
+                .unwrap_or("")
+                .trim_end_matches('/')
+        );
         Inventory {
             feat_collections: HashMap::new(),
+            base_url,
         }
     }
 
-    pub async fn scan(config: &CollectionsCfg) -> Inventory {
-        let mut inventory = Inventory::new();
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
+    pub fn href_prefix(&self) -> &str {
+        self.base_url.trim_end_matches('/')
+    }
+
+    pub async fn scan(config: &CollectionsCfg, public_server_url: Option<String>) -> Inventory {
+        let mut inventory = Inventory::new(public_server_url);
         for dir_ds in &config.directory {
             let base_dir = &dir_ds.dir;
             info!("Scanning '{base_dir}' for feature collections");
@@ -53,7 +70,7 @@ impl Inventory {
                 match SqliteDatasource::new_pool(&pathstr).await {
                     Ok(mut ds) => {
                         info!("Scanning '{pathstr}' for feature collections");
-                        match ds.collections().await {
+                        match ds.collections(inventory.href_prefix()).await {
                             Ok(collections) => inventory.add_collections(collections),
                             Err(e) => {
                                 warn!("Failed to scan feature collections for '{pathstr}': {e}")
@@ -71,7 +88,7 @@ impl Inventory {
             match PgDatasource::from_config(cfg, None).await {
                 Ok(mut ds) => {
                     info!("Scanning '{}' for feature collections", cfg.url);
-                    match ds.collections().await {
+                    match ds.collections(inventory.href_prefix()).await {
                         Ok(collections) => inventory.add_collections(collections),
                         Err(e) => {
                             warn!("Failed to scan feature collections for '{}': {e}", &cfg.url)
@@ -135,11 +152,12 @@ impl Inventory {
                 return None;
             }
         };
+        let base_url = self.href_prefix();
         let mut features = CoreFeatures {
             type_: "FeatureCollection".to_string(),
             links: vec![
                 ApiLink {
-                    href: format!("/collections/{collection_id}/items"),
+                    href: format!("{base_url}/collections/{collection_id}/items"),
                     rel: Some("self".to_string()),
                     type_: Some("text/html".to_string()),
                     title: Some("this document".to_string()),
@@ -147,7 +165,7 @@ impl Inventory {
                     length: None,
                 },
                 ApiLink {
-                    href: format!("/collections/{collection_id}/items.json"),
+                    href: format!("{base_url}/collections/{collection_id}/items.json"),
                     rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("this document".to_string()),
@@ -164,7 +182,7 @@ impl Inventory {
             let mut add_link = |link: FilterParams, rel: &str| {
                 let params = link.as_args();
                 features.links.push(ApiLink {
-                    href: format!("/collections/{collection_id}/items{params}"),
+                    href: format!("{base_url}/collections/{collection_id}/items{params}"),
                     rel: Some(rel.to_string()),
                     type_: Some("text/html".to_string()),
                     title: Some(rel.to_string()),
@@ -185,6 +203,7 @@ impl Inventory {
 
     pub async fn collection_item(
         &self,
+        base_url: &str,
         collection_id: &str,
         feature_id: &str,
     ) -> Option<CoreFeature> {
@@ -192,7 +211,7 @@ impl Inventory {
             warn!("Ignoring error getting collection {collection_id}");
             return None;
         };
-        match fc.source.item(collection_id, feature_id).await {
+        match fc.source.item(base_url, collection_id, feature_id).await {
             Ok(item) => item,
             Err(e) => {
                 warn!("Ignoring error getting collection item for {collection_id}: {e}");
@@ -222,7 +241,7 @@ mod tests {
 
     #[tokio::test]
     async fn inventory_scan() {
-        let inventory = Inventory::scan(&CollectionsCfg::from_path("../assets")).await;
+        let inventory = Inventory::scan(&CollectionsCfg::from_path("../assets"), None).await;
         // assert_eq!(inventory.collections().len(), 3);
         assert!(inventory.collections().len() >= 3);
         assert_eq!(

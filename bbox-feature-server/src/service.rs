@@ -19,15 +19,16 @@ impl OgcApiService for FeatureService {
     type CliArgs = NoArgs;
     type Metrics = NoMetrics;
 
-    async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+    async fn create(config: &Self::Config, core_cfg: &CoreServiceCfg) -> Self {
         let mut sources = Datasources::create(&config.datasources)
             .await
             .unwrap_or_else(error_exit);
 
-        let mut inventory = Inventory::scan(&config.auto_collections).await;
+        let mut inventory =
+            Inventory::scan(&config.auto_collections, core_cfg.public_server_url()).await;
         for cfg in &config.collections {
             let collection = sources
-                .setup_collection(cfg)
+                .setup_collection(cfg, inventory.href_prefix())
                 .await
                 .unwrap_or_else(error_exit);
             inventory.add_collection(collection);
@@ -49,9 +50,9 @@ impl OgcApiService for FeatureService {
         }
         classes
     }
-    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
+    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
         vec![ApiLink {
-            href: "/collections".to_string(),
+            href: format!("{api_base}/collections"),
             rel: Some("data".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("Information about the feature collections".to_string()),

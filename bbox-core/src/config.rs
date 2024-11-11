@@ -129,7 +129,8 @@ pub struct WebserverCfg {
     pub server_addr: String,
     /// Number of parallel web server threads. Defaults to number of available logical CPUs
     worker_threads: Option<usize>,
-    public_server_url: Option<String>,
+    /// Public base URL of the server (e.g. `https://bbox.example.com/`)
+    pub public_server_url: Option<String>,
     /// Log level (Default: info)
     pub loglevel: Option<Loglevel>,
     pub tls_cert: Option<String>,
@@ -171,6 +172,11 @@ impl ServiceConfig for CoreServiceCfg {
 impl CoreServiceCfg {
     pub fn loglevel(&self) -> Option<Loglevel> {
         self.webserver.as_ref().and_then(|cfg| cfg.loglevel.clone())
+    }
+    pub fn public_server_url(&self) -> Option<String> {
+        self.webserver
+            .as_ref()
+            .and_then(|cfg| cfg.public_server_url.clone())
     }
 }
 

@@ -25,6 +25,7 @@ impl CollectionDatasource for PgDatasource {
     async fn setup_collection(
         &mut self,
         cfg: &ConfiguredCollectionCfg,
+        base_url: &str,
         _extent: Option<CoreExtent>,
     ) -> Result<FeatureCollection> {
         info!("Setup Postgis Collection `{}`", &cfg.name);
@@ -126,7 +127,7 @@ impl CollectionDatasource for PgDatasource {
             item_type: None,
             crs: vec![],
             links: vec![ApiLink {
-                href: format!("/collections/{id}/items"),
+                href: format!("{base_url}/collections/{id}/items"),
                 rel: Some("items".to_string()),
                 type_: Some("application/geo+json".to_string()),
                 title: Some(id.clone()),
@@ -137,7 +138,7 @@ impl CollectionDatasource for PgDatasource {
 
         if !queryable_fields.is_empty() {
             collection.links.push(ApiLink {
-                href: format!("/collections/{id}/queryables"),
+                href: format!("{base_url}/collections/{id}/queryables"),
                 rel: Some("http://www.opengis.net/def/rel/ogc/1.0/queryables".to_string()),
                 type_: Some("application/schema+json".to_string()),
                 title: Some(id.clone()),
@@ -156,7 +157,7 @@ impl CollectionDatasource for PgDatasource {
 
 #[async_trait]
 impl AutoscanCollectionDatasource for PgDatasource {
-    async fn collections(&mut self) -> Result<Vec<FeatureCollection>> {
+    async fn collections(&mut self, base_url: &str) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"
             SELECT contents.*
@@ -178,7 +179,7 @@ impl AutoscanCollectionDatasource for PgDatasource {
                 title: Some(table_name),
                 description: None,
             };
-            if let Ok(fc) = self.setup_collection(&coll_cfg, None).await {
+            if let Ok(fc) = self.setup_collection(&coll_cfg, base_url, None).await {
                 collections.push(fc);
             }
         }
@@ -378,7 +379,12 @@ impl CollectionSource for PgCollectionSource {
         Ok(result)
     }
 
-    async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
+    async fn item(
+        &self,
+        base_url: &str,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Result<Option<CoreFeature>> {
         let Some(pk) = &self.pk_column else {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
             return Ok(None);
@@ -401,7 +407,7 @@ impl CollectionSource for PgCollectionSource {
             let mut item = row_to_feature(&row, self)?;
             item.links = vec![
                 ApiLink {
-                    href: format!("/collections/{collection_id}/items/{feature_id}"),
+                    href: format!("{base_url}/collections/{collection_id}/items/{feature_id}",),
                     rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("this document".to_string()),
@@ -409,7 +415,7 @@ impl CollectionSource for PgCollectionSource {
                     length: None,
                 },
                 ApiLink {
-                    href: format!("/collections/{collection_id}"),
+                    href: format!("{base_url}/collections/{collection_id}"),
                     rel: Some("collection".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("the collection document".to_string()),
@@ -597,7 +603,7 @@ mod tests {
             PgDatasource::new_pool("postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench")
                 .await
                 .unwrap();
-        let collections = pool.collections().await.unwrap();
+        let collections = pool.collections("").await.unwrap();
         assert!(collections.len() >= 3);
         assert!(collections
             .iter()

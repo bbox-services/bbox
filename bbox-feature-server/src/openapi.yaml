@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  title: 'OGC API - Features - Part 1: Core'
+  title: "OGC API - Features - Part 1: Core"
   version: 1.0.0
   description: |-
     OpenAPI definition that conforms to the conformance
@@ -15,14 +15,14 @@ info:
   contact:
     name: Acme Corporation
     email: info@example.org
-    url: 'http://example.org/'
+    url: "http://example.org/"
   license:
     name: CC-BY 4.0 license
-    url: 'https://creativecommons.org/licenses/by/4.0/'
+    url: "https://creativecommons.org/licenses/by/4.0/"
 servers:
-  - url: 'http://bbox:8080/'
+  - url: "http://bbox:8080/"
     description: Production server
-  - url: 'http://host.docker.internal:8080/'
+  - url: "http://host.docker.internal:8080/"
     description: Development server
 tags:
   - name: Features
@@ -63,25 +63,25 @@ paths:
       summary: the feature collections in the dataset
       operationId: getCollections
       responses:
-        '200':
-          $ref: '#/components/responses/Collections'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}':
+        "200":
+          $ref: "#/components/responses/Collections"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}":
     get:
       tags:
         - Features
       summary: describe the feature collection with id `collectionId`
       operationId: describeCollection
       parameters:
-        - $ref: '#/components/parameters/collectionId'
+        - $ref: "#/components/parameters/collectionId"
       responses:
-        '200':
-          $ref: '#/components/responses/Collection'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/Collection"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
   /collections/{collectionId}/queryables':
     get:
       tags:
@@ -89,11 +89,11 @@ paths:
       summary: the queryable properties of a feature collection in the dataset
       operationId: getCollectionQueryables
       responses:
-        '200':
-          $ref: '#/components/responses/Queryables'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items':
+        "200":
+          $ref: "#/components/responses/Queryables"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/items":
     get:
       tags:
         - Features
@@ -108,20 +108,20 @@ paths:
         Use content negotiation to request HTML or GeoJSON.
       operationId: getFeatures
       parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
       responses:
-        '200':
-          $ref: '#/components/responses/Features'
-        '400':
-          $ref: '#/components/responses/InvalidParameter'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/items/{featureId}':
+        "200":
+          $ref: "#/components/responses/Features"
+        "400":
+          $ref: "#/components/responses/InvalidParameter"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/items/{featureId}":
     get:
       tags:
         - Features
@@ -133,15 +133,15 @@ paths:
         Use content negotiation to request HTML or GeoJSON.
       operationId: getFeature
       parameters:
-        - $ref: '#/components/parameters/collectionId'
-        - $ref: '#/components/parameters/featureId'
+        - $ref: "#/components/parameters/collectionId"
+        - $ref: "#/components/parameters/featureId"
       responses:
-        '200':
-          $ref: '#/components/responses/Feature'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/Feature"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
 components:
   parameters:
     bbox:
@@ -247,7 +247,7 @@ components:
         - links
       properties:
         id:
-          description: 'identifier of the collection used, for example, in URIs'
+          description: "identifier of the collection used, for example, in URIs"
           type: string
           example: address
         title:
@@ -261,15 +261,15 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
           example:
-            - href: 'http://data.example.com/buildings'
+            - href: "http://data.example.com/buildings"
               rel: item
-            - href: 'http://example.com/concepts/buildings.html'
+            - href: "http://example.com/concepts/buildings.html"
               rel: describedBy
               type: text/html
         extent:
-          $ref: '#/components/schemas/extent'
+          $ref: "#/components/schemas/extent"
         itemType:
           description: indicator about the type of the items in the collection (the default value is 'feature').
           type: string
@@ -280,10 +280,10 @@ components:
           items:
             type: string
           default:
-            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+            - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
           example:
-            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-            - 'http://www.opengis.net/def/crs/EPSG/0/4326'
+            - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+            - "http://www.opengis.net/def/crs/EPSG/0/4326"
     collections:
       type: object
       required:
@@ -293,11 +293,11 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         collections:
           type: array
           items:
-            $ref: '#/components/schemas/collection'
+            $ref: "#/components/schemas/collection"
     confClasses:
       type: object
       required:
@@ -309,7 +309,7 @@ components:
             type: string
     exception:
       type: object
-      description: 'Information about the exception: an error code plus an optional description.'
+      description: "Information about the exception: an error code plus an optional description."
       required:
         - code
       properties:
@@ -383,8 +383,8 @@ components:
                 additional enum values.
               type: string
               enum:
-                - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-              default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+                - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+              default: "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
         temporal:
           description: The temporal extent of the features in the collection.
           type: object
@@ -411,7 +411,7 @@ components:
                   format: date-time
                   nullable: true
                 example:
-                  - '2011-11-11T12:22:11Z'
+                  - "2011-11-11T12:22:11Z"
                   - null
             trs:
               description: |-
@@ -422,8 +422,8 @@ components:
                 additional enum values.
               type: string
               enum:
-                - 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
-              default: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
+                - "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+              default: "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
     featureCollectionGeoJSON:
       type: object
       required:
@@ -437,17 +437,17 @@ components:
         features:
           type: array
           items:
-            $ref: '#/components/schemas/featureGeoJSON'
+            $ref: "#/components/schemas/featureGeoJSON"
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         timeStamp:
-          $ref: '#/components/schemas/timeStamp'
+          $ref: "#/components/schemas/timeStamp"
         numberMatched:
-          $ref: '#/components/schemas/numberMatched'
+          $ref: "#/components/schemas/numberMatched"
         numberReturned:
-          $ref: '#/components/schemas/numberReturned'
+          $ref: "#/components/schemas/numberReturned"
     featureGeoJSON:
       type: object
       required:
@@ -460,7 +460,7 @@ components:
           enum:
             - Feature
         geometry:
-          $ref: '#/components/schemas/geometryGeoJSON'
+          $ref: "#/components/schemas/geometryGeoJSON"
         properties:
           type: object
           nullable: true
@@ -471,16 +471,16 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     geometryGeoJSON:
       oneOf:
-        - $ref: '#/components/schemas/pointGeoJSON'
-        - $ref: '#/components/schemas/multipointGeoJSON'
-        - $ref: '#/components/schemas/linestringGeoJSON'
-        - $ref: '#/components/schemas/multilinestringGeoJSON'
-        - $ref: '#/components/schemas/polygonGeoJSON'
-        - $ref: '#/components/schemas/multipolygonGeoJSON'
-        - $ref: '#/components/schemas/geometrycollectionGeoJSON'
+        - $ref: "#/components/schemas/pointGeoJSON"
+        - $ref: "#/components/schemas/multipointGeoJSON"
+        - $ref: "#/components/schemas/linestringGeoJSON"
+        - $ref: "#/components/schemas/multilinestringGeoJSON"
+        - $ref: "#/components/schemas/polygonGeoJSON"
+        - $ref: "#/components/schemas/multipolygonGeoJSON"
+        - $ref: "#/components/schemas/geometrycollectionGeoJSON"
     geometrycollectionGeoJSON:
       type: object
       required:
@@ -494,7 +494,7 @@ components:
         geometries:
           type: array
           items:
-            $ref: '#/components/schemas/geometryGeoJSON'
+            $ref: "#/components/schemas/geometryGeoJSON"
     landingPage:
       type: object
       required:
@@ -509,7 +509,7 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     linestringGeoJSON:
       type: object
       required:
@@ -535,7 +535,7 @@ components:
       properties:
         href:
           type: string
-          example: 'http://data.example.com/buildings/123'
+          example: "http://data.example.com/buildings/123"
         rel:
           type: string
           example: alternate
@@ -547,7 +547,7 @@ components:
           example: en
         title:
           type: string
-          example: 'Trierer Strasse 70, 53115 Bonn'
+          example: "Trierer Strasse 70, 53115 Bonn"
         length:
           type: integer
     multilinestringGeoJSON:
@@ -667,7 +667,7 @@ components:
       description: This property indicates the time and date when the response was generated.
       type: string
       format: date-time
-      example: '2017-08-17T08:05:32Z'
+      example: "2017-08-17T08:05:32Z"
   responses:
     LandingPage:
       description: |-
@@ -680,28 +680,28 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/landingPage'
+            $ref: "#/components/schemas/landingPage"
           example:
             title: Buildings in Bonn
             description: Access to data about buildings in the city of Bonn via a Web API that conforms to the OGC API Features specification.
             links:
-              - href: 'http://data.example.org/'
+              - href: "http://data.example.org/"
                 rel: self
                 type: application/json
                 title: this document
-              - href: 'http://data.example.org/api'
+              - href: "http://data.example.org/api"
                 rel: service-desc
                 type: application/vnd.oai.openapi+json;version=3.0
                 title: the API definition
-              - href: 'http://data.example.org/api.html'
+              - href: "http://data.example.org/api.html"
                 rel: service-doc
                 type: text/html
                 title: the API documentation
-              - href: 'http://data.example.org/conformance'
+              - href: "http://data.example.org/conformance"
                 rel: conformance
                 type: application/json
                 title: OGC API conformance classes implemented by this server
-              - href: 'http://data.example.org/collections'
+              - href: "http://data.example.org/collections"
                 rel: data
                 type: application/json
                 title: Information about the feature collections
@@ -719,13 +719,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/confClasses'
+            $ref: "#/components/schemas/confClasses"
           example:
             conformsTo:
-              - 'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core'
-              - 'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30'
-              - 'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html'
-              - 'http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson'
+              - "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core"
+              - "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30"
+              - "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/html"
+              - "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
         text/html:
           schema:
             type: string
@@ -749,22 +749,22 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/collections'
+            $ref: "#/components/schemas/collections"
           example:
             links:
-              - href: 'http://data.example.org/collections.json'
+              - href: "http://data.example.org/collections.json"
                 rel: self
                 type: application/json
                 title: this document
-              - href: 'http://data.example.org/collections.html'
+              - href: "http://data.example.org/collections.html"
                 rel: alternate
                 type: text/html
                 title: this document as HTML
-              - href: 'http://schemas.example.org/1.0/buildings.xsd'
+              - href: "http://schemas.example.org/1.0/buildings.xsd"
                 rel: describedBy
                 type: application/xml
                 title: GML application schema for Acme Corporation building data
-              - href: 'http://download.example.org/buildings.gpkg'
+              - href: "http://download.example.org/buildings.gpkg"
                 rel: enclosure
                 type: application/geopackage+sqlite3
                 title: Bulk download (GeoPackage)
@@ -782,22 +782,22 @@ components:
                         - 50.78
                   temporal:
                     interval:
-                      - - '2010-02-15T12:34:56Z'
+                      - - "2010-02-15T12:34:56Z"
                         - null
                 links:
-                  - href: 'http://data.example.org/collections/buildings/items'
+                  - href: "http://data.example.org/collections/buildings/items"
                     rel: items
                     type: application/geo+json
                     title: Buildings
-                  - href: 'http://data.example.org/collections/buildings/items.html'
+                  - href: "http://data.example.org/collections/buildings/items.html"
                     rel: items
                     type: text/html
                     title: Buildings
-                  - href: 'https://creativecommons.org/publicdomain/zero/1.0/'
+                  - href: "https://creativecommons.org/publicdomain/zero/1.0/"
                     rel: license
                     type: text/html
                     title: CC0-1.0
-                  - href: 'https://creativecommons.org/publicdomain/zero/1.0/rdf'
+                  - href: "https://creativecommons.org/publicdomain/zero/1.0/rdf"
                     rel: license
                     type: application/rdf+xml
                     title: CC0-1.0
@@ -821,7 +821,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/collection'
+            $ref: "#/components/schemas/collection"
           example:
             id: buildings
             title: Buildings
@@ -835,22 +835,22 @@ components:
                     - 50.78
               temporal:
                 interval:
-                  - - '2010-02-15T12:34:56Z'
+                  - - "2010-02-15T12:34:56Z"
                     - null
             links:
-              - href: 'http://data.example.org/collections/buildings/items'
+              - href: "http://data.example.org/collections/buildings/items"
                 rel: items
                 type: application/geo+json
                 title: Buildings
-              - href: 'http://data.example.org/collections/buildings/items.html'
+              - href: "http://data.example.org/collections/buildings/items.html"
                 rel: items
                 type: text/html
                 title: Buildings
-              - href: 'https://creativecommons.org/publicdomain/zero/1.0/'
+              - href: "https://creativecommons.org/publicdomain/zero/1.0/"
                 rel: license
                 type: text/html
                 title: CC0-1.0
-              - href: 'https://creativecommons.org/publicdomain/zero/1.0/rdf'
+              - href: "https://creativecommons.org/publicdomain/zero/1.0/rdf"
                 rel: license
                 type: application/rdf+xml
                 title: CC0-1.0
@@ -865,9 +865,9 @@ components:
 
         * A title and type for the queryable properties;
       content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/json_schema'
+        # application/json:
+        #   schema:
+        #     $ref: '#/components/schemas/json_schema'
         text/html:
           schema:
             type: string
@@ -895,46 +895,46 @@ components:
       content:
         application/geo+json:
           schema:
-            $ref: '#/components/schemas/featureCollectionGeoJSON'
+            $ref: "#/components/schemas/featureCollectionGeoJSON"
           example:
             type: FeatureCollection
             links:
-              - href: 'http://data.example.com/collections/buildings/items.json'
+              - href: "http://data.example.com/collections/buildings/items.json"
                 rel: self
                 type: application/geo+json
                 title: this document
-              - href: 'http://data.example.com/collections/buildings/items.html'
+              - href: "http://data.example.com/collections/buildings/items.html"
                 rel: alternate
                 type: text/html
                 title: this document as HTML
-              - href: 'http://data.example.com/collections/buildings/items.json&offset=10&limit=2'
+              - href: "http://data.example.com/collections/buildings/items.json&offset=10&limit=2"
                 rel: next
                 type: application/geo+json
                 title: next page
-            timeStamp: '2018-04-03T14:52:23Z'
+            timeStamp: "2018-04-03T14:52:23Z"
             numberMatched: 123
             numberReturned: 2
             features:
               - type: Feature
-                id: '123'
+                id: "123"
                 geometry:
                   type: Polygon
                   coordinates:
                     - ...
                 properties:
                   function: residential
-                  floors: '2'
-                  lastUpdate: '2015-08-01T12:34:56Z'
+                  floors: "2"
+                  lastUpdate: "2015-08-01T12:34:56Z"
               - type: Feature
-                id: '132'
+                id: "132"
                 geometry:
                   type: Polygon
                   coordinates:
                     - ...
                 properties:
                   function: public use
-                  floors: '10'
-                  lastUpdate: '2013-12-03T10:15:37Z'
+                  floors: "10"
+                  lastUpdate: "2013-12-03T10:15:37Z"
         text/html:
           schema:
             type: string
@@ -945,34 +945,34 @@ components:
       content:
         application/geo+json:
           schema:
-            $ref: '#/components/schemas/featureGeoJSON'
+            $ref: "#/components/schemas/featureGeoJSON"
           example:
             type: Feature
             links:
-              - href: 'http://data.example.com/id/building/123'
+              - href: "http://data.example.com/id/building/123"
                 rel: canonical
                 title: canonical URI of the building
-              - href: 'http://data.example.com/collections/buildings/items/123.json'
+              - href: "http://data.example.com/collections/buildings/items/123.json"
                 rel: self
                 type: application/geo+json
                 title: this document
-              - href: 'http://data.example.com/collections/buildings/items/123.html'
+              - href: "http://data.example.com/collections/buildings/items/123.html"
                 rel: alternate
                 type: text/html
                 title: this document as HTML
-              - href: 'http://data.example.com/collections/buildings'
+              - href: "http://data.example.com/collections/buildings"
                 rel: collection
                 type: application/geo+json
                 title: the collection document
-            id: '123'
+            id: "123"
             geometry:
               type: Polygon
               coordinates:
                 - ...
             properties:
               function: residential
-              floors: '2'
-              lastUpdate: '2015-08-01T12:34:56Z'
+              floors: "2"
+              lastUpdate: "2015-08-01T12:34:56Z"
         text/html:
           schema:
             type: string
@@ -981,7 +981,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -992,7 +992,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string

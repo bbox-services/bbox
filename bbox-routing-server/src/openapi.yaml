@@ -1,84 +1,84 @@
 openapi: 3.0.1
 info:
-  title: 'OGC API - Routes - Part 1: Core'
+  title: "OGC API - Routes - Part 1: Core"
   version: 1.0.0
   description: |-
-    Routing API and the Route Exchange Model in 
+    Routing API and the Route Exchange Model in
     the OGC Open Routing API Pilot.
 
     # Route definition
 
-    At a minimum, a route is defined by two waypoints, the start and end 
+    At a minimum, a route is defined by two waypoints, the start and end
     points of the route. Each API also has to support the options to
-    compute the fastest or the shortest routes. This is part of the 
+    compute the fastest or the shortest routes. This is part of the
     conformance class **'core'**.
 
     Additional routing parameters / constraints are specified in additional
     conformance classes and implementations may or may not support the
     additional API building blocks. Each option is specified in a separate
-    conformance class extending **'core'**. All are optional and more 
+    conformance class extending **'core'**. All are optional and more
     can be added.
 
-    * More than two waypoints, default is no intermediate points 
+    * More than two waypoints, default is no intermediate points
     (conformance class **'intermediate-waypoints'**)
-    * Obstacle restriction (areas the route should avoid), default 
+    * Obstacle restriction (areas the route should avoid), default
     is no obstacles to avoid (conformance class **'obstacles'**)
-    * Height restriction (in m), default is no constraint (conformance 
+    * Height restriction (in m), default is no constraint (conformance
     class **'max-height'**)
-    * Maximum load restriction (in t), default is no constraint (conformance 
+    * Maximum load restriction (in t), default is no constraint (conformance
     class **'max-load'**)
-    * Time and (departure|arrival), default is departure now (conformance 
+    * Time and (departure|arrival), default is departure now (conformance
     class **'time'**)
-    * Routing engine (enum specified by API), default determined by 
+    * Routing engine (enum specified by API), default determined by
     implementation (conformance class **'routing-engine'**)
-    * Routing algorithm (enum specified by API), default determined 
+    * Routing algorithm (enum specified by API), default determined
     by implementation (conformance class **'routing-algorithm'**)
-    * Source data (enum specified by API), default determined by 
+    * Source data (enum specified by API), default determined by
     implementation (conformance class **'source-dataset'**)
 
     # Route Exchange Model
 
-    The Route Exchange Model is 
+    The Route Exchange Model is
     described in the GET operation on `/routes/{routeId}`.
 
-    A 'Route' is represented as a GeoJSON feature 
+    A 'Route' is represented as a GeoJSON feature
     collection basically with the following informaton...
     * A `name`, if one was provided with the route definition.
-    * An array of `features` (the properties of each feature is to 
+    * An array of `features` (the properties of each feature is to
     be decided):
       * The route overview. This has a LineString geometry
       of the complete route path from start to end location.
       * The start point of the route with a Point geometry.
-      * A feature for every segment of the route. This has a 
+      * A feature for every segment of the route. This has a
       Point geometry representing the last point of the segment.
       * The end point of the route with a Point geometry.
 
     # Geometries
 
-    All geometries used in the API are 
-    [GeoJSON geometries](https://tools.ietf.org/html/rfc7946#section-3.1). 
+    All geometries used in the API are
+    [GeoJSON geometries](https://tools.ietf.org/html/rfc7946#section-3.1).
     This includes the waypoints in the route definition and the
-    geometries of all features in the route exchange model 
+    geometries of all features in the route exchange model
     (overview, start, end, segments).
 
     Note that all geometries use WGS 84 coordinates (as used by GPS).
-    In GeoJSON, a coordinate is an array of numbers. The first two 
-    elements are longitude and latitude, or easting and northing, 
-    precisely in that order and using decimal numbers. Elevation 
+    In GeoJSON, a coordinate is an array of numbers. The first two
+    elements are longitude and latitude, or easting and northing,
+    precisely in that order and using decimal numbers. Elevation
     may be included as an optional third element.
 
-    If elevation is used in a route, all coordinates in the route 
+    If elevation is used in a route, all coordinates in the route
     shall include the elevation information.
 
   contact:
     name: Acme Corporation
     email: info@example.org
-    url: 'http://example.org/'
+    url: "http://example.org/"
   license:
     name: CC-BY 4.0 license
-    url: 'https://creativecommons.org/licenses/by/4.0/'
+    url: "https://creativecommons.org/licenses/by/4.0/"
 servers:
-  - url: 'https://data.example.org/'
+  - url: "https://data.example.org/"
     description: Production server
 tags:
   # - name: Capabilities
@@ -94,14 +94,14 @@ paths:
     #   description: |-
     #     The list of all routes currently available on this server.
 
-    #     The response contains a link to each route with the link 
-    #     relation type `item`. 
+    #     The response contains a link to each route with the link
+    #     relation type `item`.
 
     #     If a route has a name, the name will be used in the `title`,
     #     otherwise the `title` will be set by the server.
 
-    #     A link to the canonical URI of this document is included, 
-    #     too, with the link relation type `self`. 
+    #     A link to the canonical URI of this document is included,
+    #     too, with the link relation type `self`.
     #   operationId: getRoutes
     #   tags:
     #     - Routes
@@ -131,17 +131,17 @@ paths:
     post:
       summary: compute a route
       description: |-
-        This creates a new route. The payload of the request specifies the 
-        definition of the new route. 
+        This creates a new route. The payload of the request specifies the
+        definition of the new route.
 
-        At a minimum, a route is defined by two `waypoints`, the start and end 
+        At a minimum, a route is defined by two `waypoints`, the start and end
         point of the route.
 
         Every API has to support at least 'fastest' and 'shortest' as the
         routing `preference`. The default value is 'fastest'.
 
-        An optional `name` for the route may be provided. The name will be 
-        used as the title in links to the route (e.g., in the response to 
+        An optional `name` for the route may be provided. The name will be
+        used as the title in links to the route (e.g., in the response to
         `/routes`) and also included in the route itself.
 
         More parameters and routing constraints can optionally be provided
@@ -149,49 +149,49 @@ paths:
         * Source dataset to use when processing the route
         * Routing engine to use when processing the route
         * Routing algorithm to use when processing the route
-        * Obstacle requirements 
+        * Obstacle requirements
         * Height restriction
         * Maximum load restriction
         * Time of departure or arrival
 
-        If the parameter `mode` is not provided or has a value 'async' the 
+        If the parameter `mode` is not provided or has a value 'async' the
         response returns a link the new route in the `Location` header. If
         the value is 'sync' no route resource is created on the server, but
-        the connection is kept open until the route has been computed. The 
-        response contains the route. In synchronous mode the `subscriber` 
+        the connection is kept open until the route has been computed. The
+        response contains the route. In synchronous mode the `subscriber`
         property is ignored.
       operationId: computeRoute
       tags:
         - Routes
       parameters:
-        - $ref: '#/components/parameters/mode'
+        - $ref: "#/components/parameters/mode"
       requestBody:
         description: The definition of the route to compute.
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/routeDefinition'
+              $ref: "#/components/schemas/routeDefinition"
       responses:
-        '200':
+        "200":
           description: |-
             This response is only returned for synchronous processing (`mode=sync`).
             The response is the route.
 
-            If the request included an `Accept-Language`, the server will try to 
+            If the request included an `Accept-Language`, the server will try to
             honor the request and otherwise fall back to an available language.
           content:
             application/geo+json:
               schema:
-                $ref: '#/components/schemas/route'
+                $ref: "#/components/schemas/route"
           headers:
             Content-Language:
               schema:
                 type: string
-              description: 'The language used for names, in particular road/street names.'
-        '201':
+              description: "The language used for names, in particular road/street names."
+        "201":
           description: |-
-            This response is only returned for asynchronous processing (`mode=async` 
+            This response is only returned for asynchronous processing (`mode=async`
             or no `mode` parameter).
             The route has been created and the route is being computed.
           headers:
@@ -200,27 +200,27 @@ paths:
                 type: string
                 format: uri
               description: URI of the new resource.
-        '400':
+        "400":
           description: Malformed route definition.
-        '422':
+        "422":
           description: |-
-            Unprocessable request. The route definition document appears 
-            to be valid, but the server is incapable of processing 
+            Unprocessable request. The route definition document appears
+            to be valid, but the server is incapable of processing
             the request.
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "500":
+          $ref: "#/components/responses/ServerError"
       callbacks:
         calculationCompleted:
-          '{$request.body#/subscriber}':
+          "{$request.body#/subscriber}":
             post:
               requestBody:
                 description: the route
                 content:
                   application/json:
                     schema:
-                      $ref: '#/components/schemas/route'
+                      $ref: "#/components/schemas/route"
               responses:
-                '202':
+                "202":
                   description: Route received successfully
   # '/routes/{routeId}':
   #   get:
@@ -229,32 +229,32 @@ paths:
   #       The route is represented as a GeoJSON feature collection.
   #       Its contents will depend on the `status` of the processing.
 
-  #       If the status is 'successful' the feature collection consists 
+  #       If the status is 'successful' the feature collection consists
   #       of the following informaton
   #       * A `name`, if one was provided with the route definition.
   #       * A link to the canonical URI of the route and its definition
   #       (link relations `self` and `describedBy`)
   #       * An array of features (the properties of each is to be decided)
-  #         * The route overview feature. This has a LineString 
+  #         * The route overview feature. This has a LineString
   #         geometry of the complete route from start to end location.
   #         * The start point of the route with a Point geometry.
-  #         * A feature for every segment of the route. This has a 
+  #         * A feature for every segment of the route. This has a
   #           Point geometry representing the last point of the segment.
   #         * The end point of the route with a Point geometry.
 
-  #       If the status is 'accepted', 'running' or 'failed' the 
+  #       If the status is 'accepted', 'running' or 'failed' the
   #       feature collection has less information:
   #       * The route overview has a `null` geometry.
   #       * No segment features are included.
 
   #       The parameter `resultSet` may be used to request only a subset
   #       of the route.
-  #       * 'full' (default) returns the complete feature collection 
+  #       * 'full' (default) returns the complete feature collection
   #       representing the route.
   #       * 'overview' returns just the route overview feature.
-  #       * 'segments' returns the first segment feature with a 
+  #       * 'segments' returns the first segment feature with a
   #       link to the second segment (link relation `next`), if there
-  #       is more than one segment. It is up to the server how this is 
+  #       is more than one segment. It is up to the server how this is
   #       implemented. Options include another parameter to identify the
   #       segment by index or temporary, opaque URIs. Every segment except
   #       the first and the last segment will include two links (link
@@ -262,9 +262,9 @@ paths:
   #       `prev` link (unless there is only a single segment in which case
   #       there is no `prev` link).
 
-  #       Support for the `resultSet` parameter is not required and the 
-  #       parameter may be removed from the API definition, if conformance 
-  #       class **'result-set'** is not listed in the conformance 
+  #       Support for the `resultSet` parameter is not required and the
+  #       parameter may be removed from the API definition, if conformance
+  #       class **'result-set'** is not listed in the conformance
   #       declaration (`/conformance`).
   #     operationId: getRoute
   #     tags:
@@ -278,7 +278,7 @@ paths:
   #           The route or just the route overview or a segment of the route,
   #           if parameter `resultSet` was used.
 
-  #           If the request included an `Accept-Language`, the server will try to 
+  #           If the request included an `Accept-Language`, the server will try to
   #           honor the request and otherwise fall back to an available language.
   #         content:
   #           application/geo+json:
@@ -304,7 +304,7 @@ paths:
 
   #       Routing APIs are permitted to delete routes after some time automatically.
 
-  #       Supporting the operation is optional and part of conformance class 
+  #       Supporting the operation is optional and part of conformance class
   #       **'delete-route'**.
   #     operationId: deleteRoute
   #     tags:
@@ -322,7 +322,7 @@ paths:
   #   get:
   #     summary: fetch the definition of a route
   #     description: |-
-  #       This operation returns the original definition of the route that 
+  #       This operation returns the original definition of the route that
   #       was submitted when the route was created using POST on `/routes`.
   #     operationId: getRouteDefinition
   #     tags:
@@ -344,7 +344,7 @@ paths:
   #   get:
   #     summary: retrieve the processes available
   #     description: |-
-  #       The response is a list of processes available on this server. 
+  #       The response is a list of processes available on this server.
   #       In the Routing API Pilot there is only a single process that is
   #       specified.
   #     operationId: getProcesses
@@ -360,19 +360,19 @@ paths:
   #                 - id: routing
   #                   title: Compute routes
   #                   description: |-
-  #                     The process computes and creates a new route. 
+  #                     The process computes and creates a new route.
   #                     At a minimum, a route is defined by two `waypoints`, the start and end  point of the route.
   #                     Every process supports at least 'fastest' and 'shortest' as the routing `preference`. The default value is 'fastest'.
   #                     An optional `name` for the route may be provided. The name will be  used as the title in links to the route and also included in the route  itself.
 
-  #                     More parameters and routing constraints can optionally be provided with the routing request: 
+  #                     More parameters and routing constraints can optionally be provided with the routing request:
 
-  #                     * Source dataset to use when processing the route 
-  #                     * Routing engine to use when processing the route 
-  #                     * Routing algorithm to use when processing the route 
-  #                     * Obstacle requirements  
-  #                     * Height restriction 
-  #                     * Maximum load restriction 
+  #                     * Source dataset to use when processing the route
+  #                     * Routing engine to use when processing the route
+  #                     * Routing algorithm to use when processing the route
+  #                     * Obstacle requirements
+  #                     * Height restriction
+  #                     * Maximum load restriction
   #                     * Time of departure or arrival
   #                   keywords:
   #                     - routing
@@ -424,7 +424,7 @@ paths:
   #                 - id: maxHeight
   #                   title: Maximum height
   #                   description: |-
-  #                     A height restriction for vehicles in meters 
+  #                     A height restriction for vehicles in meters
   #                     to consider when computing the route.
 
   #                     Support for this parameter is not required and the parameter may be
@@ -440,7 +440,7 @@ paths:
   #                 - id: maxWeight
   #                   title: Maximum weight
   #                   description: |-
-  #                     A weight restriction for vehicles in tons 
+  #                     A weight restriction for vehicles in tons
   #                     to consider when computing the route.
 
   #                     Support for this parameter is not required and the parameter may be
@@ -540,11 +540,11 @@ paths:
   #                     * A link to the canonical URI of the route and its definition
   #                     (link relations `self` and `describedBy`)
   #                     * An array of features (the properties of each is to be decided)
-  #                     * The route overview feature. This has a LineString 
+  #                     * The route overview feature. This has a LineString
   #                     geometry of the complete route from start to end location.
   #                     * The start point of the route with a Point geometry.
-  #                     * A feature for every segment of the route. This has a 
-  #                     LineString geometry starting at the end of the previous 
+  #                     * A feature for every segment of the route. This has a
+  #                     LineString geometry starting at the end of the previous
   #                     segment (or, for the first segment, the start point).
   #                     * The end point of the route with a Point geometry.
   #                   formats:
@@ -625,8 +625,8 @@ paths:
   #         $ref: '#/components/responses/NotFound'
   #       '422':
   #         description: |-
-  #           Unprocessable request. The route definition document appears 
-  #           to be valid, but the server is incapable of processing 
+  #           Unprocessable request. The route definition document appears
+  #           to be valid, but the server is incapable of processing
   #           the request.
   #       '500':
   #         $ref: '#/components/responses/ServerError'
@@ -732,7 +732,7 @@ components:
         routing engine / dataset, if the conformance classes **'routing-engine'**
         and/or **'source-dataset'** are supported by the API. That is, out-of-band
         information is used by clients in the pilot. Clients have to be prepared
-        that servers respond with `400` for unsupported combinations or that 
+        that servers respond with `400` for unsupported combinations or that
         they simply ignore unsupported parameters.
       type: object
       required:
@@ -750,9 +750,9 @@ components:
             A list of points along the route. At least two points have to be provided
             (start and end point).
 
-            APIs supporting no intermediate waypoints (conformance class 
+            APIs supporting no intermediate waypoints (conformance class
             **'intermediate-waypoints'**) may add `maxItems: 2` - or any
-            other number greater than two, if they support a limited number of 
+            other number greater than two, if they support a limited number of
             intermediate waypoints.
           type: object
           required:
@@ -795,12 +795,12 @@ components:
           example: fastest
         maxHeight:
           description: |-
-            A height restriction for vehicles in meters to consider when 
+            A height restriction for vehicles in meters to consider when
             computing the route.
 
-            If a server does not have sufficient data to compute a route with 
-            height restrictions for the selected area or the selected routing 
-            engine does not support such restrictions, an error is returned 
+            If a server does not have sufficient data to compute a route with
+            height restrictions for the selected area or the selected routing
+            engine does not support such restrictions, an error is returned
             (status code `400`).
 
             Support for this parameter is not required and the parameter may be
@@ -813,9 +813,9 @@ components:
             A weight restriction for vehicles in tons to consider when computing
             the route.
 
-            If a server does not have sufficient data to compute a route with 
-            weight restrictions for the selected area or the selected routing 
-            engine does not support such restrictions, an error is returned 
+            If a server does not have sufficient data to compute a route with
+            weight restrictions for the selected area or the selected routing
+            engine does not support such restrictions, an error is returned
             (status code `400`).
 
             Support for this parameter is not required and the parameter may be
@@ -831,12 +831,12 @@ components:
             In general, the list of obstacles could also be a feature collection
             where every obstacle is a feature. Such a representation would be
             required, if the routing engine is able to handle obstacles with
-            different characteristics/properties (for example,an obstacle is 
+            different characteristics/properties (for example,an obstacle is
             only valid for a certain time interval).
 
-            If a server does not have sufficient data to compute a route with 
-            obstacle restrictions for the selected area or the selected routing 
-            engine does not support such restrictions, an error is returned 
+            If a server does not have sufficient data to compute a route with
+            obstacle restrictions for the selected area or the selected routing
+            engine does not support such restrictions, an error is returned
             (status code `400`).
 
             Support for this parameter is not required and the parameter may be
@@ -904,7 +904,7 @@ components:
             Support for this parameter is not required and the parameter may be
             removed from the API definition, if conformance class **'source-dataset'**
             is not listed in the conformance declaration under `/conformance`.
-            The enum values may be changed to reflect the datasets supported by the 
+            The enum values may be changed to reflect the datasets supported by the
             server.
           type: string
           enum:
@@ -919,7 +919,7 @@ components:
             Support for this parameter is not required and the parameter may be
             removed from the API definition, if conformance class **'routing-engine'**
             is not listed in the conformance declaration under `/conformance`.
-            The enum values may be changed to reflect the routing engines supported by the 
+            The enum values may be changed to reflect the routing engines supported by the
             server.
           type: string
           enum:
@@ -934,7 +934,7 @@ components:
             Support for this parameter is not required and the parameter may be
             removed from the API definition, if conformance class **'routing-algorithm'**
             is not listed in the conformance declaration under `/conformance`.
-            The enum values may be changed to reflect the routing algorithms supported 
+            The enum values may be changed to reflect the routing algorithms supported
             by the server.
           type: string
           enum:
@@ -956,7 +956,7 @@ components:
             timestamp:
               type: string
               format: date-time
-              example: '2019-05-23T19:06:32Z'
+              example: "2019-05-23T19:06:32Z"
             type:
               type: string
               default: departure
@@ -973,12 +973,12 @@ components:
             is not listed in the conformance declaration under `/conformance`.
           type: string
           format: uri
-          example: 'https://client.example.com/notification/36d49f'
+          example: "https://client.example.com/notification/36d49f"
     routes:
       description: |-
         The list of routes currently available.
 
-        To be discussed. This could be more sophisticated and include 
+        To be discussed. This could be more sophisticated and include
         information about the status, start/end point, etc. But it is
         unclear whether this operation is needed and this should be
         discussed first.
@@ -994,21 +994,21 @@ components:
             included, too.
           type: array
           items:
-            $ref: '#/components/schemas/route/properties/links/items'
+            $ref: "#/components/schemas/route/properties/links/items"
           example:
-            - href: 'https://example.org/routing/1.0/routes'
+            - href: "https://example.org/routing/1.0/routes"
               rel: self
               type: application/json
               title: this document
-            - href: 'https://example.org/routing/1.0/routes/5hsb32'
+            - href: "https://example.org/routing/1.0/routes/5hsb32"
               rel: item
               type: application/json
               title: route abc
-            - href: 'https://example.org/routing/1.0/routes/9fg3dh'
+            - href: "https://example.org/routing/1.0/routes/9fg3dh"
               rel: item
               type: application/json
               title: route bcd
-            - href: 'https://example.org/routing/1.0/routes/j6gdg3'
+            - href: "https://example.org/routing/1.0/routes/j6gdg3"
               rel: item
               type: application/json
               title: route cde
@@ -1028,7 +1028,7 @@ components:
           enum:
             - FeatureCollection
         status:
-          $ref: '#/components/schemas/statusEnum'
+          $ref: "#/components/schemas/statusEnum"
         name:
           type: string
         links:
@@ -1040,7 +1040,7 @@ components:
             properties:
               href:
                 type: string
-                example: 'http://data.example.com/buildings/123'
+                example: "http://data.example.com/buildings/123"
               rel:
                 type: string
                 example: alternate
@@ -1052,20 +1052,20 @@ components:
                 example: en
               title:
                 type: string
-                example: 'Trierer Strasse 70, 53115 Bonn'
+                example: "Trierer Strasse 70, 53115 Bonn"
               length:
                 type: integer
           example:
-            - href: 'https://example.org/routing/1.0/routes/5hsb32'
+            - href: "https://example.org/routing/1.0/routes/5hsb32"
               rel: self
               type: application/json
               title: this route
-            - href: 'https://example.org/routing/1.0/routes/5hsb32/definition'
+            - href: "https://example.org/routing/1.0/routes/5hsb32/definition"
               rel: describedBy
               type: application/json
               title: |-
-                the definition of the route, i.e., the start and end 
-                point as well as any other options submitted when the 
+                the definition of the route, i.e., the start and end
+                point as well as any other options submitted when the
                 route has been created)
         features:
           type: array
@@ -1073,14 +1073,14 @@ components:
             The first feature is the route overview, followed by the start point, any segments
             and finally the end point.
 
-            The start point and the first point of the route overview should be identical. 
-            The end point, the point of the last segment and the last point of the route 
+            The start point and the first point of the route overview should be identical.
+            The end point, the point of the last segment and the last point of the route
             overview should be identical, too.
           items:
             oneOf:
-              - $ref: '#/components/schemas/route-overview'
-              - $ref: '#/components/schemas/route-start-or-end'
-              - $ref: '#/components/schemas/route-segment'
+              - $ref: "#/components/schemas/route-overview"
+              - $ref: "#/components/schemas/route-start-or-end"
+              - $ref: "#/components/schemas/route-segment"
         bbox:
           type: array
           minItems: 4
@@ -1091,11 +1091,11 @@ components:
         name: Route from A to B
         status: successful
         links:
-          - href: 'https://example.com/routes/5e37f'
+          - href: "https://example.com/routes/5e37f"
             rel: self
             type: application/geo+json
             title: this document
-          - href: 'https://example.com/routes/5e37f/definition'
+          - href: "https://example.com/routes/5e37f/definition"
             rel: describedBy
             type: application/json
             title: route definition for this route
@@ -1298,19 +1298,19 @@ components:
               type: number
             maxHeight_m:
               title: maxmimum height
-              description: 'if the route has a known height restriction, it will be provided (in meters)'
+              description: "if the route has a known height restriction, it will be provided (in meters)"
               type: number
             maxLoad_t:
               title: maxmimum load
-              description: 'if the route has a known load restriction, it will be provided (in tons)'
+              description: "if the route has a known load restriction, it will be provided (in tons)"
               type: number
             obstacles:
               title: obstacles considered
-              description: 'if the route was calculated taking an obstacle into account, textual information will be provided'
+              description: "if the route was calculated taking an obstacle into account, textual information will be provided"
               type: string
             processingTime:
               title: processingTime
-              description: 'date and time when the route was computed, as a timestamp according to RFC 3339'
+              description: "date and time when the route was computed, as a timestamp according to RFC 3339"
               type: string
               format: date-time
         geometry:
@@ -1366,15 +1366,15 @@ components:
               type: number
             maxHeight_m:
               title: maxmimum height
-              description: 'if the segment has a known height restriction, it will be provided (in meters)'
+              description: "if the segment has a known height restriction, it will be provided (in meters)"
               type: number
             maxLoad_t:
               title: maxmimum load
-              description: 'if the segment has a known load restriction, it will be provided (in tons)'
+              description: "if the segment has a known load restriction, it will be provided (in tons)"
               type: number
             speedLimit:
               title: speed limit
-              description: 'if the segment has a known speed limit, it will be provided (in the unit specified by `speedLimitUnit`)'
+              description: "if the segment has a known speed limit, it will be provided (in the unit specified by `speedLimitUnit`)"
               type: integer
             speedLimitUnit:
               title: speed limit unit
@@ -1389,7 +1389,7 @@ components:
               type: string
             instructions:
               title: turn instructions
-              description: 'instructions at the end of the segment (continue, turn right or turn left to a different street)'
+              description: "instructions at the end of the segment (continue, turn right or turn left to a different street)"
               type: string
               enum:
                 - continue
@@ -1414,7 +1414,7 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/route/properties/links/items'
+            $ref: "#/components/schemas/route/properties/links/items"
       example:
         type: Feature
         id: 3
@@ -1433,11 +1433,11 @@ components:
           speedLimit: 35
           speedLimitUnit: mph
         links:
-          - href: 'https://example.org/routing/1.0/routes/5hsb32?resultSet=segments&offset=3'
+          - href: "https://example.org/routing/1.0/routes/5hsb32?resultSet=segments&offset=3"
             rel: next
             type: application/geo+json
             title: the next segment
-          - href: 'https://example.org/routing/1.0/routes/5hsb32?resultSet=segments&offset=1'
+          - href: "https://example.org/routing/1.0/routes/5hsb32?resultSet=segments&offset=1"
             rel: prev
             type: application/geo+json
             title: the previous segment

@@ -1,17 +1,17 @@
 openapi: 3.0.0
 info:
-  version: '1.0'
+  version: "1.0"
   title: OGC API - Maps
-  description: 'Example API Definition for OGC API - Maps - Part 1: Core'
+  description: "Example API Definition for OGC API - Maps - Part 1: Core"
   contact:
     name: Open Geospatial Consortium
     email: info@ogc.org
   license:
     name: OGC License
-    url: 'http://www.opengeospatial.org/legal/'
+    url: "http://www.opengeospatial.org/legal/"
 servers:
   - description: Example OGC API - Maps server
-    url: 'https://maps.ecere.com/ogcapi'
+    url: "https://maps.ecere.com/ogcapi"
 tags:
   - name: Maps
     description: OGC API Maps
@@ -158,123 +158,123 @@ paths:
       summary: Retrieve a default map of the whole dataset
       operationId: getDatasetMap
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/bbox-crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/width'
-        - $ref: '#/components/parameters/height'
-        - $ref: '#/components/parameters/f-map'
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/bbox-crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/f-map"
       responses:
-        '200':
-          $ref: '#/components/responses/Map'
-        '204':
-          $ref: '#/components/responses/EmptyMap'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/styles/{styleId}/map':
+        "200":
+          $ref: "#/components/responses/Map"
+        "204":
+          $ref: "#/components/responses/EmptyMap"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/styles/{styleId}/map":
     get:
       tags:
         - Maps
       summary: Retrieve a styled map of the whole dataset
       operationId: getDatasetStyleMap
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/bbox-crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/width'
-        - $ref: '#/components/parameters/height'
-        - $ref: '#/components/parameters/styleId'
-        - $ref: '#/components/parameters/f-map'
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/bbox-crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/styleId"
+        - $ref: "#/components/parameters/f-map"
       responses:
-        '200':
-          $ref: '#/components/responses/Map'
-        '204':
-          $ref: '#/components/responses/EmptyMap'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/map':
+        "200":
+          $ref: "#/components/responses/Map"
+        "204":
+          $ref: "#/components/responses/EmptyMap"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/map":
     get:
       tags:
         - Maps
       summary: Retrieve a map for the specified collection
       operationId: getCollectionMap
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/bbox-crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/width'
-        - $ref: '#/components/parameters/height'
-        - $ref: '#/components/parameters/f-map'
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/bbox-crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/f-map"
       responses:
-        '200':
-          $ref: '#/components/responses/Map'
-        '204':
-          $ref: '#/components/responses/EmptyMap'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/styles/{styleId}/map':
+        "200":
+          $ref: "#/components/responses/Map"
+        "204":
+          $ref: "#/components/responses/EmptyMap"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/styles/{styleId}/map":
     get:
       tags:
         - Maps
       summary: Retrieve a map for a specified collection and style
       operationId: getCollectionStyleMap
       parameters:
-        - $ref: '#/components/parameters/bbox'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/bbox-crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/width'
-        - $ref: '#/components/parameters/height'
-        - $ref: '#/components/parameters/styleId-collection'
-        - $ref: '#/components/parameters/f-map'
+        - $ref: "#/components/parameters/bbox"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/bbox-crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/width"
+        - $ref: "#/components/parameters/height"
+        - $ref: "#/components/parameters/styleId-collection"
+        - $ref: "#/components/parameters/f-map"
       responses:
-        '200':
-          $ref: '#/components/responses/Map'
-        '204':
-          $ref: '#/components/responses/EmptyMap'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/Map"
+        "204":
+          $ref: "#/components/responses/EmptyMap"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
   /tileMatrixSets:
     get:
       tags:
@@ -282,36 +282,36 @@ paths:
       summary: Retrieve the list of available tiling schemes (tile matrix sets)
       operationId: getTileMatrixSetsList
       parameters:
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileMatrixSetsList'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/tileMatrixSets/{tileMatrixSetId}':
+        "200":
+          $ref: "#/components/responses/TileMatrixSetsList"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/tileMatrixSets/{tileMatrixSetId}":
     get:
       tags:
         - Tiling Schemes
       summary: Retrieve the definition of the specified tiling scheme (tile matrix set)
       operationId: getTileMatrixSet
       parameters:
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileMatrixSet'
-        '404':
+        "200":
+          $ref: "#/components/responses/TileMatrixSet"
+        "404":
           description: The requested tile matrix set id was not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/exception'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
+                $ref: "#/components/schemas/exception"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
   /map/tiles:
     get:
       tags:
@@ -319,275 +319,275 @@ paths:
       summary: Retrieve the list of all default map tilesets for the whole dataset
       operationId: .dataset.map.getTileSetsList
       parameters:
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSetsList'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/map/tiles/{tileMatrixSetId}':
+        "200":
+          $ref: "#/components/responses/TileSetsList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/map/tiles/{tileMatrixSetId}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a default map tileset of the whole dataset for the specified tiling scheme (tile matrix set)
       operationId: .dataset.map.getTileSet
       parameters:
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSet'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}':
+        "200":
+          $ref: "#/components/responses/TileSet"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a default map tile of the whole dataset
       operationId: .dataset.map.getTile
       parameters:
-        - $ref: '#/components/parameters/tileMatrix'
-        - $ref: '#/components/parameters/tileRow'
-        - $ref: '#/components/parameters/tileCol'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-mapTile'
+        - $ref: "#/components/parameters/tileMatrix"
+        - $ref: "#/components/parameters/tileRow"
+        - $ref: "#/components/parameters/tileCol"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-mapTile"
       responses:
-        '200':
-          $ref: '#/components/responses/MapTile'
-        '204':
-          $ref: '#/components/responses/EmptyTile'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/styles/{styleId}/map/tiles':
+        "200":
+          $ref: "#/components/responses/MapTile"
+        "204":
+          $ref: "#/components/responses/EmptyTile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/styles/{styleId}/map/tiles":
     get:
       tags:
         - Map Tiles
       summary: Retrieve the list of styled map tilesets for the whole dataset
       operationId: .dataset.style.map.getTileSetsList
       parameters:
-        - $ref: '#/components/parameters/styleId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/styleId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSetsList'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/styles/{styleId}/map/tiles/{tileMatrixSetId}':
+        "200":
+          $ref: "#/components/responses/TileSetsList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/styles/{styleId}/map/tiles/{tileMatrixSetId}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a styled map tileset of the whole dataset for the specified tiling scheme (tile matrix set)
       operationId: .dataset.style.map.getTileSet
       parameters:
-        - $ref: '#/components/parameters/styleId'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/styleId"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSet'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}':
+        "200":
+          $ref: "#/components/responses/TileSet"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a styled map tiles
       operationId: .dataset.style.map.getTile
       parameters:
-        - $ref: '#/components/parameters/tileMatrix'
-        - $ref: '#/components/parameters/tileRow'
-        - $ref: '#/components/parameters/tileCol'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/styleId'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-mapTile'
+        - $ref: "#/components/parameters/tileMatrix"
+        - $ref: "#/components/parameters/tileRow"
+        - $ref: "#/components/parameters/tileCol"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/styleId"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-mapTile"
       responses:
-        '200':
-          $ref: '#/components/responses/MapTile'
-        '204':
-          $ref: '#/components/responses/EmptyTile'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/map/tiles':
+        "200":
+          $ref: "#/components/responses/MapTile"
+        "204":
+          $ref: "#/components/responses/EmptyTile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/map/tiles":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a list of all map tilesets for specified collection.
       operationId: .collection.map.getTileSetsList
       parameters:
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSetsList'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/map/tiles/{tileMatrixSetId}':
+        "200":
+          $ref: "#/components/responses/TileSetsList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/map/tiles/{tileMatrixSetId}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a map tile set metadata for the specified collection and tiling scheme (tile matrix set)
       operationId: .collection.map.getTileSet
       parameters:
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSet'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}':
+        "200":
+          $ref: "#/components/responses/TileSet"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a map tile from the specified collection
       operationId: .collection.map.getTile
       parameters:
-        - $ref: '#/components/parameters/tileMatrix'
-        - $ref: '#/components/parameters/tileRow'
-        - $ref: '#/components/parameters/tileCol'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-mapTile'
+        - $ref: "#/components/parameters/tileMatrix"
+        - $ref: "#/components/parameters/tileRow"
+        - $ref: "#/components/parameters/tileCol"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-mapTile"
       responses:
-        '200':
-          $ref: '#/components/responses/MapTile'
-        '204':
-          $ref: '#/components/responses/EmptyTile'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/styles/{styleId}/map/tiles':
+        "200":
+          $ref: "#/components/responses/MapTile"
+        "204":
+          $ref: "#/components/responses/EmptyTile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/styles/{styleId}/map/tiles":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a list of styled map tilesets for the specified collection
       operationId: .collection.style.map.getTileSetsList
       parameters:
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/f-metadata'
-        - $ref: '#/components/parameters/styleId-collection'
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/f-metadata"
+        - $ref: "#/components/parameters/styleId-collection"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSetsList'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}':
+        "200":
+          $ref: "#/components/responses/TileSetsList"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}":
     get:
       tags:
         - Map Tiles
-      summary: 'Retrieve the map tileset metadata for the specified collection, style and tiling scheme (tile matrix set).'
+      summary: "Retrieve the map tileset metadata for the specified collection, style and tiling scheme (tile matrix set)."
       operationId: .collection.style.map.getTileSet
       parameters:
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/styleId-collection'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-metadata'
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/styleId-collection"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-metadata"
       responses:
-        '200':
-          $ref: '#/components/responses/TileSet'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
-  '/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}':
+        "200":
+          $ref: "#/components/responses/TileSet"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
+  "/collections/{collectionId}/styles/{styleId}/map/tiles/{tileMatrixSetId}/{tileMatrix}/{tileRow}/{tileCol}":
     get:
       tags:
         - Map Tiles
       summary: Retrieve a map tile for a specified collection and style
       operationId: .collection.style.map.getTile
       parameters:
-        - $ref: '#/components/parameters/tileMatrix'
-        - $ref: '#/components/parameters/tileRow'
-        - $ref: '#/components/parameters/tileCol'
-        - $ref: '#/components/parameters/datetime'
-        - $ref: '#/components/parameters/collectionId-all'
-        - $ref: '#/components/parameters/collections'
-        - $ref: '#/components/parameters/subset'
-        - $ref: '#/components/parameters/crs'
-        - $ref: '#/components/parameters/subset-crs'
-        - $ref: '#/components/parameters/bgcolor'
-        - $ref: '#/components/parameters/transparent'
-        - $ref: '#/components/parameters/styleId-collection'
-        - $ref: '#/components/parameters/tileMatrixSetId'
-        - $ref: '#/components/parameters/f-mapTile'
+        - $ref: "#/components/parameters/tileMatrix"
+        - $ref: "#/components/parameters/tileRow"
+        - $ref: "#/components/parameters/tileCol"
+        - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/collectionId-all"
+        - $ref: "#/components/parameters/collections"
+        - $ref: "#/components/parameters/subset"
+        - $ref: "#/components/parameters/crs"
+        - $ref: "#/components/parameters/subset-crs"
+        - $ref: "#/components/parameters/bgcolor"
+        - $ref: "#/components/parameters/transparent"
+        - $ref: "#/components/parameters/styleId-collection"
+        - $ref: "#/components/parameters/tileMatrixSetId"
+        - $ref: "#/components/parameters/f-mapTile"
       responses:
-        '200':
-          $ref: '#/components/responses/MapTile'
-        '204':
-          $ref: '#/components/responses/EmptyTile'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/ServerError'
+        "200":
+          $ref: "#/components/responses/MapTile"
+        "204":
+          $ref: "#/components/responses/EmptyTile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "406":
+          $ref: "#/components/responses/NotAcceptable"
+        "500":
+          $ref: "#/components/responses/ServerError"
 components:
   schemas:
     confClasses:
@@ -608,7 +608,7 @@ components:
         href:
           type: string
           description: Supplies the URI to a remote resource (or resource fragment).
-          example: 'http://data.example.com/buildings/123'
+          example: "http://data.example.com/buildings/123"
         rel:
           type: string
           description: The type or semantics of the relation.
@@ -627,7 +627,7 @@ components:
         title:
           type: string
           description: Used to label the destination of a link such that it can be used as a human-readable identifier.
-          example: 'Trierer Strasse 70, 53115 Bonn'
+          example: "Trierer Strasse 70, 53115 Bonn"
         length:
           type: integer
     landingPage:
@@ -638,7 +638,7 @@ components:
         title:
           type: string
           title: The title of the API.
-          description: 'While a title is not required, implementors are strongly advised to include one.'
+          description: "While a title is not required, implementors are strongly advised to include one."
           example: Buildings in Bonn
         description:
           type: string
@@ -646,11 +646,11 @@ components:
         attribution:
           type: string
           title: attribution for the API
-          description: 'The `attribution` should be short and intended for presentation to a user, for example, in a corner of a map. Parts of the text can be links to other resources if additional information is needed. The string can include HTML markup.'
+          description: "The `attribution` should be short and intended for presentation to a user, for example, in a corner of a map. Parts of the text can be links to other resources if additional information is needed. The string can include HTML markup."
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     exception:
       title: Exception Schema
       description: JSON schema for exceptions based on RFC 7807
@@ -677,7 +677,7 @@ components:
         links:
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         timeStamp:
           type: string
           format: date-time
@@ -692,7 +692,7 @@ components:
         collections:
           type: array
           items:
-            $ref: '#/components/schemas/collectionInfo'
+            $ref: "#/components/schemas/collectionInfo"
     collectionInfo:
       type: object
       required:
@@ -701,7 +701,7 @@ components:
       properties:
         id:
           type: string
-          description: 'identifier of the collection used, for example, in URIs'
+          description: "identifier of the collection used, for example, in URIs"
           example: dem
         title:
           type: string
@@ -714,36 +714,36 @@ components:
         links:
           type: array
           example:
-            - href: 'http://data.example.org/collections/dem?f=json'
+            - href: "http://data.example.org/collections/dem?f=json"
               rel: self
               type: application/json
               title: Digital Elevation Model
-            - href: 'http://data.example.org/collections/dem?f=html'
+            - href: "http://data.example.org/collections/dem?f=html"
               rel: alternate
               type: application/json
               title: Digital Elevation Model
-            - href: 'http://data.example.org/collections/dem/coverage'
+            - href: "http://data.example.org/collections/dem/coverage"
               rel: coverage
               type: image/tiff; application=geotiff
               title: Digital Elevation Model
-            - href: 'http://data.example.org/collections/dem/coverage/domainset'
+            - href: "http://data.example.org/collections/dem/coverage/domainset"
               rel: domainset
               type: application/json
               title: Digital Elevation Model
-            - href: 'http://data.example.org/collections/dem/coverage/rangetype'
+            - href: "http://data.example.org/collections/dem/coverage/rangetype"
               rel: rangetype
               type: application/json
               title: Digital Elevation Model
-            - href: 'http://data.example.org/collections/dem/coverage/metadata'
+            - href: "http://data.example.org/collections/dem/coverage/metadata"
               rel: metadata
               type: application/json
               title: Digital Elevation Model
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         extent:
-          $ref: '#/components/schemas/extent-uad'
+          $ref: "#/components/schemas/extent-uad"
         itemType:
-          description: 'indicator about the type of the items in the collection if the collection has an accessible /collections/{collectionId}/items endpoint'
+          description: "indicator about the type of the items in the collection if the collection has an accessible /collections/{collectionId}/items endpoint"
           type: string
           default: unknown
         crs:
@@ -752,16 +752,16 @@ components:
           items:
             type: string
           default:
-            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+            - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
           example:
-            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-            - 'http://www.opengis.net/def/crs/EPSG/0/4326'
+            - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+            - "http://www.opengis.net/def/crs/EPSG/0/4326"
         dataType:
           allOf:
             - description: Type of data represented in the collection
-            - $ref: '#/components/schemas/dataType'
+            - $ref: "#/components/schemas/dataType"
         geometryDimension:
-          description: 'The geometry dimension of the features shown in this layer (0: points, 1: curves, 2: surfaces, 3: solids), unspecified: mixed or unknown'
+          description: "The geometry dimension of the features shown in this layer (0: points, 1: curves, 2: surfaces, 3: solids), unspecified: mixed or unknown"
           type: integer
           minimum: 0
           maximum: 3
@@ -862,9 +862,9 @@ components:
                 additional enum values.
               type: string
               enum:
-                - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-                - 'http://www.opengis.net/def/crs/OGC/0/CRS84h'
-              default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+                - "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+                - "http://www.opengis.net/def/crs/OGC/0/CRS84h"
+              default: "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
         temporal:
           description: The temporal extent of the features in the collection.
           type: object
@@ -897,7 +897,7 @@ components:
                   format: date-time
                   nullable: true
                 example:
-                  - '2011-11-11T12:22:11Z'
+                  - "2011-11-11T12:22:11Z"
                   - null
             trs:
               description: |-
@@ -908,15 +908,15 @@ components:
                 additional enum values.
               type: string
               enum:
-                - 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
-              default: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
+                - "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+              default: "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
     extent-uad:
       title: Extent with Uniform Additional Dimensions Schema
       description: |-
         The extent module only addresses spatial and temporal extents. This module extends extent by specifying how
         intervals and crs properties can be used to specify additional geometries.
       allOf:
-        - $ref: '#/components/schemas/extent'
+        - $ref: "#/components/schemas/extent"
         - type: object
           additionalProperties:
             description: The domain intervals for any additional dimensions of the extent (envelope) beyond those described in temporal and spatial.
@@ -955,7 +955,7 @@ components:
                         nullable: true
                       - type: number
                   example:
-                    - '2011-11-11T12:22:11Z'
+                    - "2011-11-11T12:22:11Z"
                     - 32.5
                     - null
               crs:
@@ -1024,7 +1024,7 @@ components:
       example: 127
     tileSet:
       title: Tile Set Metadata
-      description: 'A resource describing a tileset based on the OGC TileSet Metadata Standard. At least one of the ''TileMatrixSet'',  or a link with ''rel'' http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme'
+      description: "A resource describing a tileset based on the OGC TileSet Metadata Standard. At least one of the 'TileMatrixSet',  or a link with 'rel' http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme"
       type: object
       required:
         - dataType
@@ -1040,25 +1040,25 @@ components:
         dataType:
           allOf:
             - description: Type of data represented in the tileset
-            - $ref: '#/components/schemas/dataType'
+            - $ref: "#/components/schemas/dataType"
         crs:
           allOf:
             - description: Coordinate Reference System (CRS)
-            - $ref: '#/components/schemas/crs'
+            - $ref: "#/components/schemas/crs"
         tileMatrixSetURI:
-          description: 'Reference to a Tile Matrix Set on an offical source for Tile Matrix Sets such as the OGC NA definition server (http://www.opengis.net/def/tms/). Required if the tile matrix set is registered on an open official source.'
+          description: "Reference to a Tile Matrix Set on an offical source for Tile Matrix Sets such as the OGC NA definition server (http://www.opengis.net/def/tms/). Required if the tile matrix set is registered on an open official source."
           type: string
           format: uri
         links:
-          description: 'Links to related resources. Possible link ''rel'' values are: ''http://www.opengis.net/def/rel/ogc/1.0/dataset'' for a URL pointing to the dataset, ''item'' for a URL template to get a tile; ''alternate'' for a URL pointing to another representation of the TileSetMetadata (e.g a TileJSON file); ''http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme'' for a definition of the TileMatrixSet; ''http://www.opengis.net/def/rel/ogc/1.0/geodata'' for pointing to a single collection (if the tileset represents a single collection)'
+          description: "Links to related resources. Possible link 'rel' values are: 'http://www.opengis.net/def/rel/ogc/1.0/dataset' for a URL pointing to the dataset, 'item' for a URL template to get a tile; 'alternate' for a URL pointing to another representation of the TileSetMetadata (e.g a TileJSON file); 'http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme' for a definition of the TileMatrixSet; 'http://www.opengis.net/def/rel/ogc/1.0/geodata' for pointing to a single collection (if the tileset represents a single collection)"
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
         tileMatrixSetLimits:
-          description: 'Limits for the TileRow and TileCol values for each TileMatrix in the tileMatrixSet. If missing, there are no limits other that the ones imposed by the TileMatrixSet. If present the TileMatrices listed are limited and the rest not available at all'
+          description: "Limits for the TileRow and TileCol values for each TileMatrix in the tileMatrixSet. If missing, there are no limits other that the ones imposed by the TileMatrixSet. If present the TileMatrices listed are limited and the rest not available at all"
           type: array
           items:
-            $ref: '#/components/schemas/tileMatrixLimits'
+            $ref: "#/components/schemas/tileMatrixLimits"
         epoch:
           description: Epoch of the Coordinate Reference System (CRS)
           type: number
@@ -1072,10 +1072,10 @@ components:
               - dataType
             properties:
               title:
-                description: 'Title of this tile matrix set, normally used for display to a human'
+                description: "Title of this tile matrix set, normally used for display to a human"
                 type: string
               description:
-                description: 'Brief narrative description of this tile matrix set, normally available for display to a human'
+                description: "Brief narrative description of this tile matrix set, normally available for display to a human"
                 type: string
               keywords:
                 description: Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this layer
@@ -1086,9 +1086,9 @@ components:
               dataType:
                 allOf:
                   - description: Type of data represented in the layer
-                  - $ref: '#/components/schemas/dataType'
+                  - $ref: "#/components/schemas/dataType"
               geometryDimension:
-                description: 'The geometry dimension of the features shown in this layer (0: points, 1: curves, 2: surfaces, 3: solids), unspecified: mixed or unknown'
+                description: "The geometry dimension of the features shown in this layer (0: points, 1: curves, 2: surfaces, 3: solids), unspecified: mixed or unknown"
                 type: integer
                 minimum: 0
                 maximum: 3
@@ -1096,7 +1096,7 @@ components:
                 description: Feature type identifier. Only applicable to layers of datatype 'geometries'
                 type: string
               pointOfContact:
-                description: 'Useful information to contact the authors or custodians for the layer (e.g. e-mail address, a physical address,  phone numbers, etc)'
+                description: "Useful information to contact the authors or custodians for the layer (e.g. e-mail address, a physical address,  phone numbers, etc)"
                 type: string
               publisher:
                 description: Organization or individual responsible for making the layer available
@@ -1107,7 +1107,7 @@ components:
               crs:
                 allOf:
                   - description: Coordinate Reference System (CRS)
-                  - $ref: '#/components/schemas/crs'
+                  - $ref: "#/components/schemas/crs"
               epoch:
                 description: Epoch of the Coordinate Reference System (CRS)
                 type: number
@@ -1132,19 +1132,19 @@ components:
               boundingBox:
                 allOf:
                   - description: Minimum bounding rectangle surrounding the layer
-                  - $ref: '#/components/schemas/2DBoundingBox'
+                  - $ref: "#/components/schemas/2DBoundingBox"
               created:
                 allOf:
                   - description: When the layer was first produced
-                  - $ref: '#/components/schemas/timeStamp'
+                  - $ref: "#/components/schemas/timeStamp"
               updated:
                 allOf:
                   - description: Last layer change/revision
-                  - $ref: '#/components/schemas/timeStamp'
+                  - $ref: "#/components/schemas/timeStamp"
               style:
                 allOf:
                   - description: Style used to generate the layer in the tileset
-                  - $ref: '#/components/schemas/tileSet/properties/style/allOf/1'
+                  - $ref: "#/components/schemas/tileSet/properties/style/allOf/1"
               geoDataClasses:
                 description: URI identifying a class of data contained in this layer (useful to determine compatibility with styles or processes)
                 type: array
@@ -1187,7 +1187,7 @@ components:
                                 - array
                                 - boolean
                                 - integer
-                                - 'null'
+                                - "null"
                                 - number
                                 - object
                                 - string
@@ -1238,15 +1238,15 @@ components:
                               type: string
                               format: uri
               links:
-                description: 'Links related to this layer. Possible link ''rel'' values are: ''geodata'' for a URL pointing to the collection of geospatial data.'
+                description: "Links related to this layer. Possible link 'rel' values are: 'geodata' for a URL pointing to the collection of geospatial data."
                 type: array
                 minItems: 1
                 items:
-                  $ref: '#/components/schemas/link'
+                  $ref: "#/components/schemas/link"
         boundingBox:
           allOf:
-            - description: 'Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS'
-            - $ref: '#/components/schemas/2DBoundingBox'
+            - description: "Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS"
+            - $ref: "#/components/schemas/2DBoundingBox"
         centerPoint:
           allOf:
             - description: Location of a tile that nicely represents the tileset. Implementations may use this center value to set the default location or to present a representative tile in a user interface
@@ -1263,7 +1263,7 @@ components:
                 crs:
                   allOf:
                     - description: Coordinate Reference System (CRS) of the coordinates
-                    - $ref: '#/components/schemas/crs'
+                    - $ref: "#/components/schemas/crs"
                 tileMatrix:
                   description: TileMatrix identifier associated with the scaleDenominator
                   type: string
@@ -1295,11 +1295,11 @@ components:
                   items:
                     type: string
                 links:
-                  description: 'Links to style related resources. Possible link ''rel'' values are: ''style'' for a URL pointing to the style description, ''styleSpec'' for a URL pointing to the specification or standard used to define the style.'
+                  description: "Links to style related resources. Possible link 'rel' values are: 'style' for a URL pointing to the style description, 'styleSpec' for a URL pointing to the specification or standard used to define the style."
                   type: array
                   minItems: 1
                   items:
-                    $ref: '#/components/schemas/link'
+                    $ref: "#/components/schemas/link"
         license:
           description: License applicable to the tiles
           type: string
@@ -1324,11 +1324,11 @@ components:
         created:
           allOf:
             - description: When the Tile Set was first produced
-            - $ref: '#/components/schemas/timeStamp'
+            - $ref: "#/components/schemas/timeStamp"
         updated:
           allOf:
             - description: Last Tile Set change/revision
-            - $ref: '#/components/schemas/timeStamp'
+            - $ref: "#/components/schemas/timeStamp"
         pointOfContact:
           description: Useful information to contact the authors or custodians for the Tile Set
           type: string
@@ -1352,33 +1352,33 @@ components:
         dataType:
           allOf:
             - description: Type of data represented in the tileset
-            - $ref: '#/components/schemas/dataType'
+            - $ref: "#/components/schemas/dataType"
         crs:
           allOf:
             - description: Coordinate Reference System (CRS)
-            - $ref: '#/components/schemas/crs'
+            - $ref: "#/components/schemas/crs"
         tileMatrixSetURI:
-          description: 'Reference to a Tile Matrix Set on an offical source for Tile Matrix Sets such as the OGC NA definition server (http://www.opengis.net/def/tms/). Required if the tile matrix set is registered on an open official source.'
+          description: "Reference to a Tile Matrix Set on an offical source for Tile Matrix Sets such as the OGC NA definition server (http://www.opengis.net/def/tms/). Required if the tile matrix set is registered on an open official source."
           type: string
           format: uri
         links:
-          description: 'Links to related resources. A ''self'' link to the tileset as well as a ''http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme'' link to a definition of the TileMatrixSet are required.'
+          description: "Links to related resources. A 'self' link to the tileset as well as a 'http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme' link to a definition of the TileMatrixSet are required."
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     tileMatrixSet:
       title: Tile Matrix Set Definition
-      description: 'A definition of a tile matrix set following the Tile Matrix Set standard. For tileset metadata, such a description (in `tileMatrixSet` property) is only required for offline use, as an alternative to a link with a `http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme` relation type.'
+      description: "A definition of a tile matrix set following the Tile Matrix Set standard. For tileset metadata, such a description (in `tileMatrixSet` property) is only required for offline use, as an alternative to a link with a `http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme` relation type."
       type: object
       required:
         - crs
         - tileMatrices
       properties:
         title:
-          description: 'Title of this tile matrix set, normally used for display to a human'
+          description: "Title of this tile matrix set, normally used for display to a human"
           type: string
         description:
-          description: 'Brief narrative description of this tile matrix set, normally available for display to a human'
+          description: "Brief narrative description of this tile matrix set, normally available for display to a human"
           type: string
         keywords:
           description: Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set
@@ -1400,20 +1400,20 @@ components:
         crs:
           allOf:
             - description: Coordinate Reference System (CRS)
-            - $ref: '#/components/schemas/crs'
+            - $ref: "#/components/schemas/crs"
         wellKnownScaleSet:
           description: Reference to a well-known scale set
           type: string
           format: uri
         boundingBox:
           allOf:
-            - description: 'Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS'
-            - $ref: '#/components/schemas/2DBoundingBox'
+            - description: "Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS"
+            - $ref: "#/components/schemas/2DBoundingBox"
         tileMatrices:
           type: array
           description: Describes scale levels and its tile matrices
           items:
-            description: ''
+            description: ""
             type: object
             required:
               - id
@@ -1426,10 +1426,10 @@ components:
               - matrixHeight
             properties:
               title:
-                description: 'Title of this tile matrix set, normally used for display to a human'
+                description: "Title of this tile matrix set, normally used for display to a human"
                 type: string
               description:
-                description: 'Brief narrative description of this tile matrix set, normally available for display to a human'
+                description: "Brief narrative description of this tile matrix set, normally available for display to a human"
                 type: string
               keywords:
                 description: Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset
@@ -1446,7 +1446,7 @@ components:
                 description: Cell size of this tile matrix
                 type: number
               cornerOfOrigin:
-                description: 'The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile.'
+                description: "The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile."
                 type: string
                 enum:
                   - topLeft
@@ -1454,8 +1454,8 @@ components:
                 default: topLeft
               pointOfOrigin:
                 allOf:
-                  - description: 'Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was ''topLeftCorner'' and ''cornerOfOrigin'' did not exist.'
-                  - $ref: '#/components/schemas/2DPoint'
+                  - description: "Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist."
+                  - $ref: "#/components/schemas/2DPoint"
               tileWidth:
                 type: number
                 description: Width of each tile of this tile matrix in pixels
@@ -1517,10 +1517,10 @@ components:
         - links
       properties:
         id:
-          description: 'Optional local tile matrix set identifier, e.g. for use as unspecified `{tileMatrixSetId}` parameter. Implementation of ''identifier'''
+          description: "Optional local tile matrix set identifier, e.g. for use as unspecified `{tileMatrixSetId}` parameter. Implementation of 'identifier'"
           type: string
         title:
-          description: 'Title of this tile matrix set, normally used for display to a human'
+          description: "Title of this tile matrix set, normally used for display to a human"
           type: string
         uri:
           description: Reference to an official source for this tileMatrixSet
@@ -1529,12 +1529,12 @@ components:
         crs:
           allOf:
             - description: Coordinate Reference System (CRS)
-            - $ref: '#/components/schemas/crs'
+            - $ref: "#/components/schemas/crs"
         links:
           description: Links to related resources. A 'self' link to the tile matrix set definition is required.
           type: array
           items:
-            $ref: '#/components/schemas/link'
+            $ref: "#/components/schemas/link"
     tileMatrixLimits:
       title: TileMatrixLimits
       description: A resource describing useful to create an array that describes the limits for a tile set TileMatrixSet based on the OGC TileSet Metadata Standard
@@ -1579,11 +1579,11 @@ components:
         - upperRight
       properties:
         lowerLeft:
-          $ref: '#/components/schemas/2DPoint'
+          $ref: "#/components/schemas/2DPoint"
         upperRight:
-          $ref: '#/components/schemas/2DPoint'
+          $ref: "#/components/schemas/2DPoint"
         crs:
-          $ref: '#/components/schemas/crs'
+          $ref: "#/components/schemas/crs"
         orderedAxes:
           type: array
           minItems: 2
@@ -1608,9 +1608,9 @@ components:
       type: string
       enum:
         - blueMarble
-        - 'NaturalEarth:raster:HYP_HR_SR_OB_DR'
-        - 'NaturalEarth:cultural:ne_10m_admin_0_countries'
-        - 'NaturalEarth:physical:bathymetry'
+        - "NaturalEarth:raster:HYP_HR_SR_OB_DR"
+        - "NaturalEarth:cultural:ne_10m_admin_0_countries"
+        - "NaturalEarth:physical:bathymetry"
         - SRTM_ViewFinderPanorama
         - HRDEM-Ottawa
         - HRDEM-RedRiver
@@ -1629,7 +1629,7 @@ components:
     f-metadata:
       name: f
       in: query
-      description: 'The format of the response. If no value is provided, the accept header is used to determine the format. Accepted values are ''json'' or ''html''.'
+      description: "The format of the response. If no value is provided, the accept header is used to determine the format. Accepted values are 'json' or 'html'."
       required: false
       schema:
         type: string
@@ -1644,18 +1644,18 @@ components:
       description: Local identifier of a collection
       required: true
       schema:
-        $ref: '#/components/schemas/all-collections'
+        $ref: "#/components/schemas/all-collections"
     collections:
       name: collections
       in: query
       style: form
-      description: 'The collections that should be included in the response. The parameter value is a comma-separated list of collection identifiers. If the parameters is missing, some or all collections will be included. The collection will be rendered in the order specified, with the last one showing on top, unless the priority is overridden by styling rules.'
+      description: "The collections that should be included in the response. The parameter value is a comma-separated list of collection identifiers. If the parameters is missing, some or all collections will be included. The collection will be rendered in the order specified, with the last one showing on top, unless the priority is overridden by styling rules."
       required: false
       explode: false
       schema:
         type: array
         items:
-          $ref: '#/components/schemas/all-collections'
+          $ref: "#/components/schemas/all-collections"
     bbox:
       name: bbox
       in: query
@@ -1748,13 +1748,13 @@ components:
     bgcolor:
       name: bgcolor
       in: query
-      description: 'Web color name or hexadecimal 0x[AA]RRGGBB color value for the background color (default to 0x9C9C9C gray). If alpha is not specified, full opacity is assumed.'
+      description: "Web color name or hexadecimal 0x[AA]RRGGBB color value for the background color (default to 0x9C9C9C gray). If alpha is not specified, full opacity is assumed."
       required: false
       style: form
       explode: false
       schema:
         type: string
-        default: '0xFFFFFF'
+        default: "0xFFFFFF"
     transparent:
       name: transparent
       in: query
@@ -1768,7 +1768,7 @@ components:
     width:
       name: width
       in: query
-      description: 'Width of the map in pixel. If omitted and height is specified, defaults to the width maintaining a 1:1 aspect ratio. If both width and height are omitted, the server will select a default dimensions.'
+      description: "Width of the map in pixel. If omitted and height is specified, defaults to the width maintaining a 1:1 aspect ratio. If both width and height are omitted, the server will select a default dimensions."
       required: false
       style: form
       explode: false
@@ -1777,7 +1777,7 @@ components:
     height:
       name: height
       in: query
-      description: 'Height of the map in pixel. If omitted and width is specified, defaults to the height maintaining a 1:1 aspect ratio. If both width and height are omitted, the server will select a default dimensions.'
+      description: "Height of the map in pixel. If omitted and width is specified, defaults to the height maintaining a 1:1 aspect ratio. If both width and height are omitted, the server will select a default dimensions."
       required: false
       style: form
       explode: false
@@ -1786,7 +1786,7 @@ components:
     f-map:
       name: f
       in: query
-      description: 'The format of the map response (e.g. png). Accepted values are ''png'', ''jpg'' or ''tiff'' (GeoTIFF).'
+      description: "The format of the map response (e.g. png). Accepted values are 'png', 'jpg' or 'tiff' (GeoTIFF)."
       required: false
       schema:
         type: string
@@ -1803,7 +1803,7 @@ components:
       required: true
       allowEmptyValue: false
       schema:
-        $ref: '#/components/schemas/styles'
+        $ref: "#/components/schemas/styles"
     styleId-collection:
       name: styleId
       in: path
@@ -1821,11 +1821,11 @@ components:
       required: true
       schema:
         type: string
-      example: '5'
+      example: "5"
     tileRow:
       name: tileRow
       in: path
-      description: 'Row index of the tile on the selected TileMatrix. It cannot exceed the MatrixWidth-1 for the selected TileMatrix. For example, Ireland is fully within the Tile at WebMercatorQuad tileMatrix=5, tileRow=10 and tileCol=15.'
+      description: "Row index of the tile on the selected TileMatrix. It cannot exceed the MatrixWidth-1 for the selected TileMatrix. For example, Ireland is fully within the Tile at WebMercatorQuad tileMatrix=5, tileRow=10 and tileCol=15."
       required: true
       schema:
         minimum: 0
@@ -1834,7 +1834,7 @@ components:
     tileCol:
       name: tileCol
       in: path
-      description: 'Column index of the tile on the selected TileMatrix. It cannot exceed the MatrixHeight-1 for the selected TileMatrix. For example, Ireland is fully within the Tile at WebMercatorQuad tileMatrix=5, tileRow=10 and tileCol=15.'
+      description: "Column index of the tile on the selected TileMatrix. It cannot exceed the MatrixHeight-1 for the selected TileMatrix. For example, Ireland is fully within the Tile at WebMercatorQuad tileMatrix=5, tileRow=10 and tileCol=15."
       required: true
       schema:
         minimum: 0
@@ -1847,11 +1847,11 @@ components:
       required: true
       allowEmptyValue: false
       schema:
-        $ref: '#/components/schemas/tileMatrixSets'
+        $ref: "#/components/schemas/tileMatrixSets"
     f-mapTile:
       name: f
       in: query
-      description: 'The format of the map tile response (e.g. png). Accepted values are ''png'', ''jpg'' or ''tiff'' (GeoTIFF).'
+      description: "The format of the map tile response (e.g. png). Accepted values are 'png', 'jpg' or 'tiff' (GeoTIFF)."
       required: false
       schema:
         type: string
@@ -1863,20 +1863,20 @@ components:
       explode: false
   responses:
     NotFound:
-      description: 'The requested resource does not exist on the server. For example, a path parameter had an incorrect value.'
+      description: "The requested resource does not exist on the server. For example, a path parameter had an incorrect value."
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
     NotAcceptable:
-      description: 'Content negotiation failed. For example, the `Accept` header submitted in the request did not support any of the media types supported by the server for the requested resource.'
+      description: "Content negotiation failed. For example, the `Accept` header submitted in the request did not support any of the media types supported by the server for the requested resource."
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -1885,7 +1885,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -1894,7 +1894,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -1903,7 +1903,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exception'
+            $ref: "#/components/schemas/exception"
         text/html:
           schema:
             type: string
@@ -1914,28 +1914,28 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/landingPage'
+            $ref: "#/components/schemas/landingPage"
           example:
             title: Buildings in Bonn
             description: Access to data about buildings in the city of Bonn via a Web API that conforms to the OGC API Tiles specification.
             links:
-              - href: 'http://data.example.org/'
+              - href: "http://data.example.org/"
                 rel: self
                 type: application/json
                 title: this document
-              - href: 'http://data.example.org/api'
+              - href: "http://data.example.org/api"
                 rel: service-desc
                 type: application/vnd.oai.openapi+json;version=3.0
                 title: the API definition
-              - href: 'http://data.example.org/api.html'
+              - href: "http://data.example.org/api.html"
                 rel: service-doc
                 type: text/html
                 title: the API documentation
-              - href: 'http://data.example.org/conformance'
+              - href: "http://data.example.org/conformance"
                 rel: conformance
                 type: application/json
                 title: OGC API conformance classes implemented by this service
-              - href: 'http://data.example.org/collections'
+              - href: "http://data.example.org/collections"
                 rel: data
                 type: application/json
                 title: Information about the collections
@@ -1948,26 +1948,26 @@ components:
         application/json:
           schema:
             allOf:
-              - $ref: '#/components/schemas/confClasses'
+              - $ref: "#/components/schemas/confClasses"
             example:
               conformsTo:
-                - 'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core'
-                - 'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json'
-                - 'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html'
-                - 'http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30'
-                - 'http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tileset'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tilesets-list'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-tilesets'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/dataset-tilesets'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-selection'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/jpeg'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/png'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geojson'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tiff'
-                - 'http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/netcdf'
+                - "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core"
+                - "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json"
+                - "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/html"
+                - "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/oas30"
+                - "http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/collections"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/core"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tileset"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tilesets-list"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-tilesets"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/dataset-tilesets"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geodata-selection"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/jpeg"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/png"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/mvt"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/geojson"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/tiff"
+                - "http://www.opengis.net/spec/ogcapi-tiles-1/1.0/conf/netcdf"
     API:
       description: The OpenAPI definition of the API.
       content:
@@ -1982,7 +1982,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/enumeration'
+            $ref: "#/components/schemas/enumeration"
         text/html:
           schema:
             type: string
@@ -1997,22 +1997,22 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/collections'
+            $ref: "#/components/schemas/collections"
           example:
             links:
-              - href: 'http://data.example.org/collections.json'
+              - href: "http://data.example.org/collections.json"
                 rel: self
                 type: application/json
                 title: this document
-              - href: 'http://data.example.org/collections.html'
+              - href: "http://data.example.org/collections.html"
                 rel: alternate
                 type: text/html
                 title: this document as HTML
-              - href: 'http://schemas.example.org/1.0/buildings.xsd'
+              - href: "http://schemas.example.org/1.0/buildings.xsd"
                 rel: describedby
                 type: application/xml
                 title: GML application schema for Acme Corporation building data
-              - href: 'http://download.example.org/buildings.gpkg'
+              - href: "http://download.example.org/buildings.gpkg"
                 rel: enclosure
                 type: application/geopackage+sqlite3
                 title: Bulk download (GeoPackage)
@@ -2030,22 +2030,22 @@ components:
                         - 50.78
                   temporal:
                     interval:
-                      - - '2010-02-15T12:34:56Z'
+                      - - "2010-02-15T12:34:56Z"
                         - null
                 links:
-                  - href: 'http://data.example.org/collections/buildings/items'
+                  - href: "http://data.example.org/collections/buildings/items"
                     rel: items
                     type: application/geo+json
                     title: Buildings
-                  - href: 'http://data.example.org/collections/buildings/items.html'
+                  - href: "http://data.example.org/collections/buildings/items.html"
                     rel: items
                     type: text/html
                     title: Buildings
-                  - href: 'https://creativecommons.org/publicdomain/zero/1.0/'
+                  - href: "https://creativecommons.org/publicdomain/zero/1.0/"
                     rel: license
                     type: text/html
                     title: CC0-1.0
-                  - href: 'https://creativecommons.org/publicdomain/zero/1.0/rdf'
+                  - href: "https://creativecommons.org/publicdomain/zero/1.0/rdf"
                     rel: license
                     type: application/rdf+xml
                     title: CC0-1.0
@@ -2063,7 +2063,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/collectionInfo'
+            $ref: "#/components/schemas/collectionInfo"
           example:
             id: buildings
             title: Buildings
@@ -2077,22 +2077,22 @@ components:
                     - 50.78
               temporal:
                 interval:
-                  - - '2010-02-15T12:34:56Z'
+                  - - "2010-02-15T12:34:56Z"
                     - null
             links:
-              - href: 'http://data.example.org/collections/buildings/items'
+              - href: "http://data.example.org/collections/buildings/items"
                 rel: items
                 type: application/geo+json
                 title: Buildings
-              - href: 'http://data.example.org/collections/buildings/items.html'
+              - href: "http://data.example.org/collections/buildings/items.html"
                 rel: items
                 type: text/html
                 title: Buildings
-              - href: 'https://creativecommons.org/publicdomain/zero/1.0/'
+              - href: "https://creativecommons.org/publicdomain/zero/1.0/"
                 rel: license
                 type: text/html
                 title: CC0-1.0
-              - href: 'https://creativecommons.org/publicdomain/zero/1.0/rdf'
+              - href: "https://creativecommons.org/publicdomain/zero/1.0/rdf"
                 rel: license
                 type: application/rdf+xml
                 title: CC0-1.0
@@ -2128,11 +2128,11 @@ components:
               links:
                 type: array
                 items:
-                  $ref: '#/components/schemas/link'
+                  $ref: "#/components/schemas/link"
               tilesets:
                 type: array
                 items:
-                  $ref: '#/components/schemas/tileSet-item'
+                  $ref: "#/components/schemas/tileSet-item"
         text/html:
           schema:
             type: string
@@ -2141,7 +2141,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/tileSet'
+            $ref: "#/components/schemas/tileSet"
         text/html:
           schema:
             type: string
@@ -2172,7 +2172,7 @@ components:
               tileMatrixSets:
                 type: array
                 items:
-                  $ref: '#/components/schemas/tileMatrixSet-item'
+                  $ref: "#/components/schemas/tileMatrixSet-item"
         text/html:
           schema:
             type: string
@@ -2181,4 +2181,4 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/tileMatrixSet'
+            $ref: "#/components/schemas/tileMatrixSet"

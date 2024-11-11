@@ -103,7 +103,7 @@ pub struct CoreService {
 
 impl CoreService {
     pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
-        let api_base = "";
+        let api_base = self.web_config.public_server_url.as_deref().unwrap_or("");
 
         self.ogcapi
             .landing_page_links

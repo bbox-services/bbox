@@ -47,6 +47,7 @@ impl CollectionDatasource for SqliteDatasource {
     async fn setup_collection(
         &mut self,
         cfg: &ConfiguredCollectionCfg,
+        base_url: &str,
         extent: Option<CoreExtent>,
     ) -> Result<FeatureCollection> {
         info!("Setup Gpkg Collection `{}`", &cfg.name);
@@ -101,7 +102,7 @@ impl CollectionDatasource for SqliteDatasource {
             item_type: None,
             crs: vec![],
             links: vec![ApiLink {
-                href: format!("/collections/{id}/items"),
+                href: format!("{base_url}/collections/{id}/items"),
                 rel: Some("items".to_string()),
                 type_: Some("application/geo+json".to_string()),
                 title: cfg.title.clone(),
@@ -119,7 +120,7 @@ impl CollectionDatasource for SqliteDatasource {
 
 #[async_trait]
 impl AutoscanCollectionDatasource for SqliteDatasource {
-    async fn collections(&mut self) -> Result<Vec<FeatureCollection>> {
+    async fn collections(&mut self, base_url: &str) -> Result<Vec<FeatureCollection>> {
         let mut collections = Vec::new();
         let sql = r#"
             SELECT contents.*
@@ -154,7 +155,10 @@ impl AutoscanCollectionDatasource for SqliteDatasource {
                 title: Some(title),
                 description: row.try_get("description")?,
             };
-            if let Ok(fc) = self.setup_collection(&coll_cfg, Some(extent)).await {
+            if let Ok(fc) = self
+                .setup_collection(&coll_cfg, base_url, Some(extent))
+                .await
+            {
                 collections.push(fc);
             }
         }
@@ -210,7 +214,12 @@ impl CollectionSource for GpkgCollectionSource {
         Ok(result)
     }
 
-    async fn item(&self, collection_id: &str, feature_id: &str) -> Result<Option<CoreFeature>> {
+    async fn item(
+        &self,
+        base_url: &str,
+        collection_id: &str,
+        feature_id: &str,
+    ) -> Result<Option<CoreFeature>> {
         let Some(pk) = &self.pk_column else {
             warn!("Ignoring error getting item for {collection_id} without single primary key");
             return Ok(None);
@@ -229,7 +238,7 @@ impl CollectionSource for GpkgCollectionSource {
             let mut item = row_to_feature(&row, self)?;
             item.links = vec![
                 ApiLink {
-                    href: format!("/collections/{collection_id}/items/{feature_id}"),
+                    href: format!("{base_url}/collections/{collection_id}/items/{feature_id}"),
                     rel: Some("self".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("this document".to_string()),
@@ -237,7 +246,7 @@ impl CollectionSource for GpkgCollectionSource {
                     length: None,
                 },
                 ApiLink {
-                    href: format!("/collections/{collection_id}"),
+                    href: format!("{base_url}/collections/{collection_id}"),
                     rel: Some("collection".to_string()),
                     type_: Some("application/geo+json".to_string()),
                     title: Some("the collection document".to_string()),
@@ -351,7 +360,7 @@ mod tests {
         let mut pool = SqliteDatasource::new_pool("../assets/ne_extracts.gpkg")
             .await
             .unwrap();
-        let collections = pool.collections().await.unwrap();
+        let collections = pool.collections("").await.unwrap();
         assert_eq!(collections.len(), 3);
         assert_eq!(
             collections
