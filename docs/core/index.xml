@@ -26,6 +26,7 @@ title="Copy code"
 &lt;h2>Webserver&lt;span class="hx-absolute -hx-mt-20" id="webserver">&lt;/span>
 &lt;a href="#webserver" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;ul>
 &lt;li>&lt;code>server_addr&lt;/code> &lt;em>String&lt;/em>: IP address of interface and port to bind web server (e.g. 0.0.0.0:8080 for all)&lt;/li>
+&lt;li>&lt;code>public_server_url&lt;/code> &lt;em>String&lt;/em> (optional): Public base URL of the server (e.g. &lt;code>https://bbox.example.com/&lt;/code>)&lt;/li>
 &lt;li>&lt;code>loglevel&lt;/code> &lt;em>Loglevel&lt;/em> (optional): Log level (Default: info)&lt;/li>
 &lt;li>&lt;code>tls_cert&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
 &lt;li>&lt;code>tls_key&lt;/code> &lt;em>String&lt;/em> (optional)&lt;/li>
