@@ -865,9 +865,9 @@ components:
 
         * A title and type for the queryable properties;
       content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/json_schema'
+        # application/json:
+        #   schema:
+        #     $ref: '#/components/schemas/json_schema'
         text/html:
           schema:
             type: string
