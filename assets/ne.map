@@ -41,19 +41,19 @@ MAP
   CONNECTIONTYPE OGR
   CONNECTION "mvtbench.gpkg"
   DATA "ne_10m_admin_0_countries"
-  #DATA "wkb_geometry from (SELECT ogc_fid, name, adm0_a3, abbrev, mapcolor7, wkb_geometry FROM ne_10m_admin_0_countries) as temp using unique ogc_fid using SRID=3857"    
+  #DATA "wkb_geometry from (SELECT ogc_fid, name, adm0_a3, abbrev, mapcolor7, wkb_geometry FROM ne_10m_admin_0_countries) as temp using unique ogc_fid using SRID=3857"
   EXTENT -20037508.342789 -34679773.785951 20037508.342789 18428920.012950
-  DUMP true   
+  #DUMP true
   METADATA
     "wms_title" "country"
     "wms_srs" "epsg:4326 epsg:3857 epsg:900913"
-    "wms_feature_info_mime_type" "text/html"  
+    "wms_feature_info_mime_type" "text/html"
     "gml_include_items" "adm0_a3,mapcolor7"
     "gml_mapcolor7_type" "integer"
   END
   PROJECTION
     "init=epsg:3857"
-  END   
+  END
    CLASS
     STYLE
       OUTLINECOLOR 200 50 100

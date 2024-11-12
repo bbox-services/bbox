@@ -175,8 +175,7 @@ cache = "filecache"
 [[tileset]]
 name = "ne_umn"
 map_service = { project = "ne", suffix = "map", layers = "country", tile_size = 512 }
-cache = "mbtilecache"
-#cache = "pmtilecache"
+#cache = "mbtilecache"
 
 [[tileset]]
 name = "gebco"
