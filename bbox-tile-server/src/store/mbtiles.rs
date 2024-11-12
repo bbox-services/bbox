@@ -4,7 +4,7 @@ use crate::store::{StoreFromConfig, TileReader, TileStore, TileStoreError, TileW
 use async_trait::async_trait;
 use bbox_core::{Compression, Format, TileResponse};
 use log::info;
-use martin_mbtiles::{invert_y_value, CopyDuplicateMode, Metadata};
+use martin_mbtiles::{invert_y_value, Metadata};
 use martin_tile_utils::Format as TileFormat;
 use sqlx::{Acquire, Executor, Statement};
 use std::ffi::OsStr;
@@ -81,14 +81,49 @@ impl TileWriter for MbtilesDatasource {
     }
     async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
         let mut conn = self.pool.acquire().await?;
-        self.mbtiles
-            .insert_tiles(
-                &mut conn,
-                self.layout,
-                CopyDuplicateMode::Override,
-                &[(xyz.z, xyz.x as u32, xyz.y as u32, data)],
+        // self.mbtiles
+        //     .insert_tiles(
+        //         &mut conn,
+        //         self.layout,
+        //         CopyDuplicateMode::Override,
+        //         &[(xyz.z, xyz.x as u32, xyz.y as u32, data)],
+        //     )
+        //     .await?;
+        debug_assert_eq!(
+            self.layout,
+            martin_mbtiles::MbtType::Normalized { hash_view: true }
+        );
+        // TODO: common code with put_tiles
+        let mut tx = conn.begin().await?;
+        let sql2 = tx
+            .prepare(
+                "INSERT OR IGNORE INTO images (tile_id, tile_data)
+                VALUES (?1, ?2);",
             )
             .await?;
+        let sql1 = tx
+            .prepare(
+                "INSERT OR REPLACE INTO map (zoom_level, tile_column, tile_row, tile_id)
+                VALUES (?1, ?2, ?3, ?4);",
+            )
+            .await?;
+        let (z, x, y, tile_data) = (&xyz.z, &(xyz.x as u32), &(xyz.y as u32), &data);
+        let hash = blake3::hash(tile_data).to_hex();
+        sql2.query()
+            .bind(hash.as_str())
+            .bind(tile_data)
+            .execute(&mut *tx)
+            .await?;
+
+        let y = invert_y_value(*z, *y);
+        sql1.query()
+            .bind(z)
+            .bind(x)
+            .bind(y)
+            .bind(hash.as_str())
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
         Ok(())
     }
     async fn put_tiles(&mut self, tiles: &[(u8, u32, u32, Vec<u8>)]) -> Result<(), TileStoreError> {

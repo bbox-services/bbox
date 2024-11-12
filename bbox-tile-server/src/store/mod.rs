@@ -66,6 +66,7 @@ pub trait TileWriter: DynClone + Send + Sync {
     /// Write tile into store
     async fn put_tile(&self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError>;
     /// Write tile into store requiring &mut self
+    // mut is required for PMTiles writer
     async fn put_tile_mut(&mut self, xyz: &Xyz, data: Vec<u8>) -> Result<(), TileStoreError> {
         // Most implementations support writing without &mut self
         self.put_tile(xyz, data).await
