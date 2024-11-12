@@ -15,7 +15,7 @@ url = "postgresql://mvtbench:mvtbench@127.0.0.1:5439/mvtbench"
 [[datasource]]
 name = "gebco"
 [datasource.wms_proxy]
-baseurl = "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?version=1.3.0"
+baseurl = "https://wms.gebco.net/mapserv?version=1.3.0"
 format = "image/jpeg"
 ```
 
