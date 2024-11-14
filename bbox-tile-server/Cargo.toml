@@ -1,6 +1,6 @@
 [package]
 name = "bbox-tile-server"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Pirmin Kalberer <pirmin.kalberer@gmail.com>"]
 readme = "README.md"
 description = "Vector and raster tiles server supporting various sources and storage formats"
@@ -26,9 +26,9 @@ actix-web = { workspace = true }
 anyhow = "1.0.52"
 async-channel = "2.3.1"
 async-trait = { workspace = true }
-bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.1", optional = true }
-bbox-core = { path = "../bbox-core", version = "0.6.1" }
-bbox-map-server = { path = "../bbox-map-server", version = "0.6.1", optional = true }
+bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.2", optional = true }
+bbox-core = { path = "../bbox-core", version = "0.6.2" }
+bbox-map-server = { path = "../bbox-map-server", version = "0.6.2", optional = true }
 blake3 = "1.5.4"
 bytes = "1.1.0"
 chrono = { workspace = true }

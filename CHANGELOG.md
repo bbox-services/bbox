@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.2 (2024-11-14)
+
+* Add support for URL prefix for backend and endpoints
+* Automatic deduplication of file and MBTiles tile caches
+* Writing PMTiles is not limited by RAM anymore
+* Return all fields in tilejson
+* Fix collection detection for non-lowercase or empty tables
+* Website redesign with landing page and documentation
+
 ## 0.6.1 (2024-08-23)
 
 * New OGC endpoints /tileMatrixSets and /tileMatrixSets/{id}

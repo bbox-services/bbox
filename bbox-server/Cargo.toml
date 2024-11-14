@@ -1,6 +1,6 @@
 [package]
 name = "bbox-server"
-version = "0.6.1"
+version = "0.6.2"
 readme = "README.md"
 description = "BBOX OGC API Services"
 keywords = ["maps", "tiles", "postgis"]
@@ -28,14 +28,14 @@ qwc2 = ["bbox-frontend?/qwc2"]
 actix-service = "2.0.2"
 actix-web = { workspace = true }
 async-trait = { workspace = true }
-bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.1", optional = true }
-bbox-core = { path = "../bbox-core", version = "0.6.1" }
-bbox-feature-server = { path = "../bbox-feature-server", version = "0.6.1", optional = true }
-bbox-frontend = { path = "../bbox-frontend", version = "0.6.1",  optional = true }
-bbox-map-server = { path = "../bbox-map-server", version = "0.6.1", optional = true }
-bbox-processes-server = { path = "../bbox-processes-server", version = "0.6.1", optional = true }
+bbox-asset-server = { path = "../bbox-asset-server", version = "0.6.2", optional = true }
+bbox-core = { path = "../bbox-core", version = "0.6.2" }
+bbox-feature-server = { path = "../bbox-feature-server", version = "0.6.2", optional = true }
+bbox-frontend = { path = "../bbox-frontend", version = "0.6.2",  optional = true }
+bbox-map-server = { path = "../bbox-map-server", version = "0.6.2", optional = true }
+bbox-processes-server = { path = "../bbox-processes-server", version = "0.6.2", optional = true }
 bbox-routing-server = { path = "../bbox-routing-server", version = "0.1.0", optional = true }
-bbox-tile-server = { path = "../bbox-tile-server", version = "0.6.1", default-features = false, optional = true }
+bbox-tile-server = { path = "../bbox-tile-server", version = "0.6.2", default-features = false, optional = true }
 clap = { workspace = true }
 log = { workspace = true }
 minijinja = { workspace = true }
