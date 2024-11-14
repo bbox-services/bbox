@@ -11,23 +11,23 @@
 &lt;tbody>
 &lt;tr>
 &lt;td>Linux&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server-x86_64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server-x86_64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Linux ARM&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server-aarch64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server-aarch64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>macOS&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server-x86_64-apple-darwin.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server-x86_64-apple-darwin.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>macOS ARM&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server-aarch64-apple-darwin.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server-aarch64-apple-darwin.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Windows&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server-x86_64-pc-windows-msvc.zip" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server-x86_64-pc-windows-msvc.zip" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -42,15 +42,15 @@
 &lt;tbody>
 &lt;tr>
 &lt;td>Ubuntu Jammy&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server_0.6.1-jammy_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server_0.6.2-jammy_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Debian Bookworm&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server_0.6.1-bookworm_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server_0.6.2-bookworm_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Debian Bullseye&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-tile-server_0.6.1-bullseye_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-tile-server_0.6.2-bullseye_amd64.deb" target="_blank" rel="noopener">x86_64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -74,7 +74,7 @@ title="Copy code"
 &lt;h2>Docker&lt;span class="hx-absolute -hx-mt-20" id="docker">&lt;/span>
 &lt;a href="#docker" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>BBOX tile server is also available as a &lt;a href="https://hub.docker.com/r/sourcepole/bbox-tile-server" target="_blank" rel="noopener">Docker image&lt;/a>. You can either share a configuration file from the host with the container via the &lt;code>-v&lt;/code> param, or you can run BBOX in auto-discover mode.&lt;/p>
 &lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
-&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="line">&lt;span class="cl">docker run --rm --user&lt;span class="o">=&lt;/span>&lt;span class="nv">$UID&lt;/span> -p 8080:8080 -v &lt;span class="nv">$PWD&lt;/span>/bbox.toml:/bbox.toml:ro -v &lt;span class="nv">$PWD&lt;/span>/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.1&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="line">&lt;span class="cl">docker run --rm --user&lt;span class="o">=&lt;/span>&lt;span class="nv">$UID&lt;/span> -p 8080:8080 -v &lt;span class="nv">$PWD&lt;/span>/bbox.toml:/bbox.toml:ro -v &lt;span class="nv">$PWD&lt;/span>/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.2&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
 &lt;button
 class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
 title="Copy code"
@@ -96,23 +96,23 @@ title="Copy code"
 &lt;tbody>
 &lt;tr>
 &lt;td>Linux&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-server-x86_64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-server-x86_64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Linux ARM&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-server-aarch64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-server-aarch64-unknown-linux-gnu.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>macOS&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-server-x86_64-apple-darwin.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-server-x86_64-apple-darwin.tar.gz" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>macOS ARM&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-server-aarch64-apple-darwin.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-server-aarch64-apple-darwin.tar.gz" target="_blank" rel="noopener">ARM64&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;tr>
 &lt;td>Windows&lt;/td>
-&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.1/bbox-server-x86_64-pc-windows-msvc.zip" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
+&lt;td>&lt;a href="https://github.com/bbox-services/bbox/releases/download/v0.6.2/bbox-server-x86_64-pc-windows-msvc.zip" target="_blank" rel="noopener">64-bit&lt;/a>&lt;/td>
 &lt;/tr>
 &lt;/tbody>
 &lt;/table>
@@ -136,7 +136,7 @@ title="Copy code"
 &lt;h2>Docker&lt;span class="hx-absolute -hx-mt-20" id="docker">&lt;/span>
 &lt;a href="#docker" class="subheading-anchor" aria-label="Permalink for this section">&lt;/a>&lt;/h2>&lt;p>BBOX is also available as a &lt;a href="https://hub.docker.com/r/sourcepole/bbox-server-qgis" target="_blank" rel="noopener">Docker image&lt;/a>. You can either share a configuration file from the host with the container via the &lt;code>-v&lt;/code> param, or run BBOX in auto-discovery mode.&lt;/p>
 &lt;div class="hextra-code-block hx-relative hx-mt-6 first:hx-mt-0 hx-group/code">
-&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="line">&lt;span class="cl">docker run --rm --user&lt;span class="o">=&lt;/span>&lt;span class="nv">$UID&lt;/span> -p 8080:8080 -v &lt;span class="nv">$PWD&lt;/span>/bbox.toml:/bbox.toml:ro -v &lt;span class="nv">$PWD&lt;/span>/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.1&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
+&lt;div>&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-shell" data-lang="shell">&lt;span class="line">&lt;span class="cl">docker run --rm --user&lt;span class="o">=&lt;/span>&lt;span class="nv">$UID&lt;/span> -p 8080:8080 -v &lt;span class="nv">$PWD&lt;/span>/bbox.toml:/bbox.toml:ro -v &lt;span class="nv">$PWD&lt;/span>/assets:/assets:ro sourcepole/bbox-server-qgis:v0.6.2&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;/div>&lt;div class="hextra-code-copy-btn-container hx-opacity-0 hx-transition group-hover/code:hx-opacity-100 hx-flex hx-gap-1 hx-absolute hx-m-[11px] hx-right-0 hx-top-0">
 &lt;button
 class="hextra-code-copy-btn hx-group/copybtn hx-transition-all active:hx-opacity-50 hx-bg-primary-700/5 hx-border hx-border-black/5 hx-text-gray-600 hover:hx-text-gray-900 hx-rounded-md hx-p-1.5 dark:hx-bg-primary-300/10 dark:hx-border-white/10 dark:hx-text-gray-400 dark:hover:hx-text-gray-50"
 title="Copy code"
