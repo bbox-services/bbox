@@ -24,6 +24,11 @@ Composable spatial services.
 * Common configuration file
 * Open Source under Apache-2.0 / MIT license
 
+## Installation
+
+* [BBOX Server](docs/installation/) (contains all components)
+* [BBOX Tile Server](docs/tile-server/installation/)
+
 ## Links
 
 * [Documentation](docs)
