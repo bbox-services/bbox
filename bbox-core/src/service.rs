@@ -10,6 +10,7 @@ use actix_cors::Cors;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
     cookie::{time::Duration, Key},
+    http::Uri,
     middleware,
     middleware::Condition,
     web, App, HttpServer,
@@ -270,21 +271,33 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
+    let url_prefix = if let Some(ref urlstr) = core.web_config.public_server_url {
+        let url = urlstr.parse::<Uri>().unwrap().path().to_string();
+        if url == "/" {
+            String::new()
+        } else {
+            url
+        }
+    } else {
+        String::new()
+    };
     let mut server = HttpServer::new(move || {
-        App::new()
-            .configure(|cfg| core.register_endpoints(cfg))
-            .configure(|cfg| service.register_endpoints(cfg))
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .cookie_name("bbox".to_owned())
-                    .cookie_secure(false)
-                    .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
-                    .build(),
-            )
-            .wrap(Condition::new(core.has_cors(), core.cors()))
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::NormalizePath::trim())
-            .wrap(middleware::Logger::default())
+        App::new().service(
+            web::scope(&url_prefix)
+                .configure(|cfg| core.register_endpoints(cfg))
+                .configure(|cfg| service.register_endpoints(cfg))
+                .wrap(
+                    SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                        .cookie_name("bbox".to_owned())
+                        .cookie_secure(false)
+                        .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
+                        .build(),
+                )
+                .wrap(Condition::new(core.has_cors(), core.cors()))
+                .wrap(middleware::Compress::default())
+                .wrap(middleware::NormalizePath::trim())
+                .wrap(middleware::Logger::default()),
+        )
     });
     if let Some(tls_config) = tls_config {
         info!("Starting web server at https://{server_addr}");
