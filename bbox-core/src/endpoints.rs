@@ -173,6 +173,11 @@ impl ServiceEndpoints for CoreService {
                     .route(web::get().to(index)),
             )
             .service(
+                web::resource("")
+                    .guard(JsonContentGuard)
+                    .route(web::get().to(index)),
+            )
+            .service(
                 web::resource("/conformance")
                     .guard(JsonContentGuard)
                     .route(web::get().to(conformance)),
