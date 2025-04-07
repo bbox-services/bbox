@@ -105,7 +105,6 @@ pub struct CoreService {
 impl CoreService {
     pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
         let api_base = self.web_config.public_server_url.as_deref().unwrap_or("");
-
         self.ogcapi
             .landing_page_links
             .extend(svc.landing_page_links(api_base));
@@ -182,49 +181,20 @@ impl OgcApiService for CoreService {
         } else {
             None
         };
+        let mut inventory = OgcApiInventory::default();
+        let web_config = cfg.webserver.clone().unwrap_or_default();
+        let url_prefix = url_prefix(web_config.public_server_url.as_deref());
+        inventory.landing_page_links.extend(core_links(&url_prefix));
         CoreService {
-            web_config: cfg.webserver.clone().unwrap_or_default(),
-            ogcapi: OgcApiInventory::default(),
+            web_config,
+            ogcapi: inventory,
             openapi: OpenApiDoc::new(),
             metrics,
             oidc,
         }
     }
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
-        vec![
-            ApiLink {
-                href: "/".to_string(),
-                rel: Some("self".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("this document".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/openapi.json".to_string(),
-                rel: Some("service-desc".to_string()),
-                type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
-                title: Some("the API definition".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/openapi.yaml".to_string(),
-                rel: Some("service-desc".to_string()),
-                type_: Some("application/x-yaml".to_string()),
-                title: Some("the API definition".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/conformance".to_string(),
-                rel: Some("conformance".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("OGC API conformance classes implemented by this server".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ]
+        vec![]
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -241,6 +211,42 @@ impl OgcApiService for CoreService {
             RequestMetricsBuilder::new().build(opentelemetry::global::meter("bbox"))
         })
     }
+}
+fn core_links(api_base: &str) -> Vec<ApiLink> {
+    vec![
+        ApiLink {
+            href: format!("{api_base}/"),
+            rel: Some("self".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("this document".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/openapi.json"),
+            rel: Some("service-desc".to_string()),
+            type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
+            title: Some("the API definition".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/openapi.yaml"),
+            rel: Some("service-desc".to_string()),
+            type_: Some("application/x-yaml".to_string()),
+            title: Some("the API definition".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/conformance"),
+            rel: Some("conformance".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("OGC API conformance classes implemented by this server".to_string()),
+            hreflang: None,
+            length: None,
+        },
+    ]
 }
 
 /// Generic main method for a single OgcApiService
@@ -271,16 +277,7 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
-    let url_prefix = if let Some(ref urlstr) = core.web_config.public_server_url {
-        let url = urlstr.parse::<Uri>().unwrap().path().to_string();
-        if url == "/" {
-            String::new()
-        } else {
-            url
-        }
-    } else {
-        String::new()
-    };
+    let url_prefix = url_prefix(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         App::new().service(
             web::scope(&url_prefix)
@@ -307,4 +304,18 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
         server = server.bind(server_addr)?;
     }
     server.workers(workers).run().await
+}
+
+pub fn url_prefix(public_server_url: Option<&str>) -> String {
+    let url_prefix = if let Some(ref urlstr) = public_server_url {
+        let url = urlstr.parse::<Uri>().unwrap().path().to_string();
+        if url == "/" {
+            String::new()
+        } else {
+            url
+        }
+    } else {
+        String::new()
+    };
+    url_prefix
 }
