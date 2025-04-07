@@ -309,7 +309,7 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
 }
 
 pub fn extract_api_base(public_server_url: Option<&str>) -> String {
-    let api_base = if let Some(ref urlstr) = public_server_url {
+    let api_base = if let Some(urlstr) = public_server_url {
         let url = urlstr.parse::<Uri>().unwrap().path().to_string();
         if url == "/" {
             String::new()
