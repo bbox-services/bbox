@@ -1,7 +1,9 @@
-use actix_web::{http::Uri, middleware, middleware::Condition, web, App, HttpServer};
+use actix_web::{middleware, middleware::Condition, web, App, HttpServer};
 use bbox_core::cli::CliArgs;
 use bbox_core::config::CoreServiceCfg;
-use bbox_core::service::{CoreService, OgcApiService, ServiceConfig, ServiceEndpoints};
+use bbox_core::service::{
+    extract_api_base, CoreService, OgcApiService, ServiceConfig, ServiceEndpoints,
+};
 use log::info;
 use std::path::Path;
 
@@ -104,20 +106,11 @@ async fn run_service() -> std::io::Result<()> {
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
-    let url_prefix = if let Some(ref urlstr) = core.web_config.public_server_url {
-        let url = urlstr.parse::<Uri>().unwrap().path().to_string();
-        if url == "/" {
-            String::new()
-        } else {
-            url
-        }
-    } else {
-        String::new()
-    };
+    let api_base = extract_api_base(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         #[allow(unused_mut)]
         let mut app = App::new().service(
-            web::scope(&url_prefix)
+            web::scope(&api_base)
                 .wrap(Condition::new(core.has_cors(), core.cors()))
                 .wrap(Condition::new(core.has_metrics(), core.middleware()))
                 .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
