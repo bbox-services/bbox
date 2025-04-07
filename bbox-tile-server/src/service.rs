@@ -219,25 +219,29 @@ impl OgcApiService for TileService {
         }
     }
 
-    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
-        vec![
-            ApiLink {
-                href: "/tiles".to_string(),
-                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("List of available vector features tilesets".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/tiles".to_string(),
-                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-map".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("List of available map tilesets".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ]
+    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
+        if self.tilesets.is_empty() {
+            vec![]
+        } else {
+            vec![
+                ApiLink {
+                    href: format!("{api_base}/tiles"),
+                    rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector".to_string()),
+                    type_: Some("application/json".to_string()),
+                    title: Some("List of available vector features tilesets".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+                ApiLink {
+                    href: format!("{api_base}/tiles"),
+                    rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-map".to_string()),
+                    type_: Some("application/json".to_string()),
+                    title: Some("List of available map tilesets".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+            ]
+        }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
