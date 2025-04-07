@@ -78,7 +78,6 @@ pub fn absurl(req: &HttpRequest, path: &str) -> String {
             }
         })
         .unwrap_or("".to_string());
-    println!("REQBASE: {reqbase} PATH: {path}");
     format!("{}://{}{reqbase}{path}", conninfo.scheme(), conninfo.host())
 }
 
