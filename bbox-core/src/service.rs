@@ -183,8 +183,10 @@ impl OgcApiService for CoreService {
         };
         let mut inventory = OgcApiInventory::default();
         let web_config = cfg.webserver.clone().unwrap_or_default();
-        let url_prefix = url_prefix(web_config.public_server_url.as_deref());
-        inventory.landing_page_links.extend(core_links(&url_prefix));
+        let public_server_url = web_config.public_server_url.clone().unwrap_or_default();
+        inventory
+            .landing_page_links
+            .extend(core_links(&public_server_url));
         CoreService {
             web_config,
             ogcapi: inventory,
@@ -277,10 +279,10 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
-    let url_prefix = url_prefix(core.web_config.public_server_url.as_deref());
+    let api_base = extract_api_base(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         App::new().service(
-            web::scope(&url_prefix)
+            web::scope(&api_base)
                 .configure(|cfg| core.register_endpoints(cfg))
                 .configure(|cfg| service.register_endpoints(cfg))
                 .wrap(
@@ -306,8 +308,8 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     server.workers(workers).run().await
 }
 
-pub fn url_prefix(public_server_url: Option<&str>) -> String {
-    let url_prefix = if let Some(ref urlstr) = public_server_url {
+pub fn extract_api_base(public_server_url: Option<&str>) -> String {
+    let api_base = if let Some(ref urlstr) = public_server_url {
         let url = urlstr.parse::<Uri>().unwrap().path().to_string();
         if url == "/" {
             String::new()
@@ -317,5 +319,5 @@ pub fn url_prefix(public_server_url: Option<&str>) -> String {
     } else {
         String::new()
     };
-    url_prefix
+    api_base
 }
