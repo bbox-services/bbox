@@ -2,7 +2,7 @@ use actix_web::{middleware, middleware::Condition, web, App, HttpServer};
 use bbox_core::cli::CliArgs;
 use bbox_core::config::CoreServiceCfg;
 use bbox_core::service::{
-    extract_api_base, CoreService, OgcApiService, ServiceConfig, ServiceEndpoints,
+    extract_api_scope, CoreService, OgcApiService, ServiceConfig, ServiceEndpoints,
 };
 use log::info;
 use std::path::Path;
@@ -106,11 +106,11 @@ async fn run_service() -> std::io::Result<()> {
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
-    let api_base = extract_api_base(core.web_config.public_server_url.as_deref());
+    let api_scope = extract_api_scope(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         #[allow(unused_mut)]
         let mut app = App::new().service(
-            web::scope(&api_base)
+            web::scope(&api_scope)
                 .wrap(Condition::new(core.has_cors(), core.cors()))
                 .wrap(Condition::new(core.has_metrics(), core.middleware()))
                 .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))

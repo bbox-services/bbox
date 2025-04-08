@@ -279,10 +279,10 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
-    let api_base = extract_api_base(core.web_config.public_server_url.as_deref());
+    let api_scope = extract_api_scope(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         App::new().service(
-            web::scope(&api_base)
+            web::scope(&api_scope)
                 .configure(|cfg| core.register_endpoints(cfg))
                 .configure(|cfg| service.register_endpoints(cfg))
                 .wrap(
@@ -308,8 +308,8 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     server.workers(workers).run().await
 }
 
-pub fn extract_api_base(public_server_url: Option<&str>) -> String {
-    let api_base = if let Some(urlstr) = public_server_url {
+pub fn extract_api_scope(public_server_url: Option<&str>) -> String {
+    let api_scope = if let Some(urlstr) = public_server_url {
         let url = urlstr.parse::<Uri>().unwrap().path().to_string();
         if url == "/" {
             String::new()
@@ -319,5 +319,5 @@ pub fn extract_api_base(public_server_url: Option<&str>) -> String {
     } else {
         String::new()
     };
-    api_base
+    api_scope
 }
