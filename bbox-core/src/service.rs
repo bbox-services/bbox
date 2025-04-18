@@ -10,6 +10,7 @@ use actix_cors::Cors;
 use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
     cookie::{time::Duration, Key},
+    http::Uri,
     middleware,
     middleware::Condition,
     web, App, HttpServer,
@@ -104,7 +105,6 @@ pub struct CoreService {
 impl CoreService {
     pub fn add_service<T: OgcApiService>(&mut self, svc: &T) {
         let api_base = self.web_config.public_server_url.as_deref().unwrap_or("");
-
         self.ogcapi
             .landing_page_links
             .extend(svc.landing_page_links(api_base));
@@ -181,49 +181,22 @@ impl OgcApiService for CoreService {
         } else {
             None
         };
+        let mut inventory = OgcApiInventory::default();
+        let web_config = cfg.webserver.clone().unwrap_or_default();
+        let public_server_url = web_config.public_server_url.clone().unwrap_or_default();
+        inventory
+            .landing_page_links
+            .extend(core_links(&public_server_url));
         CoreService {
-            web_config: cfg.webserver.clone().unwrap_or_default(),
-            ogcapi: OgcApiInventory::default(),
+            web_config,
+            ogcapi: inventory,
             openapi: OpenApiDoc::new(),
             metrics,
             oidc,
         }
     }
     fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
-        vec![
-            ApiLink {
-                href: "/".to_string(),
-                rel: Some("self".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("this document".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/openapi.json".to_string(),
-                rel: Some("service-desc".to_string()),
-                type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
-                title: Some("the API definition".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/openapi.yaml".to_string(),
-                rel: Some("service-desc".to_string()),
-                type_: Some("application/x-yaml".to_string()),
-                title: Some("the API definition".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/conformance".to_string(),
-                rel: Some("conformance".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("OGC API conformance classes implemented by this server".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ]
+        vec![]
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -240,6 +213,42 @@ impl OgcApiService for CoreService {
             RequestMetricsBuilder::new().build(opentelemetry::global::meter("bbox"))
         })
     }
+}
+fn core_links(api_base: &str) -> Vec<ApiLink> {
+    vec![
+        ApiLink {
+            href: format!("{api_base}/"),
+            rel: Some("self".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("this document".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/openapi.json"),
+            rel: Some("service-desc".to_string()),
+            type_: Some("application/vnd.oai.openapi+json;version=3.0".to_string()),
+            title: Some("the API definition".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/openapi.yaml"),
+            rel: Some("service-desc".to_string()),
+            type_: Some("application/x-yaml".to_string()),
+            title: Some("the API definition".to_string()),
+            hreflang: None,
+            length: None,
+        },
+        ApiLink {
+            href: format!("{api_base}/conformance"),
+            rel: Some("conformance".to_string()),
+            type_: Some("application/json".to_string()),
+            title: Some("OGC API conformance classes implemented by this server".to_string()),
+            hreflang: None,
+            length: None,
+        },
+    ]
 }
 
 /// Generic main method for a single OgcApiService
@@ -270,21 +279,24 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
+    let api_scope = extract_api_scope(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
-        App::new()
-            .configure(|cfg| core.register_endpoints(cfg))
-            .configure(|cfg| service.register_endpoints(cfg))
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .cookie_name("bbox".to_owned())
-                    .cookie_secure(false)
-                    .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
-                    .build(),
-            )
-            .wrap(Condition::new(core.has_cors(), core.cors()))
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::NormalizePath::trim())
-            .wrap(middleware::Logger::default())
+        App::new().service(
+            web::scope(&api_scope)
+                .configure(|cfg| core.register_endpoints(cfg))
+                .configure(|cfg| service.register_endpoints(cfg))
+                .wrap(
+                    SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                        .cookie_name("bbox".to_owned())
+                        .cookie_secure(false)
+                        .session_lifecycle(PersistentSession::default().session_ttl(session_ttl))
+                        .build(),
+                )
+                .wrap(Condition::new(core.has_cors(), core.cors()))
+                .wrap(middleware::Compress::default())
+                .wrap(middleware::NormalizePath::trim())
+                .wrap(middleware::Logger::default()),
+        )
     });
     if let Some(tls_config) = tls_config {
         info!("Starting web server at https://{server_addr}");
@@ -294,4 +306,18 @@ pub async fn run_service<T: OgcApiService + ServiceEndpoints + Sync + 'static>(
         server = server.bind(server_addr)?;
     }
     server.workers(workers).run().await
+}
+
+pub fn extract_api_scope(public_server_url: Option<&str>) -> String {
+    let api_scope = if let Some(urlstr) = public_server_url {
+        let url = urlstr.parse::<Uri>().unwrap().path().to_string();
+        if url == "/" {
+            String::new()
+        } else {
+            url
+        }
+    } else {
+        String::new()
+    };
+    api_scope
 }

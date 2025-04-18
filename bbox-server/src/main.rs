@@ -1,7 +1,9 @@
-use actix_web::{middleware, middleware::Condition, App, HttpServer};
+use actix_web::{middleware, middleware::Condition, web, App, HttpServer};
 use bbox_core::cli::CliArgs;
 use bbox_core::config::CoreServiceCfg;
-use bbox_core::service::{CoreService, OgcApiService, ServiceConfig, ServiceEndpoints};
+use bbox_core::service::{
+    extract_api_scope, CoreService, OgcApiService, ServiceConfig, ServiceEndpoints,
+};
 use log::info;
 use std::path::Path;
 
@@ -104,22 +106,25 @@ async fn run_service() -> std::io::Result<()> {
     let workers = core.workers();
     let server_addr = core.server_addr().to_string();
     let tls_config = core.tls_config();
+    let api_scope = extract_api_scope(core.web_config.public_server_url.as_deref());
     let mut server = HttpServer::new(move || {
         #[allow(unused_mut)]
-        let mut app = App::new()
-            .wrap(Condition::new(core.has_cors(), core.cors()))
-            .wrap(Condition::new(core.has_metrics(), core.middleware()))
-            .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
-            .configure(|cfg| core.register_endpoints(cfg))
-            .configure(bbox_core::static_assets::register_endpoints)
-            .configure(|cfg| map_service.register_endpoints(cfg))
-            .configure(|cfg| tile_service.register_endpoints(cfg))
-            .configure(|cfg| feature_service.register_endpoints(cfg))
-            .configure(|cfg| asset_service.register_endpoints(cfg))
-            .configure(|cfg| processes_service.register_endpoints(cfg))
-            .configure(|cfg| routing_service.register_endpoints(cfg));
+        let mut app = App::new().service(
+            web::scope(&api_scope)
+                .wrap(Condition::new(core.has_cors(), core.cors()))
+                .wrap(Condition::new(core.has_metrics(), core.middleware()))
+                .wrap(Condition::new(core.has_metrics(), core.metrics().clone()))
+                .wrap(middleware::Logger::default())
+                .wrap(middleware::Compress::default())
+                .configure(|cfg| core.register_endpoints(cfg))
+                .configure(bbox_core::static_assets::register_endpoints)
+                .configure(|cfg| map_service.register_endpoints(cfg))
+                .configure(|cfg| tile_service.register_endpoints(cfg))
+                .configure(|cfg| feature_service.register_endpoints(cfg))
+                .configure(|cfg| asset_service.register_endpoints(cfg))
+                .configure(|cfg| processes_service.register_endpoints(cfg))
+                .configure(|cfg| routing_service.register_endpoints(cfg)),
+        );
 
         #[cfg(feature = "frontend")]
         {

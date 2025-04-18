@@ -58,7 +58,7 @@ impl RouterDs for GpkgLinesDs {
             let line = LineString::try_from(geom).unwrap();
             let mut coords = line.points();
             let src = coords.next().unwrap();
-            let dst = coords.last().unwrap();
+            let dst = coords.next_back().unwrap();
             let src_id = index.entry(src.x(), src.y());
             let dst_id = index.entry(dst.x(), dst.y());
             let weight = line.geodesic_length().round() as usize;

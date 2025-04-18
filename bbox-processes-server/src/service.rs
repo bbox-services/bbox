@@ -12,6 +12,7 @@ use log::info;
 #[derive(Clone, Default)]
 pub struct ProcessesService {
     pub backend: Option<DagsterBackend>,
+    pub enabled: bool,
 }
 
 #[async_trait]
@@ -22,14 +23,17 @@ impl OgcApiService for ProcessesService {
     type Metrics = NoMetrics;
 
     async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
-        if !config.has_backend() {
+        let enabled = if config.has_backend() {
+            true
+        } else {
             info!("Processing backend configuration missing - service disabled");
-        }
+            false
+        };
         let backend = config
             .dagster_backend
             .clone()
             .map(|_cfg| DagsterBackend::new());
-        ProcessesService { backend }
+        ProcessesService { backend, enabled }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -46,15 +50,19 @@ impl OgcApiService for ProcessesService {
             "http://www.opengis.net/spec/ogcapi-processes-1/1.0/conf/oas30".to_string(),
         ]
     }
-    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
-        vec![ApiLink {
-            href: "/processes".to_string(),
-            rel: Some("processes".to_string()),
-            type_: Some("application/json".to_string()),
-            title: Some("OGC API processes list".to_string()),
-            hreflang: None,
-            length: None,
-        }]
+    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
+        if self.enabled {
+            vec![ApiLink {
+                href: format!("{api_base}/processes"),
+                rel: Some("processes".to_string()),
+                type_: Some("application/json".to_string()),
+                title: Some("OGC API processes list".to_string()),
+                hreflang: None,
+                length: None,
+            }]
+        } else {
+            vec![]
+        }
     }
     fn openapi_yaml(&self) -> Option<&str> {
         Some(include_str!("openapi.yaml"))

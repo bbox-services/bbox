@@ -24,6 +24,7 @@ use tilejson::TileJSON;
 #[derive(Clone)]
 pub struct TileService {
     pub(crate) tilesets: Tilesets,
+    base_url: String,
 }
 
 pub type Tilesets = HashMap<String, TileSet>;
@@ -103,7 +104,7 @@ impl OgcApiService for TileService {
     type CliArgs = ServiceArgs;
     type Metrics = NoMetrics;
 
-    async fn create(config: &Self::Config, _core_cfg: &CoreServiceCfg) -> Self {
+    async fn create(config: &Self::Config, core_cfg: &CoreServiceCfg) -> Self {
         let mut tilesets = HashMap::new();
 
         // Register custom grids
@@ -200,7 +201,15 @@ impl OgcApiService for TileService {
             };
             tilesets.insert(ts.name.clone(), tileset);
         }
-        TileService { tilesets }
+        let base_url = format!(
+            "{}/",
+            core_cfg
+                .public_server_url()
+                .as_deref()
+                .unwrap_or("")
+                .trim_end_matches('/')
+        );
+        TileService { tilesets, base_url }
     }
 
     async fn cli_run(&self, cli: &ArgMatches) -> bool {
@@ -219,25 +228,29 @@ impl OgcApiService for TileService {
         }
     }
 
-    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
-        vec![
-            ApiLink {
-                href: "/tiles".to_string(),
-                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("List of available vector features tilesets".to_string()),
-                hreflang: None,
-                length: None,
-            },
-            ApiLink {
-                href: "/tiles".to_string(),
-                rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-map".to_string()),
-                type_: Some("application/json".to_string()),
-                title: Some("List of available map tilesets".to_string()),
-                hreflang: None,
-                length: None,
-            },
-        ]
+    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
+        if self.tilesets.is_empty() {
+            vec![]
+        } else {
+            vec![
+                ApiLink {
+                    href: format!("{api_base}/tiles"),
+                    rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-vector".to_string()),
+                    type_: Some("application/json".to_string()),
+                    title: Some("List of available vector features tilesets".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+                ApiLink {
+                    href: format!("{api_base}/tiles"),
+                    rel: Some("http://www.opengis.net/def/rel/ogc/1.0/tilesets-map".to_string()),
+                    type_: Some("application/json".to_string()),
+                    title: Some("List of available map tilesets".to_string()),
+                    hreflang: None,
+                    length: None,
+                },
+            ]
+        }
     }
     fn conformance_classes(&self) -> Vec<String> {
         vec![
@@ -320,6 +333,13 @@ impl TileService {
             }
         }
         None
+    }
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
+    pub fn href_prefix(&self) -> &str {
+        self.base_url.trim_end_matches('/')
     }
 }
 
