@@ -6,6 +6,8 @@ toc: false
 
 Composable spatial services.
 
+![bbox-services](bbox-services.png)
+
 ## Components
 
 * [BBOX Feature server](docs/feature-server/): OGC API Features service
