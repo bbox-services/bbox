@@ -63,9 +63,9 @@ impl OgcApiService for RoutingService {
             "http://www.opengis.net/spec/ogcapi-routes-1/1.0.0-draft.1/conf/oas30".to_string(),
         ]
     }
-    fn landing_page_links(&self, _api_base: &str) -> Vec<ApiLink> {
+    fn landing_page_links(&self, api_base: &str) -> Vec<ApiLink> {
         vec![ApiLink {
-            href: "/routes".to_string(),
+            href: format!("{api_base}/routes"),
             rel: Some("routes".to_string()),
             type_: Some("application/json".to_string()),
             title: Some("OGC API routes".to_string()),
