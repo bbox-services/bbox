@@ -44,7 +44,10 @@ impl Inventory {
 
 impl WmsService {
     fn _project(&self) -> &str {
-        self.wms_path.split('/').last().expect("invalid wms_path")
+        self.wms_path
+            .split('/')
+            .next_back()
+            .expect("invalid wms_path")
     }
     #[allow(dead_code)]
     fn cap_request(&self) -> &str {

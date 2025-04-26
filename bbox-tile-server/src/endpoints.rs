@@ -189,6 +189,7 @@ async fn tile_request(
 /// list of available tilesets
 // tiles
 async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
+    let href_prefix = service.href_prefix();
     let tile_set_items: Vec<TileSetItem> = service
         .tilesets
         .iter()
@@ -200,7 +201,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                     rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
                     r#type: Some("application/json".to_string()),
                     title: Some("Tile Matrix Set definition (as JSON)".to_string()),
-                    href: format!("/tileMatrixSets/{}", &grid_tms.id),
+                    href: format!("{href_prefix}/tileMatrixSets/{}", &grid_tms.id),
                     hreflang: None,
                     length: None,
                 }
@@ -215,7 +216,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                         rel: "self".to_string(),
                         r#type: Some("application/json".to_string()),
                         title: Some(format!("Tileset metadata for {ts_name} (as JSON)")),
-                        href: format!("/tiles/{ts_name}"),
+                        href: format!("{href_prefix}/tiles/{ts_name}"),
                         hreflang: None,
                         length: None,
                     },
@@ -225,7 +226,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                         title: Some(format!(
                             "Tileset metadata for {ts_name} (in TileJSON format)"
                         )),
-                        href: format!("/xyz/{ts_name}.json"),
+                        href: format!("{href_prefix}/xyz/{ts_name}.json"),
                         hreflang: None,
                         length: None,
                     },
@@ -234,7 +235,7 @@ async fn get_tile_sets_list(service: web::Data<TileService>) -> HttpResponse {
                         r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
                         title: Some(format!("Tiles for {ts_name} (as MVT)")),
                         href: format!(
-                            "/map/tiles/{}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}",
+                            "{href_prefix}/map/tiles/{}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}",
                             &tms.tms.id
                         ),
                         hreflang: None,
@@ -277,13 +278,14 @@ async fn get_tile_set(
         })
         .collect();
 
+    let href_prefix = service.href_prefix();
     let tiling_scheme_links = ts.tms.iter().map(|grid| {
         let grid_tms = &grid.tms.tms;
         Link {
             rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
             r#type: Some("application/json".to_string()),
             title: Some("Tile Matrix Set definition (as JSON)".to_string()),
-            href: format!("/tileMatrixSets/{}", &grid_tms.id),
+            href: format!("{href_prefix}/tileMatrixSets/{}", &grid_tms.id),
             hreflang: None,
             length: None,
         }
@@ -316,7 +318,7 @@ async fn get_tile_set(
                 rel: "self".to_string(),
                 r#type: Some("application/json".to_string()),
                 title: Some(format!("Tileset metadata for {tileset} (as JSON)")),
-                href: format!("/tiles/{tileset}"),
+                href: format!("{href_prefix}/tiles/{tileset}"),
                 hreflang: None,
                 length: None,
             },
@@ -324,7 +326,9 @@ async fn get_tile_set(
                 rel: "item".to_string(),
                 r#type: Some("application/vnd.mapbox-vector-tile".to_string()),
                 title: Some(format!("Tiles for {tileset} (as MVT)")),
-                href: format!("/xyz/{tileset}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}.mvt"),
+                href: format!(
+                    "{href_prefix}/xyz/{tileset}/{{tileMatrix}}/{{tileRow}}/{{tileCol}}.mvt"
+                ),
                 hreflang: None,
                 length: None,
                 // TODO: "templated": true
@@ -341,6 +345,7 @@ async fn get_tile_set(
 // tileMatrixSets
 async fn get_tile_matrix_sets_list(service: web::Data<TileService>) -> HttpResponse {
     let grids = service.grids();
+    let href_prefix = service.href_prefix();
     let sets = TileMatrixSets {
         tile_matrix_sets: grids
             .iter()
@@ -353,7 +358,7 @@ async fn get_tile_matrix_sets_list(service: web::Data<TileService>) -> HttpRespo
                     rel: "http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme".to_string(),
                     r#type: Some("application/json".to_string()),
                     title: Some("Tile Matrix Set definition (as JSON)".to_string()),
-                    href: format!("/tileMatrixSets/{}", &grid.tms.id),
+                    href: format!("{href_prefix}/tileMatrixSets/{}", &grid.tms.id),
                     hreflang: None,
                     length: None,
                 }],

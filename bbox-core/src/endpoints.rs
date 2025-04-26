@@ -82,21 +82,12 @@ pub fn absurl(req: &HttpRequest, path: &str) -> String {
 }
 
 /// landing page
-async fn index(ogcapi: web::Data<OgcApiInventory>, req: HttpRequest) -> HttpResponse {
+async fn index(ogcapi: web::Data<OgcApiInventory>, _req: HttpRequest) -> HttpResponse {
     // Make links absolute. Some clients (like OGC conformance tester) expect it.
-    let links = ogcapi
-        .landing_page_links
-        .iter()
-        .map(|link| {
-            let mut l = link.clone();
-            l.href = absurl(&req, &link.href);
-            l
-        })
-        .collect();
     let landing_page = CoreLandingPage {
         title: Some("BBOX OGC API".to_string()),
         description: Some("BBOX OGC API landing page".to_string()),
-        links,
+        links: ogcapi.landing_page_links.clone(),
     };
     HttpResponse::Ok().json(landing_page)
 }
@@ -169,6 +160,11 @@ impl ServiceEndpoints for CoreService {
             // OGC validator checks "{URL}/" and "{URL}/conformance" based on server URL from openapi.json
             .service(
                 web::resource("/")
+                    .guard(JsonContentGuard)
+                    .route(web::get().to(index)),
+            )
+            .service(
+                web::resource("")
                     .guard(JsonContentGuard)
                     .route(web::get().to(index)),
             )
