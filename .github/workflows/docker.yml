@@ -3,6 +3,8 @@ name: Docker images
 on:
   # push:
   #   branches: [main]
+  schedule:
+    - cron: "0 0 * * 2"
   release:
     types: [published]
   workflow_dispatch:
