@@ -4,6 +4,7 @@ use crate::filter_params::FilterParams;
 use bbox_core::file_search;
 use bbox_core::ogcapi::*;
 use bbox_core::pg_ds::PgDatasource;
+use chrono::Utc;
 use log::{info, warn};
 use std::collections::HashMap;
 
@@ -173,7 +174,7 @@ impl Inventory {
                     length: None,
                 },
             ],
-            time_stamp: None, // time when the response was generated
+            time_stamp: Some(Utc::now()),
             number_matched: Some(items.number_matched),
             number_returned: Some(items.number_returned),
             features: items.features,

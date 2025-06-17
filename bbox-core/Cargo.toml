@@ -23,6 +23,7 @@ actix-web = { workspace = true }
 actix-web-opentelemetry = { version = "0.13", features = ["metrics-prometheus"] }
 async-stream = { workspace = true }
 async-trait = { workspace = true }
+chrono = { workspace = true }
 clap = { workspace = true }
 env_logger = "0.11.5"
 figment = { version = "0.10.6", features = ["env", "toml"] }

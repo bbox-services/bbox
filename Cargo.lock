@@ -798,6 +798,7 @@ dependencies = [
  "actix-web-opentelemetry",
  "async-stream",
  "async-trait",
+ "chrono",
  "clap",
  "env_logger",
  "figment",

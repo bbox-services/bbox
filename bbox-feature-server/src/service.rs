@@ -41,7 +41,9 @@ impl OgcApiService for FeatureService {
             "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core".to_string(),
             "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson".to_string(),
             "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30".to_string(),
-            // "http://www.opengis.net/spec/ogcapi-features-2/1.0/conf/crs".to_string(),
+            "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables".to_string(),
+            "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/queryables-query-parameters"
+                .to_string(),
         ];
         if cfg!(feature = "html") {
             classes.extend(vec![
