@@ -2690,7 +2690,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.7",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -3937,7 +3937,7 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 [[package]]
 name = "pmtiles"
 version = "0.12.0"
-source = "git+https://github.com/pka/pmtiles-rs.git?branch=writer#e05ca17f3a29eac998766da8f6fc412b47b6ccd9"
+source = "git+https://github.com/pka/pmtiles-rs.git?rev=e05ca17f3a29eac998766da8f6fc412b47b6ccd9#e05ca17f3a29eac998766da8f6fc412b47b6ccd9"
 dependencies = [
  "async-compression",
  "bytes 1.8.0",
