@@ -29,7 +29,7 @@ pub enum S3StoreError {
     #[error("Reading input failed: {0}")]
     ReadInputError(#[source] std::io::Error),
     #[error("Upload failed: {0}")]
-    UploadFailed(#[source] rusoto_core::RusotoError<PutObjectError>),
+    UploadFailed(#[source] Box<rusoto_core::RusotoError<PutObjectError>>),
 }
 
 impl StoreFromConfig for S3StoreCfg {
@@ -134,7 +134,7 @@ impl S3Store {
             client.put_object(request).await
         } {
             eprintln!("Upload failed: {e}");
-            return Err(S3StoreError::UploadFailed(e).into());
+            return Err(S3StoreError::UploadFailed(Box::new(e)).into());
         }
         Ok(())
     }

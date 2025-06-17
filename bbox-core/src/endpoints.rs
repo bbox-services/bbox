@@ -15,12 +15,13 @@ use async_stream::stream;
 use futures_core::stream::Stream;
 use log::info;
 use std::convert::Infallible;
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::path::Path;
 
 impl TileResponse {
     pub fn into_stream(self) -> impl Stream<Item = Result<Bytes, Infallible>> {
-        let bytes = self.body.bytes().map_while(|val| val.ok());
+        let br = BufReader::new(self.body);
+        let bytes = br.bytes().map_while(|val| val.ok());
         stream! {
             yield Ok::<_, Infallible>(web::Bytes::from_iter(bytes));
         }
